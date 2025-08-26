@@ -73,7 +73,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
   useEffect(() => {
     const controller = new AbortController();
 
-    const handler = setTimeout(async () => {
+    const fetchSuggestions = async () => {
         setIsSuggestionsLoading(true);
         try {
             const fetchedSuggestions = await getDestinationSuggestions(destination);
@@ -91,7 +91,16 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                 setIsSuggestionsLoading(false);
             }
         }
-    }, destination ? 300 : 0); // No debounce for initial fetch, 300ms for user input
+    };
+    
+    // Don't fetch for very short queries to reduce API calls and avoid rate-limiting.
+    if (destination.trim().length > 0 && destination.trim().length < 2) {
+        setSuggestions([]); // Clear suggestions for 1-char queries
+        return;
+    }
+
+    // Increased debounce to 500ms for user input to further reduce API calls.
+    const handler = setTimeout(fetchSuggestions, destination ? 500 : 0); 
 
     return () => {
         clearTimeout(handler);
