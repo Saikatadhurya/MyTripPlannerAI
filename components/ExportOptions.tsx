@@ -14,7 +14,7 @@ const ExportOptions: React.FC<ExportOptionsProps> = ({ itinerary }) => {
     text += `Duration: ${itinerary.days} days\n`;
     text += `Start Date: ${new Date(itinerary.startDate + 'T00:00:00').toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}\n`;
     text += `Budget: ${itinerary.budget}\n`;
-    text += `Vibe: ${itinerary.vibe}\n`;
+    text += `Vibe: ${itinerary.vibe.join(', ')}\n`;
     text += `Food Preference: ${itinerary.foodPreference}\n\n`;
     text += `Budget Summary:\n`;
     text += `- Stay (est.): ${itinerary.budgetSummary.stay}\n`;
@@ -56,8 +56,12 @@ const ExportOptions: React.FC<ExportOptionsProps> = ({ itinerary }) => {
         if (day.food && day.food.length > 0) {
           text += `Food:\n${day.food.map(f => `- ${f}`).join('\n')}\n\n`;
         }
+        
+        text += `Suggested Stay:\n`;
         if (day.placesToStay && day.placesToStay.length > 0) {
-          text += `Suggested Stay:\n${day.placesToStay.map(p => `- ${p}`).join('\n')}\n\n`;
+          text += `${day.placesToStay.map(p => `- ${p}`).join('\n')}\n\n`;
+        } else {
+          text += `- N/A\n\n`;
         }
     });
     return text;

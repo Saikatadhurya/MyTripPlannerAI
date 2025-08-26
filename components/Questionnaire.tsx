@@ -7,7 +7,7 @@ export interface QuestionnaireData {
     destination: string;
     days: number;
     budget: Budget;
-    vibe: Vibe;
+    vibe: Vibe[];
     persons: number;
     foodPreference: FoodPreference;
     startDate: string;
@@ -24,11 +24,15 @@ interface QuestionnaireProps {
 const budgets: Budget[] = ['Budget', 'Midrange', 'Luxury'];
 const foodPreferences: FoodPreference[] = ['Veg', 'Non-Veg', 'Vegan'];
 
-const vibes: { label: Vibe, icon: React.ReactNode }[] = [
-    { label: 'Culture & Heritage', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg> },
-    { label: 'Adventure', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" /></svg> },
-    { label: 'Relaxation', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" /></svg> },
-    { label: 'Nightlife', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547a2 2 0 00-.547 1.806l.477 2.387a6 6 0 00.517 3.86l.158.318a6 6 0 003.86.517l2.387.477a2 2 0 001.806-.547a2 2 0 00.547-1.806l-.477-2.387a6 6 0 00-.517-3.86l-.158-.318z" /><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.536a5.5 5.5 0 110 10.928 5.5 5.5 0 010-10.928z" /></svg> }
+const vibes: { label: Vibe; icon: string; description: string }[] = [
+    { label: 'Adventure & Thrill', icon: '🧗', description: 'trekking, hiking, rafting, outdoor challenges' },
+    { label: 'Relaxation & Wellness', icon: '🏖️', description: 'beaches, spas, retreats, slow travel' },
+    { label: 'Cultural & Heritage', icon: '🏛️', description: 'history, monuments, traditions, local art' },
+    { label: 'Nature & Wildlife', icon: '🌿', description: 'mountains, forests, safaris, eco-travel' },
+    { label: 'Food & Culinary', icon: '🍲', description: 'local cuisines, street food, fine dining' },
+    { label: 'Nightlife & Entertainment', icon: '🎶', description: 'parties, clubs, festivals, concerts' },
+    { label: 'Luxury & Leisure', icon: '💎', description: 'resorts, cruises, premium experiences' },
+    { label: 'Romantic & Family Getaways', icon: '❤️', description: 'honeymoons, bonding trips, safe family travel' },
 ];
 
 const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, error, initialData, onBack }) => {
@@ -37,7 +41,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
   const [destination, setDestination] = useState(initialData?.destination || '');
   const [days, setDays] = useState(initialData?.days || 3);
   const [budget, setBudget] = useState<Budget>(initialData?.budget || 'Midrange');
-  const [vibe, setVibe] = useState<Vibe>(initialData?.vibe || 'Adventure');
+  const [vibe, setVibe] = useState<Vibe[]>(initialData?.vibe || ['Adventure & Thrill']);
   const [persons, setPersons] = useState(initialData?.persons || 1);
   const [foodPreference, setFoodPreference] = useState<FoodPreference>(initialData?.foodPreference || 'Non-Veg');
   const [startDate, setStartDate] = useState(initialData?.startDate || getTodayString());
@@ -110,6 +114,18 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
     }
   };
 
+  const handleVibeToggle = (selectedVibe: Vibe) => {
+    setVibe(prev => {
+        const isSelected = prev.includes(selectedVibe);
+        if (isSelected) {
+            // Remove it, but ensure at least one remains
+            return prev.length > 1 ? prev.filter(v => v !== selectedVibe) : prev;
+        } else {
+            // Add it
+            return [...prev, selectedVibe];
+        }
+    });
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -123,6 +139,10 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
     }
      if (days <= 0) {
       alert("Please enter a valid number of days.");
+      return;
+    }
+    if (vibe.length === 0) {
+      alert("Please select at least one travel vibe.");
       return;
     }
     onSubmit({ destination, days, budget, vibe, persons, foodPreference, startDate });
@@ -281,12 +301,13 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
             
             {/* Vibe */}
             <section>
-                <label className="block text-lg font-semibold text-slate-700 mb-3">What's your travel vibe?</label>
+                <label className="block text-lg font-semibold text-slate-700 mb-3">What's your travel vibe? (Select one or more)</label>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {vibes.map(v => (
-                        <button type="button" key={v.label} onClick={() => setVibe(v.label)} className={`p-4 rounded-lg border-2 flex flex-col items-center justify-center space-y-2 transition-all ${vibe === v.label ? 'bg-violet-100/80 text-violet-600 border-violet-500' : 'bg-white/40 text-slate-600 border-white/40 hover:bg-white/60'}`}>
-                            {v.icon}
-                            <span className="font-semibold text-sm">{v.label}</span>
+                        <button type="button" key={v.label} onClick={() => handleVibeToggle(v.label)} className={`p-4 rounded-lg border-2 flex flex-col items-center justify-start text-center space-y-2 transition-all h-full ${vibe.includes(v.label) ? 'bg-violet-100/80 text-violet-600 border-violet-500' : 'bg-white/40 text-slate-600 border-white/40 hover:bg-white/60'}`}>
+                            <span className="text-3xl">{v.icon}</span>
+                            <span className="font-semibold text-sm leading-tight">{v.label}</span>
+                            <p className="text-xs text-slate-500 font-medium">{v.description}</p>
                         </button>
                     ))}
                 </div>

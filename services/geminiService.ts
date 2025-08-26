@@ -63,7 +63,7 @@ export const generateItinerary = async (
   destination: string,
   days: number,
   budget: Budget,
-  vibe: Vibe,
+  vibe: Vibe[],
   persons: number,
   foodPreference: FoodPreference,
   startDate: string
@@ -75,7 +75,9 @@ export const generateItinerary = async (
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-    const prompt = `Create a highly detailed ${days}-day travel itinerary for ${persons} person(s) visiting ${destination}. The traveler's budget is "${budget}", their desired travel vibe is "${vibe}", and their food preference is "${foodPreference}". The trip will start on ${startDate}.
+    const vibeText = vibe.length > 1 ? `Their desired travel vibes are "${vibe.join(', ')}"` : `Their desired travel vibe is "${vibe[0]}"`;
+
+    const prompt = `Create a highly detailed ${days}-day travel itinerary for ${persons} person(s) visiting ${destination}. The traveler's budget is "${budget}". ${vibeText}, and their food preference is "${foodPreference}". The trip will start on ${startDate}.
 
 For all text content, use markdown to **bold** important keywords, places, and titles for emphasis.
 
@@ -92,7 +94,7 @@ For each of the ${days} days, provide:
 - A catchy title.
 - A bulleted list of suggested activities.
 - A bulleted list of ${foodPreference} food recommendations (specific dishes or restaurants).
-- A bulleted list of suggested places to stay for that day, considering the day's activities and location.
+- A bulleted list of suggested places to stay for that day, considering the day's activities and location. If there are no specific suggestions, return an empty list.
 - An estimated cost for the day **per person** in Indian Rupees (₹).
 
 Finally, provide a budget summary with estimated costs in Indian Rupees (₹) **per person** for the entire trip. Include separate estimates for stay, food, and a total cost **per person**.
@@ -155,7 +157,6 @@ Ensure all lists are provided as bullet points.`;
       throw new Error("Invalid response format from AI.");
     }
 
-    // FIX: Added 'persons' to the Itinerary object to ensure it's available for components like ItineraryPreview.
     const itinerary: Itinerary = {
       destination,
       days,

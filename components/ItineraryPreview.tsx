@@ -77,7 +77,7 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
             {itinerary.persons} Person{itinerary.persons > 1 ? 's' : ''}
           </SummaryItem>
           <SummaryItem icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 10v-1m0 0c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>} label="Budget / Vibe">
-            {itinerary.budget} & {itinerary.vibe}
+            {itinerary.budget} & {itinerary.vibe.join(', ')}
           </SummaryItem>
           <SummaryItem icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6H8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" /></svg>} label="Est. Stay / Person">
             <span dangerouslySetInnerHTML={parseBold(itinerary.budgetSummary.stay)} />
@@ -135,7 +135,10 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
                         <div>
                             <h4 className="font-semibold text-lg mb-2 text-slate-800 not-prose">Suggested Stay</h4>
                             <ul className="list-disc pl-5 space-y-1">
-                            {dayPlan.placesToStay.map((place, index) => <li key={index} dangerouslySetInnerHTML={parseBold(place)} />)}
+                            {dayPlan.placesToStay && dayPlan.placesToStay.length > 0
+                                ? dayPlan.placesToStay.map((place, index) => <li key={index} dangerouslySetInnerHTML={parseBold(place)} />)
+                                : <li>N/A</li>
+                            }
                             </ul>
                         </div>
                     </div>

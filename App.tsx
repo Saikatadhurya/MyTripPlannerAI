@@ -1,6 +1,6 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { Itinerary } from './types';
+import { Itinerary, Vibe } from './types';
 import { generateItinerary } from './services/geminiService';
 
 import LandingPage from './components/LandingPage';
@@ -22,7 +22,8 @@ const App: React.FC = () => {
 
   const handleStartPlanning = useCallback((destination?: string) => {
     const today = new Date().toISOString().split('T')[0];
-    setFormData(destination ? { destination, days: 3, budget: 'Midrange', vibe: 'Adventure', persons: 1, foodPreference: 'Non-Veg', startDate: today } : null);
+    const defaultVibes: Vibe[] = ['Adventure & Thrill'];
+    setFormData(destination ? { destination, days: 3, budget: 'Midrange', vibe: defaultVibes, persons: 1, foodPreference: 'Non-Veg', startDate: today } : null);
     setView('questionnaire');
   }, []);
 
