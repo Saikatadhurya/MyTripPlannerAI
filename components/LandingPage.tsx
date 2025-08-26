@@ -6,12 +6,12 @@ interface LandingPageProps {
 }
 
 const FeatureCard: React.FC<{ icon: React.ReactNode; title: string; children: React.ReactNode }> = ({ icon, title, children }) => (
-  <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+  <div className="bg-white/40 backdrop-blur-md p-6 rounded-2xl border border-white/50 shadow-lg">
     <div className="flex items-center space-x-4">
       <div className="bg-violet-100 text-violet-600 rounded-full p-3">{icon}</div>
       <div>
         <h3 className="text-lg font-semibold text-slate-800">{title}</h3>
-        <p className="text-slate-500 text-sm mt-1">{children}</p>
+        <p className="text-slate-600 text-sm mt-1">{children}</p>
       </div>
     </div>
   </div>
@@ -37,7 +37,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onPlanTrip }) => {
     <div className="space-y-16 py-8">
       {/* Hero Section */}
       <div className="text-center max-w-2xl mx-auto">
-        <div className="inline-flex items-center justify-center bg-white p-3 rounded-full shadow-md mb-6 border border-slate-200">
+        <div className="inline-flex items-center justify-center bg-white/40 backdrop-blur-md p-3 rounded-full shadow-lg mb-6 border border-white/50">
             <div className="bg-indigo-500 text-white rounded-full p-4">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" viewBox="0 0 24 24" fill="currentColor"><path d="M21.435 2.585a2.02 2.02 0 0 0-1.89-.865H4.455a2.02 2.02 0 0 0-1.89.865L.01 9.42a1.514 1.514 0 0 0 .53 1.83l8.45 6.015V21a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-3.735l8.45-6.015a1.514 1.514 0 0 0 .53-1.83l-2.555-6.835zM14 15.265V20h-4v-4.735L2.615 9.78l2.04-5.46h14.71l2.04 5.46L14 15.265z"/></svg>
             </div>
@@ -45,7 +45,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onPlanTrip }) => {
         <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight">
           Plan Your Dream Trip with AI
         </h1>
-        <p className="mt-4 text-lg text-slate-600 max-w-xl mx-auto">
+        <p className="mt-4 text-lg text-slate-700 max-w-xl mx-auto">
           Get personalized travel itineraries powered by AI. From budget planning to day-wise activities, we've got you covered.
         </p>
         <button
@@ -74,17 +74,17 @@ const LandingPage: React.FC<LandingPageProps> = ({ onPlanTrip }) => {
         <h2 className="text-3xl font-bold text-center text-slate-900">Popular Destinations</h2>
         <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {destinations.map((dest) => (
-            <button key={dest.name} onClick={() => onPlanTrip(dest.name)} className="text-left bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-lg hover:border-indigo-300 transition-all duration-300 transform hover:-translate-y-1">
+            <button key={dest.name} onClick={() => onPlanTrip(dest.name)} className="text-left bg-white/40 backdrop-blur-md p-5 rounded-2xl border border-white/50 shadow-lg hover:shadow-xl hover:border-indigo-300/50 transition-all duration-300 transform hover:-translate-y-1">
               <span className="text-3xl" role="img" aria-label="">{dest.icon}</span>
               <h3 className="text-lg font-semibold mt-3 text-slate-800">{dest.name}</h3>
-              <p className="text-slate-500 text-sm">{dest.description}</p>
+              <p className="text-slate-600 text-sm">{dest.description}</p>
             </button>
           ))}
           {destinations.length === 0 && Array(5).fill(0).map((_, i) => (
-            <div key={i} className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm animate-pulse">
-              <div className="h-8 w-8 bg-slate-200 rounded-md"></div>
-              <div className="h-4 bg-slate-200 rounded mt-4 w-3/4"></div>
-              <div className="h-3 bg-slate-200 rounded mt-2 w-full"></div>
+            <div key={i} className="bg-white/40 p-5 rounded-2xl border border-white/50 shadow-lg animate-pulse">
+              <div className="h-8 w-8 bg-slate-200/50 rounded-md"></div>
+              <div className="h-4 bg-slate-200/50 rounded mt-4 w-3/4"></div>
+              <div className="h-3 bg-slate-200/50 rounded mt-2 w-full"></div>
             </div>
           ))}
         </div>

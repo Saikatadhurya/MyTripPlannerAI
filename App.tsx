@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Itinerary } from './types';
 import { generateItinerary } from './services/geminiService';
 
@@ -15,6 +15,10 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<QuestionnaireData | null>(null);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [view]);
 
   const handleStartPlanning = useCallback((destination?: string) => {
     const today = new Date().toISOString().split('T')[0];

@@ -36,7 +36,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
   const [days, setDays] = useState(initialData?.days || 3);
   const [budget, setBudget] = useState<Budget>(initialData?.budget || 'Midrange');
   const [vibe, setVibe] = useState<Vibe>(initialData?.vibe || 'Adventure');
-  const [persons, setPersons] = useState(initialData?.persons || 0);
+  const [persons, setPersons] = useState(initialData?.persons || 1);
   const [foodPreference, setFoodPreference] = useState<FoodPreference>(initialData?.foodPreference || 'Non-Veg');
   const [startDate, setStartDate] = useState(initialData?.startDate || getTodayString());
   const [destinations, setDestinations] = useState<PopularDestination[]>([]);
@@ -56,13 +56,21 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
       alert("Please enter a destination.");
       return;
     }
+    if (persons <= 0) {
+      alert("Please enter a valid number of people.");
+      return;
+    }
+     if (days <= 0) {
+      alert("Please enter a valid number of days.");
+      return;
+    }
     onSubmit({ destination, days, budget, vibe, persons, foodPreference, startDate });
   };
   
   return (
-    <div className="max-w-3xl mx-auto p-4 sm:p-6 bg-white rounded-2xl shadow-lg border border-slate-200/80">
+    <div className="max-w-3xl mx-auto p-4 sm:p-8 bg-white/40 backdrop-blur-lg rounded-2xl shadow-xl border border-white/50">
         <div className="flex items-center justify-between mb-6">
-            <button onClick={onBack} className="text-slate-500 hover:text-slate-800 flex items-center space-x-2">
+            <button onClick={onBack} className="text-slate-600 hover:text-slate-900 flex items-center space-x-2">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
                 <span>Back</span>
             </button>
@@ -78,12 +86,12 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                 <label htmlFor="destination" className="block text-lg font-semibold text-slate-700 mb-3">Where do you want to go?</label>
                 <input
                     type="text" id="destination" value={destination} onChange={(e) => setDestination(e.target.value)}
-                    className="w-full px-4 py-3 bg-violet-50 text-slate-800 border-2 border-transparent rounded-lg focus:bg-white focus:border-violet-500 focus:ring-2 focus:ring-violet-500/50 transition-all duration-200 shadow-sm placeholder-slate-400"
+                    className="w-full px-4 py-3 bg-white/50 text-slate-800 border border-white/40 rounded-lg focus:bg-white/70 focus:border-violet-400 focus:ring-2 focus:ring-violet-500/50 transition-all duration-200 shadow-sm placeholder-slate-500"
                     placeholder="Type any destination worldwide..." required
                 />
                 <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
                     {destinations.map(d => (
-                        <button type="button" key={d.name} onClick={() => setDestination(d.name)} className={`px-3 py-2 text-sm border rounded-full transition ${destination === d.name ? 'bg-violet-100 text-violet-700 border-violet-300 font-semibold' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+                        <button type="button" key={d.name} onClick={() => setDestination(d.name)} className={`px-3 py-2 text-sm rounded-full transition ${destination === d.name ? 'bg-violet-100/80 text-violet-700 border border-violet-300 font-semibold' : 'bg-white/40 text-slate-600 hover:bg-white/70'}`}>
                             {d.name}
                         </button>
                     ))}
@@ -109,7 +117,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                       }
                     }
                   }}
-                  className="w-full px-4 py-3 bg-violet-50 text-slate-800 border-2 border-transparent rounded-lg focus:bg-white focus:border-violet-500 focus:ring-2 focus:ring-violet-500/50 transition-all duration-200 shadow-sm placeholder-slate-400"
+                  className="w-full px-4 py-3 bg-white/50 text-slate-800 border border-white/40 rounded-lg focus:bg-white/70 focus:border-violet-400 focus:ring-2 focus:ring-violet-500/50 transition-all duration-200 shadow-sm placeholder-slate-500"
                   min="1"
                   placeholder="Number of travelers"
                   required
@@ -121,7 +129,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                 <label htmlFor="start-date" className="block text-lg font-semibold text-slate-700 mb-3">When do you want to go?</label>
                 <input
                     type="date" id="start-date" value={startDate} onChange={(e) => setStartDate(e.target.value)} min={getTodayString()}
-                    className="w-full px-4 py-3 bg-violet-50 text-slate-800 border-2 border-transparent rounded-lg focus:bg-white focus:border-violet-500 focus:ring-2 focus:ring-violet-500/50 transition-all duration-200 shadow-sm"
+                    className="w-full px-4 py-3 bg-white/50 text-slate-800 border border-white/40 rounded-lg focus:bg-white/70 focus:border-violet-400 focus:ring-2 focus:ring-violet-500/50 transition-all duration-200 shadow-sm"
                     required
                 />
               </section>
@@ -132,7 +140,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                 <label className="block text-lg font-semibold text-slate-700 mb-3">How many days?</label>
                 <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
                     {dayPresets.map(d => (
-                        <button type="button" key={d} onClick={() => setDays(d)} className={`py-3 rounded-lg font-semibold transition-all duration-200 ${days === d && !isCustomDays ? 'bg-violet-600 text-white shadow-md' : 'bg-slate-100 hover:bg-slate-200'}`}>
+                        <button type="button" key={d} onClick={() => setDays(d)} className={`py-3 rounded-lg font-semibold transition-all duration-200 ${days === d && !isCustomDays ? 'bg-violet-600 text-white shadow-md' : 'bg-white/40 hover:bg-white/70'}`}>
                             {d} Day{d > 1 ? 's' : ''}
                         </button>
                     ))}
@@ -151,7 +159,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                           }
                         }
                       }}
-                      className={`w-full py-3 rounded-lg font-semibold transition-all duration-200 text-center border-2 focus:ring-2 focus:ring-violet-500/50 placeholder-slate-400 ${isCustomDays ? 'bg-white border-violet-500 text-violet-700' : 'bg-violet-50 border-transparent text-slate-700'}`}
+                      className={`w-full py-3 rounded-lg font-semibold transition-all duration-200 text-center border-2 focus:ring-2 focus:ring-violet-500/50 placeholder-slate-500 ${isCustomDays ? 'bg-white/70 border-violet-500 text-violet-700' : 'bg-white/30 border-transparent text-slate-700'}`}
                       min="1"
                       placeholder="Custom"
                     />
@@ -163,7 +171,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                 <label className="block text-lg font-semibold text-slate-700 mb-3">What's your budget range?</label>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {budgets.map(b => (
-                        <button type="button" key={b} onClick={() => setBudget(b)} className={`p-4 rounded-lg text-center border-2 transition-all ${budget === b ? 'bg-violet-50 border-violet-500 shadow-md' : 'bg-white border-slate-200 hover:border-slate-300'}`}>
+                        <button type="button" key={b} onClick={() => setBudget(b)} className={`p-4 rounded-lg text-center border-2 transition-all ${budget === b ? 'bg-violet-100/70 border-violet-500 shadow-md' : 'bg-white/40 border-white/40 hover:bg-white/60'}`}>
                             <span className="font-bold text-slate-800">{b}</span>
                         </button>
                     ))}
@@ -175,7 +183,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                 <label className="block text-lg font-semibold text-slate-700 mb-3">What's your food preference?</label>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {foodPreferences.map(fp => (
-                        <button type="button" key={fp} onClick={() => setFoodPreference(fp)} className={`p-4 rounded-lg text-center border-2 transition-all ${foodPreference === fp ? 'bg-violet-50 border-violet-500 shadow-md' : 'bg-white border-slate-200 hover:border-slate-300'}`}>
+                        <button type="button" key={fp} onClick={() => setFoodPreference(fp)} className={`p-4 rounded-lg text-center border-2 transition-all ${foodPreference === fp ? 'bg-violet-100/70 border-violet-500 shadow-md' : 'bg-white/40 border-white/40 hover:bg-white/60'}`}>
                             <span className="font-bold text-slate-800">{fp}</span>
                         </button>
                     ))}
@@ -187,7 +195,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                 <label className="block text-lg font-semibold text-slate-700 mb-3">What's your travel vibe?</label>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {vibes.map(v => (
-                        <button type="button" key={v.label} onClick={() => setVibe(v.label)} className={`p-4 rounded-lg border-2 flex flex-col items-center justify-center space-y-2 transition-all ${vibe === v.label ? 'bg-violet-50 text-violet-600 border-violet-500' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'}`}>
+                        <button type="button" key={v.label} onClick={() => setVibe(v.label)} className={`p-4 rounded-lg border-2 flex flex-col items-center justify-center space-y-2 transition-all ${vibe === v.label ? 'bg-violet-100/80 text-violet-600 border-violet-500' : 'bg-white/40 text-slate-600 border-white/40 hover:bg-white/60'}`}>
                             {v.icon}
                             <span className="font-semibold text-sm">{v.label}</span>
                         </button>

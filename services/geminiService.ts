@@ -20,6 +20,8 @@ export const generateItinerary = async (
 
     const prompt = `Create a highly detailed ${days}-day travel itinerary for ${persons} person(s) visiting ${destination}. The traveler's budget is "${budget}", their desired travel vibe is "${vibe}", and their food preference is "${foodPreference}". The trip will start on ${startDate}.
 
+For all text content, use markdown to **bold** important keywords, places, and titles for emphasis.
+
 Provide the following general information for ${destination}:
 - A brief historic background.
 - At least 5 bullet points on the famous culture.
