@@ -35,6 +35,19 @@ const vibes: { label: Vibe; icon: string; description: string }[] = [
     { label: 'Romantic & Family Getaways', icon: '❤️', description: 'honeymoons, bonding trips, safe family travel' },
 ];
 
+const loadingMessages = [
+  "Packing your virtual bags… 🧳",
+  "Finding hidden gems for your journey 🌍",
+  "Charting the perfect route for you 🗺️",
+  "Matching your vibe with the best adventures ✨",
+  "Your dream trip is loading… ✈️",
+  "Adventure is just around the corner… 🧭",
+  "Unlocking destinations you’ll love ❤️",
+  "Bringing wanderlust to life… 🌟",
+  "Great trips take a moment to plan 😉",
+  "We’re almost there… buckle up! 🚀"
+];
+
 const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, error, initialData, onBack }) => {
   const getTodayString = () => new Date().toISOString().split('T')[0];
   
@@ -50,6 +63,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
   const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
   
   const suggestionsListRef = useRef<HTMLUListElement>(null);
 
@@ -93,6 +107,15 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
       }
     }
   }, [highlightedIndex]);
+
+  useEffect(() => {
+    if (isLoading) {
+      const intervalId = setInterval(() => {
+        setCurrentMessageIndex((prevIndex) => (prevIndex + 1) % loadingMessages.length);
+      }, 2500);
+      return () => clearInterval(intervalId);
+    }
+  }, [isLoading]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (showSuggestions && suggestions.length > 0) {
@@ -148,6 +171,20 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
     onSubmit({ destination, days, budget, vibe, persons, foodPreference, startDate });
   };
   
+  if (isLoading) {
+    return (
+      <div className="max-w-3xl mx-auto p-4 sm:p-8 bg-white/40 backdrop-blur-lg rounded-2xl shadow-xl border border-white/50 flex flex-col items-center justify-center min-h-[60vh] text-center">
+        <svg className="animate-spin h-10 w-10 text-violet-600 mb-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <p key={currentMessageIndex} className="text-xl font-semibold text-slate-700 fade-in px-4">
+            {loadingMessages[currentMessageIndex]}
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-3xl mx-auto p-4 sm:p-8 bg-white/40 backdrop-blur-lg rounded-2xl shadow-xl border border-white/50">
         <div className="flex items-center justify-between mb-6">
@@ -314,12 +351,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
             </section>
 
             <button type="submit" disabled={isLoading} className="w-full flex justify-center items-center px-6 py-4 border border-transparent text-base font-bold rounded-full text-white bg-violet-600 hover:bg-violet-700 disabled:bg-violet-300 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl">
-                {isLoading ? (
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                ) : '✨ Generate My Itinerary'}
+                ✨ Generate My Itinerary
             </button>
         </form>
     </div>
