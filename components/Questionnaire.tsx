@@ -53,22 +53,31 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
   const isCustomDays = !dayPresets.includes(days);
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const handler = setTimeout(async () => {
         setIsSuggestionsLoading(true);
         try {
             const fetchedSuggestions = await getDestinationSuggestions(destination);
-            setSuggestions(fetchedSuggestions);
-            setHighlightedIndex(-1); // Reset highlight when suggestions change
+            if (!controller.signal.aborted) {
+                setSuggestions(fetchedSuggestions);
+                setHighlightedIndex(-1); // Reset highlight when suggestions change
+            }
         } catch (error) {
-            console.error(`Failed to fetch suggestions for "${destination}":`, error);
-            setSuggestions([]);
+            if (!controller.signal.aborted) {
+                console.error(`Failed to fetch suggestions for "${destination}":`, error);
+                setSuggestions([]);
+            }
         } finally {
-            setIsSuggestionsLoading(false);
+            if (!controller.signal.aborted) {
+                setIsSuggestionsLoading(false);
+            }
         }
     }, destination ? 300 : 0); // No debounce for initial fetch, 300ms for user input
 
     return () => {
         clearTimeout(handler);
+        controller.abort();
     };
   }, [destination]);
 

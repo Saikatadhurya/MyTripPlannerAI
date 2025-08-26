@@ -2,7 +2,15 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Budget, Itinerary, Vibe, FoodPreference } from '../types';
 
+// Cache for destination suggestions to avoid redundant API calls
+const suggestionsCache = new Map<string, string[]>();
+
 export const getDestinationSuggestions = async (query: string): Promise<string[]> => {
+  const cacheKey = query.trim().toLowerCase();
+  if (suggestionsCache.has(cacheKey)) {
+    return suggestionsCache.get(cacheKey)!;
+  }
+
   if (!process.env.API_KEY) {
     console.error("API key is missing.");
     return [];
@@ -12,13 +20,13 @@ export const getDestinationSuggestions = async (query: string): Promise<string[]
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
     const prompt = query.trim()
-        ? `Based on the user input "${query}", suggest 5 travel destinations. For each, provide the city, state/province, and country in a single string like "City, State, Country". Provide only a JSON array of these strings.`
-        : `Suggest 5 popular and diverse travel destinations from around the world. For each, provide the city, state/province, and country in a single string like "City, State, Country". Provide only a JSON array of these strings.`;
+        ? `Based on the user input "${query}", suggest 5 travel locations. The locations can be cities, states, provinces, or entire countries. If the user's input "${query}" is a valid location itself, it must be included in the list, preferably as the first result. The other suggestions should be closely related popular destinations. For each location, provide its name in the most appropriate format: for cities, use "City, State, Country"; for states/provinces, use "State, Country"; for countries, just use the country's name. Provide only a JSON array of these strings.`
+        : `Suggest 5 popular and diverse travel locations from around the world, including a mix of cities, states/provinces, and countries. For each location, provide its name in the most appropriate format: for cities, use "City, State, Country"; for states/provinces, use "State, Country"; for countries, just use the country's name. Provide only a JSON array of these strings.`;
 
     const responseSchema = {
         type: Type.ARRAY,
         items: { type: Type.STRING },
-        description: "A list of 5 travel destination suggestions, including city, state, and country."
+        description: "A list of 5 travel location suggestions, which can be cities, states, or countries."
     };
     
     const response = await ai.models.generateContent({
@@ -27,6 +35,8 @@ export const getDestinationSuggestions = async (query: string): Promise<string[]
       config: {
         responseMimeType: "application/json",
         responseSchema: responseSchema,
+        // Optimize for low-latency by disabling thinking
+        thinkingConfig: { thinkingBudget: 0 },
       }
     });
 
@@ -38,7 +48,9 @@ export const getDestinationSuggestions = async (query: string): Promise<string[]
       return [];
     }
     
-    return resultJson.filter(item => typeof item === 'string');
+    const suggestions = resultJson.filter(item => typeof item === 'string');
+    suggestionsCache.set(cacheKey, suggestions); // Cache the successful result
+    return suggestions;
 
   } catch (error) {
     console.error("Error fetching destination suggestions from AI:", error);
