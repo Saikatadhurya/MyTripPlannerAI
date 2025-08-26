@@ -2,6 +2,51 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Budget, Itinerary, Vibe, FoodPreference } from '../types';
 
+export const getDestinationSuggestions = async (query: string): Promise<string[]> => {
+  if (!process.env.API_KEY) {
+    console.error("API key is missing.");
+    return [];
+  }
+
+  try {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+    const prompt = query.trim()
+        ? `Based on the user input "${query}", suggest 5 travel destinations. For each, provide the city, state/province, and country in a single string like "City, State, Country". Provide only a JSON array of these strings.`
+        : `Suggest 5 popular and diverse travel destinations from around the world. For each, provide the city, state/province, and country in a single string like "City, State, Country". Provide only a JSON array of these strings.`;
+
+    const responseSchema = {
+        type: Type.ARRAY,
+        items: { type: Type.STRING },
+        description: "A list of 5 travel destination suggestions, including city, state, and country."
+    };
+    
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: responseSchema,
+      }
+    });
+
+    const resultText = response.text.trim();
+    const resultJson = JSON.parse(resultText);
+
+    if (!Array.isArray(resultJson)) {
+      console.error("Invalid response format from AI. Expected an array.");
+      return [];
+    }
+    
+    return resultJson.filter(item => typeof item === 'string');
+
+  } catch (error) {
+    console.error("Error fetching destination suggestions from AI:", error);
+    return [];
+  }
+};
+
+
 export const generateItinerary = async (
   destination: string,
   days: number,
@@ -98,9 +143,11 @@ Ensure all lists are provided as bullet points.`;
       throw new Error("Invalid response format from AI.");
     }
 
+    // FIX: Added 'persons' to the Itinerary object to ensure it's available for components like ItineraryPreview.
     const itinerary: Itinerary = {
       destination,
       days,
+      persons,
       budget,
       vibe,
       foodPreference,

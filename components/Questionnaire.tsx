@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Budget, Vibe, PopularDestination, FoodPreference } from '../types';
+
+import React, { useState, useEffect, useRef } from 'react';
+import { Budget, Vibe, FoodPreference } from '../types';
+import { getDestinationSuggestions } from '../services/geminiService';
 
 export interface QuestionnaireData {
     destination: string;
@@ -39,16 +41,66 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
   const [persons, setPersons] = useState(initialData?.persons || 1);
   const [foodPreference, setFoodPreference] = useState<FoodPreference>(initialData?.foodPreference || 'Non-Veg');
   const [startDate, setStartDate] = useState(initialData?.startDate || getTodayString());
-  const [destinations, setDestinations] = useState<PopularDestination[]>([]);
+
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  
+  const suggestionsListRef = useRef<HTMLUListElement>(null);
+
   const dayPresets = [1, 2, 3, 4, 5];
   const isCustomDays = !dayPresets.includes(days);
 
   useEffect(() => {
-    fetch('/data/destinations.json')
-      .then(res => res.json())
-      .then(data => setDestinations(data))
-      .catch(console.error);
-  }, []);
+    const handler = setTimeout(async () => {
+        setIsSuggestionsLoading(true);
+        try {
+            const fetchedSuggestions = await getDestinationSuggestions(destination);
+            setSuggestions(fetchedSuggestions);
+            setHighlightedIndex(-1); // Reset highlight when suggestions change
+        } catch (error) {
+            console.error(`Failed to fetch suggestions for "${destination}":`, error);
+            setSuggestions([]);
+        } finally {
+            setIsSuggestionsLoading(false);
+        }
+    }, destination ? 300 : 0); // No debounce for initial fetch, 300ms for user input
+
+    return () => {
+        clearTimeout(handler);
+    };
+  }, [destination]);
+
+  useEffect(() => {
+    if (highlightedIndex > -1 && suggestionsListRef.current) {
+      const highlightedItem = suggestionsListRef.current.children[highlightedIndex] as HTMLLIElement;
+      if (highlightedItem) {
+        highlightedItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+    }
+  }, [highlightedIndex]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (showSuggestions && suggestions.length > 0) {
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setHighlightedIndex(prevIndex => (prevIndex + 1) % suggestions.length);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setHighlightedIndex(prevIndex => (prevIndex - 1 + suggestions.length) % suggestions.length);
+        } else if (e.key === 'Enter') {
+            if (highlightedIndex > -1) {
+                e.preventDefault(); // Prevent form submission
+                setDestination(suggestions[highlightedIndex]);
+                setShowSuggestions(false);
+            }
+        } else if (e.key === 'Escape') {
+            setShowSuggestions(false);
+        }
+    }
+  };
+
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,19 +135,47 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
         <form onSubmit={handleSubmit} className="space-y-8">
             {/* Destination */}
             <section>
-                <label htmlFor="destination" className="block text-lg font-semibold text-slate-700 mb-3">Where do you want to go?</label>
+              <label htmlFor="destination" className="block text-lg font-semibold text-slate-700 mb-3">Where do you want to go?</label>
+              <div className="relative">
                 <input
-                    type="text" id="destination" value={destination} onChange={(e) => setDestination(e.target.value)}
+                    type="text" id="destination" value={destination}
+                    onChange={(e) => { setDestination(e.target.value); setShowSuggestions(true); }}
+                    onFocus={() => setShowSuggestions(true)}
+                    onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                    onKeyDown={handleKeyDown}
                     className="w-full px-4 py-3 bg-white/50 text-slate-800 border border-white/40 rounded-lg focus:bg-white/70 focus:border-violet-400 focus:ring-2 focus:ring-violet-500/50 transition-all duration-200 shadow-sm placeholder-slate-500"
-                    placeholder="Type any destination worldwide..." required
+                    placeholder="e.g., Paris, Tokyo, Bali..." required autoComplete="off"
                 />
-                <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
-                    {destinations.map(d => (
-                        <button type="button" key={d.name} onClick={() => setDestination(d.name)} className={`px-3 py-2 text-sm rounded-full transition ${destination === d.name ? 'bg-violet-100/80 text-violet-700 border border-violet-300 font-semibold' : 'bg-white/40 text-slate-600 hover:bg-white/70'}`}>
-                            {d.name}
-                        </button>
-                    ))}
-                </div>
+                 {isSuggestionsLoading && (
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <svg className="animate-spin h-5 w-5 text-violet-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </div>
+                )}
+                {showSuggestions && suggestions.length > 0 && (
+                  <div className="absolute z-10 w-full mt-1 bg-white/90 backdrop-blur-xl rounded-lg shadow-lg border border-white/50">
+                      <ul ref={suggestionsListRef} className="py-1 max-h-60 overflow-y-auto">
+                          {suggestions.map((s, index) => (
+                              <li key={index}>
+                                  <button
+                                      type="button"
+                                      className={`w-full text-left px-4 py-2 text-slate-700 transition-colors ${index === highlightedIndex ? 'bg-violet-100' : 'hover:bg-violet-100/50'}`}
+                                      onMouseDown={() => { // use onMouseDown to fire before input's onBlur
+                                          setDestination(s);
+                                          setShowSuggestions(false);
+                                      }}
+                                      onMouseEnter={() => setHighlightedIndex(index)}
+                                  >
+                                      {s}
+                                  </button>
+                              </li>
+                          ))}
+                      </ul>
+                  </div>
+                )}
+              </div>
             </section>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

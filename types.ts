@@ -14,6 +14,8 @@ export interface DayPlan {
 export interface Itinerary {
   destination: string;
   days: number;
+  // FIX: Added 'persons' property to fix a type error in ItineraryPreview.tsx.
+  persons: number;
   budget: Budget;
   vibe: Vibe;
   foodPreference: FoodPreference;

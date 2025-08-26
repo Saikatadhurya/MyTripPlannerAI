@@ -10,18 +10,13 @@ const parseBold = (text: string | undefined) => {
   return { __html: text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') };
 };
 
-interface ItineraryPreviewProps {
-  itinerary: Itinerary;
-  onRegenerate: () => void;
-}
-
 const InfoSection: React.FC<{ title: string; items?: string[]; children?: React.ReactNode }> = ({ title, items, children }) => {
   if ((!items || items.length === 0) && !children) {
     return null;
   }
   return (
     <div className="bg-white/40 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/50">
-      <h3 className="text-2xl font-bold text-violet-700 mb-3">{title}</h3>
+      <h3 className="text-xl font-bold text-violet-800 mb-4">{title}</h3>
       <div className="prose prose-slate max-w-none text-gray-700">
         {children}
         {items && items.length > 0 && (
@@ -36,7 +31,20 @@ const InfoSection: React.FC<{ title: string; items?: string[]; children?: React.
   );
 };
 
-const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegenerate }) => {
+const SummaryItem: React.FC<{ icon: React.ReactNode; label: string; children: React.ReactNode }> = ({ icon, label, children }) => (
+    <div className="bg-white/40 backdrop-blur-md p-4 rounded-xl border border-white/50 flex items-center space-x-4">
+        <div className="flex-shrink-0 bg-violet-100 text-violet-600 rounded-full p-3">
+            {icon}
+        </div>
+        <div>
+            <p className="text-sm text-violet-800 font-medium">{label}</p>
+            <div className="font-semibold text-lg text-slate-800">{children}</div>
+        </div>
+    </div>
+);
+
+
+const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => void; }> = ({ itinerary, onRegenerate }) => {
   const formattedStartDate = new Date(itinerary.startDate + 'T00:00:00').toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
@@ -44,95 +52,99 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
   });
 
   return (
-    <div className="max-w-4xl mx-auto" id="itinerary-preview-content">
-      <div className="mb-10">
-        <button onClick={onRegenerate} className="text-slate-600 hover:text-slate-900 flex items-center space-x-2 mb-4 no-print">
+    <div className="max-w-4xl mx-auto space-y-12" id="itinerary-preview-content">
+      <header className="space-y-4">
+        <button onClick={onRegenerate} className="text-slate-600 hover:text-slate-900 flex items-center space-x-2 no-print">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
             <span>Back</span>
         </button>
-        <h1 className="text-4xl font-bold text-gray-900 text-center" dangerouslySetInnerHTML={parseBold(itinerary.destination)} />
-        <p className="text-lg text-gray-700 mt-2 text-center">Your amazing {itinerary.days}-day itinerary</p>
-      </div>
-
-      <div className="bg-white/30 backdrop-blur-md border border-white/40 rounded-xl p-6 mb-8">
-        <h3 className="text-xl font-bold mb-4 text-violet-800">Trip Summary</h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 text-center">
-            <div>
-                <p className="text-sm text-violet-700">Start Date</p>
-                <p className="font-semibold text-lg text-slate-800">{formattedStartDate}</p>
-            </div>
-            <div>
-                <p className="text-sm text-violet-700">Budget</p>
-                <p className="font-semibold text-lg text-slate-800">{itinerary.budget}</p>
-            </div>
-             <div>
-                <p className="text-sm text-violet-700">Diet</p>
-                <p className="font-semibold text-lg text-slate-800">{itinerary.foodPreference}</p>
-            </div>
-            <div>
-                <p className="text-sm text-violet-700">Stay / person</p>
-                <p className="font-semibold text-lg text-slate-800" dangerouslySetInnerHTML={parseBold(itinerary.budgetSummary.stay)} />
-            </div>
-            <div>
-                <p className="text-sm text-violet-700">Food / person</p>
-                <p className="font-semibold text-lg text-slate-800" dangerouslySetInnerHTML={parseBold(itinerary.budgetSummary.food)} />
-            </div>
-            <div>
-                <p className="text-sm text-violet-700">Total / person</p>
-                <p className="font-semibold text-lg text-slate-800" dangerouslySetInnerHTML={parseBold(itinerary.budgetSummary.total)} />
-            </div>
+        <div className="text-center">
+            <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight" dangerouslySetInnerHTML={parseBold(itinerary.destination)} />
+            <p className="text-lg text-gray-700 mt-2">Your amazing {itinerary.days}-day itinerary</p>
         </div>
-      </div>
+      </header>
+      
+      <section>
+        <h2 className="text-3xl font-bold text-slate-800 mb-6">Trip Summary</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <SummaryItem icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>} label="Start Date">
+            {formattedStartDate}
+          </SummaryItem>
+          <SummaryItem icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>} label="Duration">
+            {itinerary.days} Day{itinerary.days > 1 ? 's' : ''}
+          </SummaryItem>
+          <SummaryItem icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>} label="Travelers">
+            {itinerary.persons} Person{itinerary.persons > 1 ? 's' : ''}
+          </SummaryItem>
+          <SummaryItem icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 10v-1m0 0c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>} label="Budget / Vibe">
+            {itinerary.budget} & {itinerary.vibe}
+          </SummaryItem>
+          <SummaryItem icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6H8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" /></svg>} label="Est. Stay / Person">
+            <span dangerouslySetInnerHTML={parseBold(itinerary.budgetSummary.stay)} />
+          </SummaryItem>
+          <SummaryItem icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>} label="Est. Total / Person">
+            <span dangerouslySetInnerHTML={parseBold(itinerary.budgetSummary.total)} />
+          </SummaryItem>
+        </div>
+      </section>
 
       <div className="space-y-8">
-        <InfoSection title="Special Events During Your Trip" items={itinerary.specialEvents} />
+        <section className="space-y-4">
+            <h2 className="text-3xl font-bold text-slate-800">About {itinerary.destination}</h2>
+            <InfoSection title="Historic Background">
+                <p dangerouslySetInnerHTML={parseBold(itinerary.historicBackground)} />
+            </InfoSection>
+            <InfoSection title="Famous Culture" items={itinerary.famousCulture} />
+        </section>
 
-        <InfoSection title="Historic Background">
-          <p dangerouslySetInnerHTML={parseBold(itinerary.historicBackground)} />
-        </InfoSection>
+        <section className="space-y-4">
+            <h2 className="text-3xl font-bold text-slate-800">Trip Essentials</h2>
+            <InfoSection title="Special Events During Your Trip" items={itinerary.specialEvents} />
+            <InfoSection title="Recommended Restaurants" items={itinerary.recommendedRestaurants} />
+            <InfoSection title="Natural Places to Explore" items={itinerary.naturalPlaces} />
+            <InfoSection title="Museums" items={itinerary.museums} />
+            <InfoSection title="Special Ornaments & Souvenirs" items={itinerary.specialOrnaments} />
+        </section>
 
-        <InfoSection title="Famous Culture" items={itinerary.famousCulture} />
-        <InfoSection title="Recommended Restaurants" items={itinerary.recommendedRestaurants} />
-        <InfoSection title="Natural Places to Explore" items={itinerary.naturalPlaces} />
-        <InfoSection title="Museums" items={itinerary.museums} />
-        <InfoSection title="Special Ornaments & Souvenirs" items={itinerary.specialOrnaments} />
-
-        {itinerary.plan.map((dayPlan) => (
-          <div key={dayPlan.day} className="bg-white/40 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/50 transition-all duration-300">
-            <div className="flex justify-between items-baseline mb-4">
-              <h2 className="text-3xl font-bold text-violet-800">Day {dayPlan.day}: <span dangerouslySetInnerHTML={parseBold(dayPlan.title)} /></h2>
-              {dayPlan.approxCost && (
-                <div className="text-right flex-shrink-0 ml-4">
-                  <p className="text-sm text-violet-700">Approx. Cost / Person</p>
-                  <p className="font-bold text-xl text-slate-800" dangerouslySetInnerHTML={parseBold(dayPlan.approxCost)} />
+        <section className="space-y-8">
+            <h2 className="text-3xl font-bold text-slate-800">Your Daily Plan</h2>
+            {itinerary.plan.map((dayPlan) => (
+                <div key={dayPlan.day} className="bg-white/40 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/50 transition-all duration-300">
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-baseline mb-4 border-b border-violet-200/50 pb-4">
+                        <h3 className="text-2xl font-bold text-violet-800">Day {dayPlan.day}: <span dangerouslySetInnerHTML={parseBold(dayPlan.title)} /></h3>
+                        {dayPlan.approxCost && (
+                            <div className="text-left sm:text-right flex-shrink-0 mt-2 sm:mt-0 sm:ml-4">
+                            <p className="text-sm text-violet-700">Approx. Cost / Person</p>
+                            <p className="font-bold text-xl text-slate-800" dangerouslySetInnerHTML={parseBold(dayPlan.approxCost)} />
+                            </div>
+                        )}
+                    </div>
+                    <div className="mt-4 grid md:grid-cols-3 gap-x-8 gap-y-6 text-gray-700 prose max-w-none">
+                        <div>
+                            <h4 className="font-semibold text-lg mb-2 text-slate-800 not-prose">Activities</h4>
+                            <ul className="list-disc pl-5 space-y-1">
+                            {dayPlan.activities.map((activity, index) => <li key={index} dangerouslySetInnerHTML={parseBold(activity)} />)}
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 className="font-semibold text-lg mb-2 text-slate-800 not-prose">Food</h4>
+                            <ul className="list-disc pl-5 space-y-1">
+                            {dayPlan.food.map((foodItem, index) => <li key={index} dangerouslySetInnerHTML={parseBold(foodItem)} />)}
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 className="font-semibold text-lg mb-2 text-slate-800 not-prose">Suggested Stay</h4>
+                            <ul className="list-disc pl-5 space-y-1">
+                            {dayPlan.placesToStay.map((place, index) => <li key={index} dangerouslySetInnerHTML={parseBold(place)} />)}
+                            </ul>
+                        </div>
+                    </div>
                 </div>
-              )}
-            </div>
-            <div className="mt-4 grid md:grid-cols-3 gap-x-8 gap-y-6 text-gray-700 prose max-w-none">
-              <div>
-                <h4 className="font-semibold text-lg mb-2 text-slate-800">Activities</h4>
-                <ul className="list-disc pl-5 space-y-1">
-                  {dayPlan.activities.map((activity, index) => <li key={index} dangerouslySetInnerHTML={parseBold(activity)} />)}
-                </ul>
-              </div>
-              <div>
-                <h4 className="font-semibold text-lg mb-2 text-slate-800">Food</h4>
-                <ul className="list-disc pl-5 space-y-1">
-                  {dayPlan.food.map((foodItem, index) => <li key={index} dangerouslySetInnerHTML={parseBold(foodItem)} />)}
-                </ul>
-              </div>
-              <div>
-                <h4 className="font-semibold text-lg mb-2 text-slate-800">Suggested Stay</h4>
-                <ul className="list-disc pl-5 space-y-1">
-                  {dayPlan.placesToStay.map((place, index) => <li key={index} dangerouslySetInnerHTML={parseBold(place)} />)}
-                </ul>
-              </div>
-            </div>
-          </div>
-        ))}
+            ))}
+        </section>
       </div>
 
-      <div className="mt-10 text-center space-y-4 no-print">
+      <footer className="mt-10 text-center space-y-4 no-print">
         <ExportOptions itinerary={itinerary} />
         <button
           onClick={onRegenerate}
@@ -140,7 +152,7 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
         >
           Regenerate with new preferences
         </button>
-      </div>
+      </footer>
     </div>
   );
 };
