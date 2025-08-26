@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Budget, Vibe, FoodPreference } from '../types';
 import { getDestinationSuggestions } from '../services/geminiService';
@@ -19,6 +18,7 @@ interface QuestionnaireProps {
   error: string | null;
   initialData?: QuestionnaireData | null;
   onBack: () => void;
+  onCancel: () => void;
 }
 
 const budgets: Budget[] = ['Budget', 'Midrange', 'Luxury'];
@@ -48,7 +48,7 @@ const loadingMessages = [
   "We’re almost there… buckle up! 🚀"
 ];
 
-const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, error, initialData, onBack }) => {
+const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, error, initialData, onBack, onCancel }) => {
   const getTodayString = () => new Date().toISOString().split('T')[0];
   
   const [destination, setDestination] = useState(initialData?.destination || '');
@@ -71,40 +71,39 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
   const isCustomDays = !dayPresets.includes(days);
 
   useEffect(() => {
-    const controller = new AbortController();
+    let isCancelled = false;
 
     const fetchSuggestions = async () => {
         setIsSuggestionsLoading(true);
         try {
             const fetchedSuggestions = await getDestinationSuggestions(destination);
-            if (!controller.signal.aborted) {
+            if (!isCancelled) {
                 setSuggestions(fetchedSuggestions);
-                setHighlightedIndex(-1); // Reset highlight when suggestions change
+                setHighlightedIndex(-1);
             }
         } catch (error) {
-            if (!controller.signal.aborted) {
+            if (!isCancelled) {
                 console.error(`Failed to fetch suggestions for "${destination}":`, error);
                 setSuggestions([]);
             }
         } finally {
-            if (!controller.signal.aborted) {
+            if (!isCancelled) {
                 setIsSuggestionsLoading(false);
             }
         }
     };
     
-    // Don't fetch for very short queries to reduce API calls and avoid rate-limiting.
-    if (destination.trim().length > 0 && destination.trim().length < 2) {
-        setSuggestions([]); // Clear suggestions for 1-char queries
+    if (destination.trim().length < 2) {
+        setSuggestions([]);
+        setIsSuggestionsLoading(false);
         return;
     }
 
-    // Increased debounce to 500ms for user input to further reduce API calls.
-    const handler = setTimeout(fetchSuggestions, destination ? 500 : 0); 
+    const handler = setTimeout(fetchSuggestions, 500); 
 
     return () => {
         clearTimeout(handler);
-        controller.abort();
+        isCancelled = true;
     };
   }, [destination]);
 
@@ -190,6 +189,12 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
         <p key={currentMessageIndex} className="text-xl font-semibold text-slate-700 fade-in px-4">
             {loadingMessages[currentMessageIndex]}
         </p>
+        <button 
+          onClick={onCancel}
+          className="mt-8 px-6 py-2 bg-white/60 text-slate-700 font-semibold rounded-full hover:bg-white/80 transition-colors"
+        >
+          Cancel
+        </button>
       </div>
     );
   }

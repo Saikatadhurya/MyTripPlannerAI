@@ -1,5 +1,4 @@
-
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Itinerary, Vibe } from './types';
 import { generateItinerary } from './services/geminiService';
 
@@ -15,6 +14,7 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<QuestionnaireData | null>(null);
+  const isGenerationCancelled = useRef(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -28,19 +28,32 @@ const App: React.FC = () => {
   }, []);
 
   const handleGenerateItinerary = useCallback(async (data: QuestionnaireData) => {
+    isGenerationCancelled.current = false;
     setIsLoading(true);
     setError(null);
     setFormData(data);
     try {
       const generatedItinerary = await generateItinerary(data.destination, data.days, data.budget, data.vibe, data.persons, data.foodPreference, data.startDate);
-      setItinerary(generatedItinerary);
-      setView('itinerary');
+      if (!isGenerationCancelled.current) {
+        setItinerary(generatedItinerary);
+        setView('itinerary');
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to generate itinerary. Please try again.');
-      setView('questionnaire'); // Stay on questionnaire to show the error
+      if (!isGenerationCancelled.current) {
+        setError(err instanceof Error ? err.message : 'Failed to generate itinerary. Please try again.');
+        setView('questionnaire'); // Stay on questionnaire to show the error
+      }
     } finally {
-      setIsLoading(false);
+      // Only set loading to false if it wasn't already set by the cancel handler
+      if (!isGenerationCancelled.current) {
+        setIsLoading(false);
+      }
     }
+  }, []);
+
+  const handleCancelGeneration = useCallback(() => {
+    isGenerationCancelled.current = true;
+    setIsLoading(false);
   }, []);
 
   const handleBackToQuestionnaire = useCallback(() => {
@@ -63,6 +76,7 @@ const App: React.FC = () => {
             error={error}
             initialData={formData}
             onBack={handleBackToHome}
+            onCancel={handleCancelGeneration}
           />
         );
       case 'itinerary':

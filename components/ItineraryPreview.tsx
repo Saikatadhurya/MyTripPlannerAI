@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Itinerary } from '../types';
 import ExportOptions from './ExportOptions';
@@ -56,7 +55,7 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
       <header className="space-y-4">
         <button onClick={onRegenerate} className="text-slate-600 hover:text-slate-900 flex items-center space-x-2 no-print">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-            <span>Back</span>
+            <span>Plan another trip</span>
         </button>
         <div className="text-center">
             <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight" dangerouslySetInnerHTML={parseBold(itinerary.destination)} />
@@ -153,7 +152,7 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
           onClick={onRegenerate}
           className="px-8 py-3 bg-white/60 text-slate-700 font-bold rounded-full hover:bg-white/80 transition-colors"
         >
-          Regenerate with new preferences
+          ✨ Spark a New Adventure
         </button>
       </footer>
     </div>
