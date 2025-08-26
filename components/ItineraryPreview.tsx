@@ -70,15 +70,15 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
                 <p className="font-semibold text-lg text-slate-800">{itinerary.foodPreference}</p>
             </div>
             <div>
-                <p className="text-sm text-violet-700">Stay / day</p>
+                <p className="text-sm text-violet-700">Stay / person</p>
                 <p className="font-semibold text-lg text-slate-800" dangerouslySetInnerHTML={parseBold(itinerary.budgetSummary.stay)} />
             </div>
             <div>
-                <p className="text-sm text-violet-700">Food / day</p>
+                <p className="text-sm text-violet-700">Food / person</p>
                 <p className="font-semibold text-lg text-slate-800" dangerouslySetInnerHTML={parseBold(itinerary.budgetSummary.food)} />
             </div>
             <div>
-                <p className="text-sm text-violet-700">Total Est.</p>
+                <p className="text-sm text-violet-700">Total / person</p>
                 <p className="font-semibold text-lg text-slate-800" dangerouslySetInnerHTML={parseBold(itinerary.budgetSummary.total)} />
             </div>
         </div>

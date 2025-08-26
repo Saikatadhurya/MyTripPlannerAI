@@ -37,7 +37,7 @@ For each of the ${days} days, provide:
 - A bulleted list of suggested activities.
 - A bulleted list of ${foodPreference} food recommendations (specific dishes or restaurants).
 
-Finally, provide a budget summary with estimated costs in Indian Rupees (₹) for stay, food, and a total for the trip for ${persons} person(s).
+Finally, provide a budget summary with estimated costs in Indian Rupees (₹) **per person** for the entire trip. Include separate estimates for stay, food, and a total cost **per person**.
 Ensure all lists are provided as bullet points.`;
 
     const responseSchema = {
