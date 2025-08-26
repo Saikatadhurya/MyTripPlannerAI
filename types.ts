@@ -7,6 +7,8 @@ export interface DayPlan {
   title: string;
   activities: string[];
   food: string[];
+  placesToStay: string[];
+  approxCost: string;
 }
 
 export interface Itinerary {
@@ -26,7 +28,6 @@ export interface Itinerary {
   naturalPlaces: string[];
   museums: string[];
   specialOrnaments: string[];
-  placesToStay: string[];
   recommendedRestaurants: string[];
   specialEvents: string[];
   plan: DayPlan[];

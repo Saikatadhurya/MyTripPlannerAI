@@ -27,7 +27,6 @@ Provide the following general information for ${destination}:
 - At least 5 bullet points on the famous culture.
 - At least 5 bullet points on special natural places to explore.
 - At least 5 bullet points on museums to visit.
-- At least 5-6 options for places to stay.
 - At least 5-6 options for recommended restaurants.
 - A few bullet points on special ornaments or souvenirs to look for, if any.
 - Based on the start date of ${startDate}, a bulleted list of any special events, festivals, or local holidays happening in or near ${destination} during the ${days}-day trip. If there are no events, return an empty list.
@@ -36,6 +35,8 @@ For each of the ${days} days, provide:
 - A catchy title.
 - A bulleted list of suggested activities.
 - A bulleted list of ${foodPreference} food recommendations (specific dishes or restaurants).
+- A bulleted list of suggested places to stay for that day, considering the day's activities and location.
+- An estimated cost for the day **per person** in Indian Rupees (₹).
 
 Finally, provide a budget summary with estimated costs in Indian Rupees (₹) **per person** for the entire trip. Include separate estimates for stay, food, and a total cost **per person**.
 Ensure all lists are provided as bullet points.`;
@@ -58,7 +59,6 @@ Ensure all lists are provided as bullet points.`;
         naturalPlaces: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Bulleted list of natural places to explore." },
         museums: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Bulleted list of museums." },
         specialOrnaments: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Bulleted list of special ornaments or souvenirs." },
-        placesToStay: { type: Type.ARRAY, items: { type: Type.STRING }, description: "List of 5-6 options for places to stay." },
         recommendedRestaurants: { type: Type.ARRAY, items: { type: Type.STRING }, description: "List of 5-6 recommended restaurants." },
         specialEvents: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Bulleted list of special events happening during the trip." },
         plan: {
@@ -70,13 +70,15 @@ Ensure all lists are provided as bullet points.`;
               day: { type: Type.INTEGER, description: "Day number." },
               title: { type: Type.STRING, description: "Catchy title for the day." },
               activities: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Bulleted list of suggested activities for the day." },
-              food: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Bulleted list of food recommendations for the day." }
+              food: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Bulleted list of food recommendations for the day." },
+              placesToStay: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Suggested places to stay for the day." },
+              approxCost: { type: Type.STRING, description: "Estimated cost for the day per person." }
             },
-            required: ["day", "title", "activities", "food"]
+            required: ["day", "title", "activities", "food", "placesToStay", "approxCost"]
           }
         }
       },
-      required: ["budgetSummary", "historicBackground", "famousCulture", "naturalPlaces", "museums", "specialOrnaments", "placesToStay", "recommendedRestaurants", "specialEvents", "plan"]
+      required: ["budgetSummary", "historicBackground", "famousCulture", "naturalPlaces", "museums", "specialOrnaments", "recommendedRestaurants", "specialEvents", "plan"]
     };
     
     const response = await ai.models.generateContent({
@@ -109,7 +111,6 @@ Ensure all lists are provided as bullet points.`;
       naturalPlaces: resultJson.naturalPlaces || [],
       museums: resultJson.museums || [],
       specialOrnaments: resultJson.specialOrnaments || [],
-      placesToStay: resultJson.placesToStay || [],
       recommendedRestaurants: resultJson.recommendedRestaurants || [],
       specialEvents: resultJson.specialEvents || [],
       plan: resultJson.plan,

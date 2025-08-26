@@ -36,7 +36,6 @@ const ExportOptions: React.FC<ExportOptionsProps> = ({ itinerary }) => {
     text += formatSection('Special Events During Your Trip', itinerary.specialEvents);
     text += formatSection('Historic Background', itinerary.historicBackground);
     text += formatSection('Famous Culture', itinerary.famousCulture);
-    text += formatSection('Places to Stay', itinerary.placesToStay);
     text += formatSection('Recommended Restaurants', itinerary.recommendedRestaurants);
     text += formatSection('Natural Places to Explore', itinerary.naturalPlaces);
     text += formatSection('Museums', itinerary.museums);
@@ -48,18 +47,24 @@ const ExportOptions: React.FC<ExportOptionsProps> = ({ itinerary }) => {
     itinerary.plan.forEach(day => {
         text += `Day ${day.day}: ${day.title}\n`;
         text += `-----------------\n`;
+        if (day.approxCost) {
+          text += `Approx. Cost / Person: ${day.approxCost}\n\n`;
+        }
         if (day.activities && day.activities.length > 0) {
           text += `Activities:\n${day.activities.map(a => `- ${a}`).join('\n')}\n\n`;
         }
         if (day.food && day.food.length > 0) {
           text += `Food:\n${day.food.map(f => `- ${f}`).join('\n')}\n\n`;
         }
+        if (day.placesToStay && day.placesToStay.length > 0) {
+          text += `Suggested Stay:\n${day.placesToStay.map(p => `- ${p}`).join('\n')}\n\n`;
+        }
     });
     return text;
   };
 
   const handleCopyToClipboard = async () => {
-    const text = generatePlainText();
+    const text = generatePlainText().replace(/\*\*/g, ''); // Remove markdown before copying
     try {
       await navigator.clipboard.writeText(text);
       alert('Itinerary copied to clipboard!');

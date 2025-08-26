@@ -92,7 +92,6 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
         </InfoSection>
 
         <InfoSection title="Famous Culture" items={itinerary.famousCulture} />
-        <InfoSection title="Places to Stay" items={itinerary.placesToStay} />
         <InfoSection title="Recommended Restaurants" items={itinerary.recommendedRestaurants} />
         <InfoSection title="Natural Places to Explore" items={itinerary.naturalPlaces} />
         <InfoSection title="Museums" items={itinerary.museums} />
@@ -100,8 +99,16 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
 
         {itinerary.plan.map((dayPlan) => (
           <div key={dayPlan.day} className="bg-white/40 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/50 transition-all duration-300">
-            <h2 className="text-3xl font-bold text-violet-800 mb-4">Day {dayPlan.day}: <span dangerouslySetInnerHTML={parseBold(dayPlan.title)} /></h2>
-            <div className="mt-4 grid md:grid-cols-2 gap-x-8 gap-y-6 text-gray-700 prose max-w-none">
+            <div className="flex justify-between items-baseline mb-4">
+              <h2 className="text-3xl font-bold text-violet-800">Day {dayPlan.day}: <span dangerouslySetInnerHTML={parseBold(dayPlan.title)} /></h2>
+              {dayPlan.approxCost && (
+                <div className="text-right flex-shrink-0 ml-4">
+                  <p className="text-sm text-violet-700">Approx. Cost / Person</p>
+                  <p className="font-bold text-xl text-slate-800" dangerouslySetInnerHTML={parseBold(dayPlan.approxCost)} />
+                </div>
+              )}
+            </div>
+            <div className="mt-4 grid md:grid-cols-3 gap-x-8 gap-y-6 text-gray-700 prose max-w-none">
               <div>
                 <h4 className="font-semibold text-lg mb-2 text-slate-800">Activities</h4>
                 <ul className="list-disc pl-5 space-y-1">
@@ -112,6 +119,12 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
                 <h4 className="font-semibold text-lg mb-2 text-slate-800">Food</h4>
                 <ul className="list-disc pl-5 space-y-1">
                   {dayPlan.food.map((foodItem, index) => <li key={index} dangerouslySetInnerHTML={parseBold(foodItem)} />)}
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-semibold text-lg mb-2 text-slate-800">Suggested Stay</h4>
+                <ul className="list-disc pl-5 space-y-1">
+                  {dayPlan.placesToStay.map((place, index) => <li key={index} dangerouslySetInnerHTML={parseBold(place)} />)}
                 </ul>
               </div>
             </div>
