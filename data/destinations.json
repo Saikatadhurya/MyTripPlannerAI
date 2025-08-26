@@ -1,0 +1,32 @@
+[
+  {
+    "name": "Goa",
+    "description": "Beautiful beaches and Portuguese heritage",
+    "bestTime": "Best: November to March",
+    "icon": "🏖️"
+  },
+  {
+    "name": "Kerala",
+    "description": "God's own country with backwaters and hills",
+    "bestTime": "Best: October to March",
+    "icon": "🌴"
+  },
+  {
+    "name": "Rajasthan",
+    "description": "Royal palaces and desert landscapes",
+    "bestTime": "Best: October to March",
+    "icon": "🕌"
+  },
+  {
+    "name": "Himachal Pradesh",
+    "description": "Mountain adventures and scenic beauty",
+    "bestTime": "Best: March to June; September to November",
+    "icon": "🏔️"
+  },
+  {
+    "name": "Mumbai",
+    "description": "The city of dreams and Bollywood",
+    "bestTime": "Best: November to February",
+    "icon": "🏙️"
+  }
+]
