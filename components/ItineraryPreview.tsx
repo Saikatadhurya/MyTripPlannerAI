@@ -159,7 +159,7 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
                 >
                   <div className="flex justify-between items-start">
                     <div>
-                      <p className="text-sm font-medium text-slate-500">{blog.source}</p>
+                      {blog.source && <p className="text-sm font-medium text-slate-500">{blog.source}</p>}
                       <h4 className="text-lg font-bold text-violet-900 group-hover:text-violet-700 transition-colors mt-1" dangerouslySetInnerHTML={parseBold(blog.title)} />
                     </div>
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-slate-500 group-hover:text-violet-600 transition-colors flex-shrink-0 ml-2 mt-1" viewBox="0 0 20 20" fill="currentColor">

@@ -85,12 +85,16 @@ const findReferenceBlogs = async (destination: string): Promise<BlogReference[]>
     const initialBlogs = groundingChunks
       .map(chunk => {
         if (chunk.web && chunk.web.uri && chunk.web.title) {
-          // Clean up titles for better prompts and display
-          const cleanedTitle = chunk.web.title.split(' - ')[0].split(' | ')[0];
           const url = new URL(chunk.web.uri);
-          const source = url.hostname.replace(/^www\./, '');
+          let source = url.hostname.replace(/^www\./, '');
+
+          // If the source is a Google redirect, don't show it.
+          if (source === 'vertexaisearch.cloud.google.com') {
+            source = '';
+          }
+          
           return {
-            title: cleanedTitle,
+            title: chunk.web.title, // Use the full, original title from the search result.
             url: chunk.web.uri,
             source,
           };
