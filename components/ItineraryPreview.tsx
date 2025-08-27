@@ -144,6 +144,32 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
                 </div>
             ))}
         </section>
+        
+        {itinerary.referenceBlogs && itinerary.referenceBlogs.length > 0 && (
+          <section className="space-y-4">
+            <h2 className="text-3xl font-bold text-slate-800">Reference Blog Posts</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {itinerary.referenceBlogs.map((blog, index) => (
+                <a
+                  key={index}
+                  href={blog.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-white/40 backdrop-blur-lg p-5 rounded-xl shadow-lg border border-white/50 hover:shadow-xl hover:border-violet-300/50 transition-all duration-300 transform hover:-translate-y-1 block group"
+                >
+                  <div className="flex justify-between items-start">
+                    <h4 className="text-lg font-bold text-violet-900 group-hover:text-violet-700 transition-colors" dangerouslySetInnerHTML={parseBold(blog.title)} />
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-slate-500 group-hover:text-violet-600 transition-colors flex-shrink-0 ml-2" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
+                      <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
+                    </svg>
+                  </div>
+                  <p className="text-sm text-slate-600 mt-2 break-all">{blog.url}</p>
+                </a>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
 
       <footer className="mt-10 text-center space-y-4 no-print">

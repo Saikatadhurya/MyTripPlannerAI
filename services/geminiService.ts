@@ -98,6 +98,9 @@ For each of the ${days} days, provide:
 - An estimated cost for the day **per person** in Indian Rupees (₹).
 
 Finally, provide a budget summary with estimated costs in Indian Rupees (₹) **per person** for the entire trip. Include separate estimates for stay, food, and a total cost **per person**.
+
+Additionally, provide a list of up to 5 highly relevant and helpful reference blog posts for planning a trip to ${destination}. For each blog post, provide a catchy, descriptive title and its full URL.
+
 Ensure all lists are provided as bullet points.`;
 
     const responseSchema = {
@@ -135,9 +138,21 @@ Ensure all lists are provided as bullet points.`;
             },
             required: ["day", "title", "activities", "food", "placesToStay", "approxCost"]
           }
+        },
+        referenceBlogs: {
+            type: Type.ARRAY,
+            description: "A list of up to 5 reference blog posts.",
+            items: {
+                type: Type.OBJECT,
+                properties: {
+                    title: { type: Type.STRING, description: "The title of the blog post." },
+                    url: { type: Type.STRING, description: "The URL of the blog post." }
+                },
+                required: ["title", "url"]
+            }
         }
       },
-      required: ["budgetSummary", "historicBackground", "famousCulture", "naturalPlaces", "museums", "specialOrnaments", "recommendedRestaurants", "specialEvents", "plan"]
+      required: ["budgetSummary", "historicBackground", "famousCulture", "naturalPlaces", "museums", "specialOrnaments", "recommendedRestaurants", "specialEvents", "plan", "referenceBlogs"]
     };
     
     const response = await ai.models.generateContent({
@@ -174,6 +189,7 @@ Ensure all lists are provided as bullet points.`;
       recommendedRestaurants: resultJson.recommendedRestaurants || [],
       specialEvents: resultJson.specialEvents || [],
       plan: resultJson.plan,
+      referenceBlogs: resultJson.referenceBlogs || [],
     };
 
     return itinerary;

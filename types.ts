@@ -12,6 +12,11 @@ export interface DayPlan {
   approxCost: string;
 }
 
+export interface BlogReference {
+  title: string;
+  url: string;
+}
+
 export interface Itinerary {
   destination: string;
   days: number;
@@ -33,6 +38,7 @@ export interface Itinerary {
   recommendedRestaurants: string[];
   specialEvents: string[];
   plan: DayPlan[];
+  referenceBlogs: BlogReference[];
 }
 
 export interface PopularDestination {
