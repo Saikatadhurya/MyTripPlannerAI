@@ -37,18 +37,19 @@ const vibes: { label: Vibe; icon: string; description: string }[] = [
     { label: 'Romantic & Family Getaways', icon: '❤️', description: 'honeymoons, bonding trips, safe family travel' },
 ];
 
-const loadingMessages = [
-  "Packing your virtual bags… 🧳",
-  "Finding hidden gems for your journey 🌍",
-  "Charting the perfect route for you 🗺️",
-  "Matching your vibe with the best adventures ✨",
-  "Your dream trip is loading… ✈️",
-  "Adventure is just around the corner… 🧭",
-  "Unlocking destinations you’ll love ❤️",
-  "Bringing wanderlust to life… 🌟",
-  "Great trips take a moment to plan 😉",
-  "We’re almost there… buckle up! 🚀"
+const loadingData = [
+  { message: "Packing your virtual bags…", icon: "🧳" },
+  { message: "Finding hidden gems for your journey", icon: "🌍" },
+  { message: "Charting the perfect route for you", icon: "🗺️" },
+  { message: "Matching your vibe with the best adventures", icon: "✨" },
+  { message: "Your dream trip is loading…", icon: "✈️" },
+  { message: "Adventure is just around the corner…", icon: "🧭" },
+  { message: "Unlocking destinations you’ll love", icon: "❤️" },
+  { message: "Bringing wanderlust to life…", icon: "🌟" },
+  { message: "Great trips take a moment to plan", icon: "😉" },
+  { message: "We’re almost there… buckle up!", icon: "🚀" },
 ];
+
 
 const Toggle: React.FC<{ label: string; description: string; enabled: boolean; onChange: (enabled: boolean) => void; }> = ({ label, description, enabled, onChange }) => (
     <button 
@@ -89,19 +90,19 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
   const suggestionsRef = useRef<HTMLUListElement>(null);
   const destinationInputRef = useRef<HTMLInputElement>(null);
 
-  const [currentLoadingMessage, setCurrentLoadingMessage] = useState(loadingMessages[0]);
+  const [loadingIndex, setLoadingIndex] = useState(0);
   
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (isLoading) {
+      setLoadingIndex(0); // Reset on new loading session
       interval = setInterval(() => {
-        setCurrentLoadingMessage(prev => {
-          const currentIndex = loadingMessages.indexOf(prev);
-          return loadingMessages[(currentIndex + 1) % loadingMessages.length];
-        });
+        setLoadingIndex(prev => (prev + 1) % loadingData.length);
       }, 2500);
     }
-    return () => clearInterval(interval);
+    return () => {
+      if(interval) clearInterval(interval);
+    }
   }, [isLoading]);
 
   const handleInputChange = (field: keyof QuestionnaireData, value: any) => {
@@ -200,13 +201,14 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
   };
 
   if (isLoading) {
+    const { message, icon } = loadingData[loadingIndex];
     return (
       <div className="text-center py-20 fade-in">
         <div className="inline-block relative">
           <div className="w-20 h-20 border-4 border-violet-200 border-t-violet-600 rounded-full animate-spin"></div>
-          <div className="absolute inset-0 flex items-center justify-center text-2xl">✈️</div>
+          <div className="absolute inset-0 flex items-center justify-center text-3xl">{icon}</div>
         </div>
-        <p className="mt-6 text-xl font-semibold text-slate-800">{currentLoadingMessage}</p>
+        <p className="mt-6 text-xl font-semibold text-slate-800">{message}</p>
         <p className="text-slate-600 mt-2">Crafting your personalized itinerary...</p>
         <button
           onClick={onCancel}

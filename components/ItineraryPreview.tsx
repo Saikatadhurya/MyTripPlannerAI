@@ -59,10 +59,6 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
   return (
     <div className="max-w-4xl mx-auto space-y-12" id="itinerary-preview-content">
       <header className="space-y-4">
-        <button onClick={onRegenerate} className="text-slate-600 hover:text-slate-900 flex items-center space-x-2 no-print">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-            <span>Plan another trip</span>
-        </button>
         <div className="text-center">
             <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight" dangerouslySetInnerHTML={parseBold(`Trip to ${itinerary.destination}`)} />
             <p className="text-lg text-gray-700 mt-2">Your amazing {itinerary.days}-day itinerary</p>
@@ -206,8 +202,17 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
         </section>
       )}
 
-      <div className="pt-8 no-print">
+      <div className="pt-8 text-center no-print">
         <ExportOptions itinerary={itinerary} />
+        <button
+            onClick={onRegenerate}
+            className="mt-8 inline-flex items-center px-8 py-3 bg-indigo-600 text-white font-bold rounded-full hover:bg-indigo-700 transition-all duration-300 transform hover:scale-105 shadow-lg"
+        >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.898 2.566l-1.581.53a5.002 5.002 0 00-8.917-1.789v.962a1 1 0 01-2 0V3a1 1 0 011-1zm12 15a1 1 0 01-1-1v-2.101a7.002 7.002 0 01-11.898-2.566l1.581-.53a5.002 5.002 0 008.917 1.789v-.962a1 1 0 012 0V17a1 1 0 01-1 1z" clipRule="evenodd" />
+            </svg>
+            <span>Plan Another Trip</span>
+        </button>
       </div>
     </div>
   );
