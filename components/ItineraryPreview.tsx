@@ -58,7 +58,7 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
             <span>Plan another trip</span>
         </button>
         <div className="text-center">
-            <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight" dangerouslySetInnerHTML={parseBold(itinerary.destination)} />
+            <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight" dangerouslySetInnerHTML={parseBold(`Trip to ${itinerary.destination}`)} />
             <p className="text-lg text-gray-700 mt-2">Your amazing {itinerary.days}-day itinerary</p>
         </div>
       </header>
@@ -72,119 +72,115 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
           <SummaryItem icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>} label="Duration">
             {itinerary.days} Day{itinerary.days > 1 ? 's' : ''}
           </SummaryItem>
-          <SummaryItem icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>} label="Travelers">
+          <SummaryItem icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>} label="Travelers">
             {itinerary.persons} Person{itinerary.persons > 1 ? 's' : ''}
           </SummaryItem>
-          <SummaryItem icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 10v-1m0 0c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>} label="Budget / Vibe">
-            {itinerary.budget} & {itinerary.vibe.join(', ')}
+          <SummaryItem icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 10v-1m0 0c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>} label="Budget">
+            {itinerary.budget}
           </SummaryItem>
-          <SummaryItem icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6H8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" /></svg>} label="Est. Stay / Person">
-            <span dangerouslySetInnerHTML={parseBold(itinerary.budgetSummary.stay)} />
+          <SummaryItem icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>} label="Vibe">
+            {itinerary.vibe.join(', ')}
           </SummaryItem>
-          <SummaryItem icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>} label="Est. Total / Person">
-            <span dangerouslySetInnerHTML={parseBold(itinerary.budgetSummary.total)} />
+          <SummaryItem icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0c-.454-.303-.977-.454-1.5-.454V5.454c.523 0 1.046-.151 1.5-.454a2.704 2.704 0 013 0 2.704 2.704 0 003 0 2.704 2.704 0 013 0 2.704 2.704 0 003 0c.454.303.977.454 1.5.454v10.092zM15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>} label="Food Preference">
+            {itinerary.foodPreference}
           </SummaryItem>
         </div>
       </section>
 
-      <div className="space-y-8">
-        <section className="space-y-4">
-            <h2 className="text-3xl font-bold text-slate-800">About {itinerary.destination}</h2>
-            <InfoSection title="Historic Background">
-                <p dangerouslySetInnerHTML={parseBold(itinerary.historicBackground)} />
-            </InfoSection>
-            <InfoSection title="Famous Culture" items={itinerary.famousCulture} />
-        </section>
+      <section>
+        <h2 className="text-3xl font-bold text-slate-800 mb-6">Budget Overview <span className="text-base font-normal text-slate-600">(Est. Per Person)</span></h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <SummaryItem icon={<span>🏨</span>} label="Est. Stay Cost">{itinerary.budgetSummary.stay}</SummaryItem>
+          <SummaryItem icon={<span>🍜</span>} label="Est. Food Cost">{itinerary.budgetSummary.food}</SummaryItem>
+          <SummaryItem icon={<span>💰</span>} label="Est. Total Cost">{itinerary.budgetSummary.total}</SummaryItem>
+        </div>
+      </section>
+      
+      <section className="space-y-6">
+        <h2 className="text-3xl font-bold text-slate-800">About {itinerary.destination}</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <InfoSection title="Historic Background">
+            <p dangerouslySetInnerHTML={parseBold(itinerary.historicBackground)} />
+          </InfoSection>
+          <InfoSection title="Famous Culture" items={itinerary.famousCulture} />
+          <InfoSection title="Natural Places to Explore" items={itinerary.naturalPlaces} />
+          <InfoSection title="Museums" items={itinerary.museums} />
+          <InfoSection title="Recommended Restaurants" items={itinerary.recommendedRestaurants} />
+          <InfoSection title="Special Ornaments & Souvenirs" items={itinerary.specialOrnaments} />
+          <InfoSection title="Special Events During Your Trip" items={itinerary.specialEvents} />
+        </div>
+      </section>
 
-        <section className="space-y-4">
-            <h2 className="text-3xl font-bold text-slate-800">Trip Essentials</h2>
-            <InfoSection title="Special Events During Your Trip" items={itinerary.specialEvents} />
-            <InfoSection title="Recommended Restaurants" items={itinerary.recommendedRestaurants} />
-            <InfoSection title="Natural Places to Explore" items={itinerary.naturalPlaces} />
-            <InfoSection title="Museums" items={itinerary.museums} />
-            <InfoSection title="Special Ornaments & Souvenirs" items={itinerary.specialOrnaments} />
-        </section>
-
-        <section className="space-y-8">
-            <h2 className="text-3xl font-bold text-slate-800">Your Daily Plan</h2>
-            {itinerary.plan.map((dayPlan) => (
-                <div key={dayPlan.day} className="bg-white/40 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/50 transition-all duration-300">
-                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-baseline mb-4 border-b border-violet-200/50 pb-4">
-                        <h3 className="text-2xl font-bold text-violet-800">Day {dayPlan.day}: <span dangerouslySetInnerHTML={parseBold(dayPlan.title)} /></h3>
-                        {dayPlan.approxCost && (
-                            <div className="text-left sm:text-right flex-shrink-0 mt-2 sm:mt-0 sm:ml-4">
-                            <p className="text-sm text-violet-700">Approx. Cost / Person</p>
-                            <p className="font-bold text-xl text-slate-800" dangerouslySetInnerHTML={parseBold(dayPlan.approxCost)} />
-                            </div>
-                        )}
-                    </div>
-                    <div className="mt-4 grid md:grid-cols-3 gap-x-8 gap-y-6 text-gray-700 prose max-w-none">
-                        <div>
-                            <h4 className="font-semibold text-lg mb-2 text-slate-800 not-prose">Activities</h4>
-                            <ul className="list-disc pl-5 space-y-1">
-                            {dayPlan.activities.map((activity, index) => <li key={index} dangerouslySetInnerHTML={parseBold(activity)} />)}
-                            </ul>
-                        </div>
-                        <div>
-                            <h4 className="font-semibold text-lg mb-2 text-slate-800 not-prose">Food</h4>
-                            <ul className="list-disc pl-5 space-y-1">
-                            {dayPlan.food.map((foodItem, index) => <li key={index} dangerouslySetInnerHTML={parseBold(foodItem)} />)}
-                            </ul>
-                        </div>
-                        <div>
-                            <h4 className="font-semibold text-lg mb-2 text-slate-800 not-prose">Suggested Stay</h4>
-                            <ul className="list-disc pl-5 space-y-1">
-                            {dayPlan.placesToStay && dayPlan.placesToStay.length > 0
-                                ? dayPlan.placesToStay.map((place, index) => <li key={index} dangerouslySetInnerHTML={parseBold(place)} />)
-                                : <li>N/A</li>
-                            }
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            ))}
-        </section>
-        
-        {itinerary.referenceBlogs && itinerary.referenceBlogs.length > 0 && (
-          <section className="space-y-4">
-            <h2 className="text-3xl font-bold text-slate-800">Reference Blog Posts</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {itinerary.referenceBlogs.map((blog, index) => (
-                <a
-                  key={index}
-                  href={blog.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-white/40 backdrop-blur-lg p-5 rounded-xl shadow-lg border border-white/50 hover:shadow-xl hover:border-violet-300/50 transition-all duration-300 transform hover:-translate-y-1 block group"
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      {blog.source && <p className="text-sm font-medium text-slate-500">{blog.source}</p>}
-                      <h4 className="text-lg font-bold text-violet-900 group-hover:text-violet-700 transition-colors mt-1" dangerouslySetInnerHTML={parseBold(blog.title)} />
-                    </div>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-slate-500 group-hover:text-violet-600 transition-colors flex-shrink-0 ml-2 mt-1" viewBox="0 0 20 20" fill="currentColor">
-                      <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
-                      <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
-                    </svg>
-                  </div>
-                  <p className="text-sm text-slate-600 mt-2" dangerouslySetInnerHTML={parseBold(blog.description)} />
-                </a>
-              ))}
+      <section className="space-y-8">
+        <h2 className="text-3xl font-bold text-slate-800">Daily Itinerary</h2>
+        {itinerary.plan.map((day) => (
+          <div key={day.day} className="bg-white/40 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/50 transition-all duration-300 hover:shadow-2xl hover:border-violet-300/50">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-sm font-semibold text-violet-700">Day {day.day}</p>
+                <h3 className="text-2xl font-bold text-slate-800" dangerouslySetInnerHTML={parseBold(day.title)} />
+              </div>
+              <p className="text-lg font-semibold text-slate-700 bg-violet-100 px-4 py-1 rounded-full">{day.approxCost}</p>
             </div>
-          </section>
-        )}
-      </div>
+            <hr className="my-4 border-violet-200" />
+            <div className="space-y-6">
+              <InfoSection title="Activities" items={day.activities} />
+              <InfoSection title="Food Recommendations" items={day.food} />
+              <InfoSection title="Suggested Places to Stay" items={day.placesToStay} />
+              
+              {day.transport && (
+                <div className="bg-violet-50/50 backdrop-blur-lg p-4 rounded-xl border border-violet-200/50">
+                   <h4 className="font-bold text-violet-800 flex items-center space-x-2 mb-3">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" /></svg>
+                      <span>Transport Suggestions (Cost: {day.transport.cost})</span>
+                   </h4>
+                   <ul className="list-disc pl-5 space-y-1 text-gray-700">
+                      {day.transport.suggestions.map((item, index) => (
+                        <li key={index} dangerouslySetInnerHTML={parseBold(item)} />
+                      ))}
+                   </ul>
+                </div>
+              )}
+              
+              {day.medicalFacilities && day.medicalFacilities.length > 0 && (
+                <div className="bg-green-50/50 backdrop-blur-lg p-4 rounded-xl border border-green-200/50">
+                   <h4 className="font-bold text-green-800 flex items-center space-x-2 mb-3">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.707-10.293a1 1 0 00-1.414-1.414l-3 3a1 1 0 001.414 1.414L9 10.414V13a1 1 0 102 0v-2.586l.293.293a1 1 0 001.414-1.414l-3-3z" clipRule="evenodd" /></svg>
+                      <span>Nearby Medical Facilities</span>
+                   </h4>
+                   <ul className="list-disc pl-5 space-y-1 text-gray-700">
+                      {day.medicalFacilities.map((item, index) => (
+                        <li key={index} dangerouslySetInnerHTML={parseBold(item)} />
+                      ))}
+                   </ul>
+                </div>
+              )}
 
-      <footer className="mt-10 text-center space-y-4 no-print">
+            </div>
+          </div>
+        ))}
+      </section>
+
+      {itinerary.referenceBlogs && itinerary.referenceBlogs.length > 0 && (
+        <section>
+          <h2 className="text-3xl font-bold text-slate-800 mb-6">Reference Blog Posts</h2>
+          <div className="grid grid-cols-1 gap-6">
+            {itinerary.referenceBlogs.map((blog, index) => (
+              <a href={blog.url} key={index} target="_blank" rel="noopener noreferrer" className="block bg-white/40 backdrop-blur-lg p-5 rounded-xl shadow-lg border border-white/50 transition-all duration-300 hover:shadow-xl hover:border-violet-300/50 hover:-translate-y-1">
+                {blog.source && <p className="text-xs font-semibold text-violet-600 uppercase tracking-wider">{blog.source}</p>}
+                <h4 className="text-lg font-bold text-slate-800 mt-1">{blog.title}</h4>
+                <p className="text-sm text-slate-600 mt-2">{blog.description}</p>
+              </a>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <div className="pt-8 no-print">
         <ExportOptions itinerary={itinerary} />
-        <button
-          onClick={onRegenerate}
-          className="px-8 py-3 bg-white/60 text-slate-700 font-bold rounded-full hover:bg-white/80 transition-colors"
-        >
-          ✨ Spark a New Adventure
-        </button>
-      </footer>
+      </div>
     </div>
   );
 };
+
 export default ItineraryPreview;
