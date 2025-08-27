@@ -87,14 +87,17 @@ const findReferenceBlogs = async (destination: string): Promise<BlogReference[]>
         if (chunk.web && chunk.web.uri && chunk.web.title) {
           // Clean up titles for better prompts and display
           const cleanedTitle = chunk.web.title.split(' - ')[0].split(' | ')[0];
+          const url = new URL(chunk.web.uri);
+          const source = url.hostname.replace(/^www\./, '');
           return {
             title: cleanedTitle,
             url: chunk.web.uri,
+            source,
           };
         }
         return null;
       })
-      .filter((blog): blog is { title: string; url: string } => blog !== null)
+      .filter((blog): blog is { title: string; url: string; source: string } => blog !== null)
       .slice(0, 5);
 
     if (initialBlogs.length === 0) {

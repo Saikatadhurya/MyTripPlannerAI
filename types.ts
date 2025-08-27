@@ -16,6 +16,7 @@ export interface BlogReference {
   title: string;
   url: string;
   description: string;
+  source: string;
 }
 
 export interface Itinerary {
