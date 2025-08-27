@@ -336,20 +336,26 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
 
         <div className="space-y-6 bg-white/40 backdrop-blur-md p-6 rounded-2xl border border-white/50 shadow-lg">
             <h2 className="flex items-center space-x-3 text-2xl font-bold text-slate-800 border-b pb-3">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 9m-6 3l6-3m0 0l6-3m-6 3v6.382" />
+              </svg>
+              <span>Trip Type</span>
+            </h2>
+            <div className="grid grid-cols-3 gap-3">
+              {tripTypes.map(({ label, icon }) => (
+                <button key={label} type="button" onClick={() => handleInputChange('tripType', label)} className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 border-2 flex items-center justify-center space-x-2 ${formData.tripType === label ? 'bg-violet-600 text-white border-violet-600' : 'bg-white/50 border-white/50 hover:border-violet-400'}`}>
+                  <span>{icon}</span>
+                  <span>{label}</span>
+                </button>
+              ))}
+            </div>
+        </div>
+
+        <div className="space-y-6 bg-white/40 backdrop-blur-md p-6 rounded-2xl border border-white/50 shadow-lg">
+            <h2 className="flex items-center space-x-3 text-2xl font-bold text-slate-800 border-b pb-3">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-violet-600" viewBox="0 0 20 20" fill="currentColor"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" /><path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h.01a1 1 0 100-2H10zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h.01a1 1 0 100-2H10z" clipRule="evenodd" /></svg>
                 <span>Core Details</span>
             </h2>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Trip Type</label>
-              <div className="grid grid-cols-3 gap-3">
-                {tripTypes.map(({ label, icon }) => (
-                  <button key={label} type="button" onClick={() => handleInputChange('tripType', label)} className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 border-2 flex items-center justify-center space-x-2 ${formData.tripType === label ? 'bg-violet-600 text-white border-violet-600' : 'bg-white/50 border-white/50 hover:border-violet-400'}`}>
-                    <span>{icon}</span>
-                    <span>{label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
             <div className={`grid grid-cols-1 ${formData.tripType !== 'Standard' ? 'sm:grid-cols-2' : ''} gap-4`}>
                {formData.tripType !== 'Standard' && (
                     <div className="relative">
@@ -364,7 +370,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                         {startPointSuggestions.length > 0 && (<ul ref={startPointSuggestionsRef} className="absolute z-10 w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg max-h-60 overflow-y-auto">{startPointSuggestions.map((s, i) => (<li key={i} onClick={() => handleStartPointSuggestionClick(s)} className="px-4 py-2 cursor-pointer hover:bg-violet-100">{s}</li>))}</ul>)}
                     </div>
                 )}
-                <div className={`relative ${formData.tripType === 'Standard' ? 'sm:col-span-2' : ''}`}>
+                <div className={`relative ${formData.tripType === 'Standard' ? 'col-span-1 sm:col-span-2' : ''}`}>
                     <label htmlFor="destination" className="block text-sm font-medium text-slate-700 mb-1">Destination</label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
