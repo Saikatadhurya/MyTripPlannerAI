@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Budget, Vibe, FoodPreference } from '../types';
 import { getDestinationSuggestions } from '../services/geminiService';
@@ -84,7 +85,8 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
   
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false);
-  const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
+  // Fix: Use ReturnType<typeof setTimeout> for browser compatibility instead of NodeJS.Timeout
+  const debounceTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isSelectingSuggestion = useRef(false);
 
   const suggestionsRef = useRef<HTMLUListElement>(null);
@@ -93,7 +95,8 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
   const [loadingIndex, setLoadingIndex] = useState(0);
   
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    // Fix: Use ReturnType<typeof setInterval> for browser compatibility instead of NodeJS.Timeout
+    let interval: ReturnType<typeof setInterval>;
     if (isLoading) {
       setLoadingIndex(0); // Reset on new loading session
       interval = setInterval(() => {

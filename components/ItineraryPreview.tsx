@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Itinerary } from '../types';
 import ExportOptions from './ExportOptions';
 
@@ -9,14 +9,19 @@ const parseBold = (text: string | undefined) => {
   return { __html: text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') };
 };
 
-const InfoSection: React.FC<{ title: string; items?: string[]; children?: React.ReactNode }> = ({ title, items, children }) => {
+const InfoSection: React.FC<{ title: string; icon: React.ReactNode; items?: string[]; children?: React.ReactNode }> = ({ title, icon, items, children }) => {
   if ((!items || items.length === 0) && !children) {
     return null;
   }
   return (
     <div className="bg-white/40 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/50">
-      <h3 className="text-xl font-bold text-violet-800 mb-4">{title}</h3>
-      <div className="prose prose-slate max-w-none text-gray-700">
+      <div className="flex items-center space-x-4 mb-4">
+        <div className="flex-shrink-0 bg-violet-100 text-violet-600 rounded-lg p-3">
+          {icon}
+        </div>
+        <h3 className="text-xl font-bold text-slate-800">{title}</h3>
+      </div>
+      <div className="prose prose-slate max-w-none text-gray-700 pl-1">
         {children}
         {items && items.length > 0 && (
           <ul className="list-disc pl-5 space-y-1">
@@ -50,22 +55,21 @@ const isTransportBlog = (blog: Itinerary['referenceBlogs'][0]): boolean => {
 };
 
 const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => void; }> = ({ itinerary, onRegenerate }) => {
-  const [activeInfoTab, setActiveInfoTab] = useState(0);
-
   const formattedStartDate = new Date(itinerary.startDate + 'T00:00:00').toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
   });
   
+  const iconClass = "h-6 w-6";
   const aboutSections = [
-    { title: 'History', content: itinerary.historicBackground, isHtml: true },
-    { title: 'Culture', items: itinerary.famousCulture },
-    { title: 'Nature', items: itinerary.naturalPlaces },
-    { title: 'Museums', items: itinerary.museums },
-    { title: 'Restaurants', items: itinerary.recommendedRestaurants },
-    { title: 'Souvenirs', items: itinerary.specialOrnaments },
-    { title: 'Events', items: itinerary.specialEvents },
+    { title: 'History', content: itinerary.historicBackground, isHtml: true, icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg> },
+    { title: 'Culture', items: itinerary.famousCulture, icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M15 21a6 6 0 00-9-5.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-3-5.197m0 0A7.962 7.962 0 0112 4.354a7.962 7.962 0 013 3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 003-5.197z" /></svg> },
+    { title: 'Nature', items: itinerary.naturalPlaces, icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9V3m0 18a9 9 0 009-9m-9 9a9 9 0 00-9-9" /></svg> },
+    { title: 'Museums', items: itinerary.museums, icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" /></svg> },
+    { title: 'Restaurants', items: itinerary.recommendedRestaurants, icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM18 13.5l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 18l-1.035.259a3.375 3.375 0 00-2.456 2.456L18 21.75l-.259-1.035a3.375 3.375 0 00-2.456-2.456L14.25 18l1.035-.259a3.375 3.375 0 002.456-2.456L18 13.5z" /></svg> },
+    { title: 'Souvenirs', items: itinerary.specialOrnaments, icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" /></svg> },
+    { title: 'Events', items: itinerary.specialEvents, icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg> },
   ].filter(section => (section.content || (section.items && section.items.length > 0)));
 
   return (
@@ -113,38 +117,14 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
       <section>
         <h2 className="text-3xl font-bold text-slate-800 mb-6">About {itinerary.destination}</h2>
         {aboutSections.length > 0 && (
-          <div className="bg-white/40 backdrop-blur-lg rounded-xl shadow-lg border border-white/50 overflow-hidden">
-            <div className="flex border-b border-violet-200/50 overflow-x-auto">
-              {aboutSections.map((section, index) => (
-                <button
-                  key={index}
-                  onClick={() => setActiveInfoTab(index)}
-                  className={`px-4 py-3 text-sm sm:px-6 sm:py-4 sm:text-base font-semibold whitespace-nowrap transition-colors duration-200 focus:outline-none ${
-                    activeInfoTab === index
-                      ? 'text-violet-700 border-b-2 border-violet-700 bg-violet-50/30'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-violet-50/50'
-                  }`}
-                >
-                  {section.title}
-                </button>
-              ))}
-            </div>
-            <div className="p-6 prose prose-slate max-w-none text-gray-700 fade-in">
-              {aboutSections[activeInfoTab] && (
-                <>
-                  {aboutSections[activeInfoTab].isHtml && aboutSections[activeInfoTab].content && (
-                    <p dangerouslySetInnerHTML={parseBold(aboutSections[activeInfoTab].content as string)} />
-                  )}
-                  {aboutSections[activeInfoTab].items && (
-                    <ul className="list-disc pl-5 space-y-1">
-                      {aboutSections[activeInfoTab].items?.map((item, i) => (
-                        <li key={i} dangerouslySetInnerHTML={parseBold(item)} />
-                      ))}
-                    </ul>
-                  )}
-                </>
-              )}
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {aboutSections.map((section, index) => (
+              <InfoSection key={index} title={section.title} icon={section.icon} items={section.items}>
+                {section.isHtml && section.content ? (
+                  <div dangerouslySetInnerHTML={parseBold(section.content as string)} />
+                ) : null}
+              </InfoSection>
+            ))}
           </div>
         )}
       </section>
@@ -162,9 +142,44 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
             </div>
             <hr className="my-4 border-violet-200" />
             <div className="space-y-6">
-              <InfoSection title="Activities" items={day.activities} />
-              <InfoSection title="Food Recommendations" items={day.food} />
-              <InfoSection title="Suggested Places to Stay" items={day.placesToStay} />
+              <div className="bg-white/40 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/50">
+                  <h3 className="text-xl font-bold text-violet-800 mb-4">Activities</h3>
+                  <div className="prose prose-slate max-w-none text-gray-700">
+                    {day.activities && day.activities.length > 0 && (
+                      <ul className="list-disc pl-5 space-y-1">
+                        {day.activities.map((item, index) => (
+                          <li key={index} dangerouslySetInnerHTML={parseBold(item)} />
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+              </div>
+
+              <div className="bg-white/40 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/50">
+                  <h3 className="text-xl font-bold text-violet-800 mb-4">Food Recommendations</h3>
+                  <div className="prose prose-slate max-w-none text-gray-700">
+                     {day.food && day.food.length > 0 && (
+                        <ul className="list-disc pl-5 space-y-1">
+                          {day.food.map((item, index) => (
+                            <li key={index} dangerouslySetInnerHTML={parseBold(item)} />
+                          ))}
+                        </ul>
+                      )}
+                  </div>
+              </div>
+              
+               <div className="bg-white/40 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/50">
+                  <h3 className="text-xl font-bold text-violet-800 mb-4">Suggested Places to Stay</h3>
+                  <div className="prose prose-slate max-w-none text-gray-700">
+                    {day.placesToStay && day.placesToStay.length > 0 && (
+                      <ul className="list-disc pl-5 space-y-1">
+                        {day.placesToStay.map((item, index) => (
+                          <li key={index} dangerouslySetInnerHTML={parseBold(item)} />
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+              </div>
               
               {day.transport && (
                 <div className="bg-violet-50/50 backdrop-blur-lg p-4 rounded-xl border border-violet-200/50">
