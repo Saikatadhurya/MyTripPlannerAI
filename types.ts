@@ -4,6 +4,21 @@ export type Vibe = 'Adventure & Thrill' | 'Relaxation & Wellness' | 'Cultural & 
 export type FoodPreference = 'Veg' | 'Non-Veg' | 'Vegan';
 export type TripType = 'Standard' | 'Bike' | 'Car';
 
+export interface QuestionnaireData {
+    destination: string;
+    startPoint: string;
+    tripType: TripType;
+    days: number;
+    budget: Budget;
+    vibe: Vibe[];
+    persons: number;
+    foodPreference: FoodPreference;
+    startDate: string;
+    includeMedical: boolean;
+    language: string;
+    includeTransport: boolean;
+}
+
 export interface DayPlan {
   day: number;
   title: string;

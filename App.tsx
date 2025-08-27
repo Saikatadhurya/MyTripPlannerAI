@@ -1,9 +1,9 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Itinerary, Vibe } from './types';
+import { Itinerary, Vibe, QuestionnaireData } from './types';
 import { generateItinerary } from './services/geminiService';
 
 import LandingPage from './components/LandingPage';
-import Questionnaire, { QuestionnaireData } from './components/Questionnaire';
+import Questionnaire from './components/Questionnaire';
 import ItineraryPreview from './components/ItineraryPreview';
 
 type View = 'landing' | 'questionnaire' | 'itinerary';
@@ -23,7 +23,7 @@ const App: React.FC = () => {
   const handleStartPlanning = useCallback((destination?: string) => {
     const today = new Date().toISOString().split('T')[0];
     const defaultVibes: Vibe[] = ['Adventure & Thrill'];
-    setFormData(destination ? { destination, startPoint: '', tripType: 'Standard', days: 3, budget: 'Midrange', vibe: defaultVibes, persons: 1, foodPreference: 'Non-Veg', startDate: today, includeMedical: false, language: 'English (en)' } : null);
+    setFormData(destination ? { destination, startPoint: '', tripType: 'Standard', days: 3, budget: 'Midrange', vibe: defaultVibes, persons: 1, foodPreference: 'Non-Veg', startDate: today, includeMedical: false, language: 'English (en)', includeTransport: true } : null);
     setView('questionnaire');
   }, []);
 
@@ -33,7 +33,7 @@ const App: React.FC = () => {
     setError(null);
     setFormData(data);
     try {
-      const generatedItinerary = await generateItinerary(data.destination, data.startPoint, data.tripType, data.days, data.budget, data.vibe, data.persons, data.foodPreference, data.startDate, data.includeMedical, data.language);
+      const generatedItinerary = await generateItinerary(data.destination, data.startPoint, data.tripType, data.days, data.budget, data.vibe, data.persons, data.foodPreference, data.startDate, data.includeMedical, data.language, data.includeTransport);
       if (!isGenerationCancelled.current) {
         setItinerary(generatedItinerary);
         setView('itinerary');
