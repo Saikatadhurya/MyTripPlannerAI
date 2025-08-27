@@ -154,6 +154,28 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
     }
   };
 
+  const handleTravelersChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Allow any number to be typed, clamp on blur
+    const num = parseInt(value, 10);
+    if (!isNaN(num)) {
+      handleInputChange('persons', num);
+    } else if (value === '') {
+      // Use 0 as a temporary placeholder for empty input, will be corrected on blur
+      handleInputChange('persons', 0);
+    }
+  };
+
+  const handleTravelersBlur = () => {
+    let value = formData.persons;
+    if (value < 1) {
+      value = 1;
+    } else if (value > 20) {
+      value = 20;
+    }
+    handleInputChange('persons', value);
+  };
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
         if (
@@ -261,7 +283,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
             </div>
             <div>
               <label htmlFor="persons" className="block text-sm font-medium text-slate-700 mb-1">Travelers</label>
-               <div className="flex items-center w-full bg-white border border-slate-300 rounded-lg">
+               <div className="flex items-center w-full bg-white border border-slate-300 rounded-lg focus-within:ring-2 focus-within:ring-violet-500 focus-within:border-violet-500 transition">
                 <button
                   type="button"
                   onClick={() => handleInputChange('persons', Math.max(1, formData.persons - 1))}
@@ -271,7 +293,17 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clipRule="evenodd" /></svg>
                 </button>
-                <span className="font-semibold text-lg text-center flex-grow tabular-nums">{formData.persons}</span>
+                <input
+                  id="persons"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={formData.persons === 0 ? '' : formData.persons}
+                  onChange={handleTravelersChange}
+                  onBlur={handleTravelersBlur}
+                  className="font-semibold text-lg text-center flex-grow tabular-nums w-full bg-transparent border-none text-gray-800 focus:ring-0 focus:outline-none"
+                  aria-label="Number of travelers"
+                />
                 <button
                   type="button"
                   onClick={() => handleInputChange('persons', Math.min(20, formData.persons + 1))}
