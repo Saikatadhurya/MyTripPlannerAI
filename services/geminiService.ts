@@ -244,7 +244,7 @@ export const generateItinerary = async (
   2.  The 'plan' array must have exactly ${days} elements.
   3.  For round trips, the 'coveredDestinations' array is mandatory and must contain detailed information for each significant place visited. For standard one-way trips, it should contain details for just the main destination.
   4.  All costs in 'budgetSummary' and 'approxCost' must be per person and specified in the local currency of the destination (e.g., INR, USD, EUR) with the currency symbol or code.
-  5.  Provide rich, practical, and engaging details. Use bold markdown (**text**) for emphasis on key places or activities.
+  5.  **MANDATORY BOLDING**: You MUST use bold markdown (**text**) to highlight key information. This includes, but is not limited to: names of specific attractions, restaurants, hotels, important timings, unique cultural items, and critical travel advice. This is crucial for readability.
   6.  If 'includeMedical' is true, the 'medicalFacilities' array for each day must list at least one nearby hospital or pharmacy.
   7.  The 'referenceBlogs' field should be an empty array. It will be populated later.
   8.  For 'Standard' trip types, 'transport' suggestions should be tailored to the selected budget (e.g., public transport for 'Budget', taxis for 'Midrange'). For 'Car' or 'Bike' trips, you MUST follow the critical vehicle instructions provided above.
