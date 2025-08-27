@@ -1,6 +1,5 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
-import { Budget, Itinerary, Vibe, FoodPreference } from '../types';
+import { Budget, Itinerary, Vibe, FoodPreference, BlogReference } from '../types';
 
 // Cache for destination suggestions to avoid redundant API calls
 const suggestionsCache = new Map<string, string[]>();
@@ -58,6 +57,48 @@ export const getDestinationSuggestions = async (query: string): Promise<string[]
   }
 };
 
+const findReferenceBlogs = async (destination: string): Promise<BlogReference[]> => {
+  if (!process.env.API_KEY) {
+    console.error("API key is missing.");
+    return [];
+  }
+  
+  try {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const prompt = `Find up to 5 helpful and popular travel blog posts for planning a trip to ${destination}.`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      config: {
+        tools: [{ googleSearch: {} }],
+      },
+    });
+
+    const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
+
+    if (Array.isArray(groundingChunks)) {
+      const blogs = groundingChunks
+        .map(chunk => {
+          if (chunk.web && chunk.web.uri && chunk.web.title) {
+            return {
+              title: chunk.web.title,
+              url: chunk.web.uri,
+            };
+          }
+          return null;
+        })
+        .filter((blog): blog is BlogReference => blog !== null);
+      
+      return blogs.slice(0, 5);
+    }
+    
+    return [];
+  } catch (error) {
+    console.error(`Error fetching reference blogs for "${destination}":`, error);
+    return []; // Return empty array on error to not block itinerary generation
+  }
+};
 
 export const generateItinerary = async (
   destination: string,
@@ -75,9 +116,10 @@ export const generateItinerary = async (
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
+    // --- Step 1: Generate the core itinerary ---
     const vibeText = vibe.length > 1 ? `Their desired travel vibes are "${vibe.join(', ')}"` : `Their desired travel vibe is "${vibe[0]}"`;
 
-    const prompt = `Create a highly detailed ${days}-day travel itinerary for ${persons} person(s) visiting ${destination}. The traveler's budget is "${budget}". ${vibeText}, and their food preference is "${foodPreference}". The trip will start on ${startDate}.
+    const itineraryPrompt = `Create a highly detailed ${days}-day travel itinerary for ${persons} person(s) visiting ${destination}. The traveler's budget is "${budget}". ${vibeText}, and their food preference is "${foodPreference}". The trip will start on ${startDate}.
 
 For all text content, use markdown to **bold** important keywords, places, and titles for emphasis.
 
@@ -99,11 +141,9 @@ For each of the ${days} days, provide:
 
 Finally, provide a budget summary with estimated costs in Indian Rupees (₹) **per person** for the entire trip. Include separate estimates for stay, food, and a total cost **per person**.
 
-Additionally, provide a list of up to 5 highly relevant and helpful reference blog posts for planning a trip to ${destination}. For each blog post, provide a catchy, descriptive title and its full URL.
-
 Ensure all lists are provided as bullet points.`;
 
-    const responseSchema = {
+    const itinerarySchema = {
       type: Type.OBJECT,
       properties: {
         budgetSummary: {
@@ -139,40 +179,28 @@ Ensure all lists are provided as bullet points.`;
             required: ["day", "title", "activities", "food", "placesToStay", "approxCost"]
           }
         },
-        referenceBlogs: {
-            type: Type.ARRAY,
-            description: "A list of up to 5 reference blog posts.",
-            items: {
-                type: Type.OBJECT,
-                properties: {
-                    title: { type: Type.STRING, description: "The title of the blog post." },
-                    url: { type: Type.STRING, description: "The URL of the blog post." }
-                },
-                required: ["title", "url"]
-            }
-        }
       },
-      required: ["budgetSummary", "historicBackground", "famousCulture", "naturalPlaces", "museums", "specialOrnaments", "recommendedRestaurants", "specialEvents", "plan", "referenceBlogs"]
+      required: ["budgetSummary", "historicBackground", "famousCulture", "naturalPlaces", "museums", "specialOrnaments", "recommendedRestaurants", "specialEvents", "plan"]
     };
-    
-    const response = await ai.models.generateContent({
+
+    const itineraryResponse = await ai.models.generateContent({
       model: "gemini-2.5-flash",
-      contents: prompt,
+      contents: itineraryPrompt,
       config: {
         responseMimeType: "application/json",
-        responseSchema: responseSchema,
+        responseSchema: itinerarySchema,
       }
     });
 
-    const resultText = response.text.trim();
-    const resultJson = JSON.parse(resultText);
+    const resultText = itineraryResponse.text.trim();
+    const itineraryDetails = JSON.parse(resultText);
 
-    // Basic validation
-    if (!resultJson.plan || !Array.isArray(resultJson.plan) || !resultJson.budgetSummary) {
-      throw new Error("Invalid response format from AI.");
-    }
+    // --- Step 2: Find reference blogs sequentially to avoid rate limiting ---
+    const referenceBlogs = await findReferenceBlogs(destination);
 
-    const itinerary: Itinerary = {
+    // --- Step 3: Combine results and return ---
+    return {
+      ...itineraryDetails,
       destination,
       days,
       persons,
@@ -180,21 +208,19 @@ Ensure all lists are provided as bullet points.`;
       vibe,
       foodPreference,
       startDate,
-      budgetSummary: resultJson.budgetSummary,
-      historicBackground: resultJson.historicBackground,
-      famousCulture: resultJson.famousCulture || [],
-      naturalPlaces: resultJson.naturalPlaces || [],
-      museums: resultJson.museums || [],
-      specialOrnaments: resultJson.specialOrnaments || [],
-      recommendedRestaurants: resultJson.recommendedRestaurants || [],
-      specialEvents: resultJson.specialEvents || [],
-      plan: resultJson.plan,
-      referenceBlogs: resultJson.referenceBlogs || [],
+      referenceBlogs,
     };
 
-    return itinerary;
   } catch (error) {
     console.error("Error generating itinerary with AI:", error);
-    throw new Error("Failed to generate itinerary. The AI service might be busy or there was an issue with the request. Please try again.");
+    let errorMessage = "An unexpected error occurred while generating the itinerary. Please try again later.";
+    if (error instanceof Error) {
+        if (error.message.includes('RESOURCE_EXHAUSTED') || error.message.includes('429')) {
+            errorMessage = "We're experiencing high demand. Please wait a moment and try generating your trip again.";
+        } else {
+            errorMessage = `Failed to generate itinerary: ${error.message}`;
+        }
+    }
+    throw new Error(errorMessage);
   }
 };
