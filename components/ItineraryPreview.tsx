@@ -42,6 +42,12 @@ const SummaryItem: React.FC<{ icon: React.ReactNode; label: string; children: Re
     </div>
 );
 
+// Helper to identify transport-related blogs
+const isTransportBlog = (blog: Itinerary['referenceBlogs'][0]): boolean => {
+    const keywords = ['transport', 'getting around', 'driving', 'bus', 'train', 'airport', 'commute', 'travel between', 'route', 'navigation'];
+    const content = `${blog.title.toLowerCase()} ${blog.description.toLowerCase()}`;
+    return keywords.some(keyword => content.includes(keyword));
+};
 
 const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => void; }> = ({ itinerary, onRegenerate }) => {
   const formattedStartDate = new Date(itinerary.startDate + 'T00:00:00').toLocaleDateString('en-US', {
@@ -164,14 +170,38 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
       {itinerary.referenceBlogs && itinerary.referenceBlogs.length > 0 && (
         <section>
           <h2 className="text-3xl font-bold text-slate-800 mb-6">Reference Blog Posts</h2>
-          <div className="grid grid-cols-1 gap-6">
-            {itinerary.referenceBlogs.map((blog, index) => (
-              <a href={blog.url} key={index} target="_blank" rel="noopener noreferrer" className="block bg-white/40 backdrop-blur-lg p-5 rounded-xl shadow-lg border border-white/50 transition-all duration-300 hover:shadow-xl hover:border-violet-300/50 hover:-translate-y-1">
-                {blog.source && <p className="text-xs font-semibold text-violet-600 uppercase tracking-wider">{blog.source}</p>}
-                <h4 className="text-lg font-bold text-slate-800 mt-1">{blog.title}</h4>
-                <p className="text-sm text-slate-600 mt-2">{blog.description}</p>
-              </a>
-            ))}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {itinerary.referenceBlogs.map((blog, index) => {
+               const isTransport = isTransportBlog(blog);
+               return (
+                <a 
+                  href={blog.url} 
+                  key={index} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className={`block p-5 rounded-xl shadow-lg border transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${
+                    isTransport 
+                      ? 'bg-sky-50/40 backdrop-blur-lg border-sky-300/50 hover:border-sky-400/50' 
+                      : 'bg-white/40 backdrop-blur-lg border-white/50 hover:border-violet-300/50'
+                  }`}
+                >
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      {blog.source && <p className={`text-xs font-semibold uppercase tracking-wider ${isTransport ? 'text-sky-600' : 'text-violet-600'}`}>{blog.source}</p>}
+                      <h4 className="text-lg font-bold text-slate-800 mt-1">{blog.title}</h4>
+                    </div>
+                    {isTransport && (
+                      <div className="flex-shrink-0 ml-4 bg-sky-100 text-sky-600 rounded-full p-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M18.562 6.077C18.238 5.437 17.562 5 16.808 5H3.192c-.754 0-1.43.437-1.754 1.077L.05 9.423A.5.5 0 00.5 10h19a.5.5 0 00.45-.577l-1.388-3.346zM2 11v4a1 1 0 001 1h1a1 1 0 001-1v-4H2zm15 0v4a1 1 0 001 1h1a1 1 0 001-1v-4h-3zM5 11v4a1 1 0 001 1h8a1 1 0 001-1v-4H5z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-sm text-slate-600 mt-2">{blog.description}</p>
+                </a>
+              );
+            })}
           </div>
         </section>
       )}

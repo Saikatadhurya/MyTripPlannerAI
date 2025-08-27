@@ -85,6 +85,9 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
   const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false);
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
 
+  const suggestionsRef = useRef<HTMLUListElement>(null);
+  const destinationInputRef = useRef<HTMLInputElement>(null);
+
   const [currentLoadingMessage, setCurrentLoadingMessage] = useState(loadingMessages[0]);
   
   useEffect(() => {
@@ -139,6 +142,24 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
     };
   }, [formData.destination, fetchSuggestions]);
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+        if (
+            suggestionsRef.current &&
+            !suggestionsRef.current.contains(event.target as Node) &&
+            destinationInputRef.current &&
+            !destinationInputRef.current.contains(event.target as Node)
+        ) {
+            setSuggestions([]);
+        }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit(formData);
@@ -185,21 +206,33 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
       <form onSubmit={handleSubmit} className="space-y-10">
         {/* Section 1: Core Details */}
         <div className="space-y-6 bg-white/40 backdrop-blur-md p-6 rounded-2xl border border-white/50 shadow-lg">
-          <h2 className="text-2xl font-bold text-slate-800 border-b pb-3">Core Details</h2>
+          <h2 className="flex items-center space-x-3 text-2xl font-bold text-slate-800 border-b pb-3">
+             <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-violet-600" viewBox="0 0 20 20" fill="currentColor"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" /><path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h.01a1 1 0 100-2H10zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h.01a1 1 0 100-2H10z" clipRule="evenodd" /></svg>
+             <span>Core Details</span>
+          </h2>
           <div className="relative">
             <label htmlFor="destination" className="block text-sm font-medium text-slate-700 mb-1">Where are you going?</label>
             <input
               id="destination"
+              ref={destinationInputRef}
               type="text"
               value={formData.destination}
               onChange={e => handleInputChange('destination', e.target.value)}
               placeholder="e.g., Paris, France"
               className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
               required
+              autoComplete="off"
             />
-            {isSuggestionsLoading && <div className="absolute right-3 top-9 text-sm text-slate-500">Loading...</div>}
+            {isSuggestionsLoading &&
+              <div className="absolute right-3 top-9">
+                <svg className="animate-spin h-5 w-5 text-violet-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              </div>
+            }
             {suggestions.length > 0 && (
-              <ul className="absolute z-10 w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg max-h-60 overflow-y-auto">
+              <ul ref={suggestionsRef} className="absolute z-10 w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg max-h-60 overflow-y-auto">
                 {suggestions.map((s, i) => (
                   <li key={i} onClick={() => { handleInputChange('destination', s); setSuggestions([]); }}
                       className="px-4 py-2 cursor-pointer hover:bg-violet-100">
@@ -209,25 +242,53 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
               </ul>
             )}
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
                 <label htmlFor="startDate" className="block text-sm font-medium text-slate-700 mb-1">Start Date</label>
                 <input id="startDate" type="date" value={formData.startDate} min={new Date().toISOString().split('T')[0]} onChange={e => handleInputChange('startDate', e.target.value)} className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition" required />
-            </div>
-            <div>
-              <label htmlFor="days" className="block text-sm font-medium text-slate-700 mb-1">Duration (days)</label>
-              <input id="days" type="number" value={formData.days} min="1" max="30" onChange={e => handleInputChange('days', parseInt(e.target.value))} className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition" required />
             </div>
             <div>
               <label htmlFor="persons" className="block text-sm font-medium text-slate-700 mb-1">Travelers</label>
               <input id="persons" type="number" value={formData.persons} min="1" max="20" onChange={e => handleInputChange('persons', parseInt(e.target.value))} className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition" required />
             </div>
           </div>
+           <div>
+              <label htmlFor="days" className="block text-sm font-medium text-slate-700 mb-1">Duration (days)</label>
+              <div className="flex flex-col sm:flex-row items-center gap-2">
+                <div className="flex-shrink-0 flex items-center space-x-1 bg-slate-200/60 p-1 rounded-lg">
+                  {[1, 2, 3, 4, 5].map(d => (
+                    <button
+                      type="button"
+                      key={d}
+                      onClick={() => handleInputChange('days', d)}
+                      className={`px-3 py-1 text-sm w-10 text-center rounded-md font-semibold transition ${
+                        formData.days === d ? 'bg-white text-violet-600 shadow' : 'text-slate-600 hover:bg-white/70'
+                      }`}
+                    >
+                      {d}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  id="days"
+                  type="number"
+                  value={formData.days}
+                  min="1"
+                  max="30"
+                  onChange={e => handleInputChange('days', parseInt(e.target.value))}
+                  className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
+                  required
+                />
+              </div>
+            </div>
         </div>
 
         {/* Section 2: Budget */}
         <div className="space-y-4 bg-white/40 backdrop-blur-md p-6 rounded-2xl border border-white/50 shadow-lg">
-           <h2 className="text-2xl font-bold text-slate-800 border-b pb-3">Budget</h2>
+           <h2 className="flex items-center space-x-3 text-2xl font-bold text-slate-800 border-b pb-3">
+             <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-violet-600" viewBox="0 0 20 20" fill="currentColor"><path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.5 2.5 0 00-1.168-.217c-1.36.0-2.5 1.119-2.5 2.5s1.14 2.5 2.5 2.5c.346 0 .682-.07.98-.2a2.5 2.5 0 001.52-2.3z" /><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.5 4.5 0 00-1.879.938.5.5 0 00-.22.643l.612 1.224a.5.5 0 00.643.22A3.49 3.49 0 0110 7.5v1.698a2.5 2.5 0 00-1.168-.217c-1.36.0-2.5 1.119-2.5 2.5s1.14 2.5 2.5 2.5c.346 0 .682-.07.98-.2a2.5 2.5 0 001.52-2.3V9.5a1 1 0 10-2 0v1a.5.5 0 01-1 0V9.5a.5.5 0 01.5-.5h1V8a1 1 0 10-2 0v.092a4.5 4.5 0 00-1.879.938.5.5 0 00-.22.643l.612 1.224a.5.5 0 00.643.22A3.49 3.49 0 0110 7.5v1.698a2.5 2.5 0 00-1.168-.217c-1.36.0-2.5 1.119-2.5 2.5s1.14 2.5 2.5 2.5c.346 0 .682-.07.98-.2a2.5 2.5 0 001.52-2.3V9.5a1 1 0 10-2 0v1a.5.5 0 01-1 0V9.5a.5.5 0 01.5-.5h1V8a1 1 0 00-2 0z" clipRule="evenodd" /></svg>
+             <span>Budget</span>
+           </h2>
            <div className="grid grid-cols-3 gap-3">
               {budgets.map(b => (
                   <button key={b} type="button" onClick={() => handleInputChange('budget', b)}
@@ -240,7 +301,10 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
 
         {/* Section 3: Vibe */}
         <div className="space-y-4 bg-white/40 backdrop-blur-md p-6 rounded-2xl border border-white/50 shadow-lg">
-          <h2 className="text-2xl font-bold text-slate-800 border-b pb-3">What's your vibe?</h2>
+          <h2 className="flex items-center space-x-3 text-2xl font-bold text-slate-800 border-b pb-3">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-violet-600" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" /></svg>
+            <span>What's your vibe?</span>
+          </h2>
           <p className="text-sm text-slate-600">Select one or more vibes that best describe your ideal trip.</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {vibes.map(v => (
@@ -258,7 +322,10 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
         
         {/* Section 4: Food Preference */}
         <div className="space-y-4 bg-white/40 backdrop-blur-md p-6 rounded-2xl border border-white/50 shadow-lg">
-           <h2 className="text-2xl font-bold text-slate-800 border-b pb-3">Food Preference</h2>
+           <h2 className="flex items-center space-x-3 text-2xl font-bold text-slate-800 border-b pb-3">
+             <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-violet-600" viewBox="0 0 20 20" fill="currentColor"><path d="M11 3a1 1 0 10-2 0v1.088A7 7 0 004.53 10.756.5.5 0 005 11h10a.5.5 0 00.47-.244A7 7 0 0011 4.088V3z" /><path fillRule="evenodd" d="M15 13a.5.5 0 01.5.5v2a.5.5 0 01-.5.5H5a.5.5 0 01-.5-.5v-2a.5.5 0 01.5-.5h10z" clipRule="evenodd" /></svg>
+             <span>Food Preference</span>
+           </h2>
            <div className="grid grid-cols-3 gap-3">
               {foodPreferences.map(f => (
                   <button key={f} type="button" onClick={() => handleInputChange('foodPreference', f)}
@@ -271,7 +338,10 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
         
         {/* Section 5: Optional Features */}
         <div className="space-y-4 bg-white/40 backdrop-blur-md p-6 rounded-2xl border border-white/50 shadow-lg">
-            <h2 className="text-2xl font-bold text-slate-800 border-b pb-3">Optional Features</h2>
+            <h2 className="flex items-center space-x-3 text-2xl font-bold text-slate-800 border-b pb-3">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-violet-600" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" /></svg>
+              <span>Optional Features</span>
+            </h2>
             <p className="text-sm text-slate-600">Add extra details to your itinerary for a more comprehensive plan.</p>
             <div className="space-y-4">
               <Toggle
