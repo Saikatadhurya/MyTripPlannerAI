@@ -119,6 +119,17 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
 
   return (
     <div className="max-w-4xl mx-auto space-y-12" id="itinerary-preview-content">
+       <div className="flex justify-end items-center no-print animated-card">
+        <button
+          onClick={onRegenerate}
+          className="inline-flex items-center px-6 py-2 bg-white/60 text-slate-800 font-bold rounded-full hover:bg-white/80 transition-all duration-300 shadow-md border border-white/50"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.898 2.566l-1.581.53a5.002 5.002 0 00-8.917-1.789v.962a1 1 0 01-2 0V3a1 1 0 011-1zm12 15a1 1 0 01-1-1v-2.101a7.002 7.002 0 01-11.898-2.566l1.581-.53a5.002 5.002 0 008.917 1.789v-.962a1 1 0 012 0V17a1 1 0 01-1 1z" clipRule="evenodd" />
+          </svg>
+          <span>Plan Another Trip</span>
+        </button>
+      </div>
       <header className="space-y-4 animated-card">
         <div className="text-center">
             <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight" dangerouslySetInnerHTML={parseBold(`Trip to ${itinerary.destination}`)} />
