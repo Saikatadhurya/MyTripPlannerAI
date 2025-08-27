@@ -8,6 +8,7 @@ export interface QuestionnaireData {
     destination: string;
     startPoint: string;
     tripType: TripType;
+    isRoundTrip?: boolean;
     days: number;
     budget: Budget;
     vibe: Vibe[];
@@ -39,10 +40,22 @@ export interface BlogReference {
   source: string;
 }
 
+export interface DestinationDetails {
+  name: string;
+  historicBackground: string[];
+  famousCulture: string[];
+  naturalPlaces: string[];
+  museums: string[];
+  specialOrnaments: string[];
+  recommendedRestaurants: string[];
+  specialEvents: string;
+}
+
 export interface Itinerary {
-  destination: string;
+  destination: string; // Main or farthest destination
   startPoint: string;
   tripType: TripType;
+  isRoundTrip?: boolean;
   days: number;
   persons: number;
   budget: Budget;
@@ -55,13 +68,7 @@ export interface Itinerary {
     food: string;
     total: string;
   };
-  historicBackground: string;
-  famousCulture: string[];
-  naturalPlaces: string[];
-  museums: string[];
-  specialOrnaments: string[];
-  recommendedRestaurants: string[];
-  specialEvents: string[];
+  coveredDestinations: DestinationDetails[];
   plan: DayPlan[];
   referenceBlogs: BlogReference[];
 }

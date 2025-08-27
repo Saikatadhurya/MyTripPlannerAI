@@ -85,6 +85,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
     startDate: new Date().toISOString().split('T')[0],
     includeMedical: false,
     language: 'English (en)',
+    isRoundTrip: false,
   });
   
   const [destinationSuggestions, setDestinationSuggestions] = useState<string[]>([]);
@@ -122,8 +123,14 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
   const handleInputChange = (field: keyof QuestionnaireData, value: any) => {
     setFormData(prev => {
         const newState = { ...prev, [field]: value };
-        if (field === 'tripType' && value === 'Standard') {
-            newState.startPoint = '';
+        if (field === 'tripType') {
+            if (value === 'Standard') {
+                newState.startPoint = '';
+                newState.isRoundTrip = false; // Reset when switching to standard
+            } else if (prev.tripType === 'Standard') {
+                // When switching from Standard to Car/Bike, enable round trip by default
+                newState.isRoundTrip = true;
+            }
         }
         return newState;
     });
@@ -349,6 +356,16 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                 </button>
               ))}
             </div>
+             {(formData.tripType === 'Car' || formData.tripType === 'Bike') && (
+              <div className="mt-4 pt-4 border-t border-violet-200/50">
+                <Toggle
+                  label="Round Trip"
+                  description="Include a return journey in your itinerary."
+                  enabled={formData.isRoundTrip ?? false}
+                  onChange={(enabled) => handleInputChange('isRoundTrip', enabled)}
+                />
+              </div>
+            )}
         </div>
 
         <div className="space-y-6 bg-white/40 backdrop-blur-md p-6 rounded-2xl border border-white/50 shadow-lg">

@@ -30,18 +30,24 @@ const ExportOptions: React.FC<ExportOptionsProps> = ({ itinerary }) => {
       } else {
         return '';
       }
-      return sectionText;
+      return sectionText.replace(/<strong>(.*?)<\/strong>/g, '$1').replace(/<b>(.*?)<\/b>/g, '$1'); // clean html
     };
 
-    text += formatSection('Special Events During Your Trip', itinerary.specialEvents);
-    text += formatSection('Historic Background', itinerary.historicBackground);
-    text += formatSection('Famous Culture', itinerary.famousCulture);
-    text += formatSection('Recommended Restaurants', itinerary.recommendedRestaurants);
-    text += formatSection('Natural Places to Explore', itinerary.naturalPlaces);
-    text += formatSection('Museums', itinerary.museums);
-    text += formatSection('Special Ornaments & Souvenirs', itinerary.specialOrnaments);
+    if (itinerary.coveredDestinations && itinerary.coveredDestinations.length > 0) {
+        itinerary.coveredDestinations.forEach(dest => {
+            text += `\n## About ${dest.name}\n`;
+            text += `-----------------\n\n`;
+            text += formatSection('Historic Background', dest.historicBackground);
+            text += formatSection('Famous Culture', dest.famousCulture);
+            text += formatSection('Recommended Restaurants', dest.recommendedRestaurants);
+            text += formatSection('Natural Places to Explore', dest.naturalPlaces);
+            text += formatSection('Museums', dest.museums);
+            text += formatSection('Special Ornaments & Souvenirs', dest.specialOrnaments);
+            text += formatSection('Special Events During Your Trip', dest.specialEvents);
+        });
+    }
 
-    text += `## Daily Plan\n`;
+    text += `\n## Daily Plan\n`;
     text += `================\n\n`;
 
     itinerary.plan.forEach(day => {

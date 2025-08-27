@@ -118,24 +118,23 @@ const findReferenceBlogs = async (destination: string, language: string): Promis
     // --- Step 2: Generate descriptions for the found blogs ---
     try {
       const blogsForDescriptionPrompt = initialBlogs.map(b => `- Title: "${b.title}"`).join('\n');
-      const descriptionPrompt = `For the following list of travel blog post titles about ${destination}, write a concise, one-sentence description for each, highlighting what the reader can expect to find. Write the descriptions in ${language}.
+      const descriptionPrompt = `For the following list of travel blog post titles about ${destination}, write a concise, one-sentence description for each, highlighting what the reader can expect to find.
 
 ${blogsForDescriptionPrompt}
 
-Your response must be a JSON array of objects, where each object has a single "description" key. The order must match the input titles.`;
-
-      const descriptionSchema = {
+Provide the output as a JSON array of objects. Each object in the array must have two string properties: "title" (which must be the full, original title from the list above) and "description".`;
+      
+      const responseSchema = {
         type: Type.ARRAY,
         items: {
           type: Type.OBJECT,
           properties: {
-            description: {
-              type: Type.STRING,
-              description: "A concise, one-sentence description of the blog post."
-            },
+            title: { type: Type.STRING },
+            description: { type: Type.STRING },
           },
-          required: ["description"]
-        }
+          required: ["title", "description"],
+        },
+        description: "An array of blog objects, each with a title and a description."
       };
 
       const descriptionResponse = await ai.models.generateContent({
@@ -143,42 +142,33 @@ Your response must be a JSON array of objects, where each object has a single "d
         contents: descriptionPrompt,
         config: {
           responseMimeType: "application/json",
-          responseSchema: descriptionSchema,
-          thinkingConfig: { thinkingBudget: 0 }, // Low latency for a simple task
+          responseSchema: responseSchema,
         }
       });
-
-      // FIX: According to Gemini API guidelines, `response.text` is a non-nullable string.
-      // Optional chaining is not necessary.
+      
       const resultText = descriptionResponse.text.trim();
       if (!resultText) {
-          throw new Error("AI response for blog descriptions was empty.");
+          return initialBlogs.map(b => ({ ...b, description: 'Read more about this trip highlight.' }));
       }
-      const descriptions = JSON.parse(resultText);
-      
-      if (!Array.isArray(descriptions) || descriptions.length !== initialBlogs.length) {
-        throw new Error("Mismatched or invalid descriptions array from AI.");
-      }
+      const descriptionsArray: {title: string, description: string}[] = JSON.parse(resultText);
+      const descriptionMap = new Map(descriptionsArray.map(item => [item.title, item.description]));
 
-      // Combine initial blogs with generated descriptions
-      return initialBlogs.map((blog, index) => ({
-        ...blog,
-        description: descriptions[index]?.description || 'A helpful travel guide for your trip.',
-      }));
-
-    } catch (descriptionError) {
-      console.error("Could not generate blog descriptions, returning blogs with a generic description.", descriptionError);
-      // Fallback: return blogs with a generic description if the second AI call fails
       return initialBlogs.map(blog => ({
         ...blog,
-        description: "Click here to explore a detailed guide and plan your trip better.",
+        description: descriptionMap.get(blog.title) || 'A helpful travel guide for your trip planning.',
       }));
+    } catch (error) {
+      console.error("Error generating blog descriptions:", error);
+      // Fallback: return blogs without descriptions
+      return initialBlogs.map(b => ({ ...b, description: 'Read more about this trip highlight.' }));
     }
+
   } catch (error) {
-    console.error(`Error fetching reference blogs for "${destination}":`, error);
-    return []; // Return empty array on error to not block itinerary generation
+    console.error("Error finding reference blogs:", error);
+    return [];
   }
 };
+
 
 export const generateItinerary = async (
   destination: string,
@@ -192,197 +182,236 @@ export const generateItinerary = async (
   startDate: string,
   includeMedical: boolean,
   language: string,
+  isRoundTrip?: boolean
 ): Promise<Itinerary> => {
+
   if (!process.env.API_KEY) {
-    throw new Error("API key is missing. Please configure your API_KEY environment variable.");
+    throw new Error("API key is missing. Please set it in your environment variables.");
   }
 
-  try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  
+  let roundTripInstructions = '';
+  if ((tripType === 'Car' || tripType === 'Bike') && isRoundTrip && startPoint) {
+      const dailyLimit = tripType === 'Car' ? '300-400 km/day' : '150-250 km/day';
+      roundTripInstructions = `
+      CRITICAL INSTRUCTION - DETAILED ROAD TRIP CIRCUIT:
+      This is a multi-stop road trip circuit request. The user wants to travel from "${startPoint}", cover a series of interesting locations, and return to "${startPoint}" within ${days} days. The main destination of interest is "${destination}".
 
-    // --- Step 1: Generate the core itinerary ---
-    const vibeText = vibe.length > 1 ? `Their desired travel vibes are "${vibe.join(', ')}"` : `Their desired travel vibe is "${vibe[0]}"`;
+      1.  **Feasibility & Route Planning**: First, you MUST estimate if a meaningful road trip circuit that includes or goes towards "${destination}" is possible within ${days} days, using a ${tripType} with a daily driving limit of ${dailyLimit}.
+          - **IF FEASIBLE**: Design a logical, sequential road trip circuit starting and ending at "${startPoint}". The route must maximize sightseeing of famous places based on the vibe: "${vibe.join(', ')}". The farthest point should be near "${destination}".
+          - **IF NOT FEASIBLE**: Do NOT fail. You MUST plan a realistic road trip circuit to an alternative region or set of destinations reachable within the timeframe that still fits the user's vibe. The "destination" field in the JSON response MUST be updated to a more descriptive name for this new circuit (e.g., "Rajasthan Heritage Circuit"). You MUST also add a bolded note in the "historicBackground" of the *first* covered destination explaining the change. For example: "**NOTE: A road trip to ${destination} and back in ${days} days isn't feasible. I've created an alternative Rajasthan Heritage Circuit that fits your timeline and preferences.**"
 
-    let tripTypeDetails = '';
-    let transportPrompt = '';
+      2.  **Structured Output - This is MANDATORY**:
+          - **coveredDestinations**: This array must list each major city/stop of the road trip circuit *in the order they are visited*. For each stop, provide the detailed information (history, culture, etc.).
+          - **plan**: The daily plan MUST correspond directly to the road trip circuit.
+              - Each day's **title** should clearly state the travel segment, for example: "Day 3: Travel from Chittorgarh to Udaipur & Local Sightseeing".
+              - The **activities** for a travel day should include the drive itself (mentioning the approximate duration/distance) and then activities upon arrival at the new destination.
+              - The final days of the plan must cover the return journey back to "${startPoint}".
 
-    switch (tripType) {
-        case 'Car':
-            tripTypeDetails = `This is a **car trip**. Please provide suggestions suitable for road travel, such as scenic routes, recommended stops between cities, parking information at destinations, and estimated driving times.`;
-            transportPrompt = `
-- A 'transport' object containing a 'suggestions' list and a 'cost' string.
-  - The 'suggestions' should include tips for the road trip, like scenic detours.
-  - The 'cost' string must detail the estimated fuel cost for the day. To do this:
-    1. Estimate the approximate travel distance in kilometers for the day's plan.
-    2. Based on the travel location (state/country), find the current approximate price for both petrol and diesel per liter.
-    3. Calculate the cost assuming an average petrol car mileage of 15 km/l and a diesel car mileage of 20 km/l.
-    4. Format the 'cost' string as: "Approx. XX km | Petrol: ₹YYYY | Diesel: ₹ZZZZ".`;
-            break;
-        case 'Bike':
-            tripTypeDetails = `This is a **motorbike trip**. Please provide suggestions suitable for a motorcyclist, such as scenic riding routes, secure parking for motorbikes, information on road conditions, and potential motorbike rental shops. The itinerary should be tailored for a road trip on a motorbike.`;
-             transportPrompt = `
-- A 'transport' object containing a 'suggestions' list and a 'cost' string.
-  - The 'suggestions' must include tips for the motorbike trip. If the route is near a state border, **provide a specific suggestion on which state has cheaper fuel and where to refuel to save money.**
-  - The 'cost' string must detail the estimated fuel cost for the day. To do this:
-    1. Estimate the approximate travel distance in kilometers for the day's plan.
-    2. Based on the travel location, find the current approximate price for petrol per liter.
-    3. Calculate the cost assuming an average motorbike mileage of 40 km/l.
-    4. Format the 'cost' string as: "Approx. XX km | Petrol: ₹YYYY".`;
-            break;
-        default: // 'Standard'
-            tripTypeDetails = `The traveler will likely use a mix of public and private transport.`;
-            transportPrompt = `
-- A 'transport' object containing a 'suggestions' list and a 'cost' string. The suggestions should be a bulleted list of transport options (e.g., taxi, metro, bus) appropriate for a "${budget}" budget. The 'cost' should be the estimated transport cost for the day in Indian Rupees (₹).`;
-    }
+      3.  **Example of a good road trip circuit plan**: A 10-day car trip from Jaipur to Jaisalmer could be structured like this:
+          - **coveredDestinations**: [ {name: "Jaipur"}, {name: "Chittorgarh"}, {name: "Udaipur"}, {name: "Jodhpur"}, {name: "Jaisalmer"}, {name: "Bikaner"} ]
+          - **plan**:
+              - Day 1: Arrive in Jaipur
+              - Day 2: Jaipur Sightseeing
+              - Day 3: Title: "Jaipur to Chittorgarh Fort", Activities: "Drive to Chittorgarh (approx 5-6 hours)..."
+              - Day 4: Title: "Chittorgarh to Udaipur", Activities: "Drive to Udaipur (approx 2-3 hours)..."
+              - ... and so on, with the final day's plan including the drive from the last stop (e.g., Bikaner) back to the start (Jaipur).
 
+      This level of detail in linking the daily plan to a sequential, multi-stop route is essential.
+      `;
+  }
+  
+  const prompt = `Create a detailed travel itinerary in ${language}. The user wants to plan a ${days}-day trip to ${destination} with a ${budget} budget.
+  
+  Trip Details:
+  - Destination: ${destination}
+  - Starting Point: ${startPoint || 'Not specified'}
+  - Trip Type: ${tripType}
+  - Is Round Trip: ${isRoundTrip ? 'Yes' : 'No'}
+  - Duration: ${days} days
+  - Number of People: ${persons}
+  - Vibe/Interests: ${vibe.join(', ')}
+  - Budget: ${budget}
+  - Food Preference: ${foodPreference}
+  - Start Date: ${startDate}
+  - Include Medical Facilities: ${includeMedical ? 'Yes' : 'No'}
+  - Output Language: ${language}
+  
+  ${(tripType === 'Car' || tripType === 'Bike') ? `
+  CRITICAL VEHICLE INSTRUCTIONS: Since the trip type is '${tripType}', you MUST assume the user has a personal or rented vehicle for the entire duration.
+  1.  **Transport Suggestions**: ALL 'transport' suggestions in the daily plan MUST be vehicle-centric. Provide details on recommended driving routes, estimated driving times, and practical parking information (availability, cost) near attractions. AVOID suggesting taxis, ride-sharing, or public transport.
+  2.  **Accommodation**: ALL 'placesToStay' suggestions should prioritize hotels or lodgings that offer secure and convenient parking for a ${tripType}. Mention this feature in the suggestion (e.g., "Hotel ABC with on-site parking").
+  3.  **Realistic Daily Driving**: You MUST pace the itinerary according to realistic daily driving limits. For a **Car**, limit driving to **300-400 km per day**. For a **Bike**, limit driving to **150-250 km per day**. If a travel leg between major stops is longer than this, it must be broken down into multiple days with an appropriate overnight stop.
+  ` : ''}
 
-    let medicalPrompt = '';
-    if (includeMedical) {
-      medicalPrompt = `
-- A bulleted list of suggested medical facilities (hospitals, pharmacies) near the planned locations. If no specific suggestions are available, return an empty list.`;
-    }
+  ${roundTripInstructions}
 
-    const locationString = startPoint ? `from **${startPoint}** to **${destination}**` : `to **${destination}**`;
+  Based on all these details, generate a comprehensive itinerary. The response must be a single JSON object that strictly follows this structure and types:
+  {
+    destination: string,
+    startPoint: string,
+    tripType: string ("Standard", "Bike", "Car"),
+    isRoundTrip: boolean,
+    days: number,
+    persons: number,
+    budget: string ("Budget", "Midrange", "Luxury"),
+    vibe: string[],
+    foodPreference: string ("Veg", "Non-Veg", "Vegan"),
+    startDate: string (format: "YYYY-MM-DD"),
+    language: string,
+    budgetSummary: { stay: string, food: string, total: string },
+    coveredDestinations: [
+      {
+        name: string,
+        historicBackground: string[],
+        famousCulture: string[],
+        naturalPlaces: string[],
+        museums: string[],
+        specialOrnaments: string[],
+        recommendedRestaurants: string[],
+        specialEvents: "A descriptive paragraph about events happening ONLY during the travel dates. If none, provide a fallback message.",
+      }
+    ],
+    plan: [
+      {
+        day: number,
+        title: string,
+        activities: string[],
+        food: string[],
+        placesToStay: string[],
+        approxCost: string,
+        medicalFacilities?: string[],
+        transport?: { suggestions: string[], cost: string }
+      }
+    ],
+    referenceBlogs: []
+  }
 
-    const itineraryPrompt = `Create a highly detailed ${days}-day travel itinerary for ${persons} person(s) traveling ${locationString}. The trip type is **${tripType}**. ${tripTypeDetails}
-
-The traveler's budget is "${budget}". ${vibeText}, and their food preference is "${foodPreference}". The trip will start on ${startDate}.
-
-IMPORTANT: The entire response, including all titles, descriptions, activities, and summaries, must be in the following language: ${language}.
-
-For all text content, use markdown to **bold** important keywords, places, and titles for emphasis.
-
-Provide the following general information for ${destination}:
-- A brief historic background.
-- At least 5 bullet points on the famous culture.
-- At least 5 bullet points on special natural places to explore.
-- At least 5 bullet points on museums to visit.
-- At least 5-6 options for recommended restaurants.
-- A few bullet points on special ornaments or souvenirs to look for, if any.
-- Based on the start date of ${startDate}, a bulleted list of any special events, festivals, or local holidays happening in or near ${destination} during the ${days}-day trip. If there are no events, return an empty list.
-
-For each of the ${days} days, provide:
-- A catchy title.
-- A bulleted list of suggested activities.
-- A bulleted list of ${foodPreference} food recommendations (specific dishes or restaurants).
-- A bulleted list of suggested places to stay for that day, considering the day's activities and location. If there are no specific suggestions, return an empty list.
-- An estimated cost for the day **per person** in Indian Rupees (₹).${transportPrompt}${medicalPrompt}
-
-Finally, provide a budget summary with estimated costs in Indian Rupees (₹) **per person** for the entire trip. Include separate estimates for stay, food, and a total cost **per person**.
-
-Ensure all lists are provided as bullet points.`;
-
-    // Dynamically build the schema for the day plan
-    const planProperties: any = {
-      day: { type: Type.INTEGER, description: "Day number." },
-      title: { type: Type.STRING, description: "Catchy title for the day." },
-      activities: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Bulleted list of suggested activities for the day." },
-      food: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Bulleted list of food recommendations for the day." },
-      placesToStay: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Suggested places to stay for the day." },
-      approxCost: { type: Type.STRING, description: "Estimated cost for the day per person." }
-    };
-
-    const planRequiredFields = ["day", "title", "activities", "food", "placesToStay", "approxCost"];
-
-    planProperties.transport = {
+  Important Rules:
+  1.  All string values in the JSON must be in ${language}.
+  2.  The 'plan' array must have exactly ${days} elements.
+  3.  For round trips, the 'coveredDestinations' array is mandatory and must contain detailed information for each significant place visited. For standard one-way trips, it should contain details for just the main destination.
+  4.  All costs in 'budgetSummary' and 'approxCost' must be per person and specified in the local currency of the destination (e.g., INR, USD, EUR) with the currency symbol or code.
+  5.  Provide rich, practical, and engaging details. Use bold markdown (**text**) for emphasis on key places or activities.
+  6.  If 'includeMedical' is true, the 'medicalFacilities' array for each day must list at least one nearby hospital or pharmacy.
+  7.  The 'referenceBlogs' field should be an empty array. It will be populated later.
+  8.  For 'Standard' trip types, 'transport' suggestions should be tailored to the selected budget (e.g., public transport for 'Budget', taxis for 'Midrange'). For 'Car' or 'Bike' trips, you MUST follow the critical vehicle instructions provided above.
+  9.  For 'historicBackground', 'famousCulture', 'naturalPlaces', 'museums', and 'specialOrnaments', provide a list of 3-5 key bullet points. Each point must be a descriptive string. Do not provide a single paragraph.
+  10. For 'specialEvents', find specific events, festivals, or notable occurrences happening ONLY during the travel dates (starting ${startDate} for ${days} days). If no specific major events are found, you MUST return the string "No major special events found for your travel dates, but here are some ongoing local experiences you might enjoy."
+  `;
+  
+    const responseSchema = {
       type: Type.OBJECT,
-      description: "Transport suggestions for the day.",
       properties: {
-        suggestions: { type: Type.ARRAY, items: { type: Type.STRING }, description: "List of transport suggestions." },
-        cost: { type: Type.STRING, description: "Estimated cost for transport for the day." }
-      },
-      required: ["suggestions", "cost"]
-    };
-    planRequiredFields.push("transport");
-    
-    if (includeMedical) {
-      planProperties.medicalFacilities = {
-        type: Type.ARRAY, 
-        items: { type: Type.STRING }, 
-        description: "List of nearby medical facilities for the day." 
-      };
-    }
-    
-    const itinerarySchema = {
-      type: Type.OBJECT,
-      properties: {
+        destination: { type: Type.STRING },
+        startPoint: { type: Type.STRING },
+        tripType: { type: Type.STRING },
+        isRoundTrip: { type: Type.BOOLEAN },
+        days: { type: Type.INTEGER },
+        persons: { type: Type.INTEGER },
+        budget: { type: Type.STRING },
+        vibe: { type: Type.ARRAY, items: { type: Type.STRING } },
+        foodPreference: { type: Type.STRING },
+        startDate: { type: Type.STRING },
+        language: { type: Type.STRING },
         budgetSummary: {
           type: Type.OBJECT,
-          description: "The estimated budget summary for the trip.",
           properties: {
-            stay: { type: Type.STRING, description: "Estimated cost for stay." },
-            food: { type: Type.STRING, description: "Estimated cost for food." },
-            total: { type: Type.STRING, description: "Total estimated cost." }
+            stay: { type: Type.STRING },
+            food: { type: Type.STRING },
+            total: { type: Type.STRING },
           },
-          required: ["stay", "food", "total"]
+          required: ["stay", "food", "total"],
         },
-        historicBackground: { type: Type.STRING, description: "Brief historic background of the destination." },
-        famousCulture: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Bulleted list of famous cultural aspects." },
-        naturalPlaces: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Bulleted list of natural places to explore." },
-        museums: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Bulleted list of museums." },
-        specialOrnaments: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Bulleted list of special ornaments or souvenirs." },
-        recommendedRestaurants: { type: Type.ARRAY, items: { type: Type.STRING }, description: "List of 5-6 recommended restaurants." },
-        specialEvents: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Bulleted list of special events happening during the trip." },
+        coveredDestinations: {
+            type: Type.ARRAY,
+            items: {
+                type: Type.OBJECT,
+                properties: {
+                    name: { type: Type.STRING },
+                    historicBackground: { type: Type.ARRAY, items: { type: Type.STRING } },
+                    famousCulture: { type: Type.ARRAY, items: { type: Type.STRING } },
+                    naturalPlaces: { type: Type.ARRAY, items: { type: Type.STRING } },
+                    museums: { type: Type.ARRAY, items: { type: Type.STRING } },
+                    specialOrnaments: { type: Type.ARRAY, items: { type: Type.STRING } },
+                    recommendedRestaurants: { type: Type.ARRAY, items: { type: Type.STRING } },
+                    specialEvents: { type: Type.STRING },
+                },
+                required: ["name", "historicBackground", "famousCulture", "naturalPlaces", "museums", "specialOrnaments", "recommendedRestaurants", "specialEvents"]
+            }
+        },
         plan: {
           type: Type.ARRAY,
-          description: "The day-by-day itinerary.",
           items: {
             type: Type.OBJECT,
-            properties: planProperties,
-            required: planRequiredFields
+            properties: {
+              day: { type: Type.INTEGER },
+              title: { type: Type.STRING },
+              activities: { type: Type.ARRAY, items: { type: Type.STRING } },
+              food: { type: Type.ARRAY, items: { type: Type.STRING } },
+              placesToStay: { type: Type.ARRAY, items: { type: Type.STRING } },
+              approxCost: { type: Type.STRING },
+              medicalFacilities: { type: Type.ARRAY, items: { type: Type.STRING } },
+              transport: {
+                type: Type.OBJECT,
+                properties: {
+                  suggestions: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  cost: { type: Type.STRING },
+                },
+                required: ["suggestions", "cost"],
+              },
+            },
+            required: ["day", "title", "activities", "food", "placesToStay", "approxCost"],
+          },
+        },
+        referenceBlogs: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              title: { type: Type.STRING },
+              url: { type: Type.STRING },
+              description: { type: Type.STRING },
+              source: { type: Type.STRING },
+            },
+            required: ["title", "url", "description", "source"],
           }
         },
       },
-      required: ["budgetSummary", "historicBackground", "famousCulture", "naturalPlaces", "museums", "specialOrnaments", "recommendedRestaurants", "specialEvents", "plan"]
+       required: ["destination", "startPoint", "tripType", "isRoundTrip", "days", "persons", "budget", "vibe", "foodPreference", "startDate", "language", "budgetSummary", "coveredDestinations", "plan", "referenceBlogs"],
     };
 
-    const itineraryResponse = await ai.models.generateContent({
+    const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
-      contents: itineraryPrompt,
+      contents: prompt,
       config: {
         responseMimeType: "application/json",
-        responseSchema: itinerarySchema,
+        responseSchema: responseSchema,
       }
     });
-
-    // FIX: According to Gemini API guidelines, `response.text` is a non-nullable string.
-    // Optional chaining is not necessary.
-    const resultText = itineraryResponse.text.trim();
+    
+    const resultText = response.text.trim();
     if (!resultText) {
-        console.error("AI response for itinerary was empty or invalid:", itineraryResponse);
-        throw new Error("The AI returned an empty response. This could be due to a safety filter or an issue with the request. Please try modifying your request.");
+        throw new Error("AI response was empty or invalid.");
     }
-    const itineraryDetails = JSON.parse(resultText);
+    const itineraryData = JSON.parse(resultText);
 
-    // --- Step 2: Find reference blogs sequentially to avoid rate limiting ---
-    const referenceBlogs = await findReferenceBlogs(destination, language);
+    // After getting the itinerary, find relevant blogs
+    const blogs = await findReferenceBlogs(itineraryData.destination, language);
+    itineraryData.referenceBlogs = blogs;
 
-    // --- Step 3: Combine results and return ---
+    // Ensure the response has all the fields from the initial request
     return {
-      ...itineraryDetails,
-      destination,
-      startPoint,
-      tripType,
-      days,
-      persons,
-      budget,
-      vibe,
-      foodPreference,
-      startDate,
-      language,
-      referenceBlogs,
+        ...itineraryData,
+        startPoint, // Ensure startPoint is passed through
+        tripType,
+        isRoundTrip: isRoundTrip ?? false,
+        persons,
+        budget,
+        vibe,
+        foodPreference,
+        startDate,
+        language,
     };
-
-  } catch (error) {
-    console.error("Error generating itinerary with AI:", error);
-    let errorMessage = "An unexpected error occurred while generating the itinerary. Please try again later.";
-    if (error instanceof Error) {
-        if (error.message.includes('RESOURCE_EXHAUSTED') || error.message.includes('429')) {
-            errorMessage = "We're experiencing high demand. Please wait a moment and try generating your trip again.";
-        } else {
-            errorMessage = `Failed to generate itinerary: ${error.message}`;
-        }
-    }
-    throw new Error(errorMessage);
-  }
 };
