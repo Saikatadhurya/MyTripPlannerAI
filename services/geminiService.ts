@@ -192,7 +192,6 @@ export const generateItinerary = async (
   startDate: string,
   includeMedical: boolean,
   language: string,
-  includeTransport: boolean,
 ): Promise<Itinerary> => {
   if (!process.env.API_KEY) {
     throw new Error("API key is missing. Please configure your API_KEY environment variable.");
@@ -207,11 +206,10 @@ export const generateItinerary = async (
     let tripTypeDetails = '';
     let transportPrompt = '';
 
-    if (includeTransport) {
-        switch (tripType) {
-            case 'Car':
-                tripTypeDetails = `This is a **car trip**. Please provide suggestions suitable for road travel, such as scenic routes, recommended stops between cities, parking information at destinations, and estimated driving times.`;
-                transportPrompt = `
+    switch (tripType) {
+        case 'Car':
+            tripTypeDetails = `This is a **car trip**. Please provide suggestions suitable for road travel, such as scenic routes, recommended stops between cities, parking information at destinations, and estimated driving times.`;
+            transportPrompt = `
 - A 'transport' object containing a 'suggestions' list and a 'cost' string.
   - The 'suggestions' should include tips for the road trip, like scenic detours.
   - The 'cost' string must detail the estimated fuel cost for the day. To do this:
@@ -219,10 +217,10 @@ export const generateItinerary = async (
     2. Based on the travel location (state/country), find the current approximate price for both petrol and diesel per liter.
     3. Calculate the cost assuming an average petrol car mileage of 15 km/l and a diesel car mileage of 20 km/l.
     4. Format the 'cost' string as: "Approx. XX km | Petrol: ₹YYYY | Diesel: ₹ZZZZ".`;
-                break;
-            case 'Bike':
-                tripTypeDetails = `This is a **motorbike trip**. Please provide suggestions suitable for a motorcyclist, such as scenic riding routes, secure parking for motorbikes, information on road conditions, and potential motorbike rental shops. The itinerary should be tailored for a road trip on a motorbike.`;
-                 transportPrompt = `
+            break;
+        case 'Bike':
+            tripTypeDetails = `This is a **motorbike trip**. Please provide suggestions suitable for a motorcyclist, such as scenic riding routes, secure parking for motorbikes, information on road conditions, and potential motorbike rental shops. The itinerary should be tailored for a road trip on a motorbike.`;
+             transportPrompt = `
 - A 'transport' object containing a 'suggestions' list and a 'cost' string.
   - The 'suggestions' must include tips for the motorbike trip. If the route is near a state border, **provide a specific suggestion on which state has cheaper fuel and where to refuel to save money.**
   - The 'cost' string must detail the estimated fuel cost for the day. To do this:
@@ -230,12 +228,11 @@ export const generateItinerary = async (
     2. Based on the travel location, find the current approximate price for petrol per liter.
     3. Calculate the cost assuming an average motorbike mileage of 40 km/l.
     4. Format the 'cost' string as: "Approx. XX km | Petrol: ₹YYYY".`;
-                break;
-            default: // 'Standard'
-                tripTypeDetails = `The traveler will likely use a mix of public and private transport.`;
-                transportPrompt = `
+            break;
+        default: // 'Standard'
+            tripTypeDetails = `The traveler will likely use a mix of public and private transport.`;
+            transportPrompt = `
 - A 'transport' object containing a 'suggestions' list and a 'cost' string. The suggestions should be a bulleted list of transport options (e.g., taxi, metro, bus) appropriate for a "${budget}" budget. The 'cost' should be the estimated transport cost for the day in Indian Rupees (₹).`;
-        }
     }
 
 
@@ -287,18 +284,16 @@ Ensure all lists are provided as bullet points.`;
 
     const planRequiredFields = ["day", "title", "activities", "food", "placesToStay", "approxCost"];
 
-    if (includeTransport) {
-        planProperties.transport = {
-          type: Type.OBJECT,
-          description: "Transport suggestions for the day.",
-          properties: {
-            suggestions: { type: Type.ARRAY, items: { type: Type.STRING }, description: "List of transport suggestions." },
-            cost: { type: Type.STRING, description: "Estimated cost for transport for the day." }
-          },
-          required: ["suggestions", "cost"]
-        };
-        planRequiredFields.push("transport");
-    }
+    planProperties.transport = {
+      type: Type.OBJECT,
+      description: "Transport suggestions for the day.",
+      properties: {
+        suggestions: { type: Type.ARRAY, items: { type: Type.STRING }, description: "List of transport suggestions." },
+        cost: { type: Type.STRING, description: "Estimated cost for transport for the day." }
+      },
+      required: ["suggestions", "cost"]
+    };
+    planRequiredFields.push("transport");
     
     if (includeMedical) {
       planProperties.medicalFacilities = {

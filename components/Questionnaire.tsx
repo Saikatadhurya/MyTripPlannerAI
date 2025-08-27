@@ -85,7 +85,6 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
     startDate: new Date().toISOString().split('T')[0],
     includeMedical: false,
     language: 'English (en)',
-    includeTransport: true,
   });
   
   const [destinationSuggestions, setDestinationSuggestions] = useState<string[]>([]);
@@ -476,12 +475,6 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                 description="Include nearby hospitals & pharmacies for each day."
                 enabled={formData.includeMedical}
                 onChange={(enabled) => handleInputChange('includeMedical', enabled)}
-              />
-              <Toggle
-                label="Transport Suggestions"
-                description="Get budget-appropriate transport options & costs."
-                enabled={formData.includeTransport}
-                onChange={(enabled) => handleInputChange('includeTransport', enabled)}
               />
             </div>
         </div>

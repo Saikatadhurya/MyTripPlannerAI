@@ -16,7 +16,6 @@ export interface QuestionnaireData {
     startDate: string;
     includeMedical: boolean;
     language: string;
-    includeTransport: boolean;
 }
 
 export interface DayPlan {
