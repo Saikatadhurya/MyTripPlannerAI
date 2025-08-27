@@ -1,6 +1,8 @@
+
 export type Budget = 'Budget' | 'Midrange' | 'Luxury';
 export type Vibe = 'Adventure & Thrill' | 'Relaxation & Wellness' | 'Cultural & Heritage' | 'Nature & Wildlife' | 'Food & Culinary' | 'Nightlife & Entertainment' | 'Luxury & Leisure' | 'Romantic & Family Getaways';
 export type FoodPreference = 'Veg' | 'Non-Veg' | 'Vegan';
+export type TripType = 'Standard' | 'Bike' | 'Car';
 
 export interface DayPlan {
   day: number;
@@ -25,6 +27,8 @@ export interface BlogReference {
 
 export interface Itinerary {
   destination: string;
+  startPoint: string;
+  tripType: TripType;
   days: number;
   persons: number;
   budget: Budget;
