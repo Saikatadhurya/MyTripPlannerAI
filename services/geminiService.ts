@@ -39,7 +39,11 @@ export const getDestinationSuggestions = async (query: string): Promise<string[]
       }
     });
 
-    const resultText = response.text.trim();
+    const resultText = response.text?.trim();
+    if (!resultText) {
+        console.error("AI response for suggestions was empty or invalid:", response);
+        return []; // Fail gracefully for suggestions
+    }
     const resultJson = JSON.parse(resultText);
 
     if (!Array.isArray(resultJson)) {
@@ -141,7 +145,10 @@ Your response must be a JSON array of objects, where each object has a single "d
         }
       });
 
-      const resultText = descriptionResponse.text.trim();
+      const resultText = descriptionResponse.text?.trim();
+      if (!resultText) {
+          throw new Error("AI response for blog descriptions was empty.");
+      }
       const descriptions = JSON.parse(resultText);
       
       if (!Array.isArray(descriptions) || descriptions.length !== initialBlogs.length) {
@@ -297,7 +304,11 @@ Ensure all lists are provided as bullet points.`;
       }
     });
 
-    const resultText = itineraryResponse.text.trim();
+    const resultText = itineraryResponse.text?.trim();
+    if (!resultText) {
+        console.error("AI response for itinerary was empty or invalid:", itineraryResponse);
+        throw new Error("The AI returned an empty response. This could be due to a safety filter or an issue with the request. Please try modifying your request.");
+    }
     const itineraryDetails = JSON.parse(resultText);
 
     // --- Step 2: Find reference blogs sequentially to avoid rate limiting ---
