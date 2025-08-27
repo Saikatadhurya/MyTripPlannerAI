@@ -62,38 +62,99 @@ const findReferenceBlogs = async (destination: string): Promise<BlogReference[]>
     console.error("API key is missing.");
     return [];
   }
-  
-  try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const prompt = `Find up to 5 helpful and popular travel blog posts for planning a trip to ${destination}.`;
 
-    const response = await ai.models.generateContent({
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+  try {
+    // --- Step 1: Find blogs using Google Search ---
+    const searchPrompt = `Find up to 5 helpful and popular travel blog posts for planning a trip to ${destination}.`;
+    const searchResponse = await ai.models.generateContent({
       model: "gemini-2.5-flash",
-      contents: prompt,
+      contents: searchPrompt,
       config: {
         tools: [{ googleSearch: {} }],
       },
     });
 
-    const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
+    const groundingChunks = searchResponse.candidates?.[0]?.groundingMetadata?.groundingChunks;
 
-    if (Array.isArray(groundingChunks)) {
-      const blogs = groundingChunks
-        .map(chunk => {
-          if (chunk.web && chunk.web.uri && chunk.web.title) {
-            return {
-              title: chunk.web.title,
-              url: chunk.web.uri,
-            };
-          }
-          return null;
-        })
-        .filter((blog): blog is BlogReference => blog !== null);
-      
-      return blogs.slice(0, 5);
+    if (!Array.isArray(groundingChunks) || groundingChunks.length === 0) {
+      return [];
     }
-    
-    return [];
+
+    const initialBlogs = groundingChunks
+      .map(chunk => {
+        if (chunk.web && chunk.web.uri && chunk.web.title) {
+          // Clean up titles for better prompts and display
+          const cleanedTitle = chunk.web.title.split(' - ')[0].split(' | ')[0];
+          return {
+            title: cleanedTitle,
+            url: chunk.web.uri,
+          };
+        }
+        return null;
+      })
+      .filter((blog): blog is { title: string; url: string } => blog !== null)
+      .slice(0, 5);
+
+    if (initialBlogs.length === 0) {
+      return [];
+    }
+
+    // --- Step 2: Generate descriptions for the found blogs ---
+    try {
+      const blogsForDescriptionPrompt = initialBlogs.map(b => `- Title: "${b.title}"`).join('\n');
+      const descriptionPrompt = `For the following list of travel blog post titles about ${destination}, write a concise, one-sentence description for each, highlighting what the reader can expect to find.
+
+${blogsForDescriptionPrompt}
+
+Your response must be a JSON array of objects, where each object has a single "description" key. The order must match the input titles.`;
+
+      const descriptionSchema = {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            description: {
+              type: Type.STRING,
+              description: "A concise, one-sentence description of the blog post."
+            },
+          },
+          required: ["description"]
+        }
+      };
+
+      const descriptionResponse = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: descriptionPrompt,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: descriptionSchema,
+          thinkingConfig: { thinkingBudget: 0 }, // Low latency for a simple task
+        }
+      });
+
+      const resultText = descriptionResponse.text.trim();
+      const descriptions = JSON.parse(resultText);
+      
+      if (!Array.isArray(descriptions) || descriptions.length !== initialBlogs.length) {
+        throw new Error("Mismatched or invalid descriptions array from AI.");
+      }
+
+      // Combine initial blogs with generated descriptions
+      return initialBlogs.map((blog, index) => ({
+        ...blog,
+        description: descriptions[index]?.description || 'A helpful travel guide for your trip.',
+      }));
+
+    } catch (descriptionError) {
+      console.error("Could not generate blog descriptions, returning blogs with a generic description.", descriptionError);
+      // Fallback: return blogs with a generic description if the second AI call fails
+      return initialBlogs.map(blog => ({
+        ...blog,
+        description: "Click here to explore a detailed guide and plan your trip better.",
+      }));
+    }
   } catch (error) {
     console.error(`Error fetching reference blogs for "${destination}":`, error);
     return []; // Return empty array on error to not block itinerary generation

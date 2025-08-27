@@ -15,6 +15,7 @@ export interface DayPlan {
 export interface BlogReference {
   title: string;
   url: string;
+  description: string;
 }
 
 export interface Itinerary {
