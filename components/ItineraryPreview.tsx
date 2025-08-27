@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Itinerary } from '../types';
 import ExportOptions from './ExportOptions';
@@ -78,7 +77,7 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
 
   return (
     <div className="max-w-4xl mx-auto space-y-12" id="itinerary-preview-content">
-      <header className="space-y-4">
+      <header className="space-y-4 animated-card">
         <div className="text-center">
             <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight" dangerouslySetInnerHTML={parseBold(`Trip to ${itinerary.destination}`)} />
             <p className="text-lg text-gray-700 mt-2">Your amazing {itinerary.days}-day {itinerary.isRoundTrip ? 'round trip ' : ''}itinerary</p>
@@ -86,43 +85,75 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
       </header>
       
       <section>
-        <h2 className="text-3xl font-bold text-slate-800 mb-6">Trip Summary</h2>
+        <h2 className="text-3xl font-bold text-slate-800 mb-6 animated-card" style={{ animationDelay: '100ms' }}>Trip Summary</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <SummaryItem icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>} label="Start Date">
-            {formattedStartDate}
-          </SummaryItem>
-          <SummaryItem icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>} label="Duration">
-            {itinerary.days} Day{itinerary.days > 1 ? 's' : ''}
-          </SummaryItem>
-          <SummaryItem icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>} label="Travelers">
-            {itinerary.persons} Person{itinerary.persons > 1 ? 's' : ''}
-          </SummaryItem>
-          <SummaryItem icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 10v-1m0 0c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>} label="Budget">
-            {itinerary.budget}
-          </SummaryItem>
-          <SummaryItem icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>} label="Vibe">
-            {itinerary.vibe.join(', ')}
-          </SummaryItem>
-           <SummaryItem icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0c-.454-.303-.977-.454-1.5-.454V5.454c.523 0 1.046-.151 1.5-.454a2.704 2.704 0 013 0 2.704 2.704 0 003 0 2.704 2.704 0 013 0 2.704 2.704 0 003 0c.454.303.977.454 1.5.454v10.092zM15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>} label="Food Preference">
-            {itinerary.foodPreference}
-          </SummaryItem>
-          <SummaryItem icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 9m-6 3l6-3m0 0l6-3m-6 3v6.382" /></svg>} label="Trip Type">
-            {itinerary.tripType} {itinerary.isRoundTrip && <span className="text-sm font-normal">(Round Trip)</span>}
-          </SummaryItem>
+          <div className="animated-card" style={{ animationDelay: '200ms' }}>
+            <SummaryItem icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>} label="Start Date">
+              {formattedStartDate}
+            </SummaryItem>
+          </div>
+          <div className="animated-card" style={{ animationDelay: '250ms' }}>
+            <SummaryItem icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>} label="Duration">
+              {itinerary.days} Day{itinerary.days > 1 ? 's' : ''}
+            </SummaryItem>
+          </div>
+          <div className="animated-card" style={{ animationDelay: '300ms' }}>
+            <SummaryItem icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>} label="Travelers">
+              {itinerary.persons} Person{itinerary.persons > 1 ? 's' : ''}
+            </SummaryItem>
+          </div>
+          <div className="animated-card" style={{ animationDelay: '350ms' }}>
+            <SummaryItem icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 10v-1m0 0c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>} label="Budget">
+              {itinerary.budget}
+            </SummaryItem>
+          </div>
+          <div className="animated-card" style={{ animationDelay: '400ms' }}>
+            <SummaryItem icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>} label="Vibe">
+              {itinerary.vibe.join(', ')}
+            </SummaryItem>
+          </div>
+           <div className="animated-card" style={{ animationDelay: '450ms' }}>
+            <SummaryItem icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0c-.454-.303-.977-.454-1.5-.454V5.454c.523 0 1.046-.151 1.5-.454a2.704 2.704 0 013 0 2.704 2.704 0 003 0 2.704 2.704 0 013 0 2.704 2.704 0 003 0c.454.303.977.454 1.5.454v10.092zM15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>} label="Food Preference">
+              {itinerary.foodPreference}
+            </SummaryItem>
+          </div>
+          <div className="animated-card" style={{ animationDelay: '500ms' }}>
+            <SummaryItem icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 9m-6 3l6-3m0 0l6-3m-6 3v6.382" /></svg>} label="Trip Type">
+              {itinerary.tripType} {itinerary.isRoundTrip && <span className="text-sm font-normal">(Round Trip)</span>}
+            </SummaryItem>
+          </div>
         </div>
       </section>
 
       <section>
-        <h2 className="text-3xl font-bold text-slate-800 mb-6">Budget Overview <span className="text-base font-normal text-slate-600">(Est. Per Person)</span></h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          <SummaryItem icon={<span>🏨</span>} label="Est. Stay Cost">{itinerary.budgetSummary.stay}</SummaryItem>
-          <SummaryItem icon={<span>🍜</span>} label="Est. Food Cost">{itinerary.budgetSummary.food}</SummaryItem>
-          <SummaryItem icon={<span>💰</span>} label="Est. Total Cost">{itinerary.budgetSummary.total}</SummaryItem>
+        <h2 className="text-3xl font-bold text-slate-800 mb-6 animated-card" style={{ animationDelay: '600ms' }}>Budget Overview <span className="text-base font-normal text-slate-600">(Est. Per Person)</span></h2>
+        <div className="bg-gradient-to-br from-violet-600 to-indigo-700 rounded-2xl p-8 text-white shadow-2xl shadow-indigo-500/30 animated-card" style={{ animationDelay: '650ms' }}>
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-6 items-center">
+                <div className="md:col-span-2 flex items-center space-x-4">
+                     <div className="bg-white/10 p-3 rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 10v-1m0 0c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                     </div>
+                     <div>
+                        <p className="text-indigo-200 text-sm font-semibold uppercase tracking-wider">Total Est. Per Person</p>
+                        <p className="text-4xl font-extrabold tracking-tight">{itinerary.budgetSummary.total}</p>
+                     </div>
+                </div>
+                <div className="md:col-span-3 grid grid-cols-2 gap-6 text-center md:text-left border-t border-indigo-500/30 pt-6 md:pt-0 md:border-t-0 md:border-l md:pl-6">
+                    <div>
+                        <p className="text-indigo-200 text-sm">Est. Stay Cost</p>
+                        <p className="text-2xl font-bold">{itinerary.budgetSummary.stay}</p>
+                    </div>
+                     <div>
+                        <p className="text-indigo-200 text-sm">Est. Food Cost</p>
+                        <p className="text-2xl font-bold">{itinerary.budgetSummary.food}</p>
+                    </div>
+                </div>
+            </div>
         </div>
       </section>
       
       <section>
-        <h2 className="text-3xl font-bold text-slate-800 mb-6">About the Destinations</h2>
+        <h2 className="text-3xl font-bold text-slate-800 mb-6 animated-card" style={{ animationDelay: '750ms' }}>About the Destinations</h2>
         <div className="space-y-10">
           {itinerary.coveredDestinations && itinerary.coveredDestinations.map((dest, destIndex) => {
             const aboutSections = getAboutSectionsForDestination(dest);
@@ -130,7 +161,7 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
             const otherSections = aboutSections.filter(s => s.title !== 'Events');
             
             return (
-              <div key={destIndex}>
+              <div key={destIndex} className="animated-card" style={{ animationDelay: `${800 + destIndex * 200}ms` }}>
                 <h3 className="text-2xl font-bold text-slate-700 mb-4 border-b border-violet-200 pb-2" dangerouslySetInnerHTML={parseBold(dest.name)} />
                 {otherSections.length > 0 && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -157,9 +188,9 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
       </section>
 
       <section className="space-y-8">
-        <h2 className="text-3xl font-bold text-slate-800">Daily Itinerary</h2>
-        {itinerary.plan.map((day) => (
-          <div key={day.day} className="bg-white/40 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/50 transition-all duration-300 hover:shadow-2xl hover:border-violet-300/50">
+        <h2 className="text-3xl font-bold text-slate-800 animated-card" style={{ animationDelay: '900ms' }}>Daily Itinerary</h2>
+        {itinerary.plan.map((day, index) => (
+          <div key={day.day} className="bg-white/40 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/50 transition-all duration-300 hover:shadow-2xl hover:border-violet-300/50 hover:-translate-y-1 animated-card" style={{ animationDelay: `${950 + index * 100}ms` }}>
             <div className="flex justify-between items-start">
               <div>
                 <p className="text-sm font-semibold text-violet-700">Day {day.day}</p>
@@ -243,7 +274,7 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
 
       {itinerary.referenceBlogs && itinerary.referenceBlogs.length > 0 && (
         <section>
-          <h2 className="text-3xl font-bold text-slate-800 mb-6">Reference Blog Posts</h2>
+          <h2 className="text-3xl font-bold text-slate-800 mb-6 animated-card" style={{ animationDelay: '1100ms' }}>Reference Blog Posts</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {itinerary.referenceBlogs.map((blog, index) => {
                const isTransport = isTransportBlog(blog);
@@ -251,11 +282,12 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
                 <a 
                   key={index}
                   href={blog.url} target="_blank" rel="noopener noreferrer"
-                  className={`block p-5 rounded-xl shadow-lg border transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${
+                  className={`block p-5 rounded-xl shadow-lg border transition-all duration-300 hover:shadow-xl hover:-translate-y-1 animated-card ${
                     isTransport 
                       ? 'bg-sky-50/40 backdrop-blur-lg border-sky-300/50 hover:border-sky-400/50' 
                       : 'bg-white/40 backdrop-blur-lg border-white/50 hover:border-violet-300/50'
                   }`}
+                   style={{ animationDelay: `${1150 + index * 100}ms` }}
                 >
                   <div className="flex justify-between items-start">
                     <div className="flex-1">

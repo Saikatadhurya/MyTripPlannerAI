@@ -73,7 +73,7 @@ const findReferenceBlogs = async (destination: string, language: string): Promis
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
   try {
-    // --- Step 1: Find blogs using Google Search ---
+    // --- Find blogs using Google Search ---
     const searchPrompt = `Find up to 5 helpful and popular travel blog posts for planning a trip to ${destination}. Prioritize blogs written in ${language}.`;
     const searchResponse = await ai.models.generateContent({
       model: "gemini-2.5-flash",
@@ -89,7 +89,7 @@ const findReferenceBlogs = async (destination: string, language: string): Promis
       return [];
     }
 
-    const initialBlogs = groundingChunks
+    const blogs = groundingChunks
       .map(chunk => {
         if (chunk.web && chunk.web.uri && chunk.web.title) {
           const url = new URL(chunk.web.uri);
@@ -101,67 +101,18 @@ const findReferenceBlogs = async (destination: string, language: string): Promis
           }
           
           return {
-            title: chunk.web.title, // Use the full, original title from the search result.
+            title: chunk.web.title,
             url: chunk.web.uri,
             source,
+            description: `A helpful travel guide for your trip planning. Read more about ${destination}.`
           };
         }
         return null;
       })
-      .filter((blog): blog is { title: string; url: string; source: string } => blog !== null)
+      .filter((blog): blog is BlogReference => blog !== null)
       .slice(0, 5);
 
-    if (initialBlogs.length === 0) {
-      return [];
-    }
-
-    // --- Step 2: Generate descriptions for the found blogs ---
-    try {
-      const blogsForDescriptionPrompt = initialBlogs.map(b => `- Title: "${b.title}"`).join('\n');
-      const descriptionPrompt = `For the following list of travel blog post titles about ${destination}, write a concise, one-sentence description for each, highlighting what the reader can expect to find.
-
-${blogsForDescriptionPrompt}
-
-Provide the output as a JSON array of objects. Each object in the array must have two string properties: "title" (which must be the full, original title from the list above) and "description".`;
-      
-      const responseSchema = {
-        type: Type.ARRAY,
-        items: {
-          type: Type.OBJECT,
-          properties: {
-            title: { type: Type.STRING },
-            description: { type: Type.STRING },
-          },
-          required: ["title", "description"],
-        },
-        description: "An array of blog objects, each with a title and a description."
-      };
-
-      const descriptionResponse = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: descriptionPrompt,
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: responseSchema,
-        }
-      });
-      
-      const resultText = descriptionResponse.text.trim();
-      if (!resultText) {
-          return initialBlogs.map(b => ({ ...b, description: 'Read more about this trip highlight.' }));
-      }
-      const descriptionsArray: {title: string, description: string}[] = JSON.parse(resultText);
-      const descriptionMap = new Map(descriptionsArray.map(item => [item.title, item.description]));
-
-      return initialBlogs.map(blog => ({
-        ...blog,
-        description: descriptionMap.get(blog.title) || 'A helpful travel guide for your trip planning.',
-      }));
-    } catch (error) {
-      console.error("Error generating blog descriptions:", error);
-      // Fallback: return blogs without descriptions
-      return initialBlogs.map(b => ({ ...b, description: 'Read more about this trip highlight.' }));
-    }
+    return blogs;
 
   } catch (error) {
     console.error("Error finding reference blogs:", error);
