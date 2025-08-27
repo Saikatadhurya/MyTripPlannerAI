@@ -47,6 +47,48 @@ const SummaryItem: React.FC<{ icon: React.ReactNode; label: string; children: Re
     </div>
 );
 
+// New component for budget cards
+const BudgetCard: React.FC<{ title: string; icon: React.ReactNode; value: string; isHighlighted?: boolean; animationDelay: string; }> = ({ title, icon, value, isHighlighted = false, animationDelay }) => {
+  // Regex to split the main numerical value from the description
+  const match = value.match(/^([A-Z]{3,}|[€$£¥₹]\s?)?([\d,.\s-]+)\s*(.*)/s);
+  
+  let mainValue = value;
+  let description = '';
+
+  if (match) {
+    mainValue = ((match[1] || '') + match[2].trim()).trim();
+    description = match[3].trim();
+  }
+  
+  const cardClasses = isHighlighted 
+    ? "bg-violet-600 text-white shadow-xl shadow-violet-500/30" 
+    : "bg-white/50 backdrop-blur-lg border border-white/60 shadow-lg";
+  
+  const iconContainerClasses = isHighlighted
+    ? "bg-white/20 text-white"
+    : "bg-violet-100 text-violet-600";
+    
+  const textColorClasses = isHighlighted
+    ? { title: 'text-violet-200', value: 'text-white', description: 'text-violet-200/90' }
+    : { title: 'text-slate-600', value: 'text-slate-800', description: 'text-slate-500' };
+
+  return (
+    <div 
+      className={`p-6 rounded-2xl text-center flex flex-col justify-start animated-card h-full ${cardClasses}`}
+      style={{ animationDelay }}
+    >
+      <div className={`mx-auto rounded-full h-12 w-12 flex items-center justify-center flex-shrink-0 ${iconContainerClasses}`}>
+        {icon}
+      </div>
+      <p className={`mt-4 text-sm font-medium ${textColorClasses.title}`}>{title}</p>
+      <div className="mt-2 flex-grow flex flex-col justify-center">
+        <p className={`text-2xl font-bold break-words ${textColorClasses.value}`}>{mainValue}</p>
+        {description && <p className={`text-sm mt-1 ${textColorClasses.description}`}>{description}</p>}
+      </div>
+    </div>
+  );
+};
+
 // Helper to identify transport-related blogs
 const isTransportBlog = (blog: Itinerary['referenceBlogs'][0]): boolean => {
     const keywords = ['transport', 'getting around', 'driving', 'bus', 'train', 'airport', 'commute', 'travel between', 'route', 'navigation'];
@@ -123,33 +165,25 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
       <section>
         <h2 className="text-3xl font-bold text-slate-800 mb-6 animated-card" style={{ animationDelay: '500ms' }}>Budget Overview <span className="text-base font-normal text-slate-600">(Est. Per Person)</span></h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white/50 backdrop-blur-lg p-6 rounded-2xl border border-white/60 shadow-lg text-center animated-card" style={{ animationDelay: '550ms' }}>
-                <div className="mx-auto bg-violet-100 text-violet-600 rounded-full h-12 w-12 flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
-                    </svg>
-                </div>
-                <p className="mt-4 text-sm text-slate-600 font-medium">Est. Stay Cost</p>
-                <p className="mt-1 text-3xl font-bold text-slate-800">{itinerary.budgetSummary.stay}</p>
-            </div>
-            <div className="bg-white/50 backdrop-blur-lg p-6 rounded-2xl border border-white/60 shadow-lg text-center animated-card" style={{ animationDelay: '600ms' }}>
-                <div className="mx-auto bg-violet-100 text-violet-600 rounded-full h-12 w-12 flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0c-.454-.303-.977-.454-1.5-.454V5.454c.523 0 1.046-.151 1.5-.454a2.704 2.704 0 013 0 2.704 2.704 0 003 0 2.704 2.704 0 013 0 2.704 2.704 0 003 0c.454.303.977.454 1.5.454v10.092zM15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                </div>
-                <p className="mt-4 text-sm text-slate-600 font-medium">Est. Food Cost</p>
-                <p className="mt-1 text-3xl font-bold text-slate-800">{itinerary.budgetSummary.food}</p>
-            </div>
-            <div className="bg-violet-600 text-white p-6 rounded-2xl shadow-xl shadow-violet-500/30 text-center animated-card" style={{ animationDelay: '650ms' }}>
-                <div className="mx-auto bg-white/20 text-white rounded-full h-12 w-12 flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 10v-1m0 0c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                </div>
-                <p className="mt-4 text-sm text-violet-200 font-medium">Total Est. Per Person</p>
-                <p className="mt-1 text-3xl font-extrabold">{itinerary.budgetSummary.total}</p>
-            </div>
+            <BudgetCard
+                title="Est. Stay Cost"
+                icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" /></svg>}
+                value={itinerary.budgetSummary.stay}
+                animationDelay="550ms"
+            />
+            <BudgetCard
+                title="Est. Food Cost"
+                icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0c-.454-.303-.977-.454-1.5-.454V5.454c.523 0 1.046-.151 1.5-.454a2.704 2.704 0 013 0 2.704 2.704 0 003 0 2.704 2.704 0 013 0 2.704 2.704 0 003 0c.454.303.977.454 1.5.454v10.092zM15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>}
+                value={itinerary.budgetSummary.food}
+                animationDelay="600ms"
+            />
+            <BudgetCard
+                title="Total Est. Per Person"
+                icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 10v-1m0 0c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+                value={itinerary.budgetSummary.total}
+                isHighlighted
+                animationDelay="650ms"
+            />
         </div>
       </section>
       
