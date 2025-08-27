@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Budget, Vibe, FoodPreference } from '../types';
 import { getDestinationSuggestions } from '../services/geminiService';
 
@@ -10,6 +10,8 @@ export interface QuestionnaireData {
     persons: number;
     foodPreference: FoodPreference;
     startDate: string;
+    includeMedical: boolean;
+    includeTransport: boolean;
 }
 
 interface QuestionnaireProps {
@@ -48,327 +50,258 @@ const loadingMessages = [
   "We’re almost there… buckle up! 🚀"
 ];
 
-const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, error, initialData, onBack, onCancel }) => {
-  const getTodayString = () => new Date().toISOString().split('T')[0];
-  
-  const [destination, setDestination] = useState(initialData?.destination || '');
-  const [days, setDays] = useState(initialData?.days || 3);
-  const [budget, setBudget] = useState<Budget>(initialData?.budget || 'Midrange');
-  const [vibe, setVibe] = useState<Vibe[]>(initialData?.vibe || ['Adventure & Thrill']);
-  const [persons, setPersons] = useState(initialData?.persons || 1);
-  const [foodPreference, setFoodPreference] = useState<FoodPreference>(initialData?.foodPreference || 'Non-Veg');
-  const [startDate, setStartDate] = useState(initialData?.startDate || getTodayString());
+const Toggle: React.FC<{ label: string; description: string; enabled: boolean; onChange: (enabled: boolean) => void; }> = ({ label, description, enabled, onChange }) => (
+    <button 
+        type="button"
+        onClick={() => onChange(!enabled)}
+        className={`w-full flex items-center justify-between p-4 rounded-lg cursor-pointer transition-all duration-200 border-2 ${enabled ? 'bg-violet-100/70 border-violet-500' : 'bg-white/40 border-white/40 hover:bg-white/60'}`}
+        role="switch"
+        aria-checked={enabled}
+    >
+      <div className="text-left">
+          <p className="font-semibold text-slate-800">{label}</p>
+          <p className="text-sm text-slate-600">{description}</p>
+      </div>
+      <div className={`w-12 h-6 flex items-center rounded-full transition-colors duration-300 ${enabled ? 'bg-violet-500' : 'bg-slate-300'}`}>
+          <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${enabled ? 'translate-x-6' : 'translate-x-1'}`}></div>
+      </div>
+    </button>
+);
 
+const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, error, initialData, onBack, onCancel }) => {
+  const [formData, setFormData] = useState<QuestionnaireData>(initialData || {
+    destination: '',
+    days: 3,
+    budget: 'Midrange',
+    vibe: ['Adventure & Thrill'],
+    persons: 1,
+    foodPreference: 'Non-Veg',
+    startDate: new Date().toISOString().split('T')[0],
+    includeMedical: false,
+    includeTransport: false,
+  });
+  
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [highlightedIndex, setHighlightedIndex] = useState(-1);
-  const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
+  const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  const [currentLoadingMessage, setCurrentLoadingMessage] = useState(loadingMessages[0]);
   
-  const suggestionsListRef = useRef<HTMLUListElement>(null);
-
-  const dayPresets = [1, 2, 3, 4, 5];
-  const isCustomDays = !dayPresets.includes(days);
-
   useEffect(() => {
-    let isCancelled = false;
-
-    const fetchSuggestions = async () => {
-        setIsSuggestionsLoading(true);
-        try {
-            const fetchedSuggestions = await getDestinationSuggestions(destination);
-            if (!isCancelled) {
-                setSuggestions(fetchedSuggestions);
-                setHighlightedIndex(-1);
-            }
-        } catch (error) {
-            if (!isCancelled) {
-                console.error(`Failed to fetch suggestions for "${destination}":`, error);
-                setSuggestions([]);
-            }
-        } finally {
-            if (!isCancelled) {
-                setIsSuggestionsLoading(false);
-            }
-        }
-    };
-    
-    if (destination.trim().length < 2) {
-        setSuggestions([]);
-        setIsSuggestionsLoading(false);
-        return;
-    }
-
-    const handler = setTimeout(fetchSuggestions, 500); 
-
-    return () => {
-        clearTimeout(handler);
-        isCancelled = true;
-    };
-  }, [destination]);
-
-  useEffect(() => {
-    if (highlightedIndex > -1 && suggestionsListRef.current) {
-      const highlightedItem = suggestionsListRef.current.children[highlightedIndex] as HTMLLIElement;
-      if (highlightedItem) {
-        highlightedItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-      }
-    }
-  }, [highlightedIndex]);
-
-  useEffect(() => {
+    let interval: NodeJS.Timeout;
     if (isLoading) {
-      const intervalId = setInterval(() => {
-        setCurrentMessageIndex((prevIndex) => (prevIndex + 1) % loadingMessages.length);
+      interval = setInterval(() => {
+        setCurrentLoadingMessage(prev => {
+          const currentIndex = loadingMessages.indexOf(prev);
+          return loadingMessages[(currentIndex + 1) % loadingMessages.length];
+        });
       }, 2500);
-      return () => clearInterval(intervalId);
     }
+    return () => clearInterval(interval);
   }, [isLoading]);
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (showSuggestions && suggestions.length > 0) {
-        if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            setHighlightedIndex(prevIndex => (prevIndex + 1) % suggestions.length);
-        } else if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            setHighlightedIndex(prevIndex => (prevIndex - 1 + suggestions.length) % suggestions.length);
-        } else if (e.key === 'Enter') {
-            if (highlightedIndex > -1) {
-                e.preventDefault(); // Prevent form submission
-                setDestination(suggestions[highlightedIndex]);
-                setShowSuggestions(false);
-            }
-        } else if (e.key === 'Escape') {
-            setShowSuggestions(false);
-        }
-    }
+  const handleInputChange = (field: keyof QuestionnaireData, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleVibeToggle = (selectedVibe: Vibe) => {
-    setVibe(prev => {
-        const isSelected = prev.includes(selectedVibe);
-        if (isSelected) {
-            // Remove it, but ensure at least one remains
-            return prev.length > 1 ? prev.filter(v => v !== selectedVibe) : prev;
-        } else {
-            // Add it
-            return [...prev, selectedVibe];
-        }
-    });
+    const newVibes = formData.vibe.includes(selectedVibe)
+      ? formData.vibe.filter(v => v !== selectedVibe)
+      : [...formData.vibe, selectedVibe];
+    // Ensure at least one vibe is selected
+    if (newVibes.length > 0) {
+      handleInputChange('vibe', newVibes);
+    }
   };
+
+  const fetchSuggestions = useCallback(async (query: string) => {
+    if (query.length < 2) {
+      setSuggestions([]);
+      return;
+    }
+    setIsSuggestionsLoading(true);
+    const results = await getDestinationSuggestions(query);
+    setSuggestions(results);
+    setIsSuggestionsLoading(false);
+  }, []);
+
+  useEffect(() => {
+    if (debounceTimeout.current) {
+      clearTimeout(debounceTimeout.current);
+    }
+    debounceTimeout.current = setTimeout(() => {
+      fetchSuggestions(formData.destination);
+    }, 300); // 300ms debounce
+    return () => {
+      if (debounceTimeout.current) {
+        clearTimeout(debounceTimeout.current);
+      }
+    };
+  }, [formData.destination, fetchSuggestions]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!destination.trim()) {
-      alert("Please enter a destination.");
-      return;
-    }
-    if (persons <= 0) {
-      alert("Please enter a valid number of people.");
-      return;
-    }
-     if (days <= 0) {
-      alert("Please enter a valid number of days.");
-      return;
-    }
-    if (vibe.length === 0) {
-      alert("Please select at least one travel vibe.");
-      return;
-    }
-    onSubmit({ destination, days, budget, vibe, persons, foodPreference, startDate });
+    onSubmit(formData);
   };
-  
+
   if (isLoading) {
     return (
-      <div className="max-w-3xl mx-auto p-4 sm:p-8 bg-white/40 backdrop-blur-lg rounded-2xl shadow-xl border border-white/50 flex flex-col items-center justify-center min-h-[60vh] text-center">
-        <svg className="animate-spin h-10 w-10 text-violet-600 mb-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-        <p key={currentMessageIndex} className="text-xl font-semibold text-slate-700 fade-in px-4">
-            {loadingMessages[currentMessageIndex]}
-        </p>
-        <button 
+      <div className="text-center py-20 fade-in">
+        <div className="inline-block relative">
+          <div className="w-20 h-20 border-4 border-violet-200 border-t-violet-600 rounded-full animate-spin"></div>
+          <div className="absolute inset-0 flex items-center justify-center text-2xl">✈️</div>
+        </div>
+        <p className="mt-6 text-xl font-semibold text-slate-800">{currentLoadingMessage}</p>
+        <p className="text-slate-600 mt-2">Crafting your personalized itinerary...</p>
+        <button
           onClick={onCancel}
-          className="mt-8 px-6 py-2 bg-white/60 text-slate-700 font-semibold rounded-full hover:bg-white/80 transition-colors"
+          className="mt-8 px-6 py-2 bg-white/60 text-slate-700 font-bold rounded-full hover:bg-white/80 transition-colors"
         >
-          Cancel
+          Cancel Generation
         </button>
       </div>
     );
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-4 sm:p-8 bg-white/40 backdrop-blur-lg rounded-2xl shadow-xl border border-white/50">
-        <div className="flex items-center justify-between mb-6">
-            <button onClick={onBack} className="text-slate-600 hover:text-slate-900 flex items-center space-x-2">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-                <span>Back</span>
-            </button>
-            <h2 className="text-2xl font-bold text-slate-800">Plan Your Journey</h2>
-            <div></div>
+    <div className="max-w-2xl mx-auto">
+       <button onClick={onBack} className="text-slate-600 hover:text-slate-900 flex items-center space-x-2 mb-6">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+            <span>Back to Home</span>
+        </button>
+
+      <div className="text-center mb-10">
+        <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Tell Us About Your Trip</h1>
+        <p className="mt-2 text-lg text-slate-600">Fill in the details below to generate a personalized itinerary.</p>
+      </div>
+
+      {error && (
+        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md mb-6" role="alert">
+          <p className="font-bold">Oops!</p>
+          <p>{error}</p>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-10">
+        {/* Section 1: Core Details */}
+        <div className="space-y-6 bg-white/40 backdrop-blur-md p-6 rounded-2xl border border-white/50 shadow-lg">
+          <h2 className="text-2xl font-bold text-slate-800 border-b pb-3">Core Details</h2>
+          <div className="relative">
+            <label htmlFor="destination" className="block text-sm font-medium text-slate-700 mb-1">Where are you going?</label>
+            <input
+              id="destination"
+              type="text"
+              value={formData.destination}
+              onChange={e => handleInputChange('destination', e.target.value)}
+              placeholder="e.g., Paris, France"
+              className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
+              required
+            />
+            {isSuggestionsLoading && <div className="absolute right-3 top-9 text-sm text-slate-500">Loading...</div>}
+            {suggestions.length > 0 && (
+              <ul className="absolute z-10 w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg max-h-60 overflow-y-auto">
+                {suggestions.map((s, i) => (
+                  <li key={i} onClick={() => { handleInputChange('destination', s); setSuggestions([]); }}
+                      className="px-4 py-2 cursor-pointer hover:bg-violet-100">
+                    {s}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+                <label htmlFor="startDate" className="block text-sm font-medium text-slate-700 mb-1">Start Date</label>
+                <input id="startDate" type="date" value={formData.startDate} min={new Date().toISOString().split('T')[0]} onChange={e => handleInputChange('startDate', e.target.value)} className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition" required />
+            </div>
+            <div>
+              <label htmlFor="days" className="block text-sm font-medium text-slate-700 mb-1">Duration (days)</label>
+              <input id="days" type="number" value={formData.days} min="1" max="30" onChange={e => handleInputChange('days', parseInt(e.target.value))} className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition" required />
+            </div>
+            <div>
+              <label htmlFor="persons" className="block text-sm font-medium text-slate-700 mb-1">Travelers</label>
+              <input id="persons" type="number" value={formData.persons} min="1" max="20" onChange={e => handleInputChange('persons', parseInt(e.target.value))} className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition" required />
+            </div>
+          </div>
         </div>
 
-        {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-6" role="alert">{error}</div>}
-      
-        <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Destination */}
-            <section>
-              <label htmlFor="destination" className="block text-lg font-semibold text-slate-700 mb-3">Where do you want to go?</label>
-              <div className="relative">
-                <input
-                    type="text" id="destination" value={destination}
-                    onChange={(e) => { setDestination(e.target.value); setShowSuggestions(true); }}
-                    onFocus={() => setShowSuggestions(true)}
-                    onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                    onKeyDown={handleKeyDown}
-                    className="w-full px-4 py-3 bg-white/50 text-slate-800 border border-white/40 rounded-lg focus:bg-white/70 focus:border-violet-400 focus:ring-2 focus:ring-violet-500/50 transition-all duration-200 shadow-sm placeholder-slate-500"
-                    placeholder="e.g., Paris, Tokyo, Bali..." required autoComplete="off"
-                />
-                 {isSuggestionsLoading && (
-                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                        <svg className="animate-spin h-5 w-5 text-violet-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                    </div>
-                )}
-                {showSuggestions && suggestions.length > 0 && (
-                  <div className="absolute z-10 w-full mt-1 bg-white/90 backdrop-blur-xl rounded-lg shadow-lg border border-white/50">
-                      <ul ref={suggestionsListRef} className="py-1 max-h-60 overflow-y-auto">
-                          {suggestions.map((s, index) => (
-                              <li key={index}>
-                                  <button
-                                      type="button"
-                                      className={`w-full text-left px-4 py-2 text-slate-700 transition-colors ${index === highlightedIndex ? 'bg-violet-100' : 'hover:bg-violet-100/50'}`}
-                                      onMouseDown={() => { // use onMouseDown to fire before input's onBlur
-                                          setDestination(s);
-                                          setShowSuggestions(false);
-                                      }}
-                                      onMouseEnter={() => setHighlightedIndex(index)}
-                                  >
-                                      {s}
-                                  </button>
-                              </li>
-                          ))}
-                      </ul>
-                  </div>
-                )}
-              </div>
-            </section>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Persons */}
-              <section>
-                <label htmlFor="persons" className="block text-lg font-semibold text-slate-700 mb-3">How many people?</label>
-                <input
-                  type="number"
-                  id="persons"
-                  value={persons === 0 ? '' : persons}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (val === '') {
-                      setPersons(0);
-                    } else {
-                      const num = Number(val);
-                      if (Number.isInteger(num) && num > 0) {
-                        setPersons(num);
-                      }
-                    }
-                  }}
-                  className="w-full px-4 py-3 bg-white/50 text-slate-800 border border-white/40 rounded-lg focus:bg-white/70 focus:border-violet-400 focus:ring-2 focus:ring-violet-500/50 transition-all duration-200 shadow-sm placeholder-slate-500"
-                  min="1"
-                  placeholder="Number of travelers"
-                  required
-                />
-              </section>
+        {/* Section 2: Budget */}
+        <div className="space-y-4 bg-white/40 backdrop-blur-md p-6 rounded-2xl border border-white/50 shadow-lg">
+           <h2 className="text-2xl font-bold text-slate-800 border-b pb-3">Budget</h2>
+           <div className="grid grid-cols-3 gap-3">
+              {budgets.map(b => (
+                  <button key={b} type="button" onClick={() => handleInputChange('budget', b)}
+                      className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 border-2 ${formData.budget === b ? 'bg-violet-600 text-white border-violet-600' : 'bg-white/50 border-white/50 hover:border-violet-400'}`}>
+                      {b}
+                  </button>
+              ))}
+           </div>
+        </div>
 
-              {/* Start Date */}
-              <section>
-                <label htmlFor="start-date" className="block text-lg font-semibold text-slate-700 mb-3">When do you want to go?</label>
-                <input
-                    type="date" id="start-date" value={startDate} onChange={(e) => setStartDate(e.target.value)} min={getTodayString()}
-                    className="w-full px-4 py-3 bg-white/50 text-slate-800 border border-white/40 rounded-lg focus:bg-white/70 focus:border-violet-400 focus:ring-2 focus:ring-violet-500/50 transition-all duration-200 shadow-sm"
-                    required
-                />
-              </section>
+        {/* Section 3: Vibe */}
+        <div className="space-y-4 bg-white/40 backdrop-blur-md p-6 rounded-2xl border border-white/50 shadow-lg">
+          <h2 className="text-2xl font-bold text-slate-800 border-b pb-3">What's your vibe?</h2>
+          <p className="text-sm text-slate-600">Select one or more vibes that best describe your ideal trip.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {vibes.map(v => (
+              <button key={v.label} type="button" onClick={() => handleVibeToggle(v.label)}
+                  className={`p-4 rounded-lg text-left transition-all duration-200 border-2 flex items-start space-x-3 ${formData.vibe.includes(v.label) ? 'bg-violet-100/70 border-violet-500' : 'bg-white/40 border-white/40 hover:bg-white/60'}`}>
+                <span className="text-2xl mt-1">{v.icon}</span>
+                <div>
+                  <p className="font-semibold text-slate-800">{v.label}</p>
+                  <p className="text-xs text-slate-500">{v.description}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+        
+        {/* Section 4: Food Preference */}
+        <div className="space-y-4 bg-white/40 backdrop-blur-md p-6 rounded-2xl border border-white/50 shadow-lg">
+           <h2 className="text-2xl font-bold text-slate-800 border-b pb-3">Food Preference</h2>
+           <div className="grid grid-cols-3 gap-3">
+              {foodPreferences.map(f => (
+                  <button key={f} type="button" onClick={() => handleInputChange('foodPreference', f)}
+                      className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 border-2 ${formData.foodPreference === f ? 'bg-violet-600 text-white border-violet-600' : 'bg-white/50 border-white/50 hover:border-violet-400'}`}>
+                      {f}
+                  </button>
+              ))}
+           </div>
+        </div>
+        
+        {/* Section 5: Optional Features */}
+        <div className="space-y-4 bg-white/40 backdrop-blur-md p-6 rounded-2xl border border-white/50 shadow-lg">
+            <h2 className="text-2xl font-bold text-slate-800 border-b pb-3">Optional Features</h2>
+            <p className="text-sm text-slate-600">Add extra details to your itinerary for a more comprehensive plan.</p>
+            <div className="space-y-4">
+              <Toggle
+                label="Medical Facilities"
+                description="Include nearby hospitals & pharmacies for each day."
+                enabled={formData.includeMedical}
+                onChange={(enabled) => handleInputChange('includeMedical', enabled)}
+              />
+              <Toggle
+                label="Transport Suggestions"
+                description="Get budget-appropriate transport options & costs."
+                enabled={formData.includeTransport}
+                onChange={(enabled) => handleInputChange('includeTransport', enabled)}
+              />
             </div>
-            
-            {/* Days */}
-            <section>
-                <label className="block text-lg font-semibold text-slate-700 mb-3">How many days?</label>
-                <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
-                    {dayPresets.map(d => (
-                        <button type="button" key={d} onClick={() => setDays(d)} className={`py-3 rounded-lg font-semibold transition-all duration-200 ${days === d && !isCustomDays ? 'bg-violet-600 text-white shadow-md' : 'bg-white/40 hover:bg-white/70'}`}>
-                            {d} Day{d > 1 ? 's' : ''}
-                        </button>
-                    ))}
-                    <input
-                      type="number"
-                      value={days === 0 ? '' : days}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        // Allow empty for editing, otherwise only positive integers
-                        if (val === '') {
-                          setDays(0);
-                        } else {
-                          const num = Number(val);
-                          if (Number.isInteger(num) && num > 0) {
-                            setDays(num);
-                          }
-                        }
-                      }}
-                      className={`w-full py-3 rounded-lg font-semibold transition-all duration-200 text-center border-2 focus:ring-2 focus:ring-violet-500/50 placeholder-slate-500 ${isCustomDays ? 'bg-white/70 border-violet-500 text-violet-700' : 'bg-white/30 border-transparent text-slate-700'}`}
-                      min="1"
-                      placeholder="Custom"
-                    />
-                </div>
-            </section>
+        </div>
 
-            {/* Budget */}
-            <section>
-                <label className="block text-lg font-semibold text-slate-700 mb-3">What's your budget range?</label>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {budgets.map(b => (
-                        <button type="button" key={b} onClick={() => setBudget(b)} className={`p-4 rounded-lg text-center border-2 transition-all ${budget === b ? 'bg-violet-100/70 border-violet-500 shadow-md' : 'bg-white/40 border-white/40 hover:bg-white/60'}`}>
-                            <span className="font-bold text-slate-800">{b}</span>
-                        </button>
-                    ))}
-                </div>
-            </section>
-
-            {/* Food Preference */}
-            <section>
-                <label className="block text-lg font-semibold text-slate-700 mb-3">What's your food preference?</label>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {foodPreferences.map(fp => (
-                        <button type="button" key={fp} onClick={() => setFoodPreference(fp)} className={`p-4 rounded-lg text-center border-2 transition-all ${foodPreference === fp ? 'bg-violet-100/70 border-violet-500 shadow-md' : 'bg-white/40 border-white/40 hover:bg-white/60'}`}>
-                            <span className="font-bold text-slate-800">{fp}</span>
-                        </button>
-                    ))}
-                </div>
-            </section>
-            
-            {/* Vibe */}
-            <section>
-                <label className="block text-lg font-semibold text-slate-700 mb-3">What's your travel vibe? (Select one or more)</label>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {vibes.map(v => (
-                        <button type="button" key={v.label} onClick={() => handleVibeToggle(v.label)} className={`p-4 rounded-lg border-2 flex flex-col items-center justify-start text-center space-y-2 transition-all h-full ${vibe.includes(v.label) ? 'bg-violet-100/80 text-violet-600 border-violet-500' : 'bg-white/40 text-slate-600 border-white/40 hover:bg-white/60'}`}>
-                            <span className="text-3xl">{v.icon}</span>
-                            <span className="font-semibold text-sm leading-tight">{v.label}</span>
-                            <p className="text-xs text-slate-500 font-medium">{v.description}</p>
-                        </button>
-                    ))}
-                </div>
-            </section>
-
-            <button type="submit" disabled={isLoading} className="w-full flex justify-center items-center px-6 py-4 border border-transparent text-base font-bold rounded-full text-white bg-violet-600 hover:bg-violet-700 disabled:bg-violet-300 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl">
-                ✨ Generate My Itinerary
-            </button>
-        </form>
+        {/* Submission */}
+        <div className="text-center pt-4">
+          <button
+            type="submit"
+            className="w-full sm:w-auto px-10 py-4 bg-indigo-600 text-white font-bold rounded-full hover:bg-indigo-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:bg-indigo-400 disabled:cursor-not-allowed"
+            disabled={!formData.destination || formData.vibe.length === 0}
+          >
+            ✨ Generate My Itinerary
+          </button>
+        </div>
+      </form>
     </div>
   );
 };
+
 export default Questionnaire;

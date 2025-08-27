@@ -175,7 +175,9 @@ export const generateItinerary = async (
   vibe: Vibe[],
   persons: number,
   foodPreference: FoodPreference,
-  startDate: string
+  startDate: string,
+  includeMedical: boolean,
+  includeTransport: boolean,
 ): Promise<Itinerary> => {
   if (!process.env.API_KEY) {
     throw new Error("API key is missing. Please configure your API_KEY environment variable.");
@@ -186,6 +188,18 @@ export const generateItinerary = async (
 
     // --- Step 1: Generate the core itinerary ---
     const vibeText = vibe.length > 1 ? `Their desired travel vibes are "${vibe.join(', ')}"` : `Their desired travel vibe is "${vibe[0]}"`;
+
+    let medicalPrompt = '';
+    if (includeMedical) {
+      medicalPrompt = `
+- A bulleted list of suggested medical facilities (hospitals, pharmacies) near the planned locations. If no specific suggestions are available, return an empty list.`;
+    }
+
+    let transportPrompt = '';
+    if (includeTransport) {
+      transportPrompt = `
+- A 'transport' object containing a 'suggestions' list and a 'cost' string. The suggestions should be a bulleted list of transport options appropriate for a "${budget}" budget. For 'Budget', focus on public transport. For 'Midrange', a mix of private cars/taxis and public transport. For 'Luxury', suggest private luxury cars. The 'cost' should be the estimated transport cost for the day in Indian Rupees (₹).`;
+    }
 
     const itineraryPrompt = `Create a highly detailed ${days}-day travel itinerary for ${persons} person(s) visiting ${destination}. The traveler's budget is "${budget}". ${vibeText}, and their food preference is "${foodPreference}". The trip will start on ${startDate}.
 
@@ -205,12 +219,42 @@ For each of the ${days} days, provide:
 - A bulleted list of suggested activities.
 - A bulleted list of ${foodPreference} food recommendations (specific dishes or restaurants).
 - A bulleted list of suggested places to stay for that day, considering the day's activities and location. If there are no specific suggestions, return an empty list.
-- An estimated cost for the day **per person** in Indian Rupees (₹).
+- An estimated cost for the day **per person** in Indian Rupees (₹).${transportPrompt}${medicalPrompt}
 
 Finally, provide a budget summary with estimated costs in Indian Rupees (₹) **per person** for the entire trip. Include separate estimates for stay, food, and a total cost **per person**.
 
 Ensure all lists are provided as bullet points.`;
 
+    // Dynamically build the schema for the day plan
+    const planProperties: any = {
+      day: { type: Type.INTEGER, description: "Day number." },
+      title: { type: Type.STRING, description: "Catchy title for the day." },
+      activities: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Bulleted list of suggested activities for the day." },
+      food: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Bulleted list of food recommendations for the day." },
+      placesToStay: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Suggested places to stay for the day." },
+      approxCost: { type: Type.STRING, description: "Estimated cost for the day per person." }
+    };
+
+    if (includeTransport) {
+      planProperties.transport = {
+        type: Type.OBJECT,
+        description: "Transport suggestions for the day.",
+        properties: {
+          suggestions: { type: Type.ARRAY, items: { type: Type.STRING }, description: "List of transport suggestions." },
+          cost: { type: Type.STRING, description: "Estimated cost for transport for the day." }
+        },
+        required: ["suggestions", "cost"]
+      };
+    }
+    
+    if (includeMedical) {
+      planProperties.medicalFacilities = {
+        type: Type.ARRAY, 
+        items: { type: Type.STRING }, 
+        description: "List of nearby medical facilities for the day." 
+      };
+    }
+    
     const itinerarySchema = {
       type: Type.OBJECT,
       properties: {
@@ -236,14 +280,7 @@ Ensure all lists are provided as bullet points.`;
           description: "The day-by-day itinerary.",
           items: {
             type: Type.OBJECT,
-            properties: {
-              day: { type: Type.INTEGER, description: "Day number." },
-              title: { type: Type.STRING, description: "Catchy title for the day." },
-              activities: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Bulleted list of suggested activities for the day." },
-              food: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Bulleted list of food recommendations for the day." },
-              placesToStay: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Suggested places to stay for the day." },
-              approxCost: { type: Type.STRING, description: "Estimated cost for the day per person." }
-            },
+            properties: planProperties,
             required: ["day", "title", "activities", "food", "placesToStay", "approxCost"]
           }
         },

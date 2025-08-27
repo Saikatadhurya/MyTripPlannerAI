@@ -10,6 +10,11 @@ export interface DayPlan {
   food: string[];
   placesToStay: string[];
   approxCost: string;
+  medicalFacilities?: string[];
+  transport?: {
+    suggestions: string[];
+    cost: string;
+  };
 }
 
 export interface BlogReference {
