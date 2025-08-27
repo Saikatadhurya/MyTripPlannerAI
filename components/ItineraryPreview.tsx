@@ -14,7 +14,7 @@ const InfoSection: React.FC<{ title: string; icon: React.ReactNode; items?: stri
     return null;
   }
   return (
-    <div className="bg-white/40 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/50">
+    <div className="bg-white/40 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/50 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
       <div className="flex items-center space-x-4 mb-4">
         <div className="flex-shrink-0 bg-violet-100 text-violet-600 rounded-lg p-3">
           {icon}
@@ -103,21 +103,16 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
             </SummaryItem>
           </div>
           <div className="animated-card" style={{ animationDelay: '350ms' }}>
-            <SummaryItem icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 10v-1m0 0c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>} label="Budget">
-              {itinerary.budget}
-            </SummaryItem>
-          </div>
-          <div className="animated-card" style={{ animationDelay: '400ms' }}>
             <SummaryItem icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>} label="Vibe">
               {itinerary.vibe.join(', ')}
             </SummaryItem>
           </div>
-           <div className="animated-card" style={{ animationDelay: '450ms' }}>
+           <div className="animated-card" style={{ animationDelay: '400ms' }}>
             <SummaryItem icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0c-.454-.303-.977-.454-1.5-.454V5.454c.523 0 1.046-.151 1.5-.454a2.704 2.704 0 013 0 2.704 2.704 0 003 0 2.704 2.704 0 013 0 2.704 2.704 0 003 0c.454.303.977.454 1.5.454v10.092zM15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>} label="Food Preference">
               {itinerary.foodPreference}
             </SummaryItem>
           </div>
-          <div className="animated-card" style={{ animationDelay: '500ms' }}>
+          <div className="animated-card" style={{ animationDelay: '450ms' }}>
             <SummaryItem icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 9m-6 3l6-3m0 0l6-3m-6 3v6.382" /></svg>} label="Trip Type">
               {itinerary.tripType} {itinerary.isRoundTrip && <span className="text-sm font-normal">(Round Trip)</span>}
             </SummaryItem>
@@ -126,28 +121,34 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
       </section>
 
       <section>
-        <h2 className="text-3xl font-bold text-slate-800 mb-6 animated-card" style={{ animationDelay: '600ms' }}>Budget Overview <span className="text-base font-normal text-slate-600">(Est. Per Person)</span></h2>
-        <div className="bg-gradient-to-br from-violet-600 to-indigo-700 rounded-2xl p-8 text-white shadow-2xl shadow-indigo-500/30 animated-card" style={{ animationDelay: '650ms' }}>
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-6 items-center">
-                <div className="md:col-span-2 flex items-center space-x-4">
-                     <div className="bg-white/10 p-3 rounded-full">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 10v-1m0 0c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                     </div>
-                     <div>
-                        <p className="text-indigo-200 text-sm font-semibold uppercase tracking-wider">Total Est. Per Person</p>
-                        <p className="text-4xl font-extrabold tracking-tight">{itinerary.budgetSummary.total}</p>
-                     </div>
+        <h2 className="text-3xl font-bold text-slate-800 mb-6 animated-card" style={{ animationDelay: '500ms' }}>Budget Overview <span className="text-base font-normal text-slate-600">(Est. Per Person)</span></h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-white/50 backdrop-blur-lg p-6 rounded-2xl border border-white/60 shadow-lg text-center animated-card" style={{ animationDelay: '550ms' }}>
+                <div className="mx-auto bg-violet-100 text-violet-600 rounded-full h-12 w-12 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
+                    </svg>
                 </div>
-                <div className="md:col-span-3 grid grid-cols-2 gap-6 text-center md:text-left border-t border-indigo-500/30 pt-6 md:pt-0 md:border-t-0 md:border-l md:pl-6">
-                    <div>
-                        <p className="text-indigo-200 text-sm">Est. Stay Cost</p>
-                        <p className="text-2xl font-bold">{itinerary.budgetSummary.stay}</p>
-                    </div>
-                     <div>
-                        <p className="text-indigo-200 text-sm">Est. Food Cost</p>
-                        <p className="text-2xl font-bold">{itinerary.budgetSummary.food}</p>
-                    </div>
+                <p className="mt-4 text-sm text-slate-600 font-medium">Est. Stay Cost</p>
+                <p className="mt-1 text-3xl font-bold text-slate-800">{itinerary.budgetSummary.stay}</p>
+            </div>
+            <div className="bg-white/50 backdrop-blur-lg p-6 rounded-2xl border border-white/60 shadow-lg text-center animated-card" style={{ animationDelay: '600ms' }}>
+                <div className="mx-auto bg-violet-100 text-violet-600 rounded-full h-12 w-12 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0c-.454-.303-.977-.454-1.5-.454V5.454c.523 0 1.046-.151 1.5-.454a2.704 2.704 0 013 0 2.704 2.704 0 003 0 2.704 2.704 0 013 0 2.704 2.704 0 003 0c.454.303.977.454 1.5.454v10.092zM15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
                 </div>
+                <p className="mt-4 text-sm text-slate-600 font-medium">Est. Food Cost</p>
+                <p className="mt-1 text-3xl font-bold text-slate-800">{itinerary.budgetSummary.food}</p>
+            </div>
+            <div className="bg-violet-600 text-white p-6 rounded-2xl shadow-xl shadow-violet-500/30 text-center animated-card" style={{ animationDelay: '650ms' }}>
+                <div className="mx-auto bg-white/20 text-white rounded-full h-12 w-12 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 10v-1m0 0c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <p className="mt-4 text-sm text-violet-200 font-medium">Total Est. Per Person</p>
+                <p className="mt-1 text-3xl font-extrabold">{itinerary.budgetSummary.total}</p>
             </div>
         </div>
       </section>
