@@ -61,7 +61,7 @@ export const getDestinationSuggestions = async (query: string): Promise<string[]
   }
 };
 
-const findReferenceBlogs = async (destination: string): Promise<BlogReference[]> => {
+const findReferenceBlogs = async (destination: string, language: string): Promise<BlogReference[]> => {
   if (!process.env.API_KEY) {
     console.error("API key is missing.");
     return [];
@@ -71,7 +71,7 @@ const findReferenceBlogs = async (destination: string): Promise<BlogReference[]>
 
   try {
     // --- Step 1: Find blogs using Google Search ---
-    const searchPrompt = `Find up to 5 helpful and popular travel blog posts for planning a trip to ${destination}.`;
+    const searchPrompt = `Find up to 5 helpful and popular travel blog posts for planning a trip to ${destination}. Prioritize blogs written in ${language}.`;
     const searchResponse = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: searchPrompt,
@@ -115,7 +115,7 @@ const findReferenceBlogs = async (destination: string): Promise<BlogReference[]>
     // --- Step 2: Generate descriptions for the found blogs ---
     try {
       const blogsForDescriptionPrompt = initialBlogs.map(b => `- Title: "${b.title}"`).join('\n');
-      const descriptionPrompt = `For the following list of travel blog post titles about ${destination}, write a concise, one-sentence description for each, highlighting what the reader can expect to find.
+      const descriptionPrompt = `For the following list of travel blog post titles about ${destination}, write a concise, one-sentence description for each, highlighting what the reader can expect to find. Write the descriptions in ${language}.
 
 ${blogsForDescriptionPrompt}
 
@@ -185,6 +185,7 @@ export const generateItinerary = async (
   startDate: string,
   includeMedical: boolean,
   includeTransport: boolean,
+  language: string,
 ): Promise<Itinerary> => {
   if (!process.env.API_KEY) {
     throw new Error("API key is missing. Please configure your API_KEY environment variable.");
@@ -209,6 +210,8 @@ export const generateItinerary = async (
     }
 
     const itineraryPrompt = `Create a highly detailed ${days}-day travel itinerary for ${persons} person(s) visiting ${destination}. The traveler's budget is "${budget}". ${vibeText}, and their food preference is "${foodPreference}". The trip will start on ${startDate}.
+
+IMPORTANT: The entire response, including all titles, descriptions, activities, and summaries, must be in the following language: ${language}.
 
 For all text content, use markdown to **bold** important keywords, places, and titles for emphasis.
 
@@ -312,7 +315,7 @@ Ensure all lists are provided as bullet points.`;
     const itineraryDetails = JSON.parse(resultText);
 
     // --- Step 2: Find reference blogs sequentially to avoid rate limiting ---
-    const referenceBlogs = await findReferenceBlogs(destination);
+    const referenceBlogs = await findReferenceBlogs(destination, language);
 
     // --- Step 3: Combine results and return ---
     return {
@@ -324,6 +327,7 @@ Ensure all lists are provided as bullet points.`;
       vibe,
       foodPreference,
       startDate,
+      language,
       referenceBlogs,
     };
 

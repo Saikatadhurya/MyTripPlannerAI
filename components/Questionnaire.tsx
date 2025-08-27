@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Budget, Vibe, FoodPreference } from '../types';
 import { getDestinationSuggestions } from '../services/geminiService';
@@ -12,6 +13,7 @@ export interface QuestionnaireData {
     startDate: string;
     includeMedical: boolean;
     includeTransport: boolean;
+    language: string;
 }
 
 interface QuestionnaireProps {
@@ -35,6 +37,35 @@ const vibes: { label: Vibe; icon: string; description: string }[] = [
     { label: 'Nightlife & Entertainment', icon: '🎶', description: 'parties, clubs, festivals, concerts' },
     { label: 'Luxury & Leisure', icon: '💎', description: 'resorts, cruises, premium experiences' },
     { label: 'Romantic & Family Getaways', icon: '❤️', description: 'honeymoons, bonding trips, safe family travel' },
+];
+
+const languages = [
+    'Afrikaans (af)', 'Akan (ak)', 'Albanian (sq)', 'Amharic (am)', 'Arabic (ar)', 'Armenian (hy)', 'Assamese (as)', 'Aymara (ay)', 'Azerbaijani (az)', 
+    'Bambara (bm)', 'Basque (eu)', 'Belarusian (be)', 'Bengali (bn)', 'Bhojpuri (bho)', 'Bosnian (bs)', 'Breton (br)', 'Bulgarian (bg)', 'Burmese (my)', 
+    'Catalan (ca)', 'Cebuano (ceb)', 'Chichewa (ny)', 'Chinese (Simplified) (zh-CN)', 'Chinese (Traditional) (zh-TW)', 'Corsican (co)', 'Croatian (hr)', 'Czech (cs)', 
+    'Danish (da)', 'Dhivehi (dv)', 'Dogri (doi)', 'Dutch (nl)', 'Dzongkha (dz)', 
+    'English (en)', 'Esperanto (eo)', 'Estonian (et)', 'Ewe (ee)', 
+    'Filipino (fil)', 'Finnish (fi)', 'French (fr)', 'Frisian (fy)', 'Fulah (ff)', 
+    'Galician (gl)', 'Georgian (ka)', 'German (de)', 'Greek (el)', 'Guarani (gn)', 'Gujarati (gu)', 
+    'Haitian Creole (ht)', 'Hausa (ha)', 'Hawaiian (haw)', 'Hebrew (he)', 'Hindi (hi)', 'Hmong (hmn)', 'Hungarian (hu)', 
+    'Icelandic (is)', 'Igbo (ig)', 'Ilocano (ilo)', 'Indonesian (id)', 'Irish (ga)', 'Italian (it)', 
+    'Japanese (ja)', 'Javanese (jv)', 
+    'Kannada (kn)', 'Kazakh (kk)', 'Khmer (km)', 'Kinyarwanda (rw)', 'Konkani (gom)', 'Korean (ko)', 'Krio (kri)', 'Kurdish (Kurmanji) (ku)', 'Kurdish (Sorani) (ckb)', 'Kyrgyz (ky)', 
+    'Lao (lo)', 'Latin (la)', 'Latvian (lv)', 'Lingala (ln)', 'Lithuanian (lt)', 'Luganda (lg)', 'Luxembourgish (lb)', 
+    'Macedonian (mk)', 'Maithili (mai)', 'Malagasy (mg)', 'Malay (ms)', 'Malayalam (ml)', 'Maltese (mt)', 'Maori (mi)', 'Marathi (mr)', 'Meiteilon (Manipuri) (mni-Mtei)', 'Mizo (lus)', 'Mongolian (mn)', 
+    'Nepali (ne)', 'Norwegian (no)', 
+    'Odia (or)', 'Oromo (om)', 
+    'Pashto (ps)', 'Persian (fa)', 'Polish (pl)', 'Portuguese (pt)', 'Punjabi (pa)', 
+    'Quechua (qu)', 
+    'Romanian (ro)', 'Russian (ru)', 
+    'Samoan (sm)', 'Sanskrit (sa)', 'Santali (sat)', 'Scots Gaelic (gd)', 'Sepedi (nso)', 'Serbian (sr)', 'Sesotho (st)', 'Shona (sn)', 'Sindhi (sd)', 'Sinhala (si)', 'Slovak (sk)', 'Slovenian (sl)', 'Somali (so)', 'Spanish (es)', 'Sundanese (su)', 'Swahili (sw)', 'Swedish (sv)', 
+    'Tajik (tg)', 'Tamil (ta)', 'Tatar (tt)', 'Telugu (te)', 'Thai (th)', 'Tigrinya (ti)', 'Tsonga (ts)', 'Turkish (tr)', 'Turkmen (tk)', 'Twi (tw)', 
+    'Ukrainian (uk)', 'Urdu (ur)', 'Uyghur (ug)', 'Uzbek (uz)', 
+    'Vietnamese (vi)', 
+    'Welsh (cy)', 'Wolof (wo)', 
+    'Xhosa (xh)', 
+    'Yiddish (yi)', 'Yoruba (yo)', 
+    'Zulu (zu)'
 ];
 
 const loadingData = [
@@ -80,6 +111,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
     startDate: new Date().toISOString().split('T')[0],
     includeMedical: false,
     includeTransport: false,
+    language: 'English (en)',
   });
   
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -89,8 +121,11 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
 
   const suggestionsRef = useRef<HTMLUListElement>(null);
   const destinationInputRef = useRef<HTMLInputElement>(null);
+  const langDropdownRef = useRef<HTMLDivElement>(null);
 
   const [loadingIndex, setLoadingIndex] = useState(0);
+  const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
+  const [langSearch, setLangSearch] = useState('');
   
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -177,16 +212,40 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
     handleInputChange('persons', value);
   };
 
+  const handleDaysChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (value === '') {
+      handleInputChange('days', 0); // Use 0 for empty, will be corrected on blur
+    } else {
+      const num = parseInt(value, 10);
+      if (!isNaN(num)) {
+        // Clamp between 0 and 30 to allow temporary invalid states before blur
+        handleInputChange('days', Math.min(30, Math.max(0, num)));
+      }
+    }
+  };
+
+  const handleDaysBlur = () => {
+    if (formData.days < 1) {
+        handleInputChange('days', 1); // Clamp min value on blur
+    }
+  };
+
+  const filteredLanguages = languages.filter(lang => lang.toLowerCase().includes(langSearch.toLowerCase()));
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-        if (
-            suggestionsRef.current &&
-            !suggestionsRef.current.contains(event.target as Node) &&
-            destinationInputRef.current &&
-            !destinationInputRef.current.contains(event.target as Node)
-        ) {
-            setSuggestions([]);
-        }
+      if (
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(event.target as Node) &&
+        destinationInputRef.current &&
+        !destinationInputRef.current.contains(event.target as Node)
+      ) {
+        setSuggestions([]);
+      }
+      if (langDropdownRef.current && !langDropdownRef.current.contains(event.target as Node)) {
+        setIsLangDropdownOpen(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
@@ -240,6 +299,49 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
       )}
 
       <form onSubmit={handleSubmit} className="space-y-10">
+        {/* Section 6: Language */}
+        <div className="relative z-10 space-y-4 bg-white/40 backdrop-blur-md p-6 rounded-2xl border border-white/50 shadow-lg">
+          <h2 className="flex items-center space-x-3 text-2xl font-bold text-slate-800 border-b pb-3">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-violet-600" viewBox="0 0 20 20" fill="currentColor"><path d="M7 2a1 1 0 000 2h1a1 1 0 100-2H7zM4 6a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM4 10a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM4 14a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1z" /></svg>
+            <span>Output Language</span>
+          </h2>
+          <div className="relative" ref={langDropdownRef}>
+            <button
+              type="button"
+              onClick={() => setIsLangDropdownOpen(!isLangDropdownOpen)}
+              className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition flex justify-between items-center"
+            >
+              <span>{formData.language}</span>
+              <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 text-slate-500 transition-transform ${isLangDropdownOpen ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+            </button>
+            {isLangDropdownOpen && (
+              <div className="absolute z-20 w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg">
+                <div className="p-2">
+                  <input
+                    type="text"
+                    placeholder="Search language..."
+                    value={langSearch}
+                    onChange={(e) => setLangSearch(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 text-gray-800 border border-slate-300 rounded-md focus:ring-1 focus:ring-violet-500 focus:border-violet-500"
+                  />
+                </div>
+                <ul className="max-h-60 overflow-y-auto">
+                  {filteredLanguages.map((lang, i) => (
+                    <li key={i} onClick={() => {
+                      handleInputChange('language', lang);
+                      setIsLangDropdownOpen(false);
+                      setLangSearch('');
+                    }} className="px-4 py-2 cursor-pointer hover:bg-violet-100">
+                      {lang.split(' (')[0]} <span className="text-slate-500">({lang.split(' (')[1]}</span>
+                    </li>
+                  ))}
+                  {filteredLanguages.length === 0 && <li className="px-4 py-2 text-slate-500">No language found.</li>}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Section 1: Core Details */}
         <div className="space-y-6 bg-white/40 backdrop-blur-md p-6 rounded-2xl border border-white/50 shadow-lg">
           <h2 className="flex items-center space-x-3 text-2xl font-bold text-slate-800 border-b pb-3">
@@ -338,10 +440,11 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                 <input
                   id="days"
                   type="number"
-                  value={formData.days}
+                  value={formData.days === 0 ? '' : formData.days}
                   min="1"
                   max="30"
-                  onChange={e => handleInputChange('days', parseInt(e.target.value))}
+                  onChange={handleDaysChange}
+                  onBlur={handleDaysBlur}
                   className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
                   required
                 />

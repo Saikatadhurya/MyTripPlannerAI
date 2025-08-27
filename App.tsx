@@ -23,7 +23,7 @@ const App: React.FC = () => {
   const handleStartPlanning = useCallback((destination?: string) => {
     const today = new Date().toISOString().split('T')[0];
     const defaultVibes: Vibe[] = ['Adventure & Thrill'];
-    setFormData(destination ? { destination, days: 3, budget: 'Midrange', vibe: defaultVibes, persons: 1, foodPreference: 'Non-Veg', startDate: today, includeMedical: false, includeTransport: false } : null);
+    setFormData(destination ? { destination, days: 3, budget: 'Midrange', vibe: defaultVibes, persons: 1, foodPreference: 'Non-Veg', startDate: today, includeMedical: false, includeTransport: false, language: 'English (en)' } : null);
     setView('questionnaire');
   }, []);
 
@@ -33,7 +33,7 @@ const App: React.FC = () => {
     setError(null);
     setFormData(data);
     try {
-      const generatedItinerary = await generateItinerary(data.destination, data.days, data.budget, data.vibe, data.persons, data.foodPreference, data.startDate, data.includeMedical, data.includeTransport);
+      const generatedItinerary = await generateItinerary(data.destination, data.days, data.budget, data.vibe, data.persons, data.foodPreference, data.startDate, data.includeMedical, data.includeTransport, data.language);
       if (!isGenerationCancelled.current) {
         setItinerary(generatedItinerary);
         setView('itinerary');
