@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Itinerary } from '../types';
 import ExportOptions from './ExportOptions';
 
@@ -50,6 +50,19 @@ const isTransportBlog = (blog: Itinerary['referenceBlogs'][0]): boolean => {
 };
 
 const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => void; }> = ({ itinerary, onRegenerate }) => {
+  const [copiedUrls, setCopiedUrls] = useState<Record<string, boolean>>({});
+
+  const handleCopyClick = (url: string) => {
+    navigator.clipboard.writeText(url).then(() => {
+        setCopiedUrls(prev => ({ ...prev, [url]: true }));
+        setTimeout(() => {
+            setCopiedUrls(prev => ({ ...prev, [url]: false }));
+        }, 2000);
+    }).catch(err => {
+        console.error('Failed to copy URL: ', err);
+    });
+  };
+
   const formattedStartDate = new Date(itinerary.startDate + 'T00:00:00').toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
@@ -169,33 +182,52 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {itinerary.referenceBlogs.map((blog, index) => {
                const isTransport = isTransportBlog(blog);
+               const isCopied = copiedUrls[blog.url];
                return (
-                <a 
-                  href={blog.url} 
+                <div 
                   key={index} 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className={`block p-5 rounded-xl shadow-lg border transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${
+                  className={`flex flex-col p-5 rounded-xl shadow-lg border transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${
                     isTransport 
                       ? 'bg-sky-50/40 backdrop-blur-lg border-sky-300/50 hover:border-sky-400/50' 
                       : 'bg-white/40 backdrop-blur-lg border-white/50 hover:border-violet-300/50'
                   }`}
                 >
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      {blog.source && <p className={`text-xs font-semibold uppercase tracking-wider ${isTransport ? 'text-sky-600' : 'text-violet-600'}`}>{blog.source}</p>}
-                      <h4 className="text-lg font-bold text-slate-800 mt-1">{blog.title}</h4>
-                    </div>
-                    {isTransport && (
-                      <div className="flex-shrink-0 ml-4 bg-sky-100 text-sky-600 rounded-full p-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M18.562 6.077C18.238 5.437 17.562 5 16.808 5H3.192c-.754 0-1.43.437-1.754 1.077L.05 9.423A.5.5 0 00.5 10h19a.5.5 0 00.45-.577l-1.388-3.346zM2 11v4a1 1 0 001 1h1a1 1 0 001-1v-4H2zm15 0v4a1 1 0 001 1h1a1 1 0 001-1v-4h-3zM5 11v4a1 1 0 001 1h8a1 1 0 001-1v-4H5z" clipRule="evenodd" />
-                        </svg>
+                  <div className="flex-grow">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        {blog.source && <p className={`text-xs font-semibold uppercase tracking-wider ${isTransport ? 'text-sky-600' : 'text-violet-600'}`}>{blog.source}</p>}
+                        <a href={blog.url} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                          <h4 className="text-lg font-bold text-slate-800 mt-1">{blog.title}</h4>
+                        </a>
                       </div>
-                    )}
+                      {isTransport && (
+                        <div className="flex-shrink-0 ml-4 bg-sky-100 text-sky-600 rounded-full p-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M18.562 6.077C18.238 5.437 17.562 5 16.808 5H3.192c-.754 0-1.43.437-1.754 1.077L.05 9.423A.5.5 0 00.5 10h19a.5.5 0 00.45-.577l-1.388-3.346zM2 11v4a1 1 0 001 1h1a1 1 0 001-1v-4H2zm15 0v4a1 1 0 001 1h1a1 1 0 001-1v-4h-3zM5 11v4a1 1 0 001 1h8a1 1 0 001-1v-4H5z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-sm text-slate-600 mt-2">{blog.description}</p>
                   </div>
-                  <p className="text-sm text-slate-600 mt-2">{blog.description}</p>
-                </a>
+
+                  <div className="mt-4 pt-3 border-t border-slate-200/60 flex items-center justify-between gap-2">
+                    <div className="flex items-center min-w-0">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-slate-400 mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z" clipRule="evenodd" /></svg>
+                      <span className="text-xs text-slate-500 truncate" title={blog.url}>{blog.url}</span>
+                    </div>
+                    <button
+                        onClick={() => handleCopyClick(blog.url)}
+                        className={`flex-shrink-0 text-xs font-semibold px-3 py-1 rounded-full transition-colors duration-200 ${
+                            isCopied 
+                            ? 'bg-green-100 text-green-700' 
+                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        }`}
+                    >
+                        {isCopied ? 'Copied!' : 'Copy'}
+                    </button>
+                  </div>
+                </div>
               );
             })}
           </div>
