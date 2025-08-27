@@ -84,6 +84,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false);
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
+  const isSelectingSuggestion = useRef(false);
 
   const suggestionsRef = useRef<HTMLUListElement>(null);
   const destinationInputRef = useRef<HTMLInputElement>(null);
@@ -107,6 +108,42 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleDestinationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    handleInputChange('destination', value);
+    
+    isSelectingSuggestion.current = false;
+
+    if (debounceTimeout.current) {
+        clearTimeout(debounceTimeout.current);
+    }
+
+    if (value.trim().length > 1) {
+        setIsSuggestionsLoading(true);
+        debounceTimeout.current = setTimeout(() => {
+          if (!isSelectingSuggestion.current) {
+            getDestinationSuggestions(value).then(results => {
+              setSuggestions(results);
+              setIsSuggestionsLoading(false);
+            });
+          }
+        }, 500); // Increased debounce delay
+    } else {
+        setSuggestions([]);
+        setIsSuggestionsLoading(false);
+    }
+  };
+
+  const handleSuggestionClick = (suggestion: string) => {
+    isSelectingSuggestion.current = true;
+    handleInputChange('destination', suggestion);
+    setSuggestions([]);
+    setIsSuggestionsLoading(false);
+    if (debounceTimeout.current) {
+      clearTimeout(debounceTimeout.current);
+    }
+  };
+
   const handleVibeToggle = (selectedVibe: Vibe) => {
     const newVibes = formData.vibe.includes(selectedVibe)
       ? formData.vibe.filter(v => v !== selectedVibe)
@@ -116,31 +153,6 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
       handleInputChange('vibe', newVibes);
     }
   };
-
-  const fetchSuggestions = useCallback(async (query: string) => {
-    if (query.length < 2) {
-      setSuggestions([]);
-      return;
-    }
-    setIsSuggestionsLoading(true);
-    const results = await getDestinationSuggestions(query);
-    setSuggestions(results);
-    setIsSuggestionsLoading(false);
-  }, []);
-
-  useEffect(() => {
-    if (debounceTimeout.current) {
-      clearTimeout(debounceTimeout.current);
-    }
-    debounceTimeout.current = setTimeout(() => {
-      fetchSuggestions(formData.destination);
-    }, 300); // 300ms debounce
-    return () => {
-      if (debounceTimeout.current) {
-        clearTimeout(debounceTimeout.current);
-      }
-    };
-  }, [formData.destination, fetchSuggestions]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -217,7 +229,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
               ref={destinationInputRef}
               type="text"
               value={formData.destination}
-              onChange={e => handleInputChange('destination', e.target.value)}
+              onChange={handleDestinationChange}
               placeholder="e.g., Paris, France"
               className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
               required
@@ -234,7 +246,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
             {suggestions.length > 0 && (
               <ul ref={suggestionsRef} className="absolute z-10 w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg max-h-60 overflow-y-auto">
                 {suggestions.map((s, i) => (
-                  <li key={i} onClick={() => { handleInputChange('destination', s); setSuggestions([]); }}
+                  <li key={i} onClick={() => handleSuggestionClick(s)}
                       className="px-4 py-2 cursor-pointer hover:bg-violet-100">
                     {s}
                   </li>
@@ -249,7 +261,27 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
             </div>
             <div>
               <label htmlFor="persons" className="block text-sm font-medium text-slate-700 mb-1">Travelers</label>
-              <input id="persons" type="number" value={formData.persons} min="1" max="20" onChange={e => handleInputChange('persons', parseInt(e.target.value))} className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition" required />
+               <div className="flex items-center w-full bg-white border border-slate-300 rounded-lg">
+                <button
+                  type="button"
+                  onClick={() => handleInputChange('persons', Math.max(1, formData.persons - 1))}
+                  disabled={formData.persons <= 1}
+                  className="p-3 text-violet-600 rounded-l-lg hover:bg-violet-50 transition disabled:text-slate-300 disabled:cursor-not-allowed"
+                  aria-label="Decrease number of travelers"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clipRule="evenodd" /></svg>
+                </button>
+                <span className="font-semibold text-lg text-center flex-grow tabular-nums">{formData.persons}</span>
+                <button
+                  type="button"
+                  onClick={() => handleInputChange('persons', Math.min(20, formData.persons + 1))}
+                  disabled={formData.persons >= 20}
+                  className="p-3 text-violet-600 rounded-r-lg hover:bg-violet-50 transition disabled:text-slate-300 disabled:cursor-not-allowed"
+                  aria-label="Increase number of travelers"
+                >
+                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" /></svg>
+                </button>
+              </div>
             </div>
           </div>
            <div>
