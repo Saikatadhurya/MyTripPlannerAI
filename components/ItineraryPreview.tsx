@@ -210,7 +210,7 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
                     <h3 className="text-lg font-bold text-sky-800">Currency Conversion</h3>
                     <p className="text-md text-slate-700 font-semibold">{itinerary.currencyConversion.rateText}</p>
                     <p className="text-sm text-slate-500 mt-1">
-                        All costs in this itinerary are estimated in your chosen currency ({itinerary.currencyConversion.fromCurrency}). The local currency is {itinerary.currencyConversion.toCurrency}.
+                        All costs in this itinerary are estimated in your chosen currency {itinerary.currencyConversion.toCurrency}. The local currency is ({itinerary.currencyConversion.fromCurrency}).
                     </p>
                 </div>
             </div>
