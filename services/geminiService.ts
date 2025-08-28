@@ -171,7 +171,22 @@ export const generateItinerary = async (
 
       This level of detail in linking the daily plan to a sequential, multi-stop route is essential.
       `;
-  }
+  } else if (tripType === 'Standard' && isRoundTrip && startPoint) {
+      roundTripInstructions = `
+      CRITICAL INSTRUCTION - STANDARD ROUND TRIP (PUBLIC TRANSPORT):
+      This is a round trip request using public transport. The user wants to travel from "${startPoint}", explore "${destination}", and return to "${startPoint}" within ${days} days.
+
+      1.  **Return Journey Planning**: You MUST dedicate the final day(s) of the itinerary to the return journey from "${destination}" back to "${startPoint}".
+      2.  **Public Transport Focus for Main Travel**: The 'transport' suggestions for the travel days (to and from the destination) MUST focus on the most efficient public transport.
+          - Provide realistic options like **trains** (mentioning class options), **buses** (mentioning carrier types like Volvo/sleeper), **shared cars**, or **flights** if the distance is significant.
+          - Include practical details like approximate travel times, booking websites or companies, and estimated costs in the 'transport' object for those days.
+      3.  **Local Transport**: For days spent exploring a destination (not traveling between cities), you should suggest local transport options (e.g., metro, ride-sharing, auto-rickshaws, taxis) that are appropriate for the user's budget.
+      4.  **Structured Daily Plan**:
+          - The plan must be sequential, starting at "${startPoint}", traveling to "${destination}", exploring, and finally returning to "${startPoint}".
+          - The title for the return travel day should be explicit, for example: 'Day ${days}: Return to ${startPoint} via Train'.
+          - The activities for the return day should center on the travel itself.
+      `;
+    }
   
   const prompt = `Create a detailed travel itinerary in ${language}. The user wants to plan a ${days}-day trip to ${destination} with a ${budget} budget.
   
