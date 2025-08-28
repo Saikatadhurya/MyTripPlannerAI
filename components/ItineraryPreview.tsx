@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Itinerary } from '../types';
 import ExportOptions from './ExportOptions';
@@ -148,7 +147,7 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
 
   return (
     <div className="max-w-4xl mx-auto space-y-12" id="itinerary-preview-content">
-       <div className="flex justify-end items-center no-print animated-card">
+       <div className="flex justify-start items-center no-print animated-card">
         <button
           onClick={onRegenerate}
           className="inline-flex items-center px-6 py-2 bg-white/60 text-slate-800 font-bold rounded-full hover:bg-white/80 transition-all duration-300 shadow-md border border-white/50"

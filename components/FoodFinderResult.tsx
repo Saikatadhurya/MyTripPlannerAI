@@ -71,14 +71,10 @@ const FoodFinderResult: React.FC<{ recommendations: FoodRecommendations; onRegen
 
     return (
         <div className="max-w-6xl mx-auto space-y-12 animated-card">
-            <div className="flex justify-between items-center no-print">
-                 <button onClick={onRegenerate} className="text-slate-600 hover:text-slate-900 flex items-center space-x-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-                    <span>Back</span>
-                </button>
+            <div className="flex justify-start items-center no-print">
                 <button
                     onClick={onRegenerate}
-                    className="inline-flex items-center justify-center px-6 py-2 bg-amber-600 text-white font-bold rounded-full hover:bg-amber-700 transition-all duration-300 transform hover:scale-105 shadow-lg"
+                    className="inline-flex items-center justify-center px-6 py-2 bg-white/60 text-slate-800 font-bold rounded-full hover:bg-white/80 transition-all duration-300 shadow-md border border-white/50"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h5M20 20v-5h-5" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 9a9 9 0 0114.13-5.22M20 15a9 9 0 01-14.13 5.22" /></svg>
                     <span>Find Another Feast</span>
