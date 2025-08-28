@@ -278,7 +278,7 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
                 <p className="text-sm font-semibold text-violet-700">Day {day.day}</p>
                 <h3 className="text-2xl font-bold text-slate-800" dangerouslySetInnerHTML={parseBold(day.title)} />
               </div>
-              <p className="text-lg font-semibold text-slate-700 bg-violet-100 px-4 py-1 rounded-full">{currencySymbol} {day.approxCost}</p>
+              <p className="text-lg font-semibold text-slate-700 bg-violet-100 px-4 py-1 rounded-full">{day.approxCost}</p>
             </div>
             <hr className="my-4 border-violet-200" />
             <div className="space-y-6">

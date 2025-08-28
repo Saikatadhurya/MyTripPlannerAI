@@ -371,7 +371,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
             <div className="mt-4 pt-4 border-t border-violet-200/50">
               <Toggle
                 label="Round Trip"
-                description={formData.tripType === 'Standard' ? "Plan a return journey using public transport" : "Create a road trip circuit back to the start"}
+                description={formData.tripType === 'Standard' ? "Plan a multi-stop circuit using public transport" : "Create a road trip circuit back to the start"}
                 enabled={formData.isRoundTrip ?? false}
                 onChange={(enabled) => handleInputChange('isRoundTrip', enabled)}
               />
