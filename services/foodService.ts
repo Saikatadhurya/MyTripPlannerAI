@@ -99,5 +99,30 @@ export const generateFoodRecommendations = async (data: FoodFinderRequestData): 
     throw new Error("AI response was empty or invalid.");
   }
   
-  return JSON.parse(resultText);
+  let jsonString = resultText;
+    
+  const markdownMatch = jsonString.match(/```(json)?([\s\S]*?)```/);
+  if (markdownMatch && markdownMatch[2]) {
+      jsonString = markdownMatch[2].trim();
+  }
+
+  const firstBrace = jsonString.indexOf('{');
+  const lastBrace = jsonString.lastIndexOf('}');
+
+  if (firstBrace === -1 || lastBrace === -1 || lastBrace < firstBrace) {
+    console.error("Could not find a valid JSON object in the AI response for food recommendations.");
+    console.error("Original response:", resultText);
+    throw new Error("The AI returned an invalid response format. Please try again.");
+  }
+
+  jsonString = jsonString.substring(firstBrace, lastBrace + 1);
+
+  try {
+      return JSON.parse(jsonString);
+  } catch (e) {
+      console.error("Failed to parse JSON from AI response after cleaning (food recommendations):", e);
+      console.error("Cleaned JSON string that failed:", jsonString);
+      console.error("Original AI response:", resultText);
+      throw new Error("The AI returned an invalid response format. Please try again.");
+  }
 };
