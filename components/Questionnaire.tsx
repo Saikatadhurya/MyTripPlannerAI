@@ -1,7 +1,7 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Budget, Vibe, FoodPreference, TripType, QuestionnaireData } from '../types';
 import { getDestinationSuggestions } from '../services/geminiService';
+import { currencies } from '../data/currencies';
 
 interface QuestionnaireProps {
   onSubmit: (data: QuestionnaireData) => void;
@@ -85,6 +85,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
     startDate: new Date().toISOString().split('T')[0],
     includeMedical: false,
     language: 'English (en)',
+    currency: 'India (INR) – ₹',
     isRoundTrip: false,
   });
   
@@ -104,6 +105,10 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
   const [languageQuery, setLanguageQuery] = useState('');
   const [languageDropdownOpen, setLanguageDropdownOpen] = useState(false);
   const languageRef = useRef<HTMLDivElement>(null);
+
+  const [currencyQuery, setCurrencyQuery] = useState('');
+  const [currencyDropdownOpen, setCurrencyDropdownOpen] = useState(false);
+  const currencyRef = useRef<HTMLDivElement>(null);
 
   const [loadingIndex, setLoadingIndex] = useState(0);
   
@@ -260,6 +265,9 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
         if (languageRef.current && !languageRef.current.contains(event.target as Node)) {
             setLanguageDropdownOpen(false);
         }
+        if (currencyRef.current && !currencyRef.current.contains(event.target as Node)) {
+            setCurrencyDropdownOpen(false);
+        }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -272,6 +280,10 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
 
   const filteredLanguages = languages.filter(lang =>
     lang.toLowerCase().includes(languageQuery.toLowerCase())
+  );
+
+  const filteredCurrencies = currencies.filter(curr =>
+    curr.toLowerCase().includes(currencyQuery.toLowerCase())
   );
 
   if (isLoading) {
@@ -450,13 +462,34 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
             </div>
         </div>
 
-        <div className="space-y-4 bg-white/40 backdrop-blur-md p-6 rounded-2xl border border-white/50 shadow-lg">
+        <div className="space-y-4 bg-white/40 backdrop-blur-md p-6 rounded-2xl border border-white/50 shadow-lg relative z-10">
             <h2 className="flex items-center space-x-3 text-2xl font-bold text-slate-800 border-b pb-3">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-violet-600" viewBox="0 0 20 20" fill="currentColor"><path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.5 2.5 0 00-1.168-.217c-1.36.0-2.5 1.119-2.5 2.5s1.14 2.5 2.5 2.5c.346 0 .682-.07.98-.2a2.5 2.5 0 001.52-2.3z" /><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.5 4.5 0 00-1.879.938.5.5 0 00-.22.643l.612 1.224a.5.5 0 00.643.22A3.49 3.49 0 0110 7.5v1.698a2.5 2.5 0 00-1.168-.217c-1.36.0-2.5 1.119-2.5 2.5s1.14 2.5 2.5 2.5c.346 0 .682-.07.98-.2a2.5 2.5 0 001.52-2.3V9.5a1 1 0 10-2 0v1a.5.5 0 01-1 0V9.5a.5.5 0 01.5-.5h1V8a1 1 0 10-2 0v.092a4.5 4.5 0 00-1.879.938.5.5 0 00-.22.643l.612 1.224a.5.5 0 00.643.22A3.49 3.49 0 0110 7.5v1.698a2.5 2.5 0 00-1.168-.217c-1.36.0-2.5 1.119-2.5 2.5s1.14 2.5 2.5 2.5c.346 0 .682-.07.98-.2a2.5 2.5 0 001.52-2.3V9.5a1 1 0 10-2 0v1a.5.5 0 01-1 0V9.5a.5.5 0 01.5-.5h1V8a1 1 0 00-2 0z" clipRule="evenodd" /></svg>
               <span>Budget</span>
             </h2>
             <div className="grid grid-cols-3 gap-3">
                 {budgets.map(b => (<button key={b} type="button" onClick={() => handleInputChange('budget', b)} className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 border-2 ${formData.budget === b ? 'bg-violet-600 text-white border-violet-600' : 'bg-white/50 border-white/50 hover:border-violet-400'}`}>{b}</button>))}
+            </div>
+            <div className="pt-4 border-t border-violet-200/50">
+                <label className="block text-sm font-medium text-slate-700 mb-1">Currency for Itinerary</label>
+                 <div ref={currencyRef} className="relative">
+                    <button type="button" onClick={() => setCurrencyDropdownOpen(!currencyDropdownOpen)} className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition flex justify-between items-center text-left" aria-haspopup="listbox" aria-expanded={currencyDropdownOpen}>
+                        <span className="truncate">{formData.currency}</span>
+                        <svg className={`h-5 w-5 text-slate-400 transition-transform ${currencyDropdownOpen ? 'rotate-180' : ''}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+                    </button>
+                    {currencyDropdownOpen && (
+                        <div className="absolute z-20 w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg">
+                            <div className="p-2"><input type="text" value={currencyQuery} onChange={(e) => setCurrencyQuery(e.target.value)} placeholder="Search currency..." className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-md focus:ring-1 focus:ring-violet-500 focus:border-violet-500" /></div>
+                            <ul className="max-h-60 overflow-y-auto p-1">
+                                {filteredCurrencies.length > 0 ? filteredCurrencies.map(curr => (
+                                    <li key={curr} onClick={() => { handleInputChange('currency', curr); setCurrencyDropdownOpen(false); setCurrencyQuery(''); }} className="px-3 py-2 text-sm rounded-md cursor-pointer hover:bg-violet-100 text-slate-800">
+                                        {curr}
+                                    </li>
+                                )) : <li className="px-3 py-2 text-sm text-slate-500">No currency found.</li>}
+                            </ul>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
 

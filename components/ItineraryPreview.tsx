@@ -197,6 +197,25 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
             />
         </div>
       </section>
+
+      {itinerary.currencyConversion && (
+        <section className="animated-card" style={{ animationDelay: '700ms' }}>
+            <div className="bg-sky-50/60 backdrop-blur-lg p-6 rounded-2xl border border-sky-200/50 shadow-lg flex items-center space-x-4">
+                <div className="flex-shrink-0 bg-sky-100 text-sky-600 rounded-full p-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                    </svg>
+                </div>
+                <div>
+                    <h3 className="text-lg font-bold text-sky-800">Currency Conversion</h3>
+                    <p className="text-md text-slate-700 font-semibold">{itinerary.currencyConversion.rateText}</p>
+                    <p className="text-sm text-slate-500 mt-1">
+                        All costs in this itinerary are estimated in your chosen currency ({itinerary.currencyConversion.fromCurrency}). The local currency is {itinerary.currencyConversion.toCurrency}.
+                    </p>
+                </div>
+            </div>
+        </section>
+      )}
       
       <section>
         <h2 className="text-3xl font-bold text-slate-800 mb-6 animated-card" style={{ animationDelay: '750ms' }}>About the Destinations</h2>

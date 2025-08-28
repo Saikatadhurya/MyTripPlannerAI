@@ -1,4 +1,3 @@
-
 export type Budget = 'Budget' | 'Midrange' | 'Luxury';
 export type Vibe = 'Adventure & Thrill' | 'Relaxation & Wellness' | 'Cultural & Heritage' | 'Nature & Wildlife' | 'Food & Culinary' | 'Nightlife & Entertainment' | 'Luxury & Leisure' | 'Romantic & Family Getaways';
 export type FoodPreference = 'Veg' | 'Non-Veg' | 'Vegan';
@@ -17,6 +16,7 @@ export interface QuestionnaireData {
     startDate: string;
     includeMedical: boolean;
     language: string;
+    currency: string;
 }
 
 export interface DayPlan {
@@ -51,6 +51,12 @@ export interface DestinationDetails {
   specialEvents: string;
 }
 
+export interface CurrencyConversion {
+    fromCurrency: string;
+    toCurrency: string;
+    rateText: string;
+}
+
 export interface Itinerary {
   destination: string; // Main or farthest destination
   startPoint: string;
@@ -63,6 +69,8 @@ export interface Itinerary {
   foodPreference: FoodPreference;
   startDate: string;
   language: string;
+  currency: string;
+  currencyConversion?: CurrencyConversion;
   budgetSummary: {
     stay: string;
     food: string;

@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { Budget, Itinerary, Vibe, FoodPreference, BlogReference, TripType } from '../types';
 
@@ -133,7 +132,8 @@ export const generateItinerary = async (
   startDate: string,
   includeMedical: boolean,
   language: string,
-  isRoundTrip?: boolean
+  isRoundTrip: boolean | undefined,
+  currency: string
 ): Promise<Itinerary> => {
 
   if (!process.env.API_KEY) {
@@ -188,6 +188,7 @@ export const generateItinerary = async (
   - Start Date: ${startDate}
   - Include Medical Facilities: ${includeMedical ? 'Yes' : 'No'}
   - Output Language: ${language}
+  - Desired Currency for Costs: ${currency}
   
   ${(tripType === 'Car' || tripType === 'Bike') ? `
   CRITICAL VEHICLE INSTRUCTIONS: Since the trip type is '${tripType}', you MUST assume the user has a personal or rented vehicle for the entire duration.
@@ -211,6 +212,8 @@ export const generateItinerary = async (
     foodPreference: string ("Veg", "Non-Veg", "Vegan"),
     startDate: string (format: "YYYY-MM-DD"),
     language: string,
+    currency: string,
+    currencyConversion?: { fromCurrency: string, toCurrency: string, rateText: string },
     budgetSummary: { stay: string, food: string, total: string },
     coveredDestinations: [
       {
@@ -243,13 +246,18 @@ export const generateItinerary = async (
   1.  All string values in the JSON must be in ${language}.
   2.  The 'plan' array must have exactly ${days} elements.
   3.  For round trips, the 'coveredDestinations' array is mandatory and must contain detailed information for each significant place visited. For standard one-way trips, it should contain details for just the main destination.
-  4.  All costs in 'budgetSummary' and 'approxCost' must be per person and specified in the local currency of the destination (e.g., INR, USD, EUR) with the currency symbol or code.
+  4.  All costs in 'budgetSummary' and 'approxCost' must be per person and specified in the user's chosen currency: "${currency}". The amounts must be realistic for the destination's local economy but presented in the chosen currency.
   5.  **MANDATORY BOLDING**: You MUST use bold markdown (**text**) to highlight key information. This includes, but is not limited to: names of specific attractions, restaurants, hotels, important timings, unique cultural items, and critical travel advice. This is crucial for readability.
   6.  If 'includeMedical' is true, the 'medicalFacilities' array for each day must list at least one nearby hospital or pharmacy.
   7.  The 'referenceBlogs' field should be an empty array. It will be populated later.
   8.  For 'Standard' trip types, 'transport' suggestions should be tailored to the selected budget (e.g., public transport for 'Budget', taxis for 'Midrange'). For 'Car' or 'Bike' trips, you MUST follow the critical vehicle instructions provided above.
   9.  For 'historicBackground', 'famousCulture', 'naturalPlaces', 'museums', and 'specialOrnaments', provide a list of 3-5 key bullet points. Each point must be a descriptive string. Do not provide a single paragraph.
   10. For 'specialEvents', find specific events, festivals, or notable occurrences happening ONLY during the travel dates (starting ${startDate} for ${days} days). If no specific major events are found, you MUST return the string "No major special events found for your travel dates, but here are some ongoing local experiences you might enjoy."
+  11. **Currency Conversion (CRITICAL)**:
+      a. First, determine the primary local currency of the destination "${destination}".
+      b. Compare the local currency with the user's chosen currency: "${currency}".
+      c. If they are different, you MUST populate the 'currencyConversion' object in the JSON response. Provide a simple, clear text representation of the approximate exchange rate in the 'rateText' field (e.g., "1 USD ≈ 83 INR"). The 'fromCurrency' should be the user's currency code (e.g., USD), and 'toCurrency' should be the local currency code (e.g., INR).
+      d. If the user's chosen currency is the same as the local currency, the 'currencyConversion' field MUST be omitted from the JSON response.
   `;
   
     const responseSchema = {
@@ -266,6 +274,16 @@ export const generateItinerary = async (
         foodPreference: { type: Type.STRING },
         startDate: { type: Type.STRING },
         language: { type: Type.STRING },
+        currency: { type: Type.STRING },
+        currencyConversion: {
+          type: Type.OBJECT,
+          properties: {
+            fromCurrency: { type: Type.STRING },
+            toCurrency: { type: Type.STRING },
+            rateText: { type: Type.STRING },
+          },
+          required: ["fromCurrency", "toCurrency", "rateText"],
+        },
         budgetSummary: {
           type: Type.OBJECT,
           properties: {
@@ -330,7 +348,7 @@ export const generateItinerary = async (
           }
         },
       },
-       required: ["destination", "startPoint", "tripType", "isRoundTrip", "days", "persons", "budget", "vibe", "foodPreference", "startDate", "language", "budgetSummary", "coveredDestinations", "plan", "referenceBlogs"],
+       required: ["destination", "startPoint", "tripType", "isRoundTrip", "days", "persons", "budget", "vibe", "foodPreference", "startDate", "language", "currency", "budgetSummary", "coveredDestinations", "plan", "referenceBlogs"],
     };
 
     const response = await ai.models.generateContent({
@@ -364,5 +382,6 @@ export const generateItinerary = async (
         foodPreference,
         startDate,
         language,
+        currency,
     };
 };
