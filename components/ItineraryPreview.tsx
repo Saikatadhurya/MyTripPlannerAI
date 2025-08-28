@@ -1,6 +1,8 @@
-import React from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Itinerary } from '../types';
 import ExportOptions from './ExportOptions';
+import { getReferenceBlogs } from '../services/geminiService';
 
 // Helper to parse simple markdown bolding
 const parseBold = (text: string | undefined) => {
@@ -110,6 +112,19 @@ const isTransportBlog = (blog: Itinerary['referenceBlogs'][0]): boolean => {
 };
 
 const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => void; }> = ({ itinerary, onRegenerate }) => {
+  const [blogs, setBlogs] = useState<Itinerary['referenceBlogs']>([]);
+  const [isLoadingBlogs, setIsLoadingBlogs] = useState(true);
+  
+  useEffect(() => {
+    const fetchBlogs = async () => {
+      setIsLoadingBlogs(true);
+      const fetchedBlogs = await getReferenceBlogs(itinerary.destination, itinerary.language);
+      setBlogs(fetchedBlogs);
+      setIsLoadingBlogs(false);
+    };
+    fetchBlogs();
+  }, [itinerary.destination, itinerary.language]);
+
   const formattedStartDate = new Date(itinerary.startDate + 'T00:00:00').toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
@@ -217,17 +232,24 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
 
       {itinerary.currencyConversion && (
         <section className="animated-card" style={{ animationDelay: '700ms' }}>
-            <div className="bg-sky-50/60 backdrop-blur-lg p-6 rounded-2xl border border-sky-200/50 shadow-lg flex items-center space-x-4">
-                <div className="flex-shrink-0 bg-sky-100 text-sky-600 rounded-full p-3">
+            <div className="bg-sky-50/60 backdrop-blur-lg p-6 rounded-2xl border border-sky-200/50 shadow-lg flex items-start space-x-4">
+                <div className="flex-shrink-0 bg-sky-100 text-sky-600 rounded-full p-3 mt-1">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                     </svg>
                 </div>
                 <div>
                     <h3 className="text-lg font-bold text-sky-800">Currency Conversion</h3>
-                    <p className="text-md text-slate-700 font-semibold">{itinerary.currencyConversion.rateText}</p>
-                    <p className="text-sm text-slate-500 mt-1">
-                        All costs in this itinerary are estimated in your chosen currency ({itinerary.currency}). The local currency is {itinerary.currencyConversion.toCurrency}.
+                    <div className="mt-2 space-y-1">
+                        <p className="text-sm text-slate-700">
+                            Destination's Local Currency: <strong className="font-semibold text-slate-800">{itinerary.currencyConversion.toCurrency}</strong>
+                        </p>
+                        <p className="text-md text-slate-700">
+                            Conversion Rate: <strong className="font-semibold text-slate-900">{itinerary.currencyConversion.rateText}</strong>
+                        </p>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-3">
+                        Note: All costs in this itinerary are shown in your chosen currency ({itinerary.currencyConversion.fromCurrency}). This rate helps you understand local prices.
                     </p>
                 </div>
             </div>
@@ -354,11 +376,29 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
         ))}
       </section>
 
-      {itinerary.referenceBlogs && itinerary.referenceBlogs.length > 0 && (
+      {isLoadingBlogs ? (
+        <section>
+          <h2 className="text-3xl font-bold text-slate-800 mb-6 animated-card flex items-center space-x-3">
+             <svg className="animate-spin h-6 w-6 text-violet-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+             <span>Finding helpful blogs...</span>
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {Array(2).fill(0).map((_, i) => (
+              <div key={i} className="bg-white/40 p-5 rounded-xl border border-white/50 shadow-lg animate-pulse">
+                <div className="h-4 bg-slate-200/50 rounded w-1/4"></div>
+                <div className="h-5 bg-slate-200/50 rounded mt-2 w-3/4"></div>
+                <div className="h-4 bg-slate-200/50 rounded mt-3 w-full"></div>
+                <div className="h-4 bg-slate-200/50 rounded mt-1 w-5/6"></div>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : (
+        blogs && blogs.length > 0 && (
         <section>
           <h2 className="text-3xl font-bold text-slate-800 mb-6 animated-card" style={{ animationDelay: '1100ms' }}>Reference Blog Posts</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {itinerary.referenceBlogs.map((blog, index) => {
+            {blogs.map((blog, index) => {
                const isTransport = isTransportBlog(blog);
                return (
                 <a 
@@ -369,7 +409,7 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
                       ? 'bg-sky-50/40 backdrop-blur-lg border-sky-300/50 hover:border-sky-400/50' 
                       : 'bg-white/40 backdrop-blur-lg border-white/50 hover:border-violet-300/50'
                   }`}
-                   style={{ animationDelay: `${1150 + index * 100}ms` }}
+                   style={{ animationDelay: `${150 + index * 100}ms` }}
                 >
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
@@ -390,6 +430,7 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
             })}
           </div>
         </section>
+        )
       )}
 
       <div className="pt-8 text-center no-print">

@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { Budget, Itinerary, Vibe, FoodPreference, BlogReference, TripType } from '../types';
 
@@ -63,7 +64,7 @@ export const getDestinationSuggestions = async (query: string): Promise<string[]
   }
 };
 
-const findReferenceBlogs = async (destination: string, language: string): Promise<BlogReference[]> => {
+export const getReferenceBlogs = async (destination: string, language: string): Promise<BlogReference[]> => {
   if (!process.env.API_KEY) {
     console.error("API key is missing.");
     return [];
@@ -274,9 +275,14 @@ export const generateItinerary = async (
   11. **Currency Conversion (CRITICAL)**:
       a. First, determine the primary local currency of the destination "${destination}".
       b. Compare the local currency with the user's chosen currency: "${currency}".
-      c. If they are different, you MUST populate the 'currencyConversion' object in the JSON response. Provide a simple, clear text representation of the approximate exchange rate in the 'rateText' field (e.g., '1 USD ≈ 83 INR'). The 'fromCurrency' should be the user's currency code (e.g., USD), and 'toCurrency' should be the local currency code (e.g., INR).
+      c. If they are different, you MUST populate the 'currencyConversion' object in the JSON response. Provide a simple, clear text representation of the approximate exchange rate in the 'rateText' field, showing the value of 1 unit of the destination's local currency in terms of the user's chosen currency (e.g., '1 INR ≈ 0.012 USD'). The 'fromCurrency' MUST be the user's chosen currency code (e.g., 'USD'), and 'toCurrency' MUST be the destination's local currency code (e.g., 'INR').
       d. If the user's chosen currency is the same as the local currency, the 'currencyConversion' field MUST be omitted from the JSON response.
-  12. **Valid JSON**: To ensure the output is valid JSON, you MUST NOT use unescaped double quotes (") inside any string values. Use single quotes (') or rephrase if you need to use quotation marks within a string.
+  12. **CRITICAL JSON VALIDATION RULE**: The output MUST be a perfectly valid JSON object. This is the single most important instruction.
+      a. **NO UNESCAPED QUOTES**: Inside any JSON string value, you MUST NEVER use a double quote character ("). It will break the JSON and cause an error.
+      b. **HOW TO HANDLE QUOTES**: If you need to include a quote inside a description or title, you have two options:
+          i. **PREFERRED**: Use single quotes instead (e.g., "Visit the 'Eiffel Tower' at night.").
+          ii. **ALTERNATIVE**: If you absolutely must use a double quote, you MUST escape it with a backslash (e.g., "The guide said, \\"Welcome to Paris!\\"").
+      c. **FAILURE TO FOLLOW THIS RULE WILL RENDER THE ENTIRE OUTPUT USELESS.** You must double-check every string value for unescaped double quotes before finishing your response.
   `;
   
     const responseSchema = {
@@ -376,6 +382,7 @@ export const generateItinerary = async (
       config: {
         responseMimeType: "application/json",
         responseSchema: responseSchema,
+        thinkingConfig: { thinkingBudget: 0 },
       }
     });
     
@@ -384,10 +391,6 @@ export const generateItinerary = async (
         throw new Error("AI response was empty or invalid.");
     }
     const itineraryData = JSON.parse(resultText);
-
-    // After getting the itinerary, find relevant blogs
-    const blogs = await findReferenceBlogs(itineraryData.destination, language);
-    itineraryData.referenceBlogs = blogs;
 
     // Ensure the response has all the fields from the initial request
     return {
