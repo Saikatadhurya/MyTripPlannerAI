@@ -3,7 +3,8 @@ import { PackingList } from '../types';
 
 const parseBold = (text: string | undefined) => {
   if (!text) return { __html: '' };
-  return { __html: text.replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-slate-800">$1</strong>') };
+  // Bolding now includes larger, darker text for prominence
+  return { __html: text.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-slate-900 text-lg">$1</strong>') };
 };
 
 const getWeatherIcon = (tempString: string | undefined): React.ReactNode => {
@@ -70,7 +71,6 @@ const PackingListPreview: React.FC<{ packingList: PackingList; onRegenerate: () 
     
     const categoryDetails = {
         clothingAndFootwear: { title: "Clothing & Footwear", items: packingList.clothingAndFootwear, icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>, color: "blue", className: "md:col-span-2" },
-        // FIX: Added className property to all objects to ensure a consistent shape and resolve TypeScript error.
         adventureClothing: { title: "Adventure & Activity Gear", items: packingList.adventureClothing, icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 004 0 2 2 0 011.523-1.943A5.998 5.998 0 0116 10c0 .954-.225 1.852-.635 2.667a2.5 2.5 0 01-5.033 0 2.5 2.5 0 00-4.667 0c-.35-.74-.533-1.554-.533-2.394a6.01 6.01 0 011.567-4.243z" clipRule="evenodd" /></svg>, color: "green", className: "" },
         electronicsAndGear: { title: "Electronics & Gear", items: packingList.electronicsAndGear, icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M7 2a2 2 0 00-2 2v12a2 2 0 002 2h6a2 2 0 002-2V4a2 2 0 00-2-2H7zm3 14a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" /></svg>, color: "slate", className: "" },
         toiletriesAndPersonalCare: { title: "Toiletries & Personal Care", items: packingList.toiletriesAndPersonalCare, icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>, color: "pink", className: "" },
@@ -89,7 +89,21 @@ const PackingListPreview: React.FC<{ packingList: PackingList; onRegenerate: () 
 
     return (
         <div className="max-w-5xl mx-auto space-y-12 animated-card">
-            <header className="space-y-4 text-center">
+            <div className="flex justify-between items-center no-print">
+                <button onClick={onRegenerate} className="text-slate-600 hover:text-slate-900 flex items-center space-x-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                    <span>Back</span>
+                </button>
+                <button
+                    onClick={onRegenerate}
+                    className="inline-flex items-center px-6 py-2 bg-indigo-600 text-white font-bold rounded-full hover:bg-indigo-700 transition-all duration-300 transform hover:scale-105 shadow-lg"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h5M20 20v-5h-5" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 9a9 9 0 0114.13-5.22M20 15a9 9 0 01-14.13 5.22" /></svg>
+                    <span>Create Another List</span>
+                </button>
+            </div>
+
+            <header className="space-y-4 text-center -mt-8">
                 <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight break-words">Packing for {packingList.destination}</h1>
                 <p className="text-lg text-gray-700 mt-2">Your personalized {packingList.days}-day packing checklist</p>
             </header>
@@ -117,7 +131,7 @@ const PackingListPreview: React.FC<{ packingList: PackingList; onRegenerate: () 
                            </div>
                            <h3 className="text-lg font-bold text-slate-800">Bag Suggestion</h3>
                         </div>
-                        <div className="text-slate-700 text-sm" dangerouslySetInnerHTML={parseBold(packingList.bagSuggestion)} />
+                        <div className="text-slate-700 text-base" dangerouslySetInnerHTML={parseBold(packingList.bagSuggestion)} />
                     </div>
                     
                     {packingList.locallyAvailableItems && packingList.locallyAvailableItems.length > 0 && (
@@ -162,7 +176,7 @@ const PackingListPreview: React.FC<{ packingList: PackingList; onRegenerate: () 
             </section>
             
             <div className="pt-8 text-center no-print">
-                <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4 mt-8">
+                 <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4 mt-8">
                     <button
                         onClick={onRegenerate}
                         className="inline-flex items-center justify-center w-full sm:w-auto px-8 py-3 bg-indigo-600 text-white font-bold rounded-full hover:bg-indigo-700 transition-all duration-300 transform hover:scale-105 shadow-lg"

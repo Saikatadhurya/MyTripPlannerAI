@@ -56,7 +56,7 @@ const FoodFinderResult: React.FC<{ recommendations: FoodRecommendations; onRegen
         lunch: { title: "Lunch", icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 2a8 8 0 100 16 8 8 0 000-16zM5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clipRule="evenodd" /></svg>, color: "pink"},
         dinner: { title: "Dinner", icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>, color: "green"},
         snacksAndStreetFood: { title: "Snacks/Street Food", icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 20l-4.95-5.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>, color: "yellow"},
-        dessertAndSweets: { title: "Dessert & Sweets", icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a.75.75 0 01-.75-.75V10.5h1.5v6.75A.75.75 0 0110 18zM10 5.385a2.25 2.25 0 012.121 1.5c.08.334.12.68.12 1.037 0 .356-.04.703-.12 1.037a2.25 2.25 0 01-4.242 0c-.08-.334-.12-.68-.12-1.037 0-.356.04-.703.12-1.037A2.25 2.25 0 0110 5.385z" clipRule="evenodd" /></svg>, color: "blue"},
+        dessertAndSweets: { title: "Dessert & Sweets", icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a.75.75 0 01-.75-.75V10.5h1.5v6.75A.75.75 0 0110 18zM10 5.385a2.25 2.25 0 012.121 1.5c.08.334.12.68.12 1.037 0 .356-.04.703-.12 1.037a2.25 2.25 0 01-4.242 0c-.08-.334-.12-.68-.12-1.037 0-.356.04.703.12-1.037A2.25 2.25 0 0110 5.385z" clipRule="evenodd" /></svg>, color: "blue"},
         drinksAndBeverages: { title: "Drinks & Beverages", icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a1 1 0 00-1 1v1a1 1 0 002 0V3a1 1 0 00-1-1zM4 9a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1z" /><path fillRule="evenodd" d="M4 11a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1z" clipRule="evenodd" /></svg>, color: "teal"},
         hiddenRecipes: { title: "Hidden Recipes", icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" /></svg>, color: "brown"},
         trendingOrViralFoods: { title: "Trending / Viral Foods", icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414l-3 3a1 1 0 01-1.414-1.414l3-3a1 1 0 011.414 0zm8 8a1 1 0 01-1.414 0l-3-3a1 1 0 011.414-1.414l3 3a1 1 0 010 1.414z" clipRule="evenodd" /></svg>, color: "fuchsia"},
@@ -71,7 +71,21 @@ const FoodFinderResult: React.FC<{ recommendations: FoodRecommendations; onRegen
 
     return (
         <div className="max-w-6xl mx-auto space-y-12 animated-card">
-            <header className="space-y-4 text-center">
+            <div className="flex justify-between items-center no-print">
+                 <button onClick={onRegenerate} className="text-slate-600 hover:text-slate-900 flex items-center space-x-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                    <span>Back</span>
+                </button>
+                <button
+                    onClick={onRegenerate}
+                    className="inline-flex items-center justify-center px-6 py-2 bg-amber-600 text-white font-bold rounded-full hover:bg-amber-700 transition-all duration-300 transform hover:scale-105 shadow-lg"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h5M20 20v-5h-5" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 9a9 9 0 0114.13-5.22M20 15a9 9 0 01-14.13 5.22" /></svg>
+                    <span>Find Another Feast</span>
+                </button>
+            </div>
+            
+            <header className="space-y-4 text-center -mt-8">
                 <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight">
                     Local Food Guide for {recommendations.destination}
                 </h1>

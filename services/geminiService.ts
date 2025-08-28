@@ -390,7 +390,36 @@ export const generateItinerary = async (
     if (!resultText) {
         throw new Error("AI response was empty or invalid.");
     }
-    const itineraryData = JSON.parse(resultText);
+    
+    let jsonString = resultText;
+    
+    // The model can sometimes wrap the JSON in markdown or add extra text.
+    // This block cleans the string before parsing.
+    const markdownMatch = jsonString.match(/```(json)?([\s\S]*?)```/);
+    if (markdownMatch && markdownMatch[2]) {
+        jsonString = markdownMatch[2].trim();
+    }
+
+    const firstBrace = jsonString.indexOf('{');
+    const lastBrace = jsonString.lastIndexOf('}');
+
+    if (firstBrace === -1 || lastBrace === -1 || lastBrace < firstBrace) {
+      console.error("Could not find a valid JSON object in the AI response.");
+      console.error("Original response:", resultText);
+      throw new Error("The AI returned an invalid response format. Please try generating the itinerary again.");
+    }
+
+    jsonString = jsonString.substring(firstBrace, lastBrace + 1);
+
+    let itineraryData;
+    try {
+        itineraryData = JSON.parse(jsonString);
+    } catch (e) {
+        console.error("Failed to parse JSON from AI response after cleaning:", e);
+        console.error("Cleaned JSON string that failed:", jsonString);
+        console.error("Original AI response:", resultText);
+        throw new Error("The AI returned an invalid response format. Please try generating the itinerary again.");
+    }
 
     // Ensure the response has all the fields from the initial request
     return {
