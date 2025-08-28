@@ -93,6 +93,7 @@ export interface PackingListRequestData {
     destination: string;
     startDate: string;
     days: number;
+    language: string;
 }
 
 export interface PackingList {
@@ -102,8 +103,11 @@ export interface PackingList {
     electronicsAndGear: string[];
     documentsAndMoney: string[];
     optionalComfortItems: string[];
+    adventureClothing: string[];
     bagSuggestion: string;
     locallyAvailableItems: string[];
     destination: string;
     days: number;
+    approximateTemperature: string;
+    startDate: string;
 }

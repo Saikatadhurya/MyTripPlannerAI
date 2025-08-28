@@ -21,7 +21,7 @@ const InfoSection: React.FC<{ title: string; icon: React.ReactNode; items?: stri
         <div className="flex-shrink-0 bg-violet-100 text-violet-600 rounded-lg p-3">
           {icon}
         </div>
-        <h3 className="text-xl font-bold text-slate-800">{title}</h3>
+        <h3 className="text-xl font-bold text-slate-800 break-words">{title}</h3>
       </div>
       <div className="prose prose-slate max-w-none text-gray-700 pl-1">
         {children}
@@ -43,8 +43,8 @@ const SummaryItem: React.FC<{ icon: React.ReactNode; label: string; children: Re
             {icon}
         </div>
         <div>
-            <p className="text-sm text-violet-800 font-medium">{label}</p>
-            <div className="font-semibold text-lg text-slate-800">{children}</div>
+            <p className="text-sm text-violet-800 font-medium break-words">{label}</p>
+            <div className="font-semibold text-lg text-slate-800 break-words">{children}</div>
         </div>
     </div>
 );
@@ -95,10 +95,10 @@ const BudgetCard: React.FC<{ title: string; icon: React.ReactNode; value: string
       <div className={`mx-auto rounded-full h-12 w-12 flex items-center justify-center flex-shrink-0 ${iconContainerClasses}`}>
         {icon}
       </div>
-      <p className={`mt-4 text-sm font-medium ${textColorClasses.title}`}>{title}</p>
+      <p className={`mt-4 text-sm font-medium break-words ${textColorClasses.title}`}>{title}</p>
       <div className="mt-2 flex-grow flex flex-col justify-center">
         <p className={`text-2xl font-bold break-words ${textColorClasses.value}`}>{currencySymbol} {mainValue}</p>
-        {description && <p className={`text-sm mt-1 ${textColorClasses.description}`}>{description}</p>}
+        {description && <p className={`text-sm mt-1 break-words ${textColorClasses.description}`}>{description}</p>}
       </div>
     </div>
   );
@@ -161,8 +161,8 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
       </div>
       <header className="space-y-4 animated-card">
         <div className="text-center">
-            <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight" dangerouslySetInnerHTML={parseBold(`Trip to ${itinerary.destination}`)} />
-            <p className="text-lg text-gray-700 mt-2">Your amazing {itinerary.days}-day {itinerary.isRoundTrip ? 'round trip ' : ''}itinerary</p>
+            <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight break-words" dangerouslySetInnerHTML={parseBold(`Trip to ${itinerary.destination}`)} />
+            <p className="text-lg text-gray-700 mt-2 break-words">Your amazing {itinerary.days}-day {itinerary.isRoundTrip ? 'round trip ' : ''}itinerary</p>
         </div>
       </header>
       
@@ -266,7 +266,7 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
             
             return (
               <div key={destIndex} className="animated-card" style={{ animationDelay: `${800 + destIndex * 200}ms` }}>
-                <h3 className="text-2xl font-bold text-slate-700 mb-4 border-b border-violet-200 pb-2" dangerouslySetInnerHTML={parseBold(dest.name)} />
+                <h3 className="text-2xl font-bold text-slate-700 mb-4 border-b border-violet-200 pb-2 break-words" dangerouslySetInnerHTML={parseBold(dest.name)} />
                 {otherSections.length > 0 && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {otherSections.map((section, index) => (
@@ -296,11 +296,11 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
         {itinerary.plan.map((day, index) => (
           <div key={day.day} className="bg-white/40 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/50 transition-all duration-300 hover:shadow-2xl hover:border-violet-300/50 hover:-translate-y-1 animated-card" style={{ animationDelay: `${950 + index * 100}ms` }}>
             <div className="flex justify-between items-start">
-              <div>
+              <div className="flex-1">
                 <p className="text-sm font-semibold text-violet-700">Day {day.day}</p>
-                <h3 className="text-2xl font-bold text-slate-800" dangerouslySetInnerHTML={parseBold(day.title)} />
+                <h3 className="text-2xl font-bold text-slate-800 break-words" dangerouslySetInnerHTML={parseBold(day.title)} />
               </div>
-              <p className="text-lg font-semibold text-slate-700 bg-violet-100 px-4 py-1 rounded-full">{day.approxCost}</p>
+              <p className="text-lg font-semibold text-slate-700 bg-violet-100 px-4 py-1 rounded-full ml-4">{day.approxCost}</p>
             </div>
             <hr className="my-4 border-violet-200" />
             <div className="space-y-6">
@@ -414,7 +414,7 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       {blog.source && <p className={`text-xs font-semibold uppercase tracking-wider ${isTransport ? 'text-sky-600' : 'text-violet-600'}`}>{blog.source}</p>}
-                      <h4 className="text-lg font-bold text-slate-800 mt-1 hover:underline">{blog.title}</h4>
+                      <h4 className="text-lg font-bold text-slate-800 mt-1 hover:underline break-words">{blog.title}</h4>
                     </div>
                     {isTransport && (
                       <div className="flex-shrink-0 ml-4 bg-sky-100 text-sky-600 rounded-full p-2">

@@ -16,11 +16,17 @@ const loadingData = [
   { message: "Your perfect packing list is being prepared...", icon: "📝" },
 ];
 
+const languages = [
+    'Afrikaans (af)', 'Akan (ak)', 'Albanian (sq)', 'Amharic (am)', 'Arabic (ar)', 'Armenian (hy)', 'Assamese (as)', 'Aymara (ay)', 'Azerbaijani (az)', 
+    'Bambara (bm)', 'Basque (eu)', 'Belarusian (be)', 'Bengali (bn)', 'Bhojpuri (bho)', 'Bosnian (bs)', 'Bulgarian (bg)', 'Catalan (ca)', 'Cebuano (ceb)', 'Chinese (Simplified) (zh-CN)', 'Chinese (Traditional) (zh-TW)', 'Corsican (co)', 'Croatian (hr)', 'Czech (cs)', 'Danish (da)', 'Dhivehi (dv)', 'Dogri (doi)', 'Dutch (nl)', 'English (en)', 'Esperanto (eo)', 'Estonian (et)', 'Ewe (ee)', 'Filipino (Tagalog) (fil)', 'Finnish (fi)', 'French (fr)', 'Frisian (fy)', 'Galician (gl)', 'Ganda (lg)', 'Georgian (ka)', 'German (de)', 'Goan Konkani (gom)', 'Greek (el)', 'Guarani (gn)', 'Gujarati (gu)', 'Haitian Creole (ht)', 'Hausa (ha)', 'Hawaiian (haw)', 'Hebrew (iw)', 'Hindi (hi)', 'Hmong (hmn)', 'Hungarian (hu)', 'Icelandic (is)', 'Igbo (ig)', 'Ilocano (ilo)', 'Indonesian (id)', 'Irish (ga)', 'Italian (it)', 'Japanese (ja)', 'Javanese (jv)', 'Kannada (kn)', 'Kazakh (kk)', 'Khmer (km)', 'Kinyarwanda (rw)', 'Korean (ko)', 'Krio (kri)', 'Kurdish (ku)', 'Kurdish (Sorani) (ckb)', 'Kyrgyz (ky)', 'Lao (lo)', 'Latin (la)', 'Latvian (lv)', 'Lingala (ln)', 'Lithuanian (lt)', 'Luganda (lg)', 'Luxembourgish (lb)', 'Macedonian (mk)', 'Maithili (mai)', 'Malagasy (mg)', 'Malay (ms)', 'Malayalam (ml)', 'Maltese (mt)', 'Maori (mi)', 'Marathi (mr)', 'Meiteilon (Manipuri) (mni-Mtei)', 'Mizo (lus)', 'Mongolian (mn)', 'Myanmar (Burmese) (my)', 'Nepali (ne)', 'Norwegian (no)', 'Nyanja (Chichewa) (ny)', 'Odia (Oriya) (or)', 'Oromo (om)', 'Pashto (ps)', 'Persian (fa)', 'Polish (pl)', 'Portuguese (Brazil) (pt-BR)', 'Portuguese (Portugal) (pt-PT)', 'Punjabi (pa)', 'Quechua (qu)', 'Romanian (ro)', 'Russian (ru)', 'Samoan (sm)', 'Sanskrit (sa)', 'Scots Gaelic (gd)', 'Sepedi (nso)', 'Serbian (sr)', 'Sesotho (st)', 'Shona (sn)', 'Sindhi (sd)', 'Sinhala (si)', 'Slovak (sk)', 'Slovenian (sl)', 'Somali (so)', 'Spanish (es)', 'Sundanese (su)', 'Swahili (sw)', 'Swedish (sv)', 'Tagalog (Filipino) (tl)', 'Tajik (tg)', 'Tamil (ta)', 'Tatar (tt)', 'Telugu (te)', 'Thai (th)', 'Tigrinya (ti)', 'Tsonga (ts)', 'Turkish (tr)', 'Turkmen (tk)', 'Ukrainian (uk)', 'Urdu (ur)', 'Uyghur (ug)', 'Uzbek (uz)', 'Vietnamese (vi)', 'Welsh (cy)', 'Xhosa (xh)', 'Yiddish (yi)', 'Yoruba (yo)', 'Zulu (zu)',
+];
+
 const PackingAssistantForm: React.FC<PackingAssistantFormProps> = ({ onSubmit, isLoading, error, onBack }) => {
   const [formData, setFormData] = useState<PackingListRequestData>({
     destination: '',
     startDate: new Date().toISOString().split('T')[0],
     days: 3,
+    language: 'English (en)',
   });
 
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -30,6 +36,10 @@ const PackingAssistantForm: React.FC<PackingAssistantFormProps> = ({ onSubmit, i
   const suggestionsRef = useRef<HTMLUListElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [loadingIndex, setLoadingIndex] = useState(0);
+
+  const [languageQuery, setLanguageQuery] = useState('');
+  const [languageDropdownOpen, setLanguageDropdownOpen] = useState(false);
+  const languageRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
@@ -46,6 +56,24 @@ const PackingAssistantForm: React.FC<PackingAssistantFormProps> = ({ onSubmit, i
   
   const handleInputChange = (field: keyof PackingListRequestData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+  
+  const handleDaysChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (value === '') {
+        handleInputChange('days', 0);
+    } else {
+        const num = parseInt(value, 10);
+        if (!isNaN(num)) {
+            handleInputChange('days', Math.min(30, Math.max(0, num)));
+        }
+    }
+  };
+
+  const handleDaysBlur = () => {
+    if (formData.days < 1) {
+        handleInputChange('days', 1);
+    }
   };
 
   const handleDestinationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -86,6 +114,9 @@ const PackingAssistantForm: React.FC<PackingAssistantFormProps> = ({ onSubmit, i
         ) {
             setSuggestions([]);
         }
+        if (languageRef.current && !languageRef.current.contains(event.target as Node)) {
+            setLanguageDropdownOpen(false);
+        }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -95,6 +126,10 @@ const PackingAssistantForm: React.FC<PackingAssistantFormProps> = ({ onSubmit, i
     e.preventDefault();
     onSubmit(formData);
   };
+
+  const filteredLanguages = languages.filter(lang =>
+    lang.toLowerCase().includes(languageQuery.toLowerCase())
+  );
   
   if (isLoading) {
     const { message, icon } = loadingData[loadingIndex];
@@ -141,6 +176,27 @@ const PackingAssistantForm: React.FC<PackingAssistantFormProps> = ({ onSubmit, i
           {isSuggestionsLoading && <div className="absolute right-3 top-9"><svg className="animate-spin h-5 w-5 text-violet-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>}
           {suggestions.length > 0 && (<ul ref={suggestionsRef} className="absolute z-10 w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg max-h-60 overflow-y-auto">{suggestions.map((s, i) => (<li key={i} onClick={() => handleSuggestionClick(s)} className="px-4 py-2 cursor-pointer hover:bg-violet-100">{s}</li>))}</ul>)}
         </div>
+        
+        <div className="relative" ref={languageRef}>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Output Language</label>
+            <button type="button" onClick={() => setLanguageDropdownOpen(!languageDropdownOpen)} className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition flex justify-between items-center text-left" aria-haspopup="listbox" aria-expanded={languageDropdownOpen}>
+                <span className="truncate">{formData.language}</span>
+                <svg className={`h-5 w-5 text-slate-400 transition-transform ${languageDropdownOpen ? 'rotate-180' : ''}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+            </button>
+            {languageDropdownOpen && (
+                <div className="absolute z-20 w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg">
+                    <div className="p-2"><input type="text" value={languageQuery} onChange={(e) => setLanguageQuery(e.target.value)} placeholder="Search languages..." className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-md focus:ring-1 focus:ring-violet-500 focus:border-violet-500" /></div>
+                    <ul className="max-h-60 overflow-y-auto p-1">
+                        {filteredLanguages.length > 0 ? filteredLanguages.map(lang => (
+                            <li key={lang} onClick={() => { handleInputChange('language', lang); setLanguageDropdownOpen(false); setLanguageQuery(''); }} className="px-3 py-2 text-sm rounded-md cursor-pointer hover:bg-violet-100 text-slate-800">
+                                {lang}
+                            </li>
+                        )) : <li className="px-3 py-2 text-sm text-slate-500">No languages found.</li>}
+                    </ul>
+                </div>
+            )}
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label htmlFor="startDate" className="block text-sm font-medium text-slate-700 mb-1">Start Date</label>
@@ -148,7 +204,7 @@ const PackingAssistantForm: React.FC<PackingAssistantFormProps> = ({ onSubmit, i
           </div>
           <div>
             <label htmlFor="days" className="block text-sm font-medium text-slate-700 mb-1">Duration (days)</label>
-            <input id="days" type="number" value={formData.days} min="1" max="30" onChange={e => handleInputChange('days', parseInt(e.target.value, 10) || 1)} className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition" required />
+            <input id="days" type="number" value={formData.days === 0 ? '' : formData.days} onBlur={handleDaysBlur} onChange={handleDaysChange} min="1" max="30" className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition" required />
           </div>
         </div>
         <div className="text-center pt-4">
