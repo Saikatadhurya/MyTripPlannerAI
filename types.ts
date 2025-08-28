@@ -87,3 +87,23 @@ export interface PopularDestination {
   bestTime: string;
   icon: string;
 }
+
+
+export interface PackingListRequestData {
+    destination: string;
+    startDate: string;
+    days: number;
+}
+
+export interface PackingList {
+    clothingAndFootwear: string[];
+    toiletriesAndPersonalCare: string[];
+    medicinesAndHealth: string[];
+    electronicsAndGear: string[];
+    documentsAndMoney: string[];
+    optionalComfortItems: string[];
+    bagSuggestion: string;
+    locallyAvailableItems: string[];
+    destination: string;
+    days: number;
+}

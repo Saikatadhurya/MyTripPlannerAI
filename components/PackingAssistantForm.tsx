@@ -1,0 +1,168 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { PackingListRequestData } from '../types';
+import { getDestinationSuggestions } from '../services/geminiService';
+
+interface PackingAssistantFormProps {
+  onSubmit: (data: PackingListRequestData) => void;
+  isLoading: boolean;
+  error: string | null;
+  onBack: () => void;
+}
+
+const loadingData = [
+  { message: "Checking the weather forecast...", icon: "🌦️" },
+  { message: "Consulting with travel experts...", icon: "🧑‍✈️" },
+  { message: "Making sure you don't forget your toothbrush...", icon: "🦷" },
+  { message: "Your perfect packing list is being prepared...", icon: "📝" },
+];
+
+const PackingAssistantForm: React.FC<PackingAssistantFormProps> = ({ onSubmit, isLoading, error, onBack }) => {
+  const [formData, setFormData] = useState<PackingListRequestData>({
+    destination: '',
+    startDate: new Date().toISOString().split('T')[0],
+    days: 3,
+  });
+
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false);
+  const debounceTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isSelectingSuggestion = useRef(false);
+  const suggestionsRef = useRef<HTMLUListElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [loadingIndex, setLoadingIndex] = useState(0);
+
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval>;
+    if (isLoading) {
+      setLoadingIndex(0);
+      interval = setInterval(() => {
+        setLoadingIndex(prev => (prev + 1) % loadingData.length);
+      }, 2500);
+    }
+    return () => {
+      if(interval) clearInterval(interval);
+    }
+  }, [isLoading]);
+  
+  const handleInputChange = (field: keyof PackingListRequestData, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleDestinationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    handleInputChange('destination', value);
+    isSelectingSuggestion.current = false;
+    if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
+
+    if (value.trim().length > 1) {
+      setIsSuggestionsLoading(true);
+      debounceTimeout.current = setTimeout(() => {
+        if (!isSelectingSuggestion.current) {
+          getDestinationSuggestions(value).then(results => {
+            setSuggestions(results);
+            setIsSuggestionsLoading(false);
+          });
+        }
+      }, 500);
+    } else {
+      setSuggestions([]);
+      setIsSuggestionsLoading(false);
+    }
+  };
+
+  const handleSuggestionClick = (suggestion: string) => {
+    isSelectingSuggestion.current = true;
+    handleInputChange('destination', suggestion);
+    setSuggestions([]);
+    setIsSuggestionsLoading(false);
+    if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+        if (
+            suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node) &&
+            inputRef.current && !inputRef.current.contains(event.target as Node)
+        ) {
+            setSuggestions([]);
+        }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+  
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
+  
+  if (isLoading) {
+    const { message, icon } = loadingData[loadingIndex];
+    return (
+      <div className="text-center py-20 fade-in">
+        <div className="inline-block relative">
+          <div className="w-20 h-20 border-4 border-violet-200 border-t-violet-600 rounded-full animate-spin"></div>
+          <div className="absolute inset-0 flex items-center justify-center text-3xl">{icon}</div>
+        </div>
+        <p className="mt-6 text-xl font-semibold text-slate-800">{message}</p>
+        <p className="text-slate-600 mt-2">Crafting your packing list...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-xl mx-auto">
+      <button onClick={onBack} className="text-slate-600 hover:text-slate-900 flex items-center space-x-2 mb-6">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+            <span>Back to Home</span>
+      </button>
+
+      <div className="text-center mb-10">
+        <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Smart Bag Packing</h1>
+        <p className="mt-2 text-lg text-slate-600">Enter your trip details for an AI-powered packing list.</p>
+      </div>
+
+      {error && (
+        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md mb-6" role="alert">
+          <p className="font-bold">Oops!</p>
+          <p>{error}</p>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-8 bg-white/40 backdrop-blur-md p-8 rounded-2xl border border-white/50 shadow-lg">
+        <div className="relative">
+          <label htmlFor="destination" className="block text-sm font-medium text-slate-700 mb-1">Destination</label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 20l-4.95-5.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
+            </div>
+            <input id="destination" ref={inputRef} type="text" value={formData.destination} onChange={handleDestinationChange} placeholder="e.g., Goa, India" className="w-full pl-10 pr-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition" required autoComplete="off" />
+          </div>
+          {isSuggestionsLoading && <div className="absolute right-3 top-9"><svg className="animate-spin h-5 w-5 text-violet-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>}
+          {suggestions.length > 0 && (<ul ref={suggestionsRef} className="absolute z-10 w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg max-h-60 overflow-y-auto">{suggestions.map((s, i) => (<li key={i} onClick={() => handleSuggestionClick(s)} className="px-4 py-2 cursor-pointer hover:bg-violet-100">{s}</li>))}</ul>)}
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="startDate" className="block text-sm font-medium text-slate-700 mb-1">Start Date</label>
+            <input id="startDate" type="date" value={formData.startDate} min={new Date().toISOString().split('T')[0]} onChange={e => handleInputChange('startDate', e.target.value)} className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition" required />
+          </div>
+          <div>
+            <label htmlFor="days" className="block text-sm font-medium text-slate-700 mb-1">Duration (days)</label>
+            <input id="days" type="number" value={formData.days} min="1" max="30" onChange={e => handleInputChange('days', parseInt(e.target.value, 10) || 1)} className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition" required />
+          </div>
+        </div>
+        <div className="text-center pt-4">
+          <button
+            type="submit"
+            className="w-full sm:w-auto px-10 py-4 bg-indigo-600 text-white font-bold rounded-full hover:bg-indigo-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:bg-indigo-400"
+            disabled={!formData.destination}
+          >
+            ✨ Pack My Adventure!
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
+export default PackingAssistantForm;

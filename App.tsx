@@ -1,16 +1,20 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Itinerary, Vibe, QuestionnaireData } from './types';
+import { Itinerary, Vibe, QuestionnaireData, PackingListRequestData, PackingList } from './types';
 import { generateItinerary } from './services/geminiService';
+import { generatePackingList } from './services/packingService';
 
 import LandingPage from './components/LandingPage';
 import Questionnaire from './components/Questionnaire';
 import ItineraryPreview from './components/ItineraryPreview';
+import PackingAssistantForm from './components/PackingAssistantForm';
+import PackingListPreview from './components/PackingListPreview';
 
-type View = 'landing' | 'questionnaire' | 'itinerary';
+type View = 'landing' | 'questionnaire' | 'itinerary' | 'packingAssistantForm' | 'packingAssistantResult';
 
 const App: React.FC = () => {
   const [view, setView] = useState<View>('landing');
   const [itinerary, setItinerary] = useState<Itinerary | null>(null);
+  const [packingList, setPackingList] = useState<PackingList | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<QuestionnaireData | null>(null);
@@ -25,6 +29,10 @@ const App: React.FC = () => {
     const defaultVibes: Vibe[] = ['Adventure & Thrill'];
     setFormData(destination ? { destination, startPoint: '', tripType: 'Standard', days: 3, budget: 'Midrange', vibe: defaultVibes, persons: 1, foodPreference: 'Non-Veg', startDate: today, includeMedical: false, language: 'English (en)', currency: 'India (INR) – ₹', isRoundTrip: false } : null);
     setView('questionnaire');
+  }, []);
+  
+  const handleStartPacking = useCallback(() => {
+    setView('packingAssistantForm');
   }, []);
 
   const handleGenerateItinerary = useCallback(async (data: QuestionnaireData) => {
@@ -51,6 +59,21 @@ const App: React.FC = () => {
     }
   }, []);
 
+  const handleGeneratePackingList = useCallback(async (data: PackingListRequestData) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+        const generatedList = await generatePackingList(data);
+        setPackingList(generatedList);
+        setView('packingAssistantResult');
+    } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to generate packing list. Please try again.');
+        setView('packingAssistantForm');
+    } finally {
+        setIsLoading(false);
+    }
+  }, []);
+
   const handleCancelGeneration = useCallback(() => {
     isGenerationCancelled.current = true;
     setIsLoading(false);
@@ -59,15 +82,24 @@ const App: React.FC = () => {
   const handleBackToQuestionnaire = useCallback(() => {
     setView('questionnaire');
   }, []);
+  
+  const handleBackToPackingForm = useCallback(() => {
+    setPackingList(null);
+    setView('packingAssistantForm');
+  }, []);
 
   const handleBackToHome = useCallback(() => {
     setView('landing');
+    setItinerary(null);
+    setPackingList(null);
+    setFormData(null);
+    setError(null);
   }, []);
 
   const renderContent = () => {
     switch (view) {
       case 'landing':
-        return <LandingPage onPlanTrip={handleStartPlanning} />;
+        return <LandingPage onPlanTrip={handleStartPlanning} onStartPacking={handleStartPacking} />;
       case 'questionnaire':
         return (
           <Questionnaire
@@ -93,8 +125,24 @@ const App: React.FC = () => {
             </button>
           </div>
         );
+      case 'packingAssistantForm':
+        return <PackingAssistantForm onSubmit={handleGeneratePackingList} onBack={handleBackToHome} isLoading={isLoading} error={error} />;
+      case 'packingAssistantResult':
+        return packingList ? (
+          <PackingListPreview packingList={packingList} onRegenerate={handleBackToPackingForm} />
+        ) : (
+          <div className="text-center p-8">
+            <p>Something went wrong. Packing list data is missing.</p>
+            <button
+              onClick={handleBackToPackingForm}
+              className="mt-4 px-6 py-2 bg-violet-600 text-white font-semibold rounded-full hover:bg-violet-700 transition-colors"
+            >
+              Try Again
+            </button>
+          </div>
+        );
       default:
-        return <LandingPage onPlanTrip={handleStartPlanning} />;
+        return <LandingPage onPlanTrip={handleStartPlanning} onStartPacking={handleStartPacking} />;
     }
   };
 
