@@ -111,3 +111,33 @@ export interface PackingList {
     approximateTemperature: string;
     startDate: string;
 }
+
+export interface FoodFinderRequestData {
+    destination: string;
+    startDate: string;
+    foodPreference: FoodPreference;
+    includeBeverages: boolean;
+    language: string;
+}
+
+export interface FoodItem {
+    name: string;
+    description: string;
+}
+
+export interface FoodRecommendations {
+    destination: string;
+    breakfast: FoodItem[];
+    lunch: FoodItem[];
+    snacksAndStreetFood: FoodItem[];
+    dinner: FoodItem[];
+    dessertAndSweets: FoodItem[];
+    drinksAndBeverages: FoodItem[];
+    iconicDishes: FoodItem[];
+    hiddenRecipes: FoodItem[];
+    trendingOrViralFoods: FoodItem[];
+    chefsSpecials: FoodItem[];
+    festivalFoods: FoodItem[];
+    seasonalSpecials: FoodItem[];
+    streetFestivalsAndFoodMelas: FoodItem[];
+}

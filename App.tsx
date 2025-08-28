@@ -1,20 +1,25 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Itinerary, Vibe, QuestionnaireData, PackingListRequestData, PackingList } from './types';
+import { Itinerary, Vibe, QuestionnaireData, PackingListRequestData, PackingList, FoodFinderRequestData, FoodRecommendations } from './types';
 import { generateItinerary } from './services/geminiService';
 import { generatePackingList } from './services/packingService';
+import { generateFoodRecommendations } from './services/foodService';
 
 import LandingPage from './components/LandingPage';
 import Questionnaire from './components/Questionnaire';
 import ItineraryPreview from './components/ItineraryPreview';
 import PackingAssistantForm from './components/PackingAssistantForm';
 import PackingListPreview from './components/PackingListPreview';
+import FoodFinderForm from './components/FoodFinderForm';
+import FoodFinderResult from './components/FoodFinderResult';
 
-type View = 'landing' | 'questionnaire' | 'itinerary' | 'packingAssistantForm' | 'packingAssistantResult';
+
+type View = 'landing' | 'questionnaire' | 'itinerary' | 'packingAssistantForm' | 'packingAssistantResult' | 'foodFinderForm' | 'foodFinderResult';
 
 const App: React.FC = () => {
   const [view, setView] = useState<View>('landing');
   const [itinerary, setItinerary] = useState<Itinerary | null>(null);
   const [packingList, setPackingList] = useState<PackingList | null>(null);
+  const [foodRecommendations, setFoodRecommendations] = useState<FoodRecommendations | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<QuestionnaireData | null>(null);
@@ -33,6 +38,10 @@ const App: React.FC = () => {
   
   const handleStartPacking = useCallback(() => {
     setView('packingAssistantForm');
+  }, []);
+
+  const handleStartFoodFinder = useCallback(() => {
+    setView('foodFinderForm');
   }, []);
 
   const handleGenerateItinerary = useCallback(async (data: QuestionnaireData) => {
@@ -74,6 +83,21 @@ const App: React.FC = () => {
     }
   }, []);
 
+  const handleGenerateFoodRecommendations = useCallback(async (data: FoodFinderRequestData) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const recommendations = await generateFoodRecommendations(data);
+      setFoodRecommendations(recommendations);
+      setView('foodFinderResult');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to generate food recommendations. Please try again.');
+      setView('foodFinderForm');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   const handleCancelGeneration = useCallback(() => {
     isGenerationCancelled.current = true;
     setIsLoading(false);
@@ -88,10 +112,16 @@ const App: React.FC = () => {
     setView('packingAssistantForm');
   }, []);
 
+  const handleBackToFoodForm = useCallback(() => {
+    setFoodRecommendations(null);
+    setView('foodFinderForm');
+  }, []);
+
   const handleBackToHome = useCallback(() => {
     setView('landing');
     setItinerary(null);
     setPackingList(null);
+    setFoodRecommendations(null);
     setFormData(null);
     setError(null);
   }, []);
@@ -99,7 +129,7 @@ const App: React.FC = () => {
   const renderContent = () => {
     switch (view) {
       case 'landing':
-        return <LandingPage onPlanTrip={handleStartPlanning} onStartPacking={handleStartPacking} />;
+        return <LandingPage onPlanTrip={handleStartPlanning} onStartPacking={handleStartPacking} onStartFoodFinder={handleStartFoodFinder} />;
       case 'questionnaire':
         return (
           <Questionnaire
@@ -141,8 +171,24 @@ const App: React.FC = () => {
             </button>
           </div>
         );
+      case 'foodFinderForm':
+        return <FoodFinderForm onSubmit={handleGenerateFoodRecommendations} onBack={handleBackToHome} isLoading={isLoading} error={error} />;
+      case 'foodFinderResult':
+        return foodRecommendations ? (
+          <FoodFinderResult recommendations={foodRecommendations} onRegenerate={handleBackToFoodForm} />
+        ) : (
+           <div className="text-center p-8">
+            <p>Something went wrong. Food recommendations are missing.</p>
+            <button
+              onClick={handleBackToFoodForm}
+              className="mt-4 px-6 py-2 bg-violet-600 text-white font-semibold rounded-full hover:bg-violet-700 transition-colors"
+            >
+              Try Again
+            </button>
+          </div>
+        );
       default:
-        return <LandingPage onPlanTrip={handleStartPlanning} onStartPacking={handleStartPacking} />;
+        return <LandingPage onPlanTrip={handleStartPlanning} onStartPacking={handleStartPacking} onStartFoodFinder={handleStartFoodFinder} />;
     }
   };
 
