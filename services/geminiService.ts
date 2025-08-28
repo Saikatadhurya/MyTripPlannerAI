@@ -151,12 +151,12 @@ export const generateItinerary = async (
 
       1.  **Feasibility & Route Planning**: First, you MUST estimate if a meaningful road trip circuit that includes or goes towards "${destination}" is possible within ${days} days, using a ${tripType} with a daily driving limit of ${dailyLimit}.
           - **IF FEASIBLE**: Design a logical, sequential road trip circuit starting and ending at "${startPoint}". The route must maximize sightseeing of famous places based on the vibe: "${vibe.join(', ')}". The farthest point should be near "${destination}".
-          - **IF NOT FEASIBLE**: Do NOT fail. You MUST plan a realistic road trip circuit to an alternative region or set of destinations reachable within the timeframe that still fits the user's vibe. The "destination" field in the JSON response MUST be updated to a more descriptive name for this new circuit (e.g., "Rajasthan Heritage Circuit"). You MUST also add a bolded note in the "historicBackground" of the *first* covered destination explaining the change. For example: "**NOTE: A road trip to ${destination} and back in ${days} days isn't feasible. I've created an alternative Rajasthan Heritage Circuit that fits your timeline and preferences.**"
+          - **IF NOT FEASIBLE**: Do NOT fail. You MUST plan a realistic road trip circuit to an alternative region or set of destinations reachable within the timeframe that still fits the user's vibe. The "destination" field in the JSON response MUST be updated to a more descriptive name for this new circuit (e.g., 'Rajasthan Heritage Circuit'). You MUST also add a bolded note in the "historicBackground" of the *first* covered destination explaining the change. For example: **NOTE: A road trip to ${destination} and back in ${days} days isn't feasible. I've created an alternative Rajasthan Heritage Circuit that fits your timeline and preferences.**
 
       2.  **Structured Output - This is MANDATORY**:
           - **coveredDestinations**: This array must list each major city/stop of the road trip circuit *in the order they are visited*. For each stop, provide the detailed information (history, culture, etc.).
           - **plan**: The daily plan MUST correspond directly to the road trip circuit.
-              - Each day's **title** should clearly state the travel segment, for example: "Day 3: Travel from Chittorgarh to Udaipur & Local Sightseeing".
+              - Each day's **title** should clearly state the travel segment, for example: 'Day 3: Travel from Chittorgarh to Udaipur & Local Sightseeing'.
               - The **activities** for a travel day should include the drive itself (mentioning the approximate duration/distance) and then activities upon arrival at the new destination.
               - The final days of the plan must cover the return journey back to "${startPoint}".
 
@@ -165,8 +165,8 @@ export const generateItinerary = async (
           - **plan**:
               - Day 1: Arrive in Jaipur
               - Day 2: Jaipur Sightseeing
-              - Day 3: Title: "Jaipur to Chittorgarh Fort", Activities: "Drive to Chittorgarh (approx 5-6 hours)..."
-              - Day 4: Title: "Chittorgarh to Udaipur", Activities: "Drive to Udaipur (approx 2-3 hours)..."
+              - Day 3: Title: 'Jaipur to Chittorgarh Fort', Activities: 'Drive to Chittorgarh (approx 5-6 hours)...'
+              - Day 4: Title: 'Chittorgarh to Udaipur', Activities: 'Drive to Udaipur (approx 2-3 hours)...'
               - ... and so on, with the final day's plan including the drive from the last stop (e.g., Bikaner) back to the start (Jaipur).
 
       This level of detail in linking the daily plan to a sequential, multi-stop route is essential.
@@ -193,7 +193,7 @@ export const generateItinerary = async (
   ${(tripType === 'Car' || tripType === 'Bike') ? `
   CRITICAL VEHICLE INSTRUCTIONS: Since the trip type is '${tripType}', you MUST assume the user has a personal or rented vehicle for the entire duration.
   1.  **Transport Suggestions**: ALL 'transport' suggestions in the daily plan MUST be vehicle-centric. Provide details on recommended driving routes, estimated driving times, and practical parking information (availability, cost) near attractions. AVOID suggesting taxis, ride-sharing, or public transport.
-  2.  **Accommodation**: ALL 'placesToStay' suggestions should prioritize hotels or lodgings that offer secure and convenient parking for a ${tripType}. Mention this feature in the suggestion (e.g., "Hotel ABC with on-site parking").
+  2.  **Accommodation**: ALL 'placesToStay' suggestions should prioritize hotels or lodgings that offer secure and convenient parking for a ${tripType}. Mention this feature in the suggestion (e.g., 'Hotel ABC with on-site parking').
   3.  **Realistic Daily Driving**: You MUST pace the itinerary according to realistic daily driving limits. For a **Car**, limit driving to **300-400 km per day**. For a **Bike**, limit driving to **150-250 km per day**. If a travel leg between major stops is longer than this, it must be broken down into multiple days with an appropriate overnight stop.
   ` : ''}
 
@@ -246,18 +246,19 @@ export const generateItinerary = async (
   1.  All string values in the JSON must be in ${language}.
   2.  The 'plan' array must have exactly ${days} elements.
   3.  For round trips, the 'coveredDestinations' array is mandatory and must contain detailed information for each significant place visited. For standard one-way trips, it should contain details for just the main destination.
-  4.  All costs in 'budgetSummary' and 'approxCost' must be per person and specified in the user's chosen currency: "${currency}". The amounts must be realistic for the destination's local economy but presented in the chosen currency.
+  4.  All costs in 'budgetSummary', 'approxCost', and 'transport.cost' must be per person and specified in the user's chosen currency: "${currency}". The amounts must be realistic for the destination's local economy but presented in the chosen currency.
   5.  **MANDATORY BOLDING**: You MUST use bold markdown (**text**) to highlight key information. This includes, but is not limited to: names of specific attractions, restaurants, hotels, important timings, unique cultural items, and critical travel advice. This is crucial for readability.
   6.  If 'includeMedical' is true, the 'medicalFacilities' array for each day must list at least one nearby hospital or pharmacy.
   7.  The 'referenceBlogs' field should be an empty array. It will be populated later.
   8.  For 'Standard' trip types, 'transport' suggestions should be tailored to the selected budget (e.g., public transport for 'Budget', taxis for 'Midrange'). For 'Car' or 'Bike' trips, you MUST follow the critical vehicle instructions provided above.
   9.  For 'historicBackground', 'famousCulture', 'naturalPlaces', 'museums', and 'specialOrnaments', provide a list of 3-5 key bullet points. Each point must be a descriptive string. Do not provide a single paragraph.
-  10. For 'specialEvents', find specific events, festivals, or notable occurrences happening ONLY during the travel dates (starting ${startDate} for ${days} days). If no specific major events are found, you MUST return the string "No major special events found for your travel dates, but here are some ongoing local experiences you might enjoy."
+  10. For 'specialEvents', find specific events, festivals, or notable occurrences happening ONLY during the travel dates (starting ${startDate} for ${days} days). If no specific major events are found, you MUST return a helpful message like 'No major special events were found for your travel dates, but you can enjoy ongoing local experiences.'
   11. **Currency Conversion (CRITICAL)**:
       a. First, determine the primary local currency of the destination "${destination}".
       b. Compare the local currency with the user's chosen currency: "${currency}".
-      c. If they are different, you MUST populate the 'currencyConversion' object in the JSON response. Provide a simple, clear text representation of the approximate exchange rate in the 'rateText' field (e.g., "1 USD ≈ 83 INR"). The 'fromCurrency' should be the user's currency code (e.g., USD), and 'toCurrency' should be the local currency code (e.g., INR).
+      c. If they are different, you MUST populate the 'currencyConversion' object in the JSON response. Provide a simple, clear text representation of the approximate exchange rate in the 'rateText' field (e.g., '1 USD ≈ 83 INR'). The 'fromCurrency' should be the user's currency code (e.g., USD), and 'toCurrency' should be the local currency code (e.g., INR).
       d. If the user's chosen currency is the same as the local currency, the 'currencyConversion' field MUST be omitted from the JSON response.
+  12. **Valid JSON**: To ensure the output is valid JSON, you MUST NOT use unescaped double quotes (") inside any string values. Use single quotes (') or rephrase if you need to use quotation marks within a string.
   `;
   
     const responseSchema = {

@@ -47,17 +47,30 @@ const SummaryItem: React.FC<{ icon: React.ReactNode; label: string; children: Re
     </div>
 );
 
+// Helper to get currency symbol or code
+const getCurrencySymbol = (currencyString: string): string => {
+    if (!currencyString) return '';
+    const symbolMatch = currencyString.match(/–\s*(.*)$/);
+    if (symbolMatch && symbolMatch[1]) return symbolMatch[1].trim();
+    const codeMatch = currencyString.match(/\((.*?)\)/);
+    if (codeMatch && codeMatch[1]) return codeMatch[1].trim();
+    return '';
+};
+
 // New component for budget cards
-const BudgetCard: React.FC<{ title: string; icon: React.ReactNode; value: string; isHighlighted?: boolean; animationDelay: string; }> = ({ title, icon, value, isHighlighted = false, animationDelay }) => {
-  // Regex to split the main numerical value from the description
-  const match = value.match(/^([A-Z]{3,}|[€$£¥₹]\s?)?([\d,.\s-]+)\s*(.*)/s);
+const BudgetCard: React.FC<{ title: string; icon: React.ReactNode; value: string; currencySymbol: string; isHighlighted?: boolean; animationDelay: string; }> = ({ title, icon, value, currencySymbol, isHighlighted = false, animationDelay }) => {
+  // Clean value from any currency prefix the AI might have added
+  const cleanedValue = value.replace(/^[A-Z]{3,5}\s?/, '').replace(/^[^\d\s.,-]+/, '').trim();
   
-  let mainValue = value;
+  // Regex to split the numerical part from the description
+  const match = cleanedValue.match(/([\d,.\s-]+)\s*(.*)/s);
+  
+  let mainValue = cleanedValue;
   let description = '';
 
   if (match) {
-    mainValue = ((match[1] || '') + match[2].trim()).trim();
-    description = match[3].trim();
+    mainValue = match[1].trim();
+    description = match[2].trim();
   }
   
   const cardClasses = isHighlighted 
@@ -82,7 +95,7 @@ const BudgetCard: React.FC<{ title: string; icon: React.ReactNode; value: string
       </div>
       <p className={`mt-4 text-sm font-medium ${textColorClasses.title}`}>{title}</p>
       <div className="mt-2 flex-grow flex flex-col justify-center">
-        <p className={`text-2xl font-bold break-words ${textColorClasses.value}`}>{mainValue}</p>
+        <p className={`text-2xl font-bold break-words ${textColorClasses.value}`}>{currencySymbol} {mainValue}</p>
         {description && <p className={`text-sm mt-1 ${textColorClasses.description}`}>{description}</p>}
       </div>
     </div>
@@ -104,6 +117,7 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
   });
   
   const iconClass = "h-6 w-6";
+  const currencySymbol = getCurrencySymbol(itinerary.currency);
   
   const getAboutSectionsForDestination = (destinationDetails: Itinerary['coveredDestinations'][0]) => {
     return [
@@ -180,18 +194,21 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
                 title="Est. Stay Cost"
                 icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" /></svg>}
                 value={itinerary.budgetSummary.stay}
+                currencySymbol={currencySymbol}
                 animationDelay="550ms"
             />
             <BudgetCard
                 title="Est. Food Cost"
                 icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0c-.454-.303-.977-.454-1.5-.454V5.454c.523 0 1.046-.151 1.5-.454a2.704 2.704 0 013 0 2.704 2.704 0 003 0 2.704 2.704 0 013 0 2.704 2.704 0 003 0c.454.303.977.454 1.5.454v10.092zM15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>}
                 value={itinerary.budgetSummary.food}
+                currencySymbol={currencySymbol}
                 animationDelay="600ms"
             />
             <BudgetCard
                 title="Total Est. Per Person"
                 icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 10v-1m0 0c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
                 value={itinerary.budgetSummary.total}
+                currencySymbol={currencySymbol}
                 isHighlighted
                 animationDelay="650ms"
             />
@@ -210,7 +227,7 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
                     <h3 className="text-lg font-bold text-sky-800">Currency Conversion</h3>
                     <p className="text-md text-slate-700 font-semibold">{itinerary.currencyConversion.rateText}</p>
                     <p className="text-sm text-slate-500 mt-1">
-                        All costs in this itinerary are estimated in your chosen currency {itinerary.currencyConversion.toCurrency}. The local currency is ({itinerary.currencyConversion.fromCurrency}).
+                        All costs in this itinerary are estimated in your chosen currency ({itinerary.currency}). The local currency is {itinerary.currencyConversion.toCurrency}.
                     </p>
                 </div>
             </div>
@@ -261,7 +278,7 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
                 <p className="text-sm font-semibold text-violet-700">Day {day.day}</p>
                 <h3 className="text-2xl font-bold text-slate-800" dangerouslySetInnerHTML={parseBold(day.title)} />
               </div>
-              <p className="text-lg font-semibold text-slate-700 bg-violet-100 px-4 py-1 rounded-full">{day.approxCost}</p>
+              <p className="text-lg font-semibold text-slate-700 bg-violet-100 px-4 py-1 rounded-full">{currencySymbol} {day.approxCost}</p>
             </div>
             <hr className="my-4 border-violet-200" />
             <div className="space-y-6">
@@ -308,7 +325,7 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
                 <div className="bg-violet-50/50 backdrop-blur-lg p-4 rounded-xl border border-violet-200/50">
                    <h4 className="font-bold text-violet-800 flex items-center space-x-2 mb-3">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18.562 6.077C18.238 5.437 17.562 5 16.808 5H3.192c-.754 0-1.43.437-1.754 1.077L.05 9.423A.5.5 0 00.5 10h19a.5.5 0 00.45-.577l-1.388-3.346zM2 11v4a1 1 0 001 1h1a1 1 0 001-1v-4H2zm15 0v4a1 1 0 001 1h1a1 1 0 001-1v-4h-3zM5 11v4a1 1 0 001 1h8a1 1 0 001-1v-4H5z" clipRule="evenodd" /></svg>
-                      <span>Transport Suggestions (Cost: {day.transport.cost})</span>
+                      <span>Transport Suggestions (Cost: {currencySymbol} {day.transport.cost})</span>
                    </h4>
                    <ul className="list-disc pl-5 space-y-1 text-gray-700">
                       {day.transport.suggestions.map((item, index) => (
