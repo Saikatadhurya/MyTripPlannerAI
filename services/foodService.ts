@@ -11,7 +11,9 @@ export const generateFoodRecommendations = async (data: FoodFinderRequestData): 
   const { destination, startDate, foodPreference, includeBeverages, language } = data;
 
   const prompt = `
-    You are an elite food critic and culinary detective. Your mission is to generate a list of hyper-local, authentic food recommendations for a trip to ${destination} on or around the date ${startDate}. The recommendations MUST be in the ${language} language.
+    You are a world-renowned Culinary Anthropologist. Your specialty is identifying and documenting hyper-local food traditions that are unique to a specific town or city, often unknown to outsiders. Your reputation is built on your obsessive attention to detail and your refusal to accept generic, regional answers.
+
+    Your mission is to generate a list of hyper-local, authentic food recommendations for a trip to ${destination} on or around the date ${startDate}. The recommendations MUST be in the ${language} language.
 
     Trip Details:
     - Dietary Preference: ${foodPreference}
@@ -19,30 +21,21 @@ export const generateFoodRecommendations = async (data: FoodFinderRequestData): 
     - Destination: ${destination}
     - Date: ${startDate}
 
-    **CRITICAL DEEP SEARCH PROTOCOL - THIS IS MANDATORY:**
-    Your reputation depends on the depth and accuracy of your search. You MUST use your search tool to perform a multi-layered, exhaustive investigation to uncover dishes that are unique to the PRECISE location of "${destination}".
+    **CORE METHODOLOGY - A Multi-Phase Intellectual Framework (MANDATORY):**
 
-    **Step 1: Foundational Search.**
-    - Search for "[destination] famous local food", "[destination] specialty dishes", and "[destination] must-try food".
-    - Your goal is to identify the most well-known local dishes.
+    **Phase 1: Broad Intelligence Gathering.**
+    - Use your search tool with basic queries like "[destination] famous dishes", "[destination] local cuisine". This is only a starting point to gather initial candidates.
 
-    **Step 2: Deeper Dive & Verification.**
-    - For each dish found, perform a verification search like "is [dish name] from [destination]".
-    - **Your primary goal is to ELIMINATE GENERIC REGIONAL DISHES.** If a dish is common throughout the entire state or country, it is a low-quality recommendation. You must find the food that makes "${destination}" special.
-    - **Example 1 (Success):** For "Beliatore, Bankura", your search MUST identify "Mecha Sandesh".
-    - **Example 2 (Success):** For "Bankura", your search MUST find "Kumror Ghyat".
-    - **Example 3 (Success):** For "Goa", you must find specific dishes like "Prawn Balchão" or "Bebinca", not just generic "seafood curry".
-    - **Credibility Clause:** Your success is 100% measured by this ability to differentiate hyper-local from generic regional food.
+    **Phase 2: The Authenticity Gauntlet (CRITICAL).**
+    This is the most important step. For every candidate dish from Phase 1, you MUST subject it to a rigorous verification process to prove it is truly hyper-local.
+    - **Cross-Verification Querying**: For each dish, perform secondary searches like "origin of [dish name]", "is [dish name] common outside of [destination]", "other cities famous for [dish name]".
+    - **The Uniqueness Test**: A dish only passes this test if your research confirms it is *overwhelmingly* associated with the specific city of "${destination}". If it's a state-wide or country-wide specialty, it is an **IMMEDIATE DISQUALIFICATION**. Your goal is to find what defines the specific town or city.
+    - **The Local's Test (Self-Critique)**: Before finalizing a dish, you must ask yourself this question: "If I showed this list to someone who has lived in '${destination}' their whole life, would they be impressed by my deep local knowledge, or would they find it generic?" Your entire response must be designed to pass this "Local's Test". If a dish feels too broad, discard it and dig deeper.
 
-    **Step 3: Uncovering Hidden Gems.**
-    - For the 'hiddenRecipes' category, search for "[destination] food blogs", "secret recipes from [destination]", or "what do locals eat in [destination]".
-    - For the 'trendingOrViralFoods' category, search social media trends: "viral food [destination] Instagram" or "[destination] food trends TikTok".
-    - For 'chefsSpecials', search for "best restaurants in [destination]" and analyze their menus for unique, non-standard items.
-
-    **Additional Contextual Layers:**
-    1.  **Seasonality**: Search for what's in season in "${destination}" around ${startDate} and recommend dishes featuring those ingredients.
-    2.  **Cultural Festivals**: Search for local festivals near ${startDate} in "${destination}" and find their associated special foods for the 'festivalFoods' category.
-    3.  **Weather Patterns**: Search for the typical weather and suggest appropriate foods (e.g., warm, hearty meals for cold climates; light, refreshing options for hot climates).
+    **Phase 3: Deep Dive for Hidden Gems.**
+    Go beyond the obvious to find what tourists miss.
+    - **Primary Source Analysis**: Search for "[destination] food blogs", "[destination] food forums", "reddit what to eat in [destination]". Analyze discussions by locals.
+    - **Socio-Cultural Context**: Investigate seasonal specialties (what's in season in "${destination}" around ${startDate}), dishes tied to local festivals, and unique recipes passed down through generations. Use these findings for the 'seasonalSpecials' and 'festivalFoods' categories.
 
     **MANDATORY JSON OUTPUT:**
     The response MUST be ONLY a single, valid JSON object. Do not add any text before or after it. The JSON object must strictly follow the structure below. All text content must be in ${language}.
