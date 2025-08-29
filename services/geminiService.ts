@@ -209,11 +209,20 @@ export const generateItinerary = async (
   - Output Language: ${language}
   - Desired Currency for Costs: ${currency}
   
+  CRITICAL COST BREAKDOWN INSTRUCTIONS (MANDATORY):
+  1.  **budgetSummary.total**: This MUST be the sum of all other per-person costs in the budgetSummary (stay, food, and any fuel or miscellaneous costs).
+  2.  **budgetSummary.miscellaneous**:
+      - **For 'Car' and 'Bike' trips**: You MUST estimate a per-person budget for **tolls, parking, and minor unforeseen expenses**. This should be roughly 10-15% of the combined stay, food, and fuel costs.
+      - **For 'Standard' trips**: You MUST estimate a per-person budget for **local transport, activity entry fees, tips, and minor unforeseen expenses**. This should be roughly 10-15% of the combined stay and food costs.
+  3.  **plan.approxCost**: This field now represents the per-person daily cost for activities and food ONLY. It MUST EXCLUDE any inter-city travel fuel costs or miscellaneous budget items.
+
   ${(tripType === 'Car' || tripType === 'Bike') ? `
-  CRITICAL VEHICLE INSTRUCTIONS: Since the trip type is '${tripType}', you MUST assume the user has a personal or rented vehicle for the entire duration.
-  1.  **Transport Suggestions**: ALL 'transport' suggestions in the daily plan MUST be vehicle-centric. Provide details on recommended driving routes, estimated driving times, and practical parking information (availability, cost) near attractions. AVOID suggesting taxis, ride-sharing, or public transport.
-  2.  **Accommodation**: ALL 'placesToStay' suggestions should prioritize hotels or lodgings that offer secure and convenient parking for a ${tripType}. Mention this feature in the suggestion (e.g., 'Hotel ABC with on-site parking').
-  3.  **Realistic Daily Driving**: You MUST pace the itinerary according to realistic daily driving limits. For a **Car**, limit driving to **300-400 km per day**. For a **Bike**, limit driving to **150-250 km per day**. If a travel leg between major stops is longer than this, it must be broken down into multiple days with an appropriate overnight stop.
+  CRITICAL VEHICLE-SPECIFIC INSTRUCTIONS:
+  1.  **Vehicle Assumption**: Assume the user has a personal or rented vehicle. All 'transport' suggestions MUST be vehicle-centric (driving routes, times).
+  2.  **Accommodation**: Prioritize hotels with secure and convenient parking for a ${tripType}.
+  3.  **Realistic Pacing**: Limit daily driving: **300-400 km for a Car**, **150-250 km for a Bike**.
+  4.  **budgetSummary.fuel**: You MUST calculate an estimated total fuel cost for the trip. Use vehicle capacities (Car: max 5 people, Bike: max 2 people) to determine the number of vehicles needed for the group of ${persons} people. Estimate the total fuel cost for ALL vehicles for the ENTIRE trip and provide the final PER-PERSON average in this field.
+  5.  **plan.transport.cost**: This field is CRITICAL. It MUST represent the estimated fuel cost for driving **ONE SINGLE VEHICLE** for that specific day's travel leg. The frontend will use this to calculate group costs. If there's no inter-city travel, this should be "0". You are FORBIDDEN from returning any non-numeric text.
   ` : ''}
 
   ${roundTripInstructions}
@@ -233,7 +242,7 @@ export const generateItinerary = async (
     language: string,
     currency: string,
     currencyConversion?: { fromCurrency: string, toCurrency: string, rateText: string },
-    budgetSummary: { stay: string, food: string, total: string },
+    budgetSummary: { stay: string, food: string, fuel?: string, miscellaneous?: string, total: string },
     coveredDestinations: [
       {
         name: string,
@@ -265,11 +274,11 @@ export const generateItinerary = async (
   1.  All string values in the JSON must be in ${language}.
   2.  The 'plan' array must have exactly ${days} elements.
   3.  For round trips, the 'coveredDestinations' array is mandatory and must contain detailed information for each significant place visited. For standard one-way trips, it should contain details for just the main destination.
-  4.  All costs in 'budgetSummary', 'approxCost', and 'transport.cost' must be per person and specified in the user's chosen currency: "${currency}". The amounts must be realistic for the destination's local economy but presented in the chosen currency.
+  4.  **COST FORMATTING (MANDATORY)**: All cost fields ('stay', 'food', 'fuel', 'miscellaneous', 'total' in 'budgetSummary'; 'approxCost' in 'plan'; 'cost' in 'transport') MUST be a string containing ONLY numbers (e.g., "1500", "250.50"). Do NOT include currency symbols, currency codes, or any text. All costs must be per person (unless specified otherwise in instructions) and calculated in the user's chosen currency: "${currency}".
   5.  **MANDATORY BOLDING**: You MUST use bold markdown (**text**) to highlight key information. This includes, but is not limited to: names of specific attractions, restaurants, hotels, important timings, unique cultural items, and critical travel advice. This is crucial for readability.
   6.  If 'includeMedical' is true, the 'medicalFacilities' array for each day must list at least one nearby hospital or pharmacy.
   7.  The 'referenceBlogs' field should be an empty array. It will be populated later.
-  8.  For 'Standard' trip types, 'transport' suggestions should be tailored to the selected budget (e.g., public transport for 'Budget', taxis for 'Midrange'). For 'Car' or 'Bike' trips, you MUST follow the critical vehicle instructions provided above.
+  8.  For 'Standard' trip types, 'transport' suggestions should be tailored to the selected budget. For 'Car' or 'Bike' trips, you MUST follow the critical vehicle instructions provided above.
   9.  For 'historicBackground', 'famousCulture', 'naturalPlaces', 'museums', and 'specialOrnaments', provide a list of 3-5 key bullet points. Each point must be a descriptive string. Do not provide a single paragraph.
   10. For 'specialEvents', find specific events, festivals, or notable occurrences happening ONLY during the travel dates (starting ${startDate} for ${days} days). If no specific major events are found, you MUST return a helpful message like 'No major special events were found for your travel dates, but you can enjoy ongoing local experiences.'
   11. **Currency Conversion (CRITICAL)**:
@@ -314,6 +323,8 @@ export const generateItinerary = async (
           properties: {
             stay: { type: Type.STRING },
             food: { type: Type.STRING },
+            fuel: { type: Type.STRING },
+            miscellaneous: { type: Type.STRING },
             total: { type: Type.STRING },
           },
           required: ["stay", "food", "total"],

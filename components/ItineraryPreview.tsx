@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect } from 'react';
 import { Itinerary } from '../types';
 import ExportOptions from './ExportOptions';
@@ -132,6 +134,65 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
   
   const iconClass = "h-6 w-6";
   const currencySymbol = getCurrencySymbol(itinerary.currency);
+  const isRoadTrip = itinerary.tripType === 'Car' || itinerary.tripType === 'Bike';
+
+  // Helper function to safely parse cost strings into numbers
+  const parseCost = (costString?: string): number => {
+    if (!costString) return 0;
+    // Removes currency symbols, codes, commas, and any other text before parsing.
+    const cleaned = String(costString).replace(/[^\d.]/g, '');
+    return parseFloat(cleaned) || 0;
+  };
+
+  const breakdownItems: Array<{ key: string; title: string; icon: React.ReactNode; value: string; }> = [];
+  breakdownItems.push({
+    key: 'stay',
+    title: "Est. Stay Cost",
+    icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" /></svg>,
+    value: itinerary.budgetSummary.stay,
+  });
+
+  breakdownItems.push({
+    key: 'food',
+    title: "Est. Food Cost",
+    icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0c-.454-.303-.977-.454-1.5-.454V5.454c.523 0 1.046-.151 1.5-.454a2.704 2.704 0 013 0 2.704 2.704 0 003 0 2.704 2.704 0 013 0 2.704 2.704 0 003 0c.454.303.977.454 1.5.454v10.092zM15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+    value: itinerary.budgetSummary.food,
+  });
+
+  if (isRoadTrip && itinerary.budgetSummary.fuel) {
+    breakdownItems.push({
+      key: 'fuel',
+      title: "Est. Fuel Cost",
+      icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>,
+      value: itinerary.budgetSummary.fuel,
+    });
+  }
+
+  if (itinerary.budgetSummary.miscellaneous) {
+    breakdownItems.push({
+      key: 'misc',
+      title: isRoadTrip ? "Misc. & Tolls" : "Activities & Misc.",
+      icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" /></svg>,
+      value: itinerary.budgetSummary.miscellaneous,
+    });
+  }
+  
+  const stayCost = parseCost(itinerary.budgetSummary.stay);
+  const foodCost = parseCost(itinerary.budgetSummary.food);
+  const miscCost = parseCost(itinerary.budgetSummary.miscellaneous);
+  const fuelCost = isRoadTrip ? parseCost(itinerary.budgetSummary.fuel) : 0;
+  const calculatedTotal = stayCost + foodCost + miscCost + fuelCost;
+  
+  const budgetItemsForGrid = [
+    ...breakdownItems.map(item => ({ ...item, isHighlighted: false })),
+    {
+      key: 'total',
+      title: "Total Est. Per Person",
+      icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 10v-1m0 0c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+      value: calculatedTotal.toFixed(2),
+      isHighlighted: true,
+    }
+  ];
   
   const getAboutSectionsForDestination = (destinationDetails: Itinerary['coveredDestinations'][0]) => {
     return [
@@ -203,34 +264,31 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
 
       <section>
         <h2 className="text-3xl font-bold text-slate-800 mb-6 animated-card" style={{ animationDelay: '500ms' }}>Budget Overview <span className="text-base font-normal text-slate-600">(Est. Per Person)</span></h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <BudgetCard
-                title="Est. Stay Cost"
-                icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" /></svg>}
-                value={itinerary.budgetSummary.stay}
-                currencySymbol={currencySymbol}
-                animationDelay="550ms"
-            />
-            <BudgetCard
-                title="Est. Food Cost"
-                icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0c-.454-.303-.977-.454-1.5-.454V5.454c.523 0 1.046-.151 1.5-.454a2.704 2.704 0 013 0 2.704 2.704 0 003 0 2.704 2.704 0 013 0 2.704 2.704 0 003 0c.454.303.977.454 1.5.454v10.092zM15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>}
-                value={itinerary.budgetSummary.food}
-                currencySymbol={currencySymbol}
-                animationDelay="600ms"
-            />
-            <BudgetCard
-                title="Total Est. Per Person"
-                icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 10v-1m0 0c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
-                value={itinerary.budgetSummary.total}
-                currencySymbol={currencySymbol}
-                isHighlighted
-                animationDelay="650ms"
-            />
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          {budgetItemsForGrid.map((item, index) => {
+            const isLastItem = index === budgetItemsForGrid.length - 1;
+            // Span the last item if the total number of items is odd
+            const wrapperClass = (isLastItem && budgetItemsForGrid.length % 2 !== 0) ? 'sm:col-span-2' : '';
+
+            return (
+              <div key={item.key} className={wrapperClass}>
+                <BudgetCard
+                  title={item.title}
+                  icon={item.icon}
+                  value={String(item.value)}
+                  currencySymbol={currencySymbol}
+                  isHighlighted={item.isHighlighted}
+                  animationDelay={`${550 + index * 50}ms`}
+                />
+              </div>
+            );
+          })}
         </div>
       </section>
 
       {itinerary.currencyConversion && (
-        <section className="animated-card" style={{ animationDelay: '700ms' }}>
+        <section className="animated-card" style={{ animationDelay: '800ms' }}>
             <div className="bg-sky-50/60 backdrop-blur-lg p-6 rounded-2xl border border-sky-200/50 shadow-lg flex items-start space-x-4">
                 <div className="flex-shrink-0 bg-sky-100 text-sky-600 rounded-full p-3 mt-1">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -256,7 +314,7 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
       )}
       
       <section>
-        <h2 className="text-3xl font-bold text-slate-800 mb-6 animated-card" style={{ animationDelay: '750ms' }}>About the Destinations</h2>
+        <h2 className="text-3xl font-bold text-slate-800 mb-6 animated-card" style={{ animationDelay: '850ms' }}>About the Destinations</h2>
         <div className="space-y-10">
           {itinerary.coveredDestinations && itinerary.coveredDestinations.map((dest, destIndex) => {
             const aboutSections = getAboutSectionsForDestination(dest);
@@ -264,7 +322,7 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
             const otherSections = aboutSections.filter(s => s.title !== 'Events');
             
             return (
-              <div key={destIndex} className="animated-card" style={{ animationDelay: `${800 + destIndex * 200}ms` }}>
+              <div key={destIndex} className="animated-card" style={{ animationDelay: `${900 + destIndex * 200}ms` }}>
                 <h3 className="text-2xl font-bold text-slate-700 mb-4 border-b border-violet-200 pb-2 break-words" dangerouslySetInnerHTML={parseBold(dest.name)} />
                 {otherSections.length > 0 && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -291,15 +349,32 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
       </section>
 
       <section className="space-y-8">
-        <h2 className="text-3xl font-bold text-slate-800 animated-card" style={{ animationDelay: '900ms' }}>Daily Itinerary</h2>
-        {itinerary.plan.map((day, index) => (
-          <div key={day.day} className="bg-white/40 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/50 transition-all duration-300 hover:shadow-2xl hover:border-violet-300/50 hover:-translate-y-1 animated-card" style={{ animationDelay: `${950 + index * 100}ms` }}>
+        <h2 className="text-3xl font-bold text-slate-800 animated-card" style={{ animationDelay: '1000ms' }}>Daily Itinerary</h2>
+        {itinerary.plan.map((day, index) => {
+          let dailyFuelCostPerPerson = 0;
+          let totalDailyCostPerPerson = parseFloat(day.approxCost) || 0;
+
+          if (isRoadTrip && day.transport?.cost && parseFloat(day.transport.cost) > 0) {
+              const vehicleCapacity = itinerary.tripType === 'Car' ? 5 : 2;
+              const numVehicles = Math.ceil(itinerary.persons / vehicleCapacity);
+              const dayTotalFuelCost = parseFloat(day.transport.cost) * numVehicles;
+              if (itinerary.persons > 0) {
+                dailyFuelCostPerPerson = dayTotalFuelCost / itinerary.persons;
+                totalDailyCostPerPerson += dailyFuelCostPerPerson;
+              }
+          }
+
+          return (
+          <div key={day.day} className="bg-white/40 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/50 transition-all duration-300 hover:shadow-2xl hover:border-violet-300/50 hover:-translate-y-1 animated-card" style={{ animationDelay: `${1050 + index * 100}ms` }}>
             <div className="flex justify-between items-start">
               <div className="flex-1">
                 <p className="text-sm font-semibold text-violet-700">Day {day.day}</p>
                 <h3 className="text-2xl font-bold text-slate-800 break-words" dangerouslySetInnerHTML={parseBold(day.title)} />
               </div>
-              <p className="text-lg font-semibold text-slate-700 bg-violet-100 px-4 py-1 rounded-full ml-4">{day.approxCost}</p>
+              <div className="text-right ml-4">
+                <p className="text-lg font-bold text-slate-800 bg-violet-100 px-4 py-1 rounded-full whitespace-nowrap">{currencySymbol} {totalDailyCostPerPerson.toFixed(2)}</p>
+                <p className="text-xs text-slate-600 mt-1">Total/Person</p>
+              </div>
             </div>
             <hr className="my-4 border-violet-200" />
             <div className="space-y-6">
@@ -346,8 +421,13 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
                 <div className="bg-violet-50/50 backdrop-blur-lg p-4 rounded-xl border border-violet-200/50">
                    <h4 className="font-bold text-violet-800 flex items-center space-x-2 mb-3">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18.562 6.077C18.238 5.437 17.562 5 16.808 5H3.192c-.754 0-1.43.437-1.754 1.077L.05 9.423A.5.5 0 00.5 10h19a.5.5 0 00.45-.577l-1.388-3.346zM2 11v4a1 1 0 001 1h1a1 1 0 001-1v-4H2zm15 0v4a1 1 0 001 1h1a1 1 0 001-1v-4h-3zM5 11v4a1 1 0 001 1h8a1 1 0 001-1v-4H5z" clipRule="evenodd" /></svg>
-                      <span>Transport Suggestions (Cost: {currencySymbol} {day.transport.cost})</span>
+                      <span>Transport Suggestions</span>
                    </h4>
+                   {isRoadTrip && dailyFuelCostPerPerson > 0 && (
+                      <p className="text-sm text-slate-700 mb-2">
+                          <strong>Est. Fuel Cost:</strong> {currencySymbol}{dailyFuelCostPerPerson.toFixed(2)} per person
+                      </p>
+                   )}
                    <ul className="list-disc pl-5 space-y-1 text-gray-700">
                       {day.transport.suggestions.map((item, index) => (
                         <li key={index} dangerouslySetInnerHTML={parseBold(item)} />
@@ -372,7 +452,7 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
 
             </div>
           </div>
-        ))}
+        )})}
       </section>
 
       {isLoadingBlogs ? (
@@ -395,7 +475,7 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
       ) : (
         blogs && blogs.length > 0 && (
         <section>
-          <h2 className="text-3xl font-bold text-slate-800 mb-6 animated-card" style={{ animationDelay: '1100ms' }}>Reference Blog Posts</h2>
+          <h2 className="text-3xl font-bold text-slate-800 mb-6 animated-card" style={{ animationDelay: '1200ms' }}>Reference Blog Posts</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {blogs.map((blog, index) => {
                const isTransport = isTransportBlog(blog);
@@ -408,7 +488,7 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
                       ? 'bg-sky-50/40 backdrop-blur-lg border-sky-300/50 hover:border-sky-400/50' 
                       : 'bg-white/40 backdrop-blur-lg border-white/50 hover:border-violet-300/50'
                   }`}
-                   style={{ animationDelay: `${150 + index * 100}ms` }}
+                   style={{ animationDelay: `${1250 + index * 100}ms` }}
                 >
                   <div className="flex justify-between items-start">
                     <div className="flex-1">

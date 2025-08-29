@@ -74,6 +74,8 @@ export interface Itinerary {
   budgetSummary: {
     stay: string;
     food: string;
+    fuel?: string;
+    miscellaneous?: string;
     total: string;
   };
   coveredDestinations: DestinationDetails[];
