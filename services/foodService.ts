@@ -11,36 +11,34 @@ export const generateFoodRecommendations = async (data: FoodFinderRequestData): 
   const { destination, startDate, foodPreference, includeBeverages, language } = data;
 
   const prompt = `
-    You are a world-renowned Culinary Anthropologist. Your specialty is identifying and documenting hyper-local food traditions that are unique to a specific town or city, often unknown to outsiders. Your reputation is built on your obsessive attention to detail and your refusal to accept generic, regional answers.
-
-    Your mission is to generate a list of hyper-local, authentic food recommendations for a trip to ${destination} on or around the date ${startDate}. The recommendations MUST be in the ${language} language.
+    You are a pragmatic Culinary Anthropologist. Your goal is to create a useful and satisfying list of food recommendations for a user traveling to ${destination}.
+    Returning an empty or mostly empty list is a complete failure. You must adapt your research strategy based on the information available for the location.
 
     Trip Details:
-    - Dietary Preference: ${foodPreference}
-    - Include Beverages: ${includeBeverages ? 'Yes' : 'No'}
     - Destination: ${destination}
+    - Dietary Preference: ${foodPreference}
     - Date: ${startDate}
+    - Include Beverages: ${includeBeverages ? 'Yes' : 'No'}
+    - Language: ${language}
 
-    **CORE METHODOLOGY - A Multi-Phase Intellectual Framework (MANDATORY):**
+    **CORE DIRECTIVE: Two-Tier Research Strategy (MANDATORY)**
 
-    **Phase 1: Broad Intelligence Gathering.**
-    - Use your search tool with basic queries like "[destination] famous dishes", "[destination] local cuisine". This is only a starting point to gather initial candidates.
+    **Tier 1: Hyper-Local Focus.**
+    - Your first priority is to execute a deep search for dishes, recipes, or food items that are *truly unique* to ${destination}.
+    - Use search queries like "[destination] special food", "[destination] own dish", "what to eat in [destination] that you can't find elsewhere".
+    - This is the ideal outcome, and you should dedicate significant effort here first.
 
-    **Phase 2: The Authenticity Gauntlet (CRITICAL).**
-    This is the most important step. For every candidate dish from Phase 1, you MUST subject it to a rigorous verification process to prove it is truly hyper-local.
-    - **Cross-Verification Querying**: For each dish, perform secondary searches like "origin of [dish name]", "is [dish name] common outside of [destination]", "other cities famous for [dish name]".
-    - **The Uniqueness Test**: A dish only passes this test if your research confirms it is *overwhelmingly* associated with the specific city of "${destination}". If it's a state-wide or country-wide specialty, it is an **IMMEDIATE DISQUALIFICATION**. Your goal is to find what defines the specific town or city.
-    - **The Local's Test (Self-Critique)**: Before finalizing a dish, you must ask yourself this question: "If I showed this list to someone who has lived in '${destination}' their whole life, would they be impressed by my deep local knowledge, or would they find it generic?" Your entire response must be designed to pass this "Local's Test". If a dish feels too broad, discard it and dig deeper.
-
-    **Phase 3: Deep Dive for Hidden Gems.**
-    Go beyond the obvious to find what tourists miss.
-    - **Primary Source Analysis**: Search for "[destination] food blogs", "[destination] food forums", "reddit what to eat in [destination]". Analyze discussions by locals.
-    - **Socio-Cultural Context**: Investigate seasonal specialties (what's in season in "${destination}" around ${startDate}), dishes tied to local festivals, and unique recipes passed down through generations. Use these findings for the 'seasonalSpecials' and 'festivalFoods' categories.
+    **Tier 2: Intelligent Fallback - Local Favorites.**
+    - **ACTIVATION CRITERIA**: You MUST activate this protocol if your Tier 1 search yields fewer than 5-7 total dishes across all categories. This is critical for less-documented towns.
+    - **BROADENED SCOPE**: Shift your focus from 'unique' to 'popular and beloved'. Search for famous regional dishes (e.g., famous Bengali cuisine if the city is in West Bengal) that are known to be exceptionally popular or made particularly well in ${destination}.
+    - **SEARCH QUERIES**: Use queries like "best restaurants in [destination]", "what do locals eat in [destination]", "[destination] food blogs".
+    - **MANDATORY CONTEXTUALIZATION**: When you include a regional dish under this Tier 2 protocol, you MUST provide context in its description. This is non-negotiable.
+        - **Good Example**: "Shorshe Ilish: A quintessential Bengali mustard fish curry, which the local restaurants in Durgapur are particularly famous for."
+        - **Bad Example**: "Shorshe Ilish: A fish curry."
+    - This protocol ensures the user always receives a valuable list, even if the location lacks a widely documented unique cuisine.
 
     **MANDATORY JSON OUTPUT:**
-    The response MUST be ONLY a single, valid JSON object. Do not add any text before or after it. The JSON object must strictly follow the structure below. All text content must be in ${language}.
-
-    For each of the 13 categories, provide 2-4 food items as objects with 'name' and 'description'. If you cannot find relevant items for a category after your deep search, you MUST return an empty array for it.
+    The response MUST be ONLY a single, valid JSON object that strictly follows this structure. All text content must be in ${language}. For each of the 13 categories, provide 2-4 food items. If a category is empty after your exhaustive two-tier search, you MUST return an empty array for it.
 
     JSON Structure:
     {
@@ -61,11 +59,11 @@ export const generateFoodRecommendations = async (data: FoodFinderRequestData): 
     }
 
     **CRITICAL JSON RULES:**
-    - Each category array MUST contain objects with 'name' and 'description' keys.
+    - Focus your efforts on populating 'iconicDishes', 'snacksAndStreetFood', 'lunch', and 'dessertAndSweets' first.
     - Descriptions must be short, enticing, and informative.
     - If 'includeBeverages' is false, the 'drinksAndBeverages' array MUST be empty.
     - The ENTIRE response, including all names and descriptions, MUST be translated into ${language}.
-    - The output MUST start with "{" and end with "}".
+    - The output MUST start with "{" and end with "}". No markdown, no introductory text.
   `;
   
   const response = await ai.models.generateContent({
