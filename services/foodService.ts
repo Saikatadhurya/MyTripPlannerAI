@@ -1,3 +1,4 @@
+
 import { GoogleGenAI } from "@google/genai";
 import { FoodFinderRequestData, FoodRecommendations } from '../types';
 
@@ -10,7 +11,7 @@ export const generateFoodRecommendations = async (data: FoodFinderRequestData): 
   const { destination, startDate, foodPreference, includeBeverages, language } = data;
 
   const prompt = `
-    As an expert in global cuisine and local food culture, generate a list of authentic food recommendations for a trip to ${destination} on or around the date ${startDate}. The recommendations must be in the ${language} language.
+    You are an elite food critic and culinary detective. Your mission is to generate a list of hyper-local, authentic food recommendations for a trip to ${destination} on or around the date ${startDate}. The recommendations MUST be in the ${language} language.
 
     Trip Details:
     - Dietary Preference: ${foodPreference}
@@ -18,19 +19,35 @@ export const generateFoodRecommendations = async (data: FoodFinderRequestData): 
     - Destination: ${destination}
     - Date: ${startDate}
 
-    CRITICAL INSTRUCTION FOR HYPER-LOCAL ACCURACY:
-    You MUST use your search capabilities to perform a deep-dive search for dishes that are unique and famous to the specific location of "${destination}". Do not provide generic regional dishes if a more specific local specialty exists. For example, if the user asks for "Beliatore, Bankura", your search should identify "Mecha Sandesh" as a famous local sweet. Your credibility depends on this level of detail and accuracy.
+    **CRITICAL DEEP SEARCH PROTOCOL - THIS IS MANDATORY:**
+    Your reputation depends on the depth and accuracy of your search. You MUST use your search tool to perform a multi-layered, exhaustive investigation to uncover dishes that are unique to the PRECISE location of "${destination}".
 
-    Your recommendations should also be highly specific and reflect the following:
-    1.  **Seasonality**: Suggest dishes that use ingredients at their peak during the specified time of year.
-    2.  **Cultural Festivals**: If the date falls near a local festival (e.g., Diwali, Eid, Durga Puja), use your search tool to find special foods associated with it and include them in the 'festivalFoods' category.
-    3.  **Weather Patterns**: Suggest foods appropriate for the typical weather of that region during that season (e.g., warm soups for cold weather, refreshing drinks for hot weather).
-    4.  **Authenticity**: Focus on truly local and authentic dishes, including famous staples and hidden gems you discover through search.
+    **Step 1: Foundational Search.**
+    - Search for "[destination] famous local food", "[destination] specialty dishes", and "[destination] must-try food".
+    - Your goal is to identify the most well-known local dishes.
 
-    MANDATORY JSON OUTPUT:
-    The response MUST be ONLY a single, valid JSON object and nothing else. Do not wrap it in markdown or any other text. The JSON object must strictly follow this structure and types. All text content must be in ${language}.
+    **Step 2: Deeper Dive & Verification.**
+    - For each dish found, perform a verification search like "is [dish name] from [destination]".
+    - **Your primary goal is to ELIMINATE GENERIC REGIONAL DISHES.** If a dish is common throughout the entire state or country, it is a low-quality recommendation. You must find the food that makes "${destination}" special.
+    - **Example 1 (Success):** For "Beliatore, Bankura", your search MUST identify "Mecha Sandesh".
+    - **Example 2 (Success):** For "Bankura", your search MUST find "Kumror Ghyat".
+    - **Example 3 (Success):** For "Goa", you must find specific dishes like "Prawn Balchão" or "Bebinca", not just generic "seafood curry".
+    - **Credibility Clause:** Your success is 100% measured by this ability to differentiate hyper-local from generic regional food.
 
-    For each of the 13 categories below, provide an array of 2-4 food items. Each item must be an object with a 'name' and a 'description'. If you cannot find relevant items for a category, you MUST return an empty array for it.
+    **Step 3: Uncovering Hidden Gems.**
+    - For the 'hiddenRecipes' category, search for "[destination] food blogs", "secret recipes from [destination]", or "what do locals eat in [destination]".
+    - For the 'trendingOrViralFoods' category, search social media trends: "viral food [destination] Instagram" or "[destination] food trends TikTok".
+    - For 'chefsSpecials', search for "best restaurants in [destination]" and analyze their menus for unique, non-standard items.
+
+    **Additional Contextual Layers:**
+    1.  **Seasonality**: Search for what's in season in "${destination}" around ${startDate} and recommend dishes featuring those ingredients.
+    2.  **Cultural Festivals**: Search for local festivals near ${startDate} in "${destination}" and find their associated special foods for the 'festivalFoods' category.
+    3.  **Weather Patterns**: Search for the typical weather and suggest appropriate foods (e.g., warm, hearty meals for cold climates; light, refreshing options for hot climates).
+
+    **MANDATORY JSON OUTPUT:**
+    The response MUST be ONLY a single, valid JSON object. Do not add any text before or after it. The JSON object must strictly follow the structure below. All text content must be in ${language}.
+
+    For each of the 13 categories, provide 2-4 food items as objects with 'name' and 'description'. If you cannot find relevant items for a category after your deep search, you MUST return an empty array for it.
 
     JSON Structure:
     {
@@ -50,13 +67,12 @@ export const generateFoodRecommendations = async (data: FoodFinderRequestData): 
       "streetFestivalsAndFoodMelas": [{ "name": "string", "description": "string" }]
     }
 
-    CRITICAL RULES:
+    **CRITICAL JSON RULES:**
     - Each category array MUST contain objects with 'name' and 'description' keys.
-    - Descriptions should be short, enticing, and informative (1-2 sentences).
+    - Descriptions must be short, enticing, and informative.
     - If 'includeBeverages' is false, the 'drinksAndBeverages' array MUST be empty.
-    - Ensure every string value is correctly escaped for valid JSON. Use single quotes inside strings if necessary, or escape double quotes (\\").
-    - The ENTIRE JSON response, including all names and descriptions, must be translated into ${language}.
-    - The output MUST start with "{" and end with "}". No other text should precede or follow the JSON object.
+    - The ENTIRE response, including all names and descriptions, MUST be translated into ${language}.
+    - The output MUST start with "{" and end with "}".
   `;
   
   const response = await ai.models.generateContent({

@@ -57,7 +57,15 @@ const App: React.FC = () => {
       }
     } catch (err) {
       if (!isGenerationCancelled.current) {
-        setError(err instanceof Error ? err.message : 'Failed to generate itinerary. Please try again.');
+        let errorMessage = 'Failed to generate itinerary. Please try again.';
+        if (err instanceof Error) {
+            if (err.message.includes('503') || err.message.toLowerCase().includes('overloaded')) {
+                errorMessage = 'The AI model is currently busy handling many requests. Please wait a moment and try again.';
+            } else {
+                errorMessage = err.message;
+            }
+        }
+        setError(errorMessage);
         setView('questionnaire'); // Stay on questionnaire to show the error
       }
     } finally {
@@ -76,7 +84,15 @@ const App: React.FC = () => {
         setPackingList(generatedList);
         setView('packingAssistantResult');
     } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to generate packing list. Please try again.');
+        let errorMessage = 'Failed to generate packing list. Please try again.';
+        if (err instanceof Error) {
+            if (err.message.includes('503') || err.message.toLowerCase().includes('overloaded')) {
+                errorMessage = 'The AI model is currently busy handling many requests. Please wait a moment and try again.';
+            } else {
+                errorMessage = err.message;
+            }
+        }
+        setError(errorMessage);
         setView('packingAssistantForm');
     } finally {
         setIsLoading(false);
@@ -91,7 +107,15 @@ const App: React.FC = () => {
       setFoodRecommendations(recommendations);
       setView('foodFinderResult');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to generate food recommendations. Please try again.');
+      let errorMessage = 'Failed to generate food recommendations. Please try again.';
+      if (err instanceof Error) {
+          if (err.message.includes('503') || err.message.toLowerCase().includes('overloaded')) {
+              errorMessage = 'The AI model is currently busy handling many requests. Please wait a moment and try again.';
+          } else {
+              errorMessage = err.message;
+          }
+      }
+      setError(errorMessage);
       setView('foodFinderForm');
     } finally {
       setIsLoading(false);
