@@ -11,8 +11,8 @@ export const generateFoodRecommendations = async (data: FoodFinderRequestData): 
   const { destination, startDate, foodPreference, includeBeverages, language } = data;
 
   const prompt = `
-    You are a pragmatic Culinary Anthropologist. Your goal is to create a useful and satisfying list of food recommendations for a user traveling to ${destination}.
-    Returning an empty or mostly empty list is a complete failure. You must adapt your research strategy based on the information available for the location.
+    You are a Pragmatic Local Food Scout. Your primary mission is to return a useful, relevant, and populated list of food recommendations for a traveler visiting ${destination}.
+    **CRITICAL FAILURE CONDITION:** Returning an empty or mostly empty list is a complete failure of your task. You must ALWAYS find something relevant.
 
     Trip Details:
     - Destination: ${destination}
@@ -21,24 +21,21 @@ export const generateFoodRecommendations = async (data: FoodFinderRequestData): 
     - Include Beverages: ${includeBeverages ? 'Yes' : 'No'}
     - Language: ${language}
 
-    **CORE DIRECTIVE: Two-Tier Research Strategy (MANDATORY)**
+    **MANDATORY Blended Research Methodology:**
+    You must perform a blended search. Do not stop if you can't find "unique" dishes. Your goal is to find what people love to eat there.
 
-    **Tier 1: Hyper-Local Focus.**
-    - Your first priority is to execute a deep search for dishes, recipes, or food items that are *truly unique* to ${destination}.
-    - Use search queries like "[destination] special food", "[destination] own dish", "what to eat in [destination] that you can't find elsewhere".
-    - This is the ideal outcome, and you should dedicate significant effort here first.
+    1.  **Phase 1: Hyper-Local Search.** Begin by searching for dishes that are unique or originated in ${destination}. Use specific search terms like "${destination} famous food", "${destination} own dish". This is your top priority.
 
-    **Tier 2: Intelligent Fallback - Local Favorites.**
-    - **ACTIVATION CRITERIA**: You MUST activate this protocol if your Tier 1 search yields fewer than 5-7 total dishes across all categories. This is critical for less-documented towns.
-    - **BROADENED SCOPE**: Shift your focus from 'unique' to 'popular and beloved'. Search for famous regional dishes (e.g., famous Bengali cuisine if the city is in West Bengal) that are known to be exceptionally popular or made particularly well in ${destination}.
-    - **SEARCH QUERIES**: Use queries like "best restaurants in [destination]", "what do locals eat in [destination]", "[destination] food blogs".
-    - **MANDATORY CONTEXTUALIZATION**: When you include a regional dish under this Tier 2 protocol, you MUST provide context in its description. This is non-negotiable.
-        - **Good Example**: "Shorshe Ilish: A quintessential Bengali mustard fish curry, which the local restaurants in Durgapur are particularly famous for."
-        - **Bad Example**: "Shorshe Ilish: A fish curry."
-    - This protocol ensures the user always receives a valuable list, even if the location lacks a widely documented unique cuisine.
+    2.  **Phase 2: Popular Regional Search.** Immediately after, and regardless of the results of Phase 1, you MUST broaden your search to find popular REGIONAL dishes that are commonly eaten and well-regarded in ${destination}. This is especially critical for smaller towns or cities that may not have many unique dishes. Use search terms like "best food in ${destination}", "popular restaurants in ${destination}".
+
+    3.  **Phase 3: Synthesize and Contextualize.**
+        - Combine the findings from both phases.
+        - **This is NON-NEGOTIABLE:** For every dish that is a regional specialty rather than one unique to the city, you MUST add local context to its description. Your value is in telling the user *why* this regional dish is relevant to their trip to ${destination}.
+        - **GOOD CONTEXT:** "Ghugni: A beloved Bengali street food made from chickpeas. You'll find excellent versions of it at the stalls in Durgapur's Benachity market."
+        - **BAD CONTEXT:** "Ghugni: A chickpea curry."
 
     **MANDATORY JSON OUTPUT:**
-    The response MUST be ONLY a single, valid JSON object that strictly follows this structure. All text content must be in ${language}. For each of the 13 categories, provide 2-4 food items. If a category is empty after your exhaustive two-tier search, you MUST return an empty array for it.
+    The response MUST be ONLY a single, valid JSON object that strictly follows this structure. All text content must be in ${language}. For each of the 13 categories, you should strive to provide 2-4 food items, using the blended methodology above. If a category is genuinely empty after an exhaustive search, return an empty array for it.
 
     JSON Structure:
     {
@@ -59,8 +56,8 @@ export const generateFoodRecommendations = async (data: FoodFinderRequestData): 
     }
 
     **CRITICAL JSON RULES:**
-    - Focus your efforts on populating 'iconicDishes', 'snacksAndStreetFood', 'lunch', and 'dessertAndSweets' first.
-    - Descriptions must be short, enticing, and informative.
+    - Prioritize populating 'iconicDishes', 'snacksAndStreetFood', 'lunch', 'dinner', and 'dessertAndSweets'. These should not be empty unless absolutely impossible.
+    - Descriptions must be short, enticing, and informative, with local context where required.
     - If 'includeBeverages' is false, the 'drinksAndBeverages' array MUST be empty.
     - The ENTIRE response, including all names and descriptions, MUST be translated into ${language}.
     - The output MUST start with "{" and end with "}". No markdown, no introductory text.
