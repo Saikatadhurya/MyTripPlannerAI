@@ -16,11 +16,15 @@ const AppCard: React.FC<{ app: MobileApp }> = ({ app }) => {
     const appStoreSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(`${app.name} App Store`)}`;
     const playStoreSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(`${app.name} Play Store`)}`;
 
+    // Intelligent check: Show category only if it's present and different from the app name (case-insensitive).
+    const showCategory = app.category && app.category.toLowerCase() !== app.name.toLowerCase();
+
     return (
         <div className="bg-white/40 backdrop-blur-lg p-4 rounded-xl shadow-md border border-white/50 space-y-3 h-full flex flex-col">
             <div className="flex items-start justify-between">
                 <div className="flex-1 min-w-0">
-                    {app.category ? (
+                    {showCategory ? (
+                        // Layout with a distinct category title
                         <div>
                             <h3 className="text-xl font-bold text-slate-800 capitalize truncate">{app.category}</h3>
                             <div className="flex items-center space-x-2 mt-1">
@@ -29,6 +33,7 @@ const AppCard: React.FC<{ app: MobileApp }> = ({ app }) => {
                             </div>
                         </div>
                     ) : (
+                        // Standard layout for apps without a category or where category is redundant
                         <div className="flex items-center space-x-3">
                             <span className="text-3xl">{app.icon}</span>
                             <h4 className="font-bold text-slate-800 text-lg truncate">{app.name}</h4>
