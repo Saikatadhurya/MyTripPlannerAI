@@ -1,7 +1,8 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { MusicFinderRequestData, LocationSuggestion } from '../types';
 import { getDestinationSuggestions } from '../services/geminiService';
-import LoadingIndicator from './LoadingIndicator';
+import StreamingLoadingIndicator from './LoadingIndicator';
 
 interface MusicFinderFormProps {
   onSubmit: (data: MusicFinderRequestData) => void;
@@ -9,21 +10,22 @@ interface MusicFinderFormProps {
   error: string | null;
   onBack: () => void;
   onCancel: () => void;
+  streamedText: string;
 }
 
-const loadingData = [
-  { message: "Tuning into local frequencies...", icon: "📻" },
-  { message: "Finding the top charts...", icon: "📈" },
-  { message: "Asking locals for their favorite songs...", icon: "🎧" },
-  { message: "Curating your travel playlist...", icon: "🎶" },
+const musicStages = [
+    { key: '"genre": "Top Trending Hits"', text: 'Finding top trending hits' },
+    { key: '"musicCategories"', text: 'Discovering local genres and artists' },
+    { key: '"appLinks"', text: 'Locating songs on streaming apps' },
 ];
+
 
 const languages = [
     'Afrikaans (af)', 'Akan (ak)', 'Albanian (sq)', 'Amharic (am)', 'Arabic (ar)', 'Armenian (hy)', 'Assamese (as)', 'Aymara (ay)', 'Azerbaijani (az)', 
     'Bambara (bm)', 'Basque (eu)', 'Belarusian (be)', 'Bengali (bn)', 'Bhojpuri (bho)', 'Bosnian (bs)', 'Bulgarian (bg)', 'Catalan (ca)', 'Cebuano (ceb)', 'Chinese (Simplified) (zh-CN)', 'Chinese (Traditional) (zh-TW)', 'Corsican (co)', 'Croatian (hr)', 'Czech (cs)', 'Danish (da)', 'Dhivehi (dv)', 'Dogri (doi)', 'Dutch (nl)', 'English (en)', 'Esperanto (eo)', 'Estonian (et)', 'Ewe (ee)', 'Filipino (Tagalog) (fil)', 'Finnish (fi)', 'French (fr)', 'Frisian (fy)', 'Galician (gl)', 'Ganda (lg)', 'Georgian (ka)', 'German (de)', 'Goan Konkani (gom)', 'Greek (el)', 'Guarani (gn)', 'Gujarati (gu)', 'Haitian Creole (ht)', 'Hausa (ha)', 'Hawaiian (haw)', 'Hebrew (iw)', 'Hindi (hi)', 'Hmong (hmn)', 'Hungarian (hu)', 'Icelandic (is)', 'Igbo (ig)', 'Ilocano (ilo)', 'Indonesian (id)', 'Irish (ga)', 'Italian (it)', 'Japanese (ja)', 'Javanese (jv)', 'Kannada (kn)', 'Kazakh (kk)', 'Khmer (km)', 'Kinyarwanda (rw)', 'Korean (ko)', 'Krio (kri)', 'Kurdish (ku)', 'Kurdish (Sorani) (ckb)', 'Kyrgyz (ky)', 'Lao (lo)', 'Latin (la)', 'Latvian (lv)', 'Lingala (ln)', 'Lithuanian (lt)', 'Luganda (lg)', 'Luxembourgish (lb)', 'Macedonian (mk)', 'Maithili (mai)', 'Malagasy (mg)', 'Malay (ms)', 'Malayalam (ml)', 'Maltese (mt)', 'Maori (mi)', 'Marathi (mr)', 'Meiteilon (Manipuri) (mni-Mtei)', 'Mizo (lus)', 'Mongolian (mn)', 'Myanmar (Burmese) (my)', 'Nepali (ne)', 'Norwegian (no)', 'Nyanja (Chichewa) (ny)', 'Odia (Oriya) (or)', 'Oromo (om)', 'Pashto (ps)', 'Persian (fa)', 'Polish (pl)', 'Portuguese (Brazil) (pt-BR)', 'Portuguese (Portugal) (pt-PT)', 'Punjabi (pa)', 'Quechua (qu)', 'Romanian (ro)', 'Russian (ru)', 'Samoan (sm)', 'Sanskrit (sa)', 'Scots Gaelic (gd)', 'Sepedi (nso)', 'Serbian (sr)', 'Sesotho (st)', 'Shona (sn)', 'Sindhi (sd)', 'Sinhala (si)', 'Slovak (sk)', 'Slovenian (sl)', 'Somali (so)', 'Spanish (es)', 'Sundanese (su)', 'Swahili (sw)', 'Swedish (sv)', 'Tagalog (Filipino) (tl)', 'Tajik (tg)', 'Tamil (ta)', 'Tatar (tt)', 'Telugu (te)', 'Thai (th)', 'Tigrinya (ti)', 'Tsonga (ts)', 'Turkish (tr)', 'Turkmen (tk)', 'Ukrainian (uk)', 'Urdu (ur)', 'Uyghur (ug)', 'Uzbek (uz)', 'Vietnamese (vi)', 'Welsh (cy)', 'Xhosa (xh)', 'Yiddish (yi)', 'Yoruba (yo)', 'Zulu (zu)',
 ];
 
-const MusicFinderForm: React.FC<MusicFinderFormProps> = ({ onSubmit, isLoading, error, onBack, onCancel }) => {
+const MusicFinderForm: React.FC<MusicFinderFormProps> = ({ onSubmit, isLoading, error, onBack, onCancel, streamedText }) => {
   const [formData, setFormData] = useState<MusicFinderRequestData>({
     destination: '',
     language: 'English (en)',
@@ -107,10 +109,11 @@ const MusicFinderForm: React.FC<MusicFinderFormProps> = ({ onSubmit, isLoading, 
   
   if (isLoading) {
     return (
-      <LoadingIndicator
-        messages={loadingData}
+      <StreamingLoadingIndicator
+        streamedText={streamedText}
+        stages={musicStages}
         onCancel={onCancel}
-        subtext="Finding the perfect soundtrack for you..."
+        title="Curating Your Playlist..."
         accentColor="fuchsia"
       />
     );

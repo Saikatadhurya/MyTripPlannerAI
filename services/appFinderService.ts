@@ -1,11 +1,8 @@
 
-
-
-
 import { GoogleGenAI } from "@google/genai";
 import { AppFinderRequestData, AppRecommendations } from '../types';
 
-export const generateAppRecommendations = async (data: AppFinderRequestData): Promise<AppRecommendations> => {
+export const generateAppRecommendations = async (data: AppFinderRequestData, onChunk: (chunk: string) => void): Promise<AppRecommendations> => {
   if (!process.env.API_KEY) {
     throw new Error("API key is missing. Please set it in your environment variables.");
   }
@@ -50,50 +47,44 @@ export const generateAppRecommendations = async (data: AppFinderRequestData): Pr
         \`{ "name": "Google Maps", "category": "", "description": "The world's most popular navigation app...", "platform": "Both", "icon": "🗺️" }\`
   `;
   
-  let attempts = 0;
-  const maxAttempts = 2;
-
-  while (attempts < maxAttempts) {
-      attempts++;
-      let resultText = '';
-      try {
-          const response = await ai.models.generateContent({
-              model: "gemini-2.5-flash",
-              contents: prompt,
-              config: {
-                  tools: [{ googleSearch: {} }],
-              }
-          });
-
-          resultText = response.text.trim();
-          if (!resultText) {
-              throw new Error("AI response was empty or invalid.");
+  let fullText = '';
+  try {
+      const stream = await ai.models.generateContentStream({
+          model: "gemini-2.5-flash",
+          contents: prompt,
+          config: {
+              tools: [{ googleSearch: {} }],
           }
-          
-          let jsonString = resultText;
-          const markdownMatch = jsonString.match(/```(json)?([\s\S]*?)```/);
-          if (markdownMatch && markdownMatch[2]) {
-              jsonString = markdownMatch[2].trim();
-          }
+      });
 
-          const firstBrace = jsonString.indexOf('{');
-          const lastBrace = jsonString.lastIndexOf('}');
-
-          if (firstBrace === -1 || lastBrace === -1 || lastBrace < firstBrace) {
-              throw new Error("Could not find a valid JSON object in the AI response.");
-          }
-
-          jsonString = jsonString.substring(firstBrace, lastBrace + 1);
-          return JSON.parse(jsonString); // Success
-      } catch (error) {
-          console.error(`Attempt ${attempts}/${maxAttempts} failed to generate and parse app recommendations:`, error);
-          console.error("Original AI response for failed attempt:", resultText);
-          if (attempts >= maxAttempts) {
-              throw new Error("The AI returned an invalid response format. Please try again.");
-          }
-          await new Promise(resolve => setTimeout(resolve, 200));
+      for await (const chunk of stream) {
+          const chunkText = chunk.text;
+          fullText += chunkText;
+          onChunk(chunkText);
       }
-  }
 
-  throw new Error("Failed to generate app recommendations after multiple attempts.");
+      if (!fullText) {
+          throw new Error("AI response was empty or invalid.");
+      }
+      
+      let jsonString = fullText;
+      const markdownMatch = jsonString.match(/```(json)?([\s\S]*?)```/);
+      if (markdownMatch && markdownMatch[2]) {
+          jsonString = markdownMatch[2].trim();
+      }
+
+      const firstBrace = jsonString.indexOf('{');
+      const lastBrace = jsonString.lastIndexOf('}');
+
+      if (firstBrace === -1 || lastBrace === -1 || lastBrace < firstBrace) {
+          throw new Error("Could not find a valid JSON object in the AI response.");
+      }
+
+      jsonString = jsonString.substring(firstBrace, lastBrace + 1);
+      return JSON.parse(jsonString);
+  } catch (error) {
+      console.error("Failed to generate and parse app recommendations stream:", error);
+      console.error("Original AI response text accumulated:", fullText);
+      throw new Error("The AI returned an invalid response format. Please try again.");
+  }
 };

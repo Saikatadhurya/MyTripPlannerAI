@@ -494,8 +494,8 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
                       </p>
                    )}
                    <ul className="list-disc pl-5 space-y-1 text-gray-700">
-                      {day.transport.suggestions.map((item, index) => (
-                        <li key={index} dangerouslySetInnerHTML={parseBold(item)} />
+                      {[].concat(day.transport.suggestions || []).map((item, index) => (
+                        <li key={index} dangerouslySetInnerHTML={parseBold(String(item))} />
                       ))}
                    </ul>
                 </div>

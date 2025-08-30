@@ -1,7 +1,8 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { PackingList, PackingListRequestData } from '../types';
 
-export const generatePackingList = async (data: PackingListRequestData): Promise<PackingList> => {
+export const generatePackingList = async (data: PackingListRequestData, onChunk: (chunk: string) => void): Promise<PackingList> => {
   if (!process.env.API_KEY) {
     throw new Error("API key is missing. Please set it in your environment variables.");
   }
@@ -39,68 +40,49 @@ export const generatePackingList = async (data: PackingListRequestData): Promise
     8. The entire JSON response, including all string values, MUST be in ${language}.
   `;
 
-  const responseSchema = {
-    type: Type.OBJECT,
-    properties: {
-      clothingAndFootwear: { type: Type.ARRAY, items: { type: Type.STRING } },
-      toiletriesAndPersonalCare: { type: Type.ARRAY, items: { type: Type.STRING } },
-      medicinesAndHealth: { type: Type.ARRAY, items: { type: Type.STRING } },
-      electronicsAndGear: { type: Type.ARRAY, items: { type: Type.STRING } },
-      documentsAndMoney: { type: Type.ARRAY, items: { type: Type.STRING } },
-      optionalComfortItems: { type: Type.ARRAY, items: { type: Type.STRING } },
-      adventureClothing: { type: Type.ARRAY, items: { type: Type.STRING } },
-      bagSuggestion: { type: Type.STRING },
-      locallyAvailableItems: { type: Type.ARRAY, items: { type: Type.STRING } },
-      approximateTemperature: { type: Type.STRING },
-    },
-    required: ["clothingAndFootwear", "toiletriesAndPersonalCare", "medicinesAndHealth", "electronicsAndGear", "documentsAndMoney", "optionalComfortItems", "adventureClothing", "bagSuggestion", "locallyAvailableItems", "approximateTemperature"],
-  };
-
-  const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
-    contents: prompt,
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: responseSchema,
-    }
-  });
-
-  const resultText = response.text.trim();
-  if (!resultText) {
-    throw new Error("AI response was empty or invalid.");
-  }
-  
-  let jsonString = resultText;
-  const markdownMatch = jsonString.match(/```(json)?([\s\S]*?)```/);
-  if (markdownMatch && markdownMatch[2]) {
-      jsonString = markdownMatch[2].trim();
-  }
-
-  const firstBrace = jsonString.indexOf('{');
-  const lastBrace = jsonString.lastIndexOf('}');
-
-  if (firstBrace === -1 || lastBrace === -1 || lastBrace < firstBrace) {
-    console.error("Could not find a valid JSON object in the AI response for packing list.");
-    console.error("Original response:", resultText);
-    throw new Error("The AI returned an invalid response format. Please try again.");
-  }
-
-  jsonString = jsonString.substring(firstBrace, lastBrace + 1);
-  
-  let packingData;
+  let fullText = '';
   try {
-      packingData = JSON.parse(jsonString);
-  } catch (e) {
-      console.error("Failed to parse JSON from AI response after cleaning (packing list):", e);
-      console.error("Cleaned JSON string that failed:", jsonString);
-      console.error("Original AI response:", resultText);
+      const stream = await ai.models.generateContentStream({
+        model: "gemini-2.5-flash",
+        contents: prompt,
+      });
+
+      for await (const chunk of stream) {
+          const chunkText = chunk.text;
+          fullText += chunkText;
+          onChunk(chunkText);
+      }
+
+      if (!fullText) {
+        throw new Error("AI response was empty or invalid.");
+      }
+      
+      let jsonString = fullText;
+      const markdownMatch = jsonString.match(/```(json)?([\s\S]*?)```/);
+      if (markdownMatch && markdownMatch[2]) {
+          jsonString = markdownMatch[2].trim();
+      }
+
+      const firstBrace = jsonString.indexOf('{');
+      const lastBrace = jsonString.lastIndexOf('}');
+
+      if (firstBrace === -1 || lastBrace === -1 || lastBrace < firstBrace) {
+        throw new Error("Could not find a valid JSON object in the AI response for packing list.");
+      }
+
+      jsonString = jsonString.substring(firstBrace, lastBrace + 1);
+      
+      const packingData = JSON.parse(jsonString);
+
+      return {
+        ...packingData,
+        destination,
+        days,
+        startDate,
+      };
+  } catch (error) {
+      console.error("Failed to generate and parse packing list stream:", error);
+      console.error("Original AI response text accumulated:", fullText);
       throw new Error("The AI returned an invalid response format. Please try again.");
   }
-
-  return {
-    ...packingData,
-    destination,
-    days,
-    startDate,
-  };
 };

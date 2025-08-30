@@ -1,7 +1,8 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { FoodFinderRequestData, FoodPreference, LocationSuggestion } from '../types';
 import { getDestinationSuggestions } from '../services/geminiService';
-import LoadingIndicator from './LoadingIndicator';
+import StreamingLoadingIndicator from './LoadingIndicator';
 
 interface FoodFinderFormProps {
   onSubmit: (data: FoodFinderRequestData) => void;
@@ -9,13 +10,16 @@ interface FoodFinderFormProps {
   error: string | null;
   onBack: () => void;
   onCancel: () => void;
+  streamedText: string;
 }
 
-const loadingData = [
-  { message: "Simmering local recipes...", icon: "🍲" },
-  { message: "Chatting with local chefs...", icon: "🧑‍🍳" },
-  { message: "Finding the freshest ingredients...", icon: "🌶️" },
-  { message: "Preparing your delicious food guide...", icon: "📝" },
+const foodStages = [
+    { key: '"breakfast"', text: 'Discovering morning bites' },
+    { key: '"lunch"', text: 'Looking for midday meals' },
+    { key: '"snacksAndStreetFood"', text: 'Finding popular street food' },
+    { key: '"iconicDishes"', text: 'Identifying iconic dishes' },
+    { key: '"hiddenRecipes"', text: 'Uncovering hidden gems' },
+    { key: '"trendingOrViralFoods"', text: 'Checking out viral food trends' },
 ];
 
 const foodPreferences: {label: FoodPreference, icon: string}[] = [
@@ -47,7 +51,7 @@ const Toggle: React.FC<{ label: string; description: string; enabled: boolean; o
     </button>
 );
 
-const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, error, onBack, onCancel }) => {
+const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, error, onBack, onCancel, streamedText }) => {
   const [formData, setFormData] = useState<FoodFinderRequestData>({
     destination: '',
     startDate: new Date().toISOString().split('T')[0],
@@ -133,10 +137,11 @@ const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, er
   
   if (isLoading) {
     return (
-      <LoadingIndicator
-        messages={loadingData}
+      <StreamingLoadingIndicator
+        streamedText={streamedText}
+        stages={foodStages}
         onCancel={onCancel}
-        subtext="Cooking up some recommendations..."
+        title="Cooking Up Recommendations..."
         accentColor="amber"
       />
     );

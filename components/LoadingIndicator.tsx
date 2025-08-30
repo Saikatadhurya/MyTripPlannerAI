@@ -1,104 +1,138 @@
-import React, { useState, useEffect } from 'react';
 
-interface LoadingIndicatorProps {
-  messages: { message: string; icon: string }[];
+import React, { useState, useEffect, useMemo } from 'react';
+
+interface Stage {
+  key: string;
+  text: string;
+}
+
+interface StreamingLoadingIndicatorProps {
+  streamedText: string;
+  stages: Stage[];
   onCancel: () => void;
-  subtext: string;
+  title: string;
   accentColor: 'violet' | 'amber' | 'teal' | 'fuchsia';
 }
 
 const colorClasses = {
-  violet: {
-    spinner: 'border-violet-200 border-t-violet-600',
-    progress: 'bg-violet-600',
-  },
-  amber: {
-    spinner: 'border-amber-200 border-t-amber-600',
-    progress: 'bg-amber-600',
-  },
-  teal: {
-    spinner: 'border-teal-200 border-t-teal-600',
-    progress: 'bg-teal-600',
-  },
-  fuchsia: {
-    spinner: 'border-fuchsia-200 border-t-fuchsia-600',
-    progress: 'bg-fuchsia-600',
-  },
+  violet: { text: 'text-violet-600', bg: 'bg-violet-600', ring: 'ring-violet-300' },
+  amber: { text: 'text-amber-600', bg: 'bg-amber-600', ring: 'ring-amber-300' },
+  teal: { text: 'text-teal-600', bg: 'bg-teal-600', ring: 'ring-teal-300' },
+  fuchsia: { text: 'text-fuchsia-600', bg: 'bg-fuchsia-600', ring: 'ring-fuchsia-300' },
 };
 
-const DURATION_TO_95_PERCENT = 35 * 1000; // 35 seconds to reach 95%
+const StageItem: React.FC<{ text: string, status: 'completed' | 'in_progress' | 'pending', accentColor: string }> = ({ text, status, accentColor }) => {
+    const colors = colorClasses[accentColor as keyof typeof colorClasses] || colorClasses.violet;
+    
+    const getIcon = () => {
+        switch(status) {
+            case 'completed':
+                return (
+                    <div className={`w-6 h-6 rounded-full ${colors.bg} flex items-center justify-center`}>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                    </div>
+                );
+            case 'in_progress':
+                return (
+                    <div className={`w-6 h-6 rounded-full border-2 border-slate-300 border-t-${accentColor}-600 animate-spin`}></div>
+                );
+            case 'pending':
+                return <div className="w-6 h-6 rounded-full border-2 border-slate-300"></div>;
+        }
+    };
 
-const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({ messages, onCancel, subtext, accentColor }) => {
-  const [loadingIndex, setLoadingIndex] = useState(0);
-  const [progress, setProgress] = useState(0);
+    const textClass = useMemo(() => {
+        switch(status) {
+            case 'completed': return 'text-slate-500 line-through';
+            case 'in_progress': return `${colors.text} font-semibold`;
+            case 'pending': return 'text-slate-400';
+        }
+    }, [status, colors.text]);
+
+    return (
+        <li className="flex items-center space-x-4 transition-all duration-300">
+            <div className="flex-shrink-0">{getIcon()}</div>
+            <span className={`transition-colors duration-300 ${textClass}`}>{text}</span>
+        </li>
+    );
+};
+
+const StreamingLoadingIndicator: React.FC<StreamingLoadingIndicatorProps> = ({ streamedText, stages, onCancel, title, accentColor }) => {
+  const [completedStages, setCompletedStages] = useState<Set<string>>(new Set());
+  const [currentStageIndex, setCurrentStageIndex] = useState(0);
 
   useEffect(() => {
+    const newCompleted = new Set<string>();
+    let firstPendingIndex = stages.length;
+
+    stages.forEach((stage, index) => {
+      if (streamedText.includes(stage.key)) {
+        newCompleted.add(stage.key);
+      } else if (firstPendingIndex === stages.length) {
+        firstPendingIndex = index;
+      }
+    });
+    
+    setCompletedStages(newCompleted);
+    setCurrentStageIndex(firstPendingIndex);
+
+  }, [streamedText, stages]);
+
+  const [visibleText, setVisibleText] = useState('');
+  useEffect(() => {
+    const slicedText = streamedText.slice(-250);
+    let i = 0;
     const interval = setInterval(() => {
-      setLoadingIndex(prev => (prev + 1) % messages.length);
-    }, 2500);
+      setVisibleText(slicedText.substring(0, i));
+      i++;
+      if (i > slicedText.length) {
+        clearInterval(interval);
+      }
+    }, 5);
     return () => clearInterval(interval);
-  }, [messages.length]);
 
-  useEffect(() => {
-    let startTime: number;
-    let frameId: number;
+  }, [streamedText]);
 
-    const animateProgress = (timestamp: number) => {
-      if (!startTime) {
-        startTime = timestamp;
-      }
-      const elapsedTime = timestamp - startTime;
-      
-      // A non-linear progression: starts faster, slows down near the end (ease-out cubic)
-      const t = Math.min(1, elapsedTime / DURATION_TO_95_PERCENT);
-      const easedT = 1 - Math.pow(1 - t, 3);
-      const currentProgress = Math.min(95, easedT * 95);
-
-      setProgress(currentProgress);
-
-      if (elapsedTime < DURATION_TO_95_PERCENT) {
-        frameId = requestAnimationFrame(animateProgress);
-      }
-    };
-
-    frameId = requestAnimationFrame(animateProgress);
-
-    return () => {
-      cancelAnimationFrame(frameId);
-    };
-  }, []);
-
-  const { message, icon } = messages[loadingIndex];
-  const colors = colorClasses[accentColor];
 
   return (
-    <div className="text-center py-20 fade-in">
-      <div className="inline-block relative">
-        <div className={`w-20 h-20 border-4 ${colors.spinner} rounded-full animate-spin`}></div>
-        <div className="absolute inset-0 flex items-center justify-center text-3xl">{icon}</div>
-      </div>
-      <p className="mt-6 text-xl font-semibold text-slate-800">{message}</p>
-      <p className="text-slate-600 mt-2">{subtext}</p>
-      
-      <div className="max-w-sm mx-auto mt-8 px-4">
-        <div className="relative">
-            <div className="absolute top-0 left-0 w-full h-2.5 bg-slate-200/70 rounded-full"></div>
-            <div 
-              className={`absolute top-0 left-0 h-2.5 ${colors.progress} rounded-full transition-all duration-300 ease-linear`}
-              style={{ width: `${progress}%` }}
-            ></div>
-        </div>
-        <p className="text-sm font-semibold text-slate-700 mt-2 tabular-nums">{Math.round(progress)}%</p>
-      </div>
+    <div className="text-center py-12 px-4 fade-in">
+      <div className="max-w-md mx-auto bg-white/40 backdrop-blur-lg p-8 rounded-2xl border border-white/50 shadow-2xl">
+        <h2 className="text-2xl font-bold text-slate-800">{title}</h2>
+        <p className="text-slate-600 mt-2">The AI is working its magic. Here's the real-time progress:</p>
+        
+        <ul className="space-y-4 text-left my-8">
+            {stages.map((stage, index) => (
+                <StageItem 
+                    key={stage.key}
+                    text={stage.text}
+                    status={
+                        completedStages.has(stage.key) ? 'completed' :
+                        index === currentStageIndex ? 'in_progress' : 'pending'
+                    }
+                    accentColor={accentColor}
+                />
+            ))}
+        </ul>
 
-      <button
-        onClick={onCancel}
-        className="mt-8 px-6 py-2 bg-white/60 text-slate-700 font-bold rounded-full hover:bg-white/80 transition-colors"
-      >
-        Cancel Generation
-      </button>
+        <div className="bg-slate-800 text-left rounded-lg p-4 font-mono text-xs text-green-400 h-28 overflow-hidden relative">
+            <pre className="whitespace-pre-wrap break-all">
+                {visibleText}
+                <span className="w-2 h-4 bg-green-400 inline-block animate-pulse ml-1"></span>
+            </pre>
+            <div className="absolute bottom-0 left-0 w-full h-8 bg-gradient-to-t from-slate-800 to-transparent"></div>
+        </div>
+
+        <button
+          onClick={onCancel}
+          className="mt-8 px-8 py-3 bg-white/60 text-slate-800 font-bold rounded-full hover:bg-white/90 transition-all duration-300 shadow-md border border-white/50"
+        >
+          Cancel Generation
+        </button>
+      </div>
     </div>
   );
 };
 
-export default LoadingIndicator;
+export default StreamingLoadingIndicator;

@@ -35,6 +35,7 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<QuestionnaireData | null>(null);
+  const [streamedText, setStreamedText] = useState('');
   const isGenerationCancelled = useRef(false);
 
   useEffect(() => {
@@ -70,8 +71,15 @@ const App: React.FC = () => {
     setIsLoading(true);
     setError(null);
     setFormData(data);
+    setStreamedText('');
+    const onChunk = (chunk: string) => {
+        if (!isGenerationCancelled.current) {
+            setStreamedText(prev => prev + chunk);
+        }
+    };
+
     try {
-      const generatedItinerary = await generateItinerary(data.destination, data.startPoint, data.tripType, data.days, data.budget, data.vibe, data.persons, data.foodPreference, data.startDate, data.includeMedical, data.language, data.isRoundTrip, data.currency);
+      const generatedItinerary = await generateItinerary(data.destination, data.startPoint, data.tripType, data.days, data.budget, data.vibe, data.persons, data.foodPreference, data.startDate, data.includeMedical, data.language, data.isRoundTrip, data.currency, onChunk);
       if (!isGenerationCancelled.current) {
         setItinerary(generatedItinerary);
         setView('itinerary');
@@ -90,7 +98,6 @@ const App: React.FC = () => {
         setView('questionnaire'); // Stay on questionnaire to show the error
       }
     } finally {
-      // Only set loading to false if it wasn't already set by the cancel handler
       if (!isGenerationCancelled.current) {
         setIsLoading(false);
       }
@@ -101,8 +108,14 @@ const App: React.FC = () => {
     isGenerationCancelled.current = false;
     setIsLoading(true);
     setError(null);
+    setStreamedText('');
+    const onChunk = (chunk: string) => {
+        if (!isGenerationCancelled.current) {
+            setStreamedText(prev => prev + chunk);
+        }
+    };
     try {
-        const generatedList = await generatePackingList(data);
+        const generatedList = await generatePackingList(data, onChunk);
         if (!isGenerationCancelled.current) {
             setPackingList(generatedList);
             setView('packingAssistantResult');
@@ -131,8 +144,14 @@ const App: React.FC = () => {
     isGenerationCancelled.current = false;
     setIsLoading(true);
     setError(null);
+    setStreamedText('');
+    const onChunk = (chunk: string) => {
+        if (!isGenerationCancelled.current) {
+            setStreamedText(prev => prev + chunk);
+        }
+    };
     try {
-      const recommendations = await generateFoodRecommendations(data);
+      const recommendations = await generateFoodRecommendations(data, onChunk);
       if (!isGenerationCancelled.current) {
         setFoodRecommendations(recommendations);
         setView('foodFinderResult');
@@ -161,8 +180,14 @@ const App: React.FC = () => {
     isGenerationCancelled.current = false;
     setIsLoading(true);
     setError(null);
+    setStreamedText('');
+    const onChunk = (chunk: string) => {
+        if (!isGenerationCancelled.current) {
+            setStreamedText(prev => prev + chunk);
+        }
+    };
     try {
-      const recommendations = await generateAppRecommendations(data);
+      const recommendations = await generateAppRecommendations(data, onChunk);
       if (!isGenerationCancelled.current) {
         setAppRecommendations(recommendations);
         setView('appFinderResult');
@@ -191,8 +216,14 @@ const App: React.FC = () => {
     isGenerationCancelled.current = false;
     setIsLoading(true);
     setError(null);
+    setStreamedText('');
+    const onChunk = (chunk: string) => {
+        if (!isGenerationCancelled.current) {
+            setStreamedText(prev => prev + chunk);
+        }
+    };
     try {
-      const recommendations = await generateMusicRecommendations(data);
+      const recommendations = await generateMusicRecommendations(data, onChunk);
       if (!isGenerationCancelled.current) {
         setMusicRecommendations(recommendations);
         setView('musicFinderResult');
@@ -220,6 +251,7 @@ const App: React.FC = () => {
   const handleCancelGeneration = useCallback(() => {
     isGenerationCancelled.current = true;
     setIsLoading(false);
+    setStreamedText('');
   }, []);
 
   const handleBackToQuestionnaire = useCallback(() => {
@@ -271,6 +303,7 @@ const App: React.FC = () => {
             initialData={formData}
             onBack={handleBackToHome}
             onCancel={handleCancelGeneration}
+            streamedText={streamedText}
           />
         );
       case 'itinerary':
@@ -288,7 +321,7 @@ const App: React.FC = () => {
           </div>
         );
       case 'packingAssistantForm':
-        return <PackingAssistantForm onSubmit={handleGeneratePackingList} onBack={handleBackToHome} isLoading={isLoading} error={error} onCancel={handleCancelGeneration} />;
+        return <PackingAssistantForm onSubmit={handleGeneratePackingList} onBack={handleBackToHome} isLoading={isLoading} error={error} onCancel={handleCancelGeneration} streamedText={streamedText} />;
       case 'packingAssistantResult':
         return packingList ? (
           <PackingListPreview packingList={packingList} onRegenerate={handleBackToPackingForm} />
@@ -304,7 +337,7 @@ const App: React.FC = () => {
           </div>
         );
       case 'foodFinderForm':
-        return <FoodFinderForm onSubmit={handleGenerateFoodRecommendations} onBack={handleBackToHome} isLoading={isLoading} error={error} onCancel={handleCancelGeneration} />;
+        return <FoodFinderForm onSubmit={handleGenerateFoodRecommendations} onBack={handleBackToHome} isLoading={isLoading} error={error} onCancel={handleCancelGeneration} streamedText={streamedText} />;
       case 'foodFinderResult':
         return foodRecommendations ? (
           <FoodFinderResult recommendations={foodRecommendations} onRegenerate={handleBackToFoodForm} />
@@ -320,7 +353,7 @@ const App: React.FC = () => {
           </div>
         );
       case 'appFinderForm':
-        return <AppFinderForm onSubmit={handleGenerateAppRecommendations} onBack={handleBackToHome} isLoading={isLoading} error={error} onCancel={handleCancelGeneration} />;
+        return <AppFinderForm onSubmit={handleGenerateAppRecommendations} onBack={handleBackToHome} isLoading={isLoading} error={error} onCancel={handleCancelGeneration} streamedText={streamedText} />;
       case 'appFinderResult':
         return appRecommendations ? (
           <AppFinderResult recommendations={appRecommendations} onRegenerate={handleBackToAppForm} />
@@ -336,7 +369,7 @@ const App: React.FC = () => {
           </div>
         );
       case 'musicFinderForm':
-        return <MusicFinderForm onSubmit={handleGenerateMusicRecommendations} onBack={handleBackToHome} isLoading={isLoading} error={error} onCancel={handleCancelGeneration} />;
+        return <MusicFinderForm onSubmit={handleGenerateMusicRecommendations} onBack={handleBackToHome} isLoading={isLoading} error={error} onCancel={handleCancelGeneration} streamedText={streamedText} />;
       case 'musicFinderResult':
         return musicRecommendations ? (
           <MusicFinderResult recommendations={musicRecommendations} onRegenerate={handleBackToMusicForm} />
