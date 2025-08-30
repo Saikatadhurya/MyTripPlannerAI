@@ -3,7 +3,7 @@ import { Itinerary, Vibe, QuestionnaireData, PackingListRequestData, PackingList
 import { generateItinerary } from './services/geminiService';
 import { generatePackingList } from './services/packingService';
 import { generateFoodRecommendations } from './services/foodService';
-import { generateAppRecommendations } from './services/appFinderService';
+import { generateAppRecommendations, prefetchAppRecommendationsForPopularDestinations } from './services/appFinderService';
 
 
 import LandingPage from './components/LandingPage';
@@ -29,6 +29,12 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<QuestionnaireData | null>(null);
   const isGenerationCancelled = useRef(false);
+
+  useEffect(() => {
+    // Intelligently pre-fetch app recommendations for popular destinations
+    // when the app loads, improving perceived speed for common user journeys.
+    prefetchAppRecommendationsForPopularDestinations();
+  }, []); // Empty dependency array ensures it runs only on initial mount.
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -86,13 +92,17 @@ const App: React.FC = () => {
   }, []);
 
   const handleGeneratePackingList = useCallback(async (data: PackingListRequestData) => {
+    isGenerationCancelled.current = false;
     setIsLoading(true);
     setError(null);
     try {
         const generatedList = await generatePackingList(data);
-        setPackingList(generatedList);
-        setView('packingAssistantResult');
+        if (!isGenerationCancelled.current) {
+            setPackingList(generatedList);
+            setView('packingAssistantResult');
+        }
     } catch (err) {
+      if (!isGenerationCancelled.current) {
         let errorMessage = 'Failed to generate packing list. Please try again.';
         if (err instanceof Error) {
             if (err.message.includes('503') || err.message.toLowerCase().includes('overloaded')) {
@@ -103,54 +113,71 @@ const App: React.FC = () => {
         }
         setError(errorMessage);
         setView('packingAssistantForm');
+      }
     } finally {
-        setIsLoading(false);
+        if (!isGenerationCancelled.current) {
+            setIsLoading(false);
+        }
     }
   }, []);
 
   const handleGenerateFoodRecommendations = useCallback(async (data: FoodFinderRequestData) => {
+    isGenerationCancelled.current = false;
     setIsLoading(true);
     setError(null);
     try {
       const recommendations = await generateFoodRecommendations(data);
-      setFoodRecommendations(recommendations);
-      setView('foodFinderResult');
-    } catch (err) {
-      let errorMessage = 'Failed to generate food recommendations. Please try again.';
-      if (err instanceof Error) {
-          if (err.message.includes('503') || err.message.toLowerCase().includes('overloaded')) {
-              errorMessage = 'The AI model is currently busy handling many requests. Please wait a moment and try again.';
-          } else {
-              errorMessage = err.message;
-          }
+      if (!isGenerationCancelled.current) {
+        setFoodRecommendations(recommendations);
+        setView('foodFinderResult');
       }
-      setError(errorMessage);
-      setView('foodFinderForm');
+    } catch (err) {
+      if (!isGenerationCancelled.current) {
+        let errorMessage = 'Failed to generate food recommendations. Please try again.';
+        if (err instanceof Error) {
+            if (err.message.includes('503') || err.message.toLowerCase().includes('overloaded')) {
+                errorMessage = 'The AI model is currently busy handling many requests. Please wait a moment and try again.';
+            } else {
+                errorMessage = err.message;
+            }
+        }
+        setError(errorMessage);
+        setView('foodFinderForm');
+      }
     } finally {
-      setIsLoading(false);
+      if (!isGenerationCancelled.current) {
+        setIsLoading(false);
+      }
     }
   }, []);
 
   const handleGenerateAppRecommendations = useCallback(async (data: AppFinderRequestData) => {
+    isGenerationCancelled.current = false;
     setIsLoading(true);
     setError(null);
     try {
       const recommendations = await generateAppRecommendations(data);
-      setAppRecommendations(recommendations);
-      setView('appFinderResult');
-    } catch (err) {
-      let errorMessage = 'Failed to generate app recommendations. Please try again.';
-      if (err instanceof Error) {
-          if (err.message.includes('503') || err.message.toLowerCase().includes('overloaded')) {
-              errorMessage = 'The AI model is currently busy handling many requests. Please wait a moment and try again.';
-          } else {
-              errorMessage = err.message;
-          }
+      if (!isGenerationCancelled.current) {
+        setAppRecommendations(recommendations);
+        setView('appFinderResult');
       }
-      setError(errorMessage);
-      setView('appFinderForm');
+    } catch (err) {
+      if (!isGenerationCancelled.current) {
+        let errorMessage = 'Failed to generate app recommendations. Please try again.';
+        if (err instanceof Error) {
+            if (err.message.includes('503') || err.message.toLowerCase().includes('overloaded')) {
+                errorMessage = 'The AI model is currently busy handling many requests. Please wait a moment and try again.';
+            } else {
+                errorMessage = err.message;
+            }
+        }
+        setError(errorMessage);
+        setView('appFinderForm');
+      }
     } finally {
-      setIsLoading(false);
+      if (!isGenerationCancelled.current) {
+        setIsLoading(false);
+      }
     }
   }, []);
 
@@ -218,7 +245,7 @@ const App: React.FC = () => {
           </div>
         );
       case 'packingAssistantForm':
-        return <PackingAssistantForm onSubmit={handleGeneratePackingList} onBack={handleBackToHome} isLoading={isLoading} error={error} />;
+        return <PackingAssistantForm onSubmit={handleGeneratePackingList} onBack={handleBackToHome} isLoading={isLoading} error={error} onCancel={handleCancelGeneration} />;
       case 'packingAssistantResult':
         return packingList ? (
           <PackingListPreview packingList={packingList} onRegenerate={handleBackToPackingForm} />
@@ -234,7 +261,7 @@ const App: React.FC = () => {
           </div>
         );
       case 'foodFinderForm':
-        return <FoodFinderForm onSubmit={handleGenerateFoodRecommendations} onBack={handleBackToHome} isLoading={isLoading} error={error} />;
+        return <FoodFinderForm onSubmit={handleGenerateFoodRecommendations} onBack={handleBackToHome} isLoading={isLoading} error={error} onCancel={handleCancelGeneration} />;
       case 'foodFinderResult':
         return foodRecommendations ? (
           <FoodFinderResult recommendations={foodRecommendations} onRegenerate={handleBackToFoodForm} />
@@ -250,7 +277,7 @@ const App: React.FC = () => {
           </div>
         );
       case 'appFinderForm':
-        return <AppFinderForm onSubmit={handleGenerateAppRecommendations} onBack={handleBackToHome} isLoading={isLoading} error={error} />;
+        return <AppFinderForm onSubmit={handleGenerateAppRecommendations} onBack={handleBackToHome} isLoading={isLoading} error={error} onCancel={handleCancelGeneration} />;
       case 'appFinderResult':
         return appRecommendations ? (
           <AppFinderResult recommendations={appRecommendations} onRegenerate={handleBackToAppForm} />

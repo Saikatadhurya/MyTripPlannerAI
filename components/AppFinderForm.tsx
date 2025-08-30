@@ -7,13 +7,14 @@ interface AppFinderFormProps {
   isLoading: boolean;
   error: string | null;
   onBack: () => void;
+  onCancel: () => void;
 }
 
 const loadingData = [
-  { message: "Scanning app stores...", icon: "📡" },
-  { message: "Consulting with local experts...", icon: "🧑‍💻" },
-  { message: "Finding the best local apps...", icon: "✨" },
-  { message: "Preparing your app guide...", icon: "📲" },
+  { message: "Scanning app stores...", icon: "📲" },
+  { message: "Finding local gems...", icon: "💎" },
+  { message: "Checking ratings and reviews...", icon: "📊" },
+  { message: "Compiling your app guide...", icon: "📝" },
 ];
 
 const languages = [
@@ -21,7 +22,7 @@ const languages = [
     'Bambara (bm)', 'Basque (eu)', 'Belarusian (be)', 'Bengali (bn)', 'Bhojpuri (bho)', 'Bosnian (bs)', 'Bulgarian (bg)', 'Catalan (ca)', 'Cebuano (ceb)', 'Chinese (Simplified) (zh-CN)', 'Chinese (Traditional) (zh-TW)', 'Corsican (co)', 'Croatian (hr)', 'Czech (cs)', 'Danish (da)', 'Dhivehi (dv)', 'Dogri (doi)', 'Dutch (nl)', 'English (en)', 'Esperanto (eo)', 'Estonian (et)', 'Ewe (ee)', 'Filipino (Tagalog) (fil)', 'Finnish (fi)', 'French (fr)', 'Frisian (fy)', 'Galician (gl)', 'Ganda (lg)', 'Georgian (ka)', 'German (de)', 'Goan Konkani (gom)', 'Greek (el)', 'Guarani (gn)', 'Gujarati (gu)', 'Haitian Creole (ht)', 'Hausa (ha)', 'Hawaiian (haw)', 'Hebrew (iw)', 'Hindi (hi)', 'Hmong (hmn)', 'Hungarian (hu)', 'Icelandic (is)', 'Igbo (ig)', 'Ilocano (ilo)', 'Indonesian (id)', 'Irish (ga)', 'Italian (it)', 'Japanese (ja)', 'Javanese (jv)', 'Kannada (kn)', 'Kazakh (kk)', 'Khmer (km)', 'Kinyarwanda (rw)', 'Korean (ko)', 'Krio (kri)', 'Kurdish (ku)', 'Kurdish (Sorani) (ckb)', 'Kyrgyz (ky)', 'Lao (lo)', 'Latin (la)', 'Latvian (lv)', 'Lingala (ln)', 'Lithuanian (lt)', 'Luganda (lg)', 'Luxembourgish (lb)', 'Macedonian (mk)', 'Maithili (mai)', 'Malagasy (mg)', 'Malay (ms)', 'Malayalam (ml)', 'Maltese (mt)', 'Maori (mi)', 'Marathi (mr)', 'Meiteilon (Manipuri) (mni-Mtei)', 'Mizo (lus)', 'Mongolian (mn)', 'Myanmar (Burmese) (my)', 'Nepali (ne)', 'Norwegian (no)', 'Nyanja (Chichewa) (ny)', 'Odia (Oriya) (or)', 'Oromo (om)', 'Pashto (ps)', 'Persian (fa)', 'Polish (pl)', 'Portuguese (Brazil) (pt-BR)', 'Portuguese (Portugal) (pt-PT)', 'Punjabi (pa)', 'Quechua (qu)', 'Romanian (ro)', 'Russian (ru)', 'Samoan (sm)', 'Sanskrit (sa)', 'Scots Gaelic (gd)', 'Sepedi (nso)', 'Serbian (sr)', 'Sesotho (st)', 'Shona (sn)', 'Sindhi (sd)', 'Sinhala (si)', 'Slovak (sk)', 'Slovenian (sl)', 'Somali (so)', 'Spanish (es)', 'Sundanese (su)', 'Swahili (sw)', 'Swedish (sv)', 'Tagalog (Filipino) (tl)', 'Tajik (tg)', 'Tamil (ta)', 'Tatar (tt)', 'Telugu (te)', 'Thai (th)', 'Tigrinya (ti)', 'Tsonga (ts)', 'Turkish (tr)', 'Turkmen (tk)', 'Ukrainian (uk)', 'Urdu (ur)', 'Uyghur (ug)', 'Uzbek (uz)', 'Vietnamese (vi)', 'Welsh (cy)', 'Xhosa (xh)', 'Yiddish (yi)', 'Yoruba (yo)', 'Zulu (zu)',
 ];
 
-const AppFinderForm: React.FC<AppFinderFormProps> = ({ onSubmit, isLoading, error, onBack }) => {
+const AppFinderForm: React.FC<AppFinderFormProps> = ({ onSubmit, isLoading, error, onBack, onCancel }) => {
   const [formData, setFormData] = useState<AppFinderRequestData>({
     destination: '',
     language: 'English (en)',
@@ -48,8 +49,8 @@ const AppFinderForm: React.FC<AppFinderFormProps> = ({ onSubmit, isLoading, erro
       }, 2500);
     }
     return () => {
-      if(interval) clearInterval(interval);
-    }
+      if (interval) clearInterval(interval);
+    };
   }, [isLoading]);
   
   const handleInputChange = (field: keyof AppFinderRequestData, value: any) => {
@@ -120,7 +121,13 @@ const AppFinderForm: React.FC<AppFinderFormProps> = ({ onSubmit, isLoading, erro
           <div className="absolute inset-0 flex items-center justify-center text-3xl">{icon}</div>
         </div>
         <p className="mt-6 text-xl font-semibold text-slate-800">{message}</p>
-        <p className="text-slate-600 mt-2">Finding essential local apps...</p>
+        <p className="text-slate-600 mt-2">Finding the best apps for your trip...</p>
+        <button
+          onClick={onCancel}
+          className="mt-8 px-6 py-2 bg-white/60 text-slate-700 font-bold rounded-full hover:bg-white/80 transition-colors"
+        >
+          Cancel Generation
+        </button>
       </div>
     );
   }

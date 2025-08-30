@@ -1,13 +1,45 @@
 import { GoogleGenAI } from "@google/genai";
 import { AppFinderRequestData, AppRecommendations } from '../types';
 
+// Helper function to get/set from sessionStorage for improved caching.
+const getFromSessionCache = (key: string): AppRecommendations | null => {
+    try {
+        const cachedData = sessionStorage.getItem(key);
+        if (cachedData) {
+            return JSON.parse(cachedData);
+        }
+    } catch (error) {
+        console.error("Failed to read from session cache:", error);
+        // If reading fails, clear the corrupted item to prevent future errors.
+        sessionStorage.removeItem(key);
+    }
+    return null;
+};
+
+const setInSessionCache = (key: string, data: AppRecommendations): void => {
+    try {
+        sessionStorage.setItem(key, JSON.stringify(data));
+    } catch (error) {
+        console.error("Failed to write to session cache:", error);
+    }
+};
+
 export const generateAppRecommendations = async (data: AppFinderRequestData): Promise<AppRecommendations> => {
   if (!process.env.API_KEY) {
     throw new Error("API key is missing. Please set it in your environment variables.");
   }
 
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const { destination, language } = data;
+  const cacheKey = `app-recs-${destination.trim().toLowerCase()}-${language}`;
+
+  const cachedResult = getFromSessionCache(cacheKey);
+  if (cachedResult) {
+    console.log(`[Cache HIT] for ${destination}`);
+    return cachedResult;
+  }
+  console.log(`[Cache MISS] for ${destination}. Fetching from AI...`);
+
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
   const prompt = `
     You are a tech-savvy local guide and an expert global travel assistant. Your mission is to provide a traveler with a curated list of the most useful, relevant, and currently available mobile apps for their trip to ${destination}. Your recommendations MUST include popular local alternatives to global apps.
@@ -18,6 +50,7 @@ export const generateAppRecommendations = async (data: AppFinderRequestData): Pr
     3.  **Fetch Ratings:** For each app, you MUST find its current rating on both the Apple App Store and Google Play Store. Populate the \`appStoreRating\` and \`playStoreRating\` fields with the rating as a string (e.g., "4.7"). If an app is not on a platform or a rating is not available, omit that specific rating field.
     4.  **Find Links:** Provide direct download links from the official Apple App Store or Google Play Store if available. Otherwise, omit the field.
     5.  **Categorize Accurately:** Place each app in ONE of the specified categories. If a category has no relevant apps after an exhaustive search, return an empty array for it.
+    6.  **Stability over Completeness:** It is more important to return a valid, stable JSON response than to fill every single optional field. If you cannot find a specific rating or URL, omit that field but still return the rest of the app's information.
 
     The response MUST be ONLY a single, valid JSON object that strictly follows this structure. All text content must be in ${language}.
 
@@ -74,11 +107,47 @@ export const generateAppRecommendations = async (data: AppFinderRequestData): Pr
   jsonString = jsonString.substring(firstBrace, lastBrace + 1);
 
   try {
-      return JSON.parse(jsonString);
+      const recommendations = JSON.parse(jsonString);
+      // Cache the successful result before returning
+      setInSessionCache(cacheKey, recommendations);
+      return recommendations;
   } catch (e) {
       console.error("Failed to parse JSON from AI response after cleaning (app recommendations):", e);
       console.error("Cleaned JSON string that failed:", jsonString);
       console.error("Original AI response:", resultText);
       throw new Error("The AI returned an invalid response format. Please try again.");
   }
+};
+
+export const prefetchAppRecommendationsForPopularDestinations = async (): Promise<void> => {
+    console.log("Starting to pre-fetch app recommendations for popular destinations...");
+    try {
+        const response = await fetch('/data/destinations.json');
+        if (!response.ok) {
+            console.error("Failed to fetch popular destinations for pre-fetching.");
+            return;
+        }
+        const popularDestinations: { name: string }[] = await response.json();
+        
+        // Use a common default language for pre-fetching.
+        const defaultLanguage = 'English (en)';
+
+        const prefetchPromises = popularDestinations.map(dest => {
+            const requestData: AppFinderRequestData = {
+                destination: dest.name,
+                language: defaultLanguage,
+            };
+            // The generate function already handles caching, so it won't re-fetch if already present.
+            return generateAppRecommendations(requestData).catch(error => {
+                console.warn(`Failed to pre-fetch app recommendations for ${dest.name}:`, error.message);
+                return null;
+            });
+        });
+
+        await Promise.allSettled(prefetchPromises);
+        console.log("Pre-fetching of app recommendations completed.");
+
+    } catch (error) {
+        console.error("An error occurred during the pre-fetching process:", error);
+    }
 };

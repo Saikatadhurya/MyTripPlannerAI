@@ -7,6 +7,7 @@ interface FoodFinderFormProps {
   isLoading: boolean;
   error: string | null;
   onBack: () => void;
+  onCancel: () => void;
 }
 
 const loadingData = [
@@ -45,7 +46,7 @@ const Toggle: React.FC<{ label: string; description: string; enabled: boolean; o
     </button>
 );
 
-const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, error, onBack }) => {
+const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, error, onBack, onCancel }) => {
   const [formData, setFormData] = useState<FoodFinderRequestData>({
     destination: '',
     startDate: new Date().toISOString().split('T')[0],
@@ -148,6 +149,12 @@ const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, er
         </div>
         <p className="mt-6 text-xl font-semibold text-slate-800">{message}</p>
         <p className="text-slate-600 mt-2">Cooking up some recommendations...</p>
+        <button
+          onClick={onCancel}
+          className="mt-8 px-6 py-2 bg-white/60 text-slate-700 font-bold rounded-full hover:bg-white/80 transition-colors"
+        >
+          Cancel Generation
+        </button>
       </div>
     );
   }
