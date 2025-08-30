@@ -60,7 +60,11 @@ export const generateMusicRecommendations = async (data: MusicFinderRequestData)
 
     **FINAL CRITICAL RULES:**
     1.  **Language:** The entire JSON response MUST be in ${language}.
-    2.  **JSON Format:** The output MUST be a perfectly valid JSON object. No markdown, no extra text.
+    2.  **JSON Format & Validation (CRITICAL):**
+        a. The output MUST be a perfectly valid JSON object. No markdown, no extra text.
+        b. **NO UNESCAPED QUOTES**: Inside any JSON string value (like 'title' or 'artistOrDescription'), you MUST NEVER use a double quote character ("). It will break the JSON.
+        c. **HOW TO HANDLE QUOTES**: If you need to include a quote, use single quotes instead (e.g., "A song called 'The Best' by..."). If you must use a double quote, you MUST escape it with a backslash (e.g., "The review said, \\\\"It's a hit!\\\\").
+        d. Failure to produce valid JSON will result in a failed request.
     `;
 
   const response = await ai.models.generateContent({
