@@ -64,7 +64,6 @@ const StreamingLoadingIndicator: React.FC<StreamingLoadingIndicatorProps> = ({ s
   
   const allStages = useMemo(() => [connectingStage, ...stages, finalizingStage], [stages, connectingStage, finalizingStage]);
 
-  const [completedStageKeys, setCompletedStageKeys] = useState<Set<string>>(new Set());
   const [currentStageIndex, setCurrentStageIndex] = useState(0);
 
   const hasStreamStarted = useMemo(() => streamedText.length > 0, [streamedText]);
@@ -72,27 +71,21 @@ const StreamingLoadingIndicator: React.FC<StreamingLoadingIndicatorProps> = ({ s
   useEffect(() => {
     const newCompleted = new Set<string>();
     
-    // "Connecting" is complete once the stream starts.
     if (hasStreamStarted) {
       newCompleted.add(connectingStage.key);
     }
     
-    // Check which of the main stages are complete based on streamed text.
     stages.forEach((stage) => {
       if (streamedText.includes(stage.key)) {
         newCompleted.add(stage.key);
       }
     });
 
-    setCompletedStageKeys(newCompleted);
-
-    // Determine the current "in_progress" stage by finding the first one not yet completed.
     let firstPendingIndex = allStages.findIndex(stage => !newCompleted.has(stage.key));
     
-    // If all stream-related stages are done, the next stage is "finalizing".
-    if (newCompleted.size === stages.length + 1) { // +1 for the 'connecting' stage
-       firstPendingIndex = allStages.length - 1; // Index of finalizingStage
-    } else if (firstPendingIndex === -1) { // Fallback if all are somehow completed
+    if (newCompleted.size === stages.length + 1) {
+       firstPendingIndex = allStages.length - 1;
+    } else if (firstPendingIndex === -1) {
        firstPendingIndex = allStages.length;
     }
     
@@ -103,18 +96,20 @@ const StreamingLoadingIndicator: React.FC<StreamingLoadingIndicatorProps> = ({ s
   const colors = colorClasses[accentColor] || colorClasses.violet;
   
   const progress = useMemo(() => {
-    const totalSteps = allStages.length;
-    if (totalSteps <= 1) return 100;
-
-    // If we are still connecting, show a small initial, animated progress.
     if (!hasStreamStarted) {
         return 5;
     }
 
-    // Progress is based on which stage we're currently working on.
+    const totalSteps = allStages.length;
+    if (totalSteps <= 1) return 100;
+
+    if (currentStageIndex >= totalSteps - 1) {
+      return 99;
+    }
+
     const progressPercentage = (currentStageIndex / (totalSteps - 1)) * 100;
     
-    return Math.min(100, progressPercentage);
+    return Math.min(99, Math.floor(progressPercentage));
   }, [currentStageIndex, allStages.length, hasStreamStarted]);
 
   return (
@@ -139,12 +134,12 @@ const StreamingLoadingIndicator: React.FC<StreamingLoadingIndicatorProps> = ({ s
 
         <div className="w-full bg-slate-200/70 rounded-full h-2.5 overflow-hidden">
             <div
-                className={`${colors.bg} h-2.5 rounded-full transition-all duration-500 ease-out ${!hasStreamStarted ? 'connecting-pulse' : ''}`}
+                className={`${colors.bg} h-2.5 rounded-full transition-all duration-500 ease-out ${!hasStreamStarted ? 'progress-bar-connecting' : ''}`}
                 style={{ width: `${progress}%` }}
             ></div>
         </div>
         <p className={`text-sm font-semibold mt-2 ${colors.text}`}>
-            {Math.floor(progress)}% Complete
+            {progress}% Complete
         </p>
 
         <button
