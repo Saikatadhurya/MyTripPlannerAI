@@ -32,17 +32,10 @@ const AppLinkButton: React.FC<{ appName: MusicItem['appLinks'][0]['appName'], mu
 const MusicItemCard: React.FC<{ item: MusicItem }> = ({ item }) => {
   return (
     <div className="bg-white/30 backdrop-blur-lg p-4 rounded-xl shadow-lg border border-white/50 flex space-x-4 items-center transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-      <div className="flex-shrink-0 w-24 h-24">
-        <img 
-          src={item.imageUrl} 
-          alt={item.title} 
-          className="w-full h-full object-cover rounded-md shadow-md"
-          onError={(e) => {
-            const target = e.target as HTMLImageElement;
-            target.onerror = null; // prevent infinite loop
-            target.src = 'https://placehold.co/100x100/f0f2f5/7f56d9?text=Music'; // Fallback image
-          }}
-        />
+      <div className="flex-shrink-0 w-16 h-16 bg-fuchsia-100/70 rounded-md flex items-center justify-center">
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-fuchsia-600" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3V4a1 1 0 00-1-1z" />
+        </svg>
       </div>
       <div className="flex-1 min-w-0">
         <h3 className="font-bold text-lg text-slate-900 truncate" title={item.title}>{item.title}</h3>

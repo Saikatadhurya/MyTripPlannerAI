@@ -10,7 +10,7 @@ export const generateMusicRecommendations = async (data: MusicFinderRequestData)
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
   const prompt = `
-    You are a Local Music Scout AI. Your mission is to find and curate a list of local music for a traveler visiting ${destination}, identifying the best platforms to listen on.
+    You are a Local Music Scout AI. Your mission is to find and curate a list of local music for a traveler visiting ${destination}, identifying the best platforms to listen on. Your response MUST be extremely fast.
 
     **CRITICAL INSTRUCTIONS & METHODOLOGY:**
     1.  **Use Google Search:** You MUST use your search capabilities to find up-to-date information on genres, artists, and playlists for ${destination}.
@@ -23,7 +23,7 @@ export const generateMusicRecommendations = async (data: MusicFinderRequestData)
         a. After finding popular hits, proceed with your blended research to find other locally relevant music (native genres, contemporary music locals listen to).
         b. These go into the \`categories\` array.
     
-    4.  **Image Sourcing (CRITICAL):** For each music item, you MUST perform a search to find a high-quality, representative image (album art, playlist cover, or artist photo) and provide a direct, publicly accessible URL in the \`imageUrl\` field. This is not optional.
+    4.  **DO NOT SEARCH FOR IMAGES:** You are strictly forbidden from searching for album art or any images. This is the most important rule for ensuring speed.
 
     5.  **App Sourcing (MANDATORY & RESTRICTED):** For each song or playlist, you MUST identify which of the following popular streaming platforms it is available on. To improve speed, you are ONLY allowed to suggest apps from this predefined list. Do not search for other apps.
         - **Allowed Apps:** Spotify, Apple Music, YouTube Music, SoundCloud, Deezer, JioSaavn, Gaana, Wynk, Anghami, Boomplay.
@@ -45,7 +45,6 @@ export const generateMusicRecommendations = async (data: MusicFinderRequestData)
           {
             "title": "string",
             "artistOrDescription": "string",
-            "imageUrl": "string (a direct, publicly accessible URL to the album art or a representative image)",
             "appLinks": [
               { "appName": "Spotify" }
             ]
@@ -60,7 +59,6 @@ export const generateMusicRecommendations = async (data: MusicFinderRequestData)
             {
               "title": "string",
               "artistOrDescription": "string",
-              "imageUrl": "string (a direct, publicly accessible URL to the album art or a representative image)",
               "appLinks": [
                 { "appName": "YouTube Music" }
               ]
@@ -80,6 +78,8 @@ export const generateMusicRecommendations = async (data: MusicFinderRequestData)
     contents: prompt,
     config: {
       tools: [{ googleSearch: {} }],
+      // Optimize for speed by disabling thinking.
+      thinkingConfig: { thinkingBudget: 0 },
     }
   });
 
