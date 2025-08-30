@@ -1,5 +1,6 @@
 
 
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { Budget, Itinerary, Vibe, FoodPreference, BlogReference, TripType, LocationSuggestion } from '../types';
 
@@ -99,6 +100,7 @@ export const getReferenceBlogs = async (destination: string, language: string): 
       contents: searchPrompt,
       config: {
         tools: [{ googleSearch: {} }],
+        thinkingConfig: { thinkingBudget: 0 },
       },
     });
 
@@ -326,6 +328,9 @@ export const generateItinerary = async (
       contents: prompt,
       config: {
         tools: [{ googleSearch: {} }],
+        // Optimize for speed, as the search tool can add latency.
+        // The detailed prompt helps guide the model effectively without extra thinking time.
+        thinkingConfig: { thinkingBudget: 0 },
       }
     });
     
