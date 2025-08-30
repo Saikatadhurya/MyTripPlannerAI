@@ -2,6 +2,7 @@
 
 
 
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { Budget, Itinerary, Vibe, FoodPreference, BlogReference, TripType, LocationSuggestion } from '../types';
 
@@ -336,6 +337,7 @@ export const generateItinerary = async (
                 contents: prompt,
                 config: {
                     tools: [{ googleSearch: {} }],
+                    thinkingConfig: { thinkingBudget: 0 },
                 }
             });
             
