@@ -70,6 +70,7 @@ export interface Itinerary {
   startDate: string;
   language: string;
   currency: string;
+  planNote?: string;
   currencyConversion?: CurrencyConversion;
   budgetSummary: {
     stay: string;

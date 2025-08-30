@@ -287,8 +287,24 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
         </div>
       </section>
 
-      {itinerary.currencyConversion && (
+      {itinerary.planNote && (
         <section className="animated-card" style={{ animationDelay: '800ms' }}>
+            <div className="bg-amber-50/60 backdrop-blur-lg p-6 rounded-2xl border border-amber-200/50 shadow-lg flex items-start space-x-4">
+                <div className="flex-shrink-0 bg-amber-100 text-amber-600 rounded-full p-3 mt-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                </div>
+                <div>
+                    <h3 className="text-lg font-bold text-amber-800">Important Plan Note</h3>
+                    <div className="mt-2 text-md text-slate-700" dangerouslySetInnerHTML={parseBold(itinerary.planNote)} />
+                </div>
+            </div>
+        </section>
+      )}
+
+      {itinerary.currencyConversion && (
+        <section className="animated-card" style={{ animationDelay: '850ms' }}>
             <div className="bg-sky-50/60 backdrop-blur-lg p-6 rounded-2xl border border-sky-200/50 shadow-lg flex items-start space-x-4">
                 <div className="flex-shrink-0 bg-sky-100 text-sky-600 rounded-full p-3 mt-1">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -314,7 +330,7 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
       )}
       
       <section>
-        <h2 className="text-3xl font-bold text-slate-800 mb-6 animated-card" style={{ animationDelay: '850ms' }}>About the Destinations</h2>
+        <h2 className="text-3xl font-bold text-slate-800 mb-6 animated-card" style={{ animationDelay: '900ms' }}>About the Destinations</h2>
         <div className="space-y-10">
           {itinerary.coveredDestinations && itinerary.coveredDestinations.map((dest, destIndex) => {
             const aboutSections = getAboutSectionsForDestination(dest);
@@ -322,7 +338,7 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
             const otherSections = aboutSections.filter(s => s.title !== 'Events');
             
             return (
-              <div key={destIndex} className="animated-card" style={{ animationDelay: `${900 + destIndex * 200}ms` }}>
+              <div key={destIndex} className="animated-card" style={{ animationDelay: `${950 + destIndex * 200}ms` }}>
                 <h3 className="text-2xl font-bold text-slate-700 mb-4 border-b border-violet-200 pb-2 break-words" dangerouslySetInnerHTML={parseBold(dest.name)} />
                 {otherSections.length > 0 && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -349,7 +365,7 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
       </section>
 
       <section className="space-y-8">
-        <h2 className="text-3xl font-bold text-slate-800 animated-card" style={{ animationDelay: '1000ms' }}>Daily Itinerary</h2>
+        <h2 className="text-3xl font-bold text-slate-800 animated-card" style={{ animationDelay: '1050ms' }}>Daily Itinerary</h2>
         {itinerary.plan.map((day, index) => {
           let dailyFuelCostPerPerson = 0;
           let totalDailyCostPerPerson = parseFloat(day.approxCost) || 0;
@@ -365,7 +381,7 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
           }
 
           return (
-          <div key={day.day} className="bg-white/40 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/50 transition-all duration-300 hover:shadow-2xl hover:border-violet-300/50 hover:-translate-y-1 animated-card" style={{ animationDelay: `${1050 + index * 100}ms` }}>
+          <div key={day.day} className="bg-white/40 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/50 transition-all duration-300 hover:shadow-2xl hover:border-violet-300/50 hover:-translate-y-1 animated-card" style={{ animationDelay: `${1100 + index * 100}ms` }}>
             <div className="flex justify-between items-start">
               <div className="flex-1">
                 <p className="text-sm font-semibold text-violet-700">Day {day.day}</p>
@@ -475,7 +491,7 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
       ) : (
         blogs && blogs.length > 0 && (
         <section>
-          <h2 className="text-3xl font-bold text-slate-800 mb-6 animated-card" style={{ animationDelay: '1200ms' }}>Reference Blog Posts</h2>
+          <h2 className="text-3xl font-bold text-slate-800 mb-6 animated-card" style={{ animationDelay: '1250ms' }}>Reference Blog Posts</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {blogs.map((blog, index) => {
                const isTransport = isTransportBlog(blog);
@@ -488,7 +504,7 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
                       ? 'bg-sky-50/40 backdrop-blur-lg border-sky-300/50 hover:border-sky-400/50' 
                       : 'bg-white/40 backdrop-blur-lg border-white/50 hover:border-violet-300/50'
                   }`}
-                   style={{ animationDelay: `${1250 + index * 100}ms` }}
+                   style={{ animationDelay: `${1300 + index * 100}ms` }}
                 >
                   <div className="flex justify-between items-start">
                     <div className="flex-1">

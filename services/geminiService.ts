@@ -169,7 +169,7 @@ export const generateItinerary = async (
 
       1.  **Feasibility & Route Planning**: First, you MUST estimate if a meaningful road trip circuit that includes or goes towards "${destination}" is possible within ${days} days, using a ${tripType} with a daily driving limit of ${dailyLimit}.
           - **IF FEASIBLE**: Design a logical, sequential road trip circuit starting and ending at "${startPoint}". The route must maximize sightseeing of famous places based on the vibe: "${vibe.join(', ')}". The farthest point should be near "${destination}".
-          - **IF NOT FEASIBLE**: Do NOT fail. You MUST plan a realistic road trip circuit to an alternative region or set of destinations reachable within the timeframe that still fits the user's vibe. The "destination" field in the JSON response MUST be updated to a more descriptive name for this new circuit (e.g., 'Rajasthan Heritage Circuit'). You MUST also add a bolded note in the "historicBackground" of the *first* covered destination explaining the change. For example: **NOTE: A road trip to ${destination} and back in ${days} days isn't feasible. I've created an alternative Rajasthan Heritage Circuit that fits your timeline and preferences.**
+          - **IF NOT FEASIBLE**: Do NOT fail. You MUST plan a realistic road trip circuit to an alternative region or set of destinations reachable within the timeframe that still fits the user's vibe. The "destination" field in the JSON response MUST be updated to a more descriptive name for this new circuit (e.g., 'Rajasthan Heritage Circuit'). You MUST also add a note in the new 'planNote' field in the root of the JSON response, explaining the change clearly and starting with "NOTE:". For example: "NOTE: A road trip to ${destination} and back in ${days} days isn't feasible. I've created an alternative Coastal Karnataka Temple & Adventure Circuit that fits your timeline and preferences."
 
       2.  **Structured Output - This is MANDATORY**:
           - **coveredDestinations**: This array must list each major city/stop of the road trip circuit *in the order they are visited*. For each stop, provide the detailed information (history, culture, etc.).
@@ -258,6 +258,7 @@ export const generateItinerary = async (
     startDate: string (format: "YYYY-MM-DD"),
     language: string,
     currency: string,
+    planNote?: string,
     currencyConversion?: { fromCurrency: string, toCurrency: string, rateText: string },
     budgetSummary: { stay: string, food: string, fuel?: string, miscellaneous?: string, total: string },
     coveredDestinations: [
@@ -326,6 +327,7 @@ export const generateItinerary = async (
         startDate: { type: Type.STRING },
         language: { type: Type.STRING },
         currency: { type: Type.STRING },
+        planNote: { type: Type.STRING },
         currencyConversion: {
           type: Type.OBJECT,
           properties: {
