@@ -206,6 +206,41 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
     ].filter(section => (section.content || (section.items && section.items.length > 0)));
   };
 
+  const generateMapsUrl = () => {
+    const waypoints: string[] = [];
+
+    // Add start point if it exists
+    if (itinerary.startPoint) {
+        waypoints.push(itinerary.startPoint);
+    }
+
+    // Add covered destinations, avoiding consecutive duplicates
+    if (itinerary.coveredDestinations) {
+        itinerary.coveredDestinations.forEach(dest => {
+            if (waypoints.length === 0 || waypoints[waypoints.length - 1].toLowerCase() !== dest.name.toLowerCase()) {
+                waypoints.push(dest.name);
+            }
+        });
+    }
+
+    // If it's a round trip, add start point at the end if it's not already there
+    if (itinerary.isRoundTrip && itinerary.startPoint) {
+        if (waypoints.length === 0 || waypoints[waypoints.length - 1].toLowerCase() !== itinerary.startPoint.toLowerCase()) {
+            waypoints.push(itinerary.startPoint);
+        }
+    }
+    
+    // If we have less than 2 waypoints, it's not a route. Search for the main destination instead.
+    if (waypoints.length < 2) {
+        const singlePlace = itinerary.destination || itinerary.startPoint || 'world';
+        return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(singlePlace)}`;
+    }
+    
+    // Build the directions URL
+    return `https://www.google.com/maps/dir/${waypoints.map(p => encodeURIComponent(p)).join('/')}`;
+  };
+
+
   return (
     <div className="max-w-4xl mx-auto space-y-12" id="itinerary-preview-content">
        <div className="flex justify-start items-center no-print animated-card">
@@ -259,6 +294,20 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
               {itinerary.tripType} {itinerary.isRoundTrip && <span className="text-sm font-normal">(Round Trip)</span>}
             </SummaryItem>
           </div>
+        </div>
+
+        <div className="mt-8 text-center animated-card" style={{ animationDelay: '500ms' }}>
+          <a
+            href={generateMapsUrl()}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center px-6 py-3 bg-white/60 backdrop-blur-md border border-white/50 text-slate-800 font-bold rounded-full hover:bg-white/80 transition-all duration-300 shadow-md transform hover:scale-105"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 9m-6 3l6-3m0 0l6-3m-6 3v6.382" />
+            </svg>
+            View Route on Google Maps
+          </a>
         </div>
       </section>
 
