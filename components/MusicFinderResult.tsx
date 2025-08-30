@@ -13,7 +13,6 @@ const AppLinkButton: React.FC<{ appName: MusicItem['appLinks'][0]['appName'], mu
         'Boomplay': 'bg-[#FF4F00] hover:bg-[#ff6a29] text-white',
         'Deezer': 'bg-[#FEAA2D] hover:bg-[#ffb74a] text-black',
         'SoundCloud': 'bg-[#FF5500] hover:bg-[#ff7029] text-white',
-        'Other': 'bg-slate-500 hover:bg-slate-600 text-white',
     };
 
     const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(`${musicTitle} ${appName}`)}`;
@@ -23,7 +22,7 @@ const AppLinkButton: React.FC<{ appName: MusicItem['appLinks'][0]['appName'], mu
             href={searchUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className={`px-3 py-1 text-xs font-semibold rounded-full transition-transform transform hover:scale-105 ${styles[appName] || styles.Other}`}
+            className={`px-3 py-1 text-xs font-semibold rounded-full transition-transform transform hover:scale-105 ${styles[appName] || 'bg-slate-500 hover:bg-slate-600 text-white'}`}
         >
             {appName}
         </a>
@@ -32,6 +31,9 @@ const AppLinkButton: React.FC<{ appName: MusicItem['appLinks'][0]['appName'], mu
 
 
 const MusicFinderResult: React.FC<{ recommendations: MusicRecommendations; onRegenerate: () => void; }> = ({ recommendations, onRegenerate }) => {
+    const hasPopularHits = recommendations.popularHits && recommendations.popularHits.music.length > 0;
+    const hasOtherCategories = recommendations.categories && recommendations.categories.length > 0;
+
     return (
         <div className="max-w-4xl mx-auto space-y-12 animated-card">
             <div className="flex justify-start items-center no-print">
@@ -54,7 +56,30 @@ const MusicFinderResult: React.FC<{ recommendations: MusicRecommendations; onReg
             </header>
             
             <div className="space-y-8">
-                {recommendations.categories && recommendations.categories.length > 0 ? (
+                {hasPopularHits && (
+                    <div className="bg-gradient-to-br from-fuchsia-100 to-purple-100 backdrop-blur-lg p-6 rounded-2xl shadow-xl border-2 border-fuchsia-300/50">
+                        <h2 className="text-2xl font-bold text-fuchsia-800 flex items-center space-x-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                            <span>{recommendations.popularHits!.genre}</span>
+                        </h2>
+                        <p className="text-sm text-slate-600 mt-1 mb-4">{recommendations.popularHits!.description}</p>
+                        <ul className="divide-y divide-fuchsia-200/50">
+                            {recommendations.popularHits!.music.map((item, itemIndex) => (
+                                <li key={itemIndex} className="py-4">
+                                    <h3 className="font-semibold text-lg text-slate-900">{item.title}</h3>
+                                    <p className="text-sm text-slate-700 mb-3">{item.artistOrDescription}</p>
+                                    <div className="flex items-center flex-wrap gap-2">
+                                        {item.appLinks && item.appLinks.map((link, linkIndex) => (
+                                            <AppLinkButton key={linkIndex} appName={link.appName} musicTitle={item.title} />
+                                        ))}
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+                
+                {hasOtherCategories ? (
                     recommendations.categories.map((category, index) => (
                         <div key={index} className="bg-white/30 backdrop-blur-lg p-6 rounded-2xl shadow-lg border border-white/50">
                             <h2 className="text-2xl font-bold text-slate-800">{category.genre}</h2>
@@ -74,8 +99,10 @@ const MusicFinderResult: React.FC<{ recommendations: MusicRecommendations; onReg
                             </ul>
                         </div>
                     ))
-                ) : (
-                    <div className="text-center bg-white/20 backdrop-blur-xl border border-white/30 rounded-2xl p-12 shadow-lg">
+                ) : null }
+
+                {!hasPopularHits && !hasOtherCategories && (
+                     <div className="text-center bg-white/20 backdrop-blur-xl border border-white/30 rounded-2xl p-12 shadow-lg">
                         <h2 className="text-2xl font-bold text-slate-800">No Specific Music Found</h2>
                         <p className="text-slate-600 mt-2">We couldn't find unique local music for {recommendations.destination}. Try exploring global charts on Spotify or Apple Music for popular hits!</p>
                     </div>

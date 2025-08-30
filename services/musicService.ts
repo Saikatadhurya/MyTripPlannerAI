@@ -14,33 +14,51 @@ export const generateMusicRecommendations = async (data: MusicFinderRequestData)
 
     **CRITICAL INSTRUCTIONS & METHODOLOGY:**
     1.  **Use Google Search:** You MUST use your search capabilities to find up-to-date information on genres, artists, and playlists for ${destination}.
-    2.  **Blended Research:**
-        a. First, find music genres and artists native or unique to the region of ${destination}.
-        b. Second, find contemporary and popular music that locals in ${destination} listen to, even if it's not unique to the region.
-    3.  **App Sourcing (MANDATORY & RESTRICTED):** For each song or playlist, you MUST identify which of the following popular streaming platforms it is available on. To improve speed, you are ONLY allowed to suggest apps from this predefined list. Do not search for other apps.
+    
+    2.  **HIGH-PRIORITY TASK - POPULAR HITS:**
+        a. Your FIRST task is to perform a targeted search for the **most popular, currently trending, and chart-topping songs** in ${destination}.
+        b. These results MUST be placed in a dedicated \`popularHits\` object in the JSON output. This is not optional. The genre for this MUST be "Popular Hits".
+
+    3.  **MAIN TASK - OTHER GENRES:**
+        a. After finding popular hits, proceed with your blended research to find other locally relevant music (native genres, contemporary music locals listen to).
+        b. These go into the \`categories\` array.
+    
+    4.  **App Sourcing (MANDATORY & RESTRICTED):** For each song or playlist, you MUST identify which of the following popular streaming platforms it is available on. To improve speed, you are ONLY allowed to suggest apps from this predefined list. Do not search for other apps.
         - **Allowed Apps:** Spotify, Apple Music, YouTube Music, SoundCloud, Deezer, JioSaavn, Gaana, Wynk, Anghami, Boomplay.
-    4.  **DO NOT PROVIDE URLs:** You are strictly forbidden from providing any URLs. Just provide the app's name.
-    5.  **Categorization:** Group your findings into the specified genre categories. A description for each genre explaining its local relevance is mandatory.
-    6.  **No Empty Results:** Returning empty lists is a failure. If a specific genre has no results, find more general popular music and place it in a suitable category like 'Pop & Rock' or 'Modern Fusion / Indie'.
-    7.  **Quantity Requirement (CRITICAL):** For each genre category, you MUST provide a substantial list of at least 10 music items (songs or playlists). A sparse list is not acceptable.
+    
+    5.  **DO NOT PROVIDE URLs:** You are strictly forbidden from providing any URLs. Just provide the app's name.
+    6.  **Categorization:** Group your findings into the specified genre categories. A description for each genre explaining its local relevance is mandatory.
+    7.  **No Empty Results:** Returning empty lists is a failure. If a specific genre has no results, find more general popular music and place it in a suitable category like 'Pop & Rock' or 'Modern Fusion / Indie'.
+    8.  **Quantity Requirement (CRITICAL):** For each genre category (including Popular Hits), you MUST provide a substantial list of at least 10 music items (songs or playlists). A sparse list is not acceptable.
 
     **JSON OUTPUT SPECIFICATION:**
     The response MUST be ONLY a single, valid JSON object that strictly follows this structure. All text content must be in ${language}.
 
     {
       "destination": "${destination}",
+      "popularHits": {
+        "genre": "Popular Hits",
+        "description": "The most popular and trending songs currently loved by locals in ${destination}.",
+        "music": [
+          {
+            "title": "string",
+            "artistOrDescription": "string",
+            "appLinks": [
+              { "appName": "Spotify" }
+            ]
+          }
+        ]
+      },
       "categories": [
         {
-          "genre": "string", // E.g., "Folk / Traditional"
-          "description": "string", // E.g., "Traditional Rajasthani folk music known for its vibrant storytelling..."
+          "genre": "string",
+          "description": "string",
           "music": [
             {
-              "title": "string", // E.g., "Kesariya Balam" (Song) or "Sounds of Rajasthan" (Playlist)
-              "artistOrDescription": "string", // E.g., "Allah Jilai Bai" or "A playlist of classic Rajasthani folk songs."
+              "title": "string",
+              "artistOrDescription": "string",
               "appLinks": [
-                {
-                  "appName": "Spotify" | "Apple Music" | "YouTube Music" | "JioSaavn" | "Gaana" | "Wynk" | "Anghami" | "Boomplay" | "Deezer" | "SoundCloud"
-                }
+                { "appName": "YouTube Music" }
               ]
             }
           ]
