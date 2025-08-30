@@ -5,6 +5,7 @@ interface LandingPageProps {
   onPlanTrip: (destination?: string) => void;
   onStartPacking: () => void;
   onStartFoodFinder: () => void;
+  onStartAppFinder: () => void;
 }
 
 const FeatureCard: React.FC<{ icon: React.ReactNode; title: string; children: React.ReactNode }> = ({ icon, title, children }) => (
@@ -19,7 +20,7 @@ const FeatureCard: React.FC<{ icon: React.ReactNode; title: string; children: Re
   </div>
 );
 
-const LandingPage: React.FC<LandingPageProps> = ({ onPlanTrip, onStartPacking, onStartFoodFinder }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ onPlanTrip, onStartPacking, onStartFoodFinder, onStartAppFinder }) => {
   const [destinations, setDestinations] = useState<PopularDestination[]>([]);
 
   useEffect(() => {
@@ -41,7 +42,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onPlanTrip, onStartPacking, o
       <div className="text-center max-w-2xl mx-auto">
         <div className="inline-flex items-center justify-center bg-white/40 backdrop-blur-md p-3 rounded-full shadow-lg mb-6 border border-white/50">
             <div className="bg-indigo-500 text-white rounded-full p-4">
-                <svg xmlns="http://www.w.org/2000/svg" className="h-8 w-8" viewBox="0 0 24 24" fill="currentColor"><path d="M21.435 2.585a2.02 2.02 0 0 0-1.89-.865H4.455a2.02 2.02 0 0 0-1.89.865L.01 9.42a1.514 1.514 0 0 0 .53 1.83l8.45 6.015V21a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-3.735l8.45-6.015a1.514 1.514 0 0 0 .53-1.83l-2.555-6.835zM14 15.265V20h-4v-4.735L2.615 9.78l2.04-5.46h14.71l2.04 5.46L14 15.265z"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" viewBox="0 0 24 24" fill="currentColor"><path d="M21.435 2.585a2.02 2.02 0 0 0-1.89-.865H4.455a2.02 2.02 0 0 0-1.89.865L.01 9.42a1.514 1.514 0 0 0 .53 1.83l8.45 6.015V21a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-3.735l8.45-6.015a1.514 1.514 0 0 0 .53-1.83l-2.555-6.835zM14 15.265V20h-4v-4.735L2.615 9.78l2.04-5.46h14.71l2.04 5.46L14 15.265z"/></svg>
             </div>
         </div>
         <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight">
@@ -95,6 +96,22 @@ const LandingPage: React.FC<LandingPageProps> = ({ onPlanTrip, onStartPacking, o
           </div>
           <div className="mt-6 px-6 py-2 bg-amber-600 text-white font-bold rounded-full group-hover:bg-amber-700 transition-all duration-300 transform group-hover:scale-105 shadow-lg">
             🍴 Discover My Local Feast
+          </div>
+        </button>
+        
+        <button
+          onClick={onStartAppFinder}
+          className="bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-white/30 shadow-lg text-center flex flex-col justify-between items-center group hover:border-teal-300/50 transition-all duration-300 transform hover:-translate-y-1 h-full"
+        >
+          <div>
+            <div className="bg-teal-100 text-teal-600 rounded-full p-4 inline-block transform group-hover:scale-110 transition-transform">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 2a2 2 0 00-2 2v12a2 2 0 002 2h6a2 2 0 002-2V4a2 2 0 00-2-2h-6zm-2 2a2 2 0 012-2h6a2 2 0 012 2v12a2 2 0 01-2 2h-6a2 2 0 01-2-2V4z" clipRule="evenodd" /><path d="M6 3a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1z" /></svg>
+            </div>
+            <h3 className="text-2xl font-bold text-slate-800 mt-4">Mobile App Finder</h3>
+            <p className="text-slate-600 mt-2">Find essential local apps for your trip</p>
+          </div>
+          <div className="mt-6 px-6 py-2 bg-teal-600 text-white font-bold rounded-full group-hover:bg-teal-700 transition-all duration-300 transform group-hover:scale-105 shadow-lg">
+            📱 Discover My Local Apps
           </div>
         </button>
         

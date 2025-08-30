@@ -1,8 +1,10 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Itinerary, Vibe, QuestionnaireData, PackingListRequestData, PackingList, FoodFinderRequestData, FoodRecommendations } from './types';
+import { Itinerary, Vibe, QuestionnaireData, PackingListRequestData, PackingList, FoodFinderRequestData, FoodRecommendations, AppFinderRequestData, AppRecommendations } from './types';
 import { generateItinerary } from './services/geminiService';
 import { generatePackingList } from './services/packingService';
 import { generateFoodRecommendations } from './services/foodService';
+import { generateAppRecommendations } from './services/appFinderService';
+
 
 import LandingPage from './components/LandingPage';
 import Questionnaire from './components/Questionnaire';
@@ -11,15 +13,18 @@ import PackingAssistantForm from './components/PackingAssistantForm';
 import PackingListPreview from './components/PackingListPreview';
 import FoodFinderForm from './components/FoodFinderForm';
 import FoodFinderResult from './components/FoodFinderResult';
+import AppFinderForm from './components/AppFinderForm';
+import AppFinderResult from './components/AppFinderResult';
 
 
-type View = 'landing' | 'questionnaire' | 'itinerary' | 'packingAssistantForm' | 'packingAssistantResult' | 'foodFinderForm' | 'foodFinderResult';
+type View = 'landing' | 'questionnaire' | 'itinerary' | 'packingAssistantForm' | 'packingAssistantResult' | 'foodFinderForm' | 'foodFinderResult' | 'appFinderForm' | 'appFinderResult';
 
 const App: React.FC = () => {
   const [view, setView] = useState<View>('landing');
   const [itinerary, setItinerary] = useState<Itinerary | null>(null);
   const [packingList, setPackingList] = useState<PackingList | null>(null);
   const [foodRecommendations, setFoodRecommendations] = useState<FoodRecommendations | null>(null);
+  const [appRecommendations, setAppRecommendations] = useState<AppRecommendations | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<QuestionnaireData | null>(null);
@@ -42,6 +47,10 @@ const App: React.FC = () => {
 
   const handleStartFoodFinder = useCallback(() => {
     setView('foodFinderForm');
+  }, []);
+
+  const handleStartAppFinder = useCallback(() => {
+    setView('appFinderForm');
   }, []);
 
   const handleGenerateItinerary = useCallback(async (data: QuestionnaireData) => {
@@ -122,6 +131,29 @@ const App: React.FC = () => {
     }
   }, []);
 
+  const handleGenerateAppRecommendations = useCallback(async (data: AppFinderRequestData) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const recommendations = await generateAppRecommendations(data);
+      setAppRecommendations(recommendations);
+      setView('appFinderResult');
+    } catch (err) {
+      let errorMessage = 'Failed to generate app recommendations. Please try again.';
+      if (err instanceof Error) {
+          if (err.message.includes('503') || err.message.toLowerCase().includes('overloaded')) {
+              errorMessage = 'The AI model is currently busy handling many requests. Please wait a moment and try again.';
+          } else {
+              errorMessage = err.message;
+          }
+      }
+      setError(errorMessage);
+      setView('appFinderForm');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   const handleCancelGeneration = useCallback(() => {
     isGenerationCancelled.current = true;
     setIsLoading(false);
@@ -141,11 +173,17 @@ const App: React.FC = () => {
     setView('foodFinderForm');
   }, []);
 
+  const handleBackToAppForm = useCallback(() => {
+    setAppRecommendations(null);
+    setView('appFinderForm');
+  }, []);
+
   const handleBackToHome = useCallback(() => {
     setView('landing');
     setItinerary(null);
     setPackingList(null);
     setFoodRecommendations(null);
+    setAppRecommendations(null);
     setFormData(null);
     setError(null);
   }, []);
@@ -153,7 +191,7 @@ const App: React.FC = () => {
   const renderContent = () => {
     switch (view) {
       case 'landing':
-        return <LandingPage onPlanTrip={handleStartPlanning} onStartPacking={handleStartPacking} onStartFoodFinder={handleStartFoodFinder} />;
+        return <LandingPage onPlanTrip={handleStartPlanning} onStartPacking={handleStartPacking} onStartFoodFinder={handleStartFoodFinder} onStartAppFinder={handleStartAppFinder} />;
       case 'questionnaire':
         return (
           <Questionnaire
@@ -211,8 +249,24 @@ const App: React.FC = () => {
             </button>
           </div>
         );
+      case 'appFinderForm':
+        return <AppFinderForm onSubmit={handleGenerateAppRecommendations} onBack={handleBackToHome} isLoading={isLoading} error={error} />;
+      case 'appFinderResult':
+        return appRecommendations ? (
+          <AppFinderResult recommendations={appRecommendations} onRegenerate={handleBackToAppForm} />
+        ) : (
+           <div className="text-center p-8">
+            <p>Something went wrong. App recommendations are missing.</p>
+            <button
+              onClick={handleBackToAppForm}
+              className="mt-4 px-6 py-2 bg-violet-600 text-white font-semibold rounded-full hover:bg-violet-700 transition-colors"
+            >
+              Try Again
+            </button>
+          </div>
+        );
       default:
-        return <LandingPage onPlanTrip={handleStartPlanning} onStartPacking={handleStartPacking} onStartFoodFinder={handleStartFoodFinder} />;
+        return <LandingPage onPlanTrip={handleStartPlanning} onStartPacking={handleStartPacking} onStartFoodFinder={handleStartFoodFinder} onStartAppFinder={handleStartAppFinder} />;
     }
   };
 

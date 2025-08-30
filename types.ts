@@ -143,3 +143,31 @@ export interface FoodRecommendations {
     seasonalSpecials: FoodItem[];
     streetFestivalsAndFoodMelas: FoodItem[];
 }
+
+export interface AppFinderRequestData {
+    destination: string;
+    language: string;
+}
+
+export interface MobileApp {
+    name: string;
+    description: string;
+    platform: 'iOS' | 'Android' | 'Both';
+    appStoreUrl?: string;
+    playStoreUrl?: string;
+    icon: string; // Emoji
+    appStoreRating?: string;
+    playStoreRating?: string;
+}
+
+export interface AppRecommendations {
+    destination: string;
+    transportAndTravel: MobileApp[];
+    stayAndLiving: MobileApp[];
+    foodAndDining: MobileApp[];
+    entertainmentAndLeisure: MobileApp[];
+    shoppingAndEssentials: MobileApp[];
+    explorationAndTours: MobileApp[];
+    utilitiesAndSafety: MobileApp[];
+    festivalsAndSeasonal: MobileApp[];
+}
