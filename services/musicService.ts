@@ -17,9 +17,8 @@ export const generateMusicRecommendations = async (data: MusicFinderRequestData)
     2.  **Blended Research:**
         a. First, find music genres and artists native or unique to the region of ${destination}.
         b. Second, find contemporary and popular music that locals in ${destination} listen to, even if it's not unique to the region.
-    3.  **App Sourcing (MANDATORY):** For each song or playlist, you MUST identify major streaming platforms where it is likely available. Prioritize these apps:
-        - **Global:** Spotify, Apple Music, YouTube Music, SoundCloud, Deezer.
-        - **Regional (VERY IMPORTANT):** Search for and include popular regional apps. Examples: JioSaavn/Gaana/Wynk for India, Anghami for the Middle East, Boomplay for Africa, Melon/Line Music for East Asia. You MUST verify if these are popular in ${destination}.
+    3.  **App Sourcing (MANDATORY & RESTRICTED):** For each song or playlist, you MUST identify which of the following popular streaming platforms it is available on. To improve speed, you are ONLY allowed to suggest apps from this predefined list. Do not search for other apps.
+        - **Allowed Apps:** Spotify, Apple Music, YouTube Music, SoundCloud, Deezer, JioSaavn, Gaana, Wynk, Anghami, Boomplay.
     4.  **DO NOT PROVIDE URLs:** You are strictly forbidden from providing any URLs. Just provide the app's name.
     5.  **Categorization:** Group your findings into the specified genre categories. A description for each genre explaining its local relevance is mandatory.
     6.  **No Empty Results:** Returning empty lists is a failure. If a specific genre has no results, find more general popular music and place it in a suitable category like 'Pop & Rock' or 'Modern Fusion / Indie'.
@@ -40,7 +39,7 @@ export const generateMusicRecommendations = async (data: MusicFinderRequestData)
               "artistOrDescription": "string", // E.g., "Allah Jilai Bai" or "A playlist of classic Rajasthani folk songs."
               "appLinks": [
                 {
-                  "appName": "Spotify" | "Apple Music" | "YouTube Music" | "JioSaavn" | "Gaana" | "Wynk" | "Anghami" | "Boomplay" | "Deezer" | "SoundCloud" | "Other"
+                  "appName": "Spotify" | "Apple Music" | "YouTube Music" | "JioSaavn" | "Gaana" | "Wynk" | "Anghami" | "Boomplay" | "Deezer" | "SoundCloud"
                 }
               ]
             }
