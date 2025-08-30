@@ -301,9 +301,9 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
             href={generateMapsUrl()}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center px-6 py-3 bg-white/60 backdrop-blur-md border border-white/50 text-slate-800 font-bold rounded-full hover:bg-white/80 transition-all duration-300 shadow-md transform hover:scale-105"
+            className="inline-flex items-center justify-center group px-8 py-4 bg-gradient-to-br from-indigo-600 to-violet-600 text-white font-bold rounded-full transition-all duration-300 shadow-lg shadow-violet-500/30 transform hover:scale-105 hover:shadow-xl hover:shadow-violet-500/50"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-3 transition-transform duration-300 group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 9m-6 3l6-3m0 0l6-3m-6 3v6.382" />
             </svg>
             View Route on Google Maps
