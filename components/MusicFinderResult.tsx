@@ -22,6 +22,7 @@ const AppLinkButton: React.FC<{ appName: MusicItem['appLinks'][0]['appName'], mu
             href={searchUrl}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
             className={`px-3 py-1 text-xs font-semibold rounded-full transition-transform transform hover:scale-105 ${styles[appName] || 'bg-slate-500 hover:bg-slate-600 text-white'}`}
         >
             {appName}
@@ -30,8 +31,28 @@ const AppLinkButton: React.FC<{ appName: MusicItem['appLinks'][0]['appName'], mu
 };
 
 const MusicItemCard: React.FC<{ item: MusicItem }> = ({ item }) => {
+  const handleCardClick = () => {
+    const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(`${item.title} ${item.artistOrDescription}`)}`;
+    window.open(googleSearchUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      // Prevent the default action to stop scrolling when space is pressed
+      event.preventDefault();
+      handleCardClick();
+    }
+  };
+
   return (
-    <div className="bg-white/30 backdrop-blur-lg p-4 rounded-xl shadow-lg border border-white/50 flex space-x-4 items-center transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+    <div
+      className="bg-white/30 backdrop-blur-lg p-4 rounded-xl shadow-lg border border-white/50 flex space-x-4 items-center transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer h-full"
+      onClick={handleCardClick}
+      onKeyDown={handleKeyDown}
+      role="button"
+      tabIndex={0}
+      aria-label={`Search for ${item.title} by ${item.artistOrDescription} on Google`}
+    >
       <div className="flex-shrink-0 w-16 h-16 bg-fuchsia-100/70 rounded-md flex items-center justify-center">
         <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-fuchsia-600" viewBox="0 0 20 20" fill="currentColor">
           <path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3V4a1 1 0 00-1-1z" />
