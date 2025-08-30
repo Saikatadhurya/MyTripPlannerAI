@@ -1,4 +1,5 @@
 
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { Budget, Itinerary, Vibe, FoodPreference, BlogReference, TripType, LocationSuggestion } from '../types';
 
@@ -175,20 +176,22 @@ export const generateItinerary = async (
               - **C. Route Design:** Based on the above, design a logical, sequential road trip circuit starting and ending at "${startPoint}". The route must maximize sightseeing of famous places based on the vibe: "${vibe.join(', ')}". The farthest point should be near "${destination}".
           - **IF NOT FEASIBLE**: Do NOT fail. You MUST plan a realistic road trip circuit to an alternative region or set of destinations reachable within the timeframe that still fits the user's vibe. The "destination" field in the JSON response MUST be updated to a more descriptive name for this new circuit (e.g., 'Rajasthan Heritage Circuit'). You MUST also add a note in the new 'planNote' field in the root of the JSON response, explaining the change clearly and starting with "NOTE:". For example: "NOTE: A road trip to ${destination} and back in ${days} days isn't feasible. I've created an alternative Coastal Karnataka Temple & Adventure Circuit that fits your timeline and preferences."
 
-      2.  **Structured Output - This is MANDATORY**:
+      2.  **Distance & Time Accuracy (CRITICAL)**: You MUST use your search capabilities to get accurate driving distances (in kilometers) and realistic travel times between all stops in the circuit. These MUST be reflected in the daily 'activities' descriptions (e.g., "Drive from Jaipur to Udaipur (**approx. 395 km, 6-7 hours**)..."). Inaccurate distances are a critical failure.
+
+      3.  **Structured Output - This is MANDATORY**:
           - **coveredDestinations**: This array must list each major city/stop of the road trip circuit *in the order they are visited*. For each stop, provide the detailed information (history, culture, etc.).
           - **plan**: The daily plan MUST correspond directly to the road trip circuit.
               - Each day's **title** should clearly state the travel segment, for example: 'Day 3: Travel from Chittorgarh to Udaipur & Local Sightseeing'.
-              - The **activities** for a travel day should include the drive itself (mentioning the approximate duration/distance) and then activities upon arrival at the new destination.
+              - The **activities** for a travel day should include the drive itself (mentioning the accurate, searched duration/distance) and then activities upon arrival at the new destination.
               - The final days of the plan must cover the return journey back to "${startPoint}".
 
-      3.  **Example of a good road trip circuit plan**: A 10-day car trip from Jaipur to Jaisalmer could be structured like this:
+      4.  **Example of a good road trip circuit plan**: A 10-day car trip from Jaipur to Jaisalmer could be structured like this:
           - **coveredDestinations**: [ {name: "Jaipur"}, {name: "Chittorgarh"}, {name: "Udaipur"}, {name: "Jodhpur"}, {name: "Jaisalmer"}, {name: "Bikaner"} ]
           - **plan**:
               - Day 1: Arrive in Jaipur
               - Day 2: Jaipur Sightseeing
-              - Day 3: Title: 'Jaipur to Chittorgarh Fort', Activities: 'Drive to Chittorgarh (approx 5-6 hours)...'
-              - Day 4: Title: 'Chittorgarh to Udaipur', Activities: 'Drive to Udaipur (approx 2-3 hours)...'
+              - Day 3: Title: 'Jaipur to Chittorgarh Fort', Activities: 'Drive to Chittorgarh (**approx. 305 km, 5-6 hours**)...'
+              - Day 4: Title: 'Chittorgarh to Udaipur', Activities: 'Drive to Udaipur (**approx. 115 km, 2-3 hours**)...'
               - ... and so on, with the final day's plan including the drive from the last stop (e.g., Bikaner) back to the start (Jaipur).
 
       This level of detail in linking the daily plan to a sequential, multi-stop route is essential.
@@ -200,16 +203,18 @@ export const generateItinerary = async (
 
       1.  **Route & Transport Planning**:
           -   **A. Itinerary Density & Maximization (CRITICAL):** Your primary goal is to **maximize the number of interesting and feasible places covered** within the given **${days} days**, using public transport. A longer duration MUST result in a richer, denser itinerary with more stops, not just more days in the same few cities. You MUST intelligently add relevant destinations to create a comprehensive tour circuit that makes full and enjoyable use of the time. For example, a 15-day trip should cover significantly more cities than a 5-day trip.
-          -   **B. Route Design & Transport Details:** Design a logical, sequential tour circuit starting and ending at "${startPoint}". The route must maximize sightseeing of famous places based on the vibe: "${vibe.join(', ')}". The farthest point should be near "${destination}". Unlike a road trip, the travel between cities/stops MUST be planned using the most efficient and budget-appropriate public transport. Provide realistic options like **trains** (mentioning class options), **buses** (mentioning carrier types like Volvo/sleeper), **shared cars**, or **flights** if the distance is significant. Include practical details like approximate travel times, booking websites or companies, and estimated costs in the 'transport' object for those travel days.
+          -   **B. Route Design & Transport Details:** Design a logical, sequential tour circuit starting and ending at "${startPoint}". The route must maximize sightseeing of famous places based on the vibe: "${vibe.join(', ')}". The farthest point should be near "${destination}". Unlike a road trip, the travel between cities/stops MUST be planned using the most efficient and budget-appropriate public transport. Provide realistic options like **trains** (mentioning class options), **buses** (mentioning carrier types like Volvo/sleeper), **shared cars**, or **flights** if the distance is significant.
 
-      2.  **Structured Output - This is MANDATORY**:
+      2.  **Distance & Time Accuracy (CRITICAL)**: You MUST use your search capabilities to get accurate travel distances and realistic travel times for the suggested mode of public transport (train, bus, etc.) between all stops in the circuit. These MUST be reflected in the daily 'activities' descriptions and 'transport' suggestions. Inaccurate details are a critical failure.
+
+      3.  **Structured Output - This is MANDATORY**:
           -   **coveredDestinations**: This array MUST list each major city/stop of the tour circuit *in the order they are visited*. For each stop, provide the detailed information (history, culture, etc.).
           -   **plan**: The daily plan MUST correspond directly to the tour circuit.
               -   Each day's **title** should clearly state the travel segment, for example: 'Day 3: Travel from Agra to Jaipur via Train & Local Sightseeing'.
               -   The **activities** for a travel day should include the journey itself (mentioning approximate duration and mode of transport) and then activities upon arrival at the new destination.
               -   The final days of the plan MUST cover the return journey, possibly via intermediate stops, back to "${startPoint}".
 
-      3.  **Local Transport**: For days spent exploring a destination (not traveling between cities), you should suggest local transport options (e.g., metro, ride-sharing, auto-rickshaws, taxis) that are appropriate for the user's budget.
+      4.  **Local Transport**: For days spent exploring a destination (not traveling between cities), you should suggest local transport options (e.g., metro, ride-sharing, auto-rickshaws, taxis) that are appropriate for the user's budget.
       `;
     }
   
@@ -316,107 +321,11 @@ export const generateItinerary = async (
       c. **FAILURE TO FOLLOW THIS RULE WILL RENDER THE ENTIRE OUTPUT USELESS.** You must double-check every string value for unescaped double quotes before finishing your response.
   `;
   
-    const responseSchema = {
-      type: Type.OBJECT,
-      properties: {
-        destination: { type: Type.STRING },
-        startPoint: { type: Type.STRING },
-        tripType: { type: Type.STRING },
-        isRoundTrip: { type: Type.BOOLEAN },
-        days: { type: Type.INTEGER },
-        persons: { type: Type.INTEGER },
-        budget: { type: Type.STRING },
-        vibe: { type: Type.ARRAY, items: { type: Type.STRING } },
-        foodPreference: { type: Type.STRING },
-        startDate: { type: Type.STRING },
-        language: { type: Type.STRING },
-        currency: { type: Type.STRING },
-        planNote: { type: Type.STRING },
-        currencyConversion: {
-          type: Type.OBJECT,
-          properties: {
-            fromCurrency: { type: Type.STRING },
-            toCurrency: { type: Type.STRING },
-            rateText: { type: Type.STRING },
-          },
-          required: ["fromCurrency", "toCurrency", "rateText"],
-        },
-        budgetSummary: {
-          type: Type.OBJECT,
-          properties: {
-            stay: { type: Type.STRING },
-            food: { type: Type.STRING },
-            fuel: { type: Type.STRING },
-            miscellaneous: { type: Type.STRING },
-            total: { type: Type.STRING },
-          },
-          required: ["stay", "food", "total"],
-        },
-        coveredDestinations: {
-            type: Type.ARRAY,
-            items: {
-                type: Type.OBJECT,
-                properties: {
-                    name: { type: Type.STRING },
-                    historicBackground: { type: Type.ARRAY, items: { type: Type.STRING } },
-                    famousCulture: { type: Type.ARRAY, items: { type: Type.STRING } },
-                    naturalPlaces: { type: Type.ARRAY, items: { type: Type.STRING } },
-                    museums: { type: Type.ARRAY, items: { type: Type.STRING } },
-                    specialOrnaments: { type: Type.ARRAY, items: { type: Type.STRING } },
-                    recommendedRestaurants: { type: Type.ARRAY, items: { type: Type.STRING } },
-                    specialEvents: { type: Type.STRING },
-                },
-                required: ["name", "historicBackground", "famousCulture", "naturalPlaces", "museums", "specialOrnaments", "recommendedRestaurants", "specialEvents"]
-            }
-        },
-        plan: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              day: { type: Type.INTEGER },
-              title: { type: Type.STRING },
-              activities: { type: Type.ARRAY, items: { type: Type.STRING } },
-              food: { type: Type.ARRAY, items: { type: Type.STRING } },
-              placesToStay: { type: Type.ARRAY, items: { type: Type.STRING } },
-              approxCost: { type: Type.STRING },
-              medicalFacilities: { type: Type.ARRAY, items: { type: Type.STRING } },
-              transport: {
-                type: Type.OBJECT,
-                properties: {
-                  suggestions: { type: Type.ARRAY, items: { type: Type.STRING } },
-                  cost: { type: Type.STRING },
-                },
-                required: ["suggestions", "cost"],
-              },
-            },
-            required: ["day", "title", "activities", "food", "placesToStay", "approxCost"],
-          },
-        },
-        referenceBlogs: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              title: { type: Type.STRING },
-              url: { type: Type.STRING },
-              description: { type: Type.STRING },
-              source: { type: Type.STRING },
-            },
-            required: ["title", "url", "description", "source"],
-          }
-        },
-      },
-       required: ["destination", "startPoint", "tripType", "isRoundTrip", "days", "persons", "budget", "vibe", "foodPreference", "startDate", "language", "currency", "budgetSummary", "coveredDestinations", "plan", "referenceBlogs"],
-    };
-
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: prompt,
       config: {
-        responseMimeType: "application/json",
-        responseSchema: responseSchema,
-        thinkingConfig: { thinkingBudget: 0 },
+        tools: [{ googleSearch: {} }],
       }
     });
     
