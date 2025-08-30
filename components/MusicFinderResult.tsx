@@ -1,7 +1,7 @@
 import React from 'react';
 import { MusicRecommendations, MusicItem, MusicGenreCategory } from '../types';
 
-const AppLinkButton: React.FC<{ appName: MusicItem['appLinks'][0]['appName'], url: string }> = ({ appName, url }) => {
+const AppLinkButton: React.FC<{ appName: MusicItem['appLinks'][0]['appName'], musicTitle: string }> = ({ appName, musicTitle }) => {
     const styles = {
         'Spotify': 'bg-[#1DB954] hover:bg-[#1ED760] text-white',
         'Apple Music': 'bg-[#FC3C44] hover:bg-[#ff5a5f] text-white',
@@ -16,9 +16,11 @@ const AppLinkButton: React.FC<{ appName: MusicItem['appLinks'][0]['appName'], ur
         'Other': 'bg-slate-500 hover:bg-slate-600 text-white',
     };
 
+    const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(`${musicTitle} ${appName}`)}`;
+
     return (
         <a
-            href={url}
+            href={searchUrl}
             target="_blank"
             rel="noopener noreferrer"
             className={`px-3 py-1 text-xs font-semibold rounded-full transition-transform transform hover:scale-105 ${styles[appName] || styles.Other}`}
@@ -64,7 +66,7 @@ const MusicFinderResult: React.FC<{ recommendations: MusicRecommendations; onReg
                                         <p className="text-sm text-slate-700 mb-3">{item.artistOrDescription}</p>
                                         <div className="flex items-center flex-wrap gap-2">
                                             {item.appLinks && item.appLinks.map((link, linkIndex) => (
-                                                <AppLinkButton key={linkIndex} appName={link.appName} url={link.url} />
+                                                <AppLinkButton key={linkIndex} appName={link.appName} musicTitle={item.title} />
                                             ))}
                                         </div>
                                     </li>
