@@ -196,6 +196,5 @@ export interface MusicGenreCategory {
 
 export interface MusicRecommendations {
     destination: string;
-    trendingHits: MusicGenreCategory;
-    regionalHighlights: MusicGenreCategory[];
+    musicCategories: MusicGenreCategory[];
 }

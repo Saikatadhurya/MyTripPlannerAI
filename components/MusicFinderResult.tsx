@@ -74,21 +74,24 @@ const getIconForGenre = (genreTitle: string): { icon: React.ReactNode; color: st
     const lowerCaseTitle = genreTitle.toLowerCase();
     const iconClass = "h-6 w-6";
 
-    if (lowerCaseTitle.includes('trending')) {
-        return { icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414l-3 3a1 1 0 01-1.414-1.414l3-3a1 1 0 011.414 0zm8 8a1 1 0 01-1.414 0l-3-3a1 1 0 011.414-1.414l3 3a1 1 0 010 1.414z" clipRule="evenodd" /></svg>, color: 'fuchsia' };
-    }
-    if (lowerCaseTitle.includes('north')) {
-        return { icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path d="M2 6a2 2 0 012-2h12a2 2 0 012 2v1H2V6zM2 9h16v1a1 1 0 01-1 1H3a1 1 0 01-1-1V9zm0 3h16v1a1 1 0 01-1 1H3a1 1 0 01-1-1v-1z" /><path d="M10 14a1 1 0 011 1v2a1 1 0 11-2 0v-2a1 1 0 011-1z" /></svg>, color: 'red' };
-    }
-    if (lowerCaseTitle.includes('south')) {
-        return { icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 2a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 2zM5.226 5.226a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zM13.713 5.226a.75.75 0 010 1.06l-1.06 1.06a.75.75 0 01-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zM2 10a.75.75 0 01.75-.75h1.5a.75.75 0 010 1.5h-1.5A.75.75 0 012 10zm13.5 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5a.75.75 0 01.75-.75zM10 18a.75.75 0 01-.75-.75v-1.5a.75.75 0 011.5 0v1.5A.75.75 0 0110 18zM5.226 13.713a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zM13.713 13.713a.75.75 0 010 1.06l-1.06 1.06a.75.75 0 01-1.06-1.06l1.06-1.06a.75.75 0 011.06 0z" clipRule="evenodd" /></svg>, color: 'amber' };
-    }
-    if (lowerCaseTitle.includes('east')) {
-        return { icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" /></svg>, color: 'teal' };
-    }
-    if (lowerCaseTitle.includes('west')) {
-        return { icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 2a.5.5 0 01.5.5v1.5a.5.5 0 01-1 0V2.5A.5.5 0 0110 2zM5.293 6.707a.5.5 0 010-.707l1.5-1.5a.5.5 0 01.707.707l-1.5 1.5a.5.5 0 01-.707 0zM12.5 5.5a.5.5 0 01.707 0l1.5 1.5a.5.5 0 01-.707.707l-1.5-1.5a.5.5 0 010-.707zM2 10a.5.5 0 01.5-.5h1.5a.5.5 0 010 1H2.5A.5.5 0 012 10zm15 0a.5.5 0 01.5-.5h1.5a.5.5 0 010 1H17.5a.5.5 0 01-.5-.5zM10 18a.5.5 0 01-.5-.5v-1.5a.5.5 0 011 0v1.5a.5.5 0 01-.5.5zM6.707 14.707a.5.5 0 01.707 0l1.5-1.5a.5.5 0 01.707.707l-1.5 1.5a.5.5 0 01-.707-.707zM12.5 13.5a.5.5 0 01.707 0l1.5 1.5a.5.5 0 01-.707.707l-1.5-1.5a.5.5 0 010-.707z" clipRule="evenodd" /><path d="M10 6a4 4 0 100 8 4 4 0 000-8z" /></svg>, color: 'sky' };
-    }
+    // Priority Keywords
+    if (lowerCaseTitle.includes('trending')) return { icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414l-3 3a1 1 0 01-1.414-1.414l3-3a1 1 0 011.414 0zm8 8a1 1 0 01-1.414 0l-3-3a1 1 0 011.414-1.414l3 3a1 1 0 010 1.414z" clipRule="evenodd" /></svg>, color: 'fuchsia' };
+    
+    // Regional Keywords
+    if (lowerCaseTitle.includes('north')) return { icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L10 4.414l6.293 6.293a1 1 0 001.414-1.414l-7-7z" /></svg>, color: 'red' };
+    if (lowerCaseTitle.includes('south')) return { icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path d="M10 17.414l-6.293-6.293a1 1 0 011.414-1.414L10 15.586l6.293-6.293a1 1 0 011.414 1.414L10.707 17.707a1 1 0 01-1.414 0z" /></svg>, color: 'amber' };
+    if (lowerCaseTitle.includes('east')) return { icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor" transform="rotate(-90 10 10)"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L10 4.414l6.293 6.293a1 1 0 001.414-1.414l-7-7z" /></svg>, color: 'teal' };
+    if (lowerCaseTitle.includes('west')) return { icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor" transform="rotate(90 10 10)"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L10 4.414l6.293 6.293a1 1 0 001.414-1.414l-7-7z" /></svg>, color: 'sky' };
+    
+    // Genre Keywords
+    if (lowerCaseTitle.includes('pop')) return { icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>, color: 'pink' };
+    if (lowerCaseTitle.includes('rock') || lowerCaseTitle.includes('metal')) return { icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414l-3 3a1 1 0 01-1.414-1.414l3-3a1 1 0 011.414 0zm8 8a1 1 0 01-1.414 0l-3-3a1 1 0 011.414-1.414l3 3a1 1 0 010 1.414z" clipRule="evenodd" /></svg>, color: 'slate' };
+    if (lowerCaseTitle.includes('folk') || lowerCaseTitle.includes('traditional')) return { icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path d="M14.293 5.293a1 1 0 011.414 1.414L10 12.414l-5.707-5.707a1 1 0 011.414-1.414L10 9.586l4.293-4.293zM5 14a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" /></svg>, color: 'green' };
+    if (lowerCaseTitle.includes('classical') || lowerCaseTitle.includes('orchestra')) return { icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" /></svg>, color: 'indigo' };
+    if (lowerCaseTitle.includes('hip hop') || lowerCaseTitle.includes('rap')) return { icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM5 11a1 1 0 100 2h8a1 1 0 100-2H5z" /></svg>, color: 'purple' };
+    if (lowerCaseTitle.includes('electronic') || lowerCaseTitle.includes('dance')) return { icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" /></svg>, color: 'cyan' };
+    
+    // Default
     return { icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3V4a1 1 0 00-1-1z" /></svg>, color: 'slate' };
 };
 
@@ -101,7 +104,12 @@ const CategoryHeader: React.FC<{ category: MusicGenreCategory }> = ({ category }
         amber: 'bg-amber-100 text-amber-600',
         teal: 'bg-teal-100 text-teal-600',
         sky: 'bg-sky-100 text-sky-600',
-        slate: 'bg-slate-100 text-slate-600'
+        slate: 'bg-slate-100 text-slate-600',
+        pink: 'bg-pink-100 text-pink-600',
+        green: 'bg-green-100 text-green-600',
+        indigo: 'bg-indigo-100 text-indigo-600',
+        purple: 'bg-purple-100 text-purple-600',
+        cyan: 'bg-cyan-100 text-cyan-600',
     };
     
     const iconBg = accentClasses[color] || accentClasses['slate'];
@@ -120,8 +128,7 @@ const CategoryHeader: React.FC<{ category: MusicGenreCategory }> = ({ category }
 };
 
 const MusicFinderResult: React.FC<{ recommendations: MusicRecommendations; onRegenerate: () => void; }> = ({ recommendations, onRegenerate }) => {
-    const hasTrendingHits = recommendations.trendingHits && recommendations.trendingHits.music.length > 0;
-    const hasRegionalHighlights = recommendations.regionalHighlights && recommendations.regionalHighlights.length > 0;
+    const hasMusic = recommendations.musicCategories && recommendations.musicCategories.length > 0;
 
     return (
         <div className="max-w-5xl mx-auto space-y-12 animated-card">
@@ -145,32 +152,19 @@ const MusicFinderResult: React.FC<{ recommendations: MusicRecommendations; onReg
             </header>
             
             <div className="space-y-10">
-                {hasTrendingHits && (
-                    <div className="bg-white/30 backdrop-blur-lg p-6 rounded-2xl shadow-lg border border-white/50">
-                        <CategoryHeader category={recommendations.trendingHits} />
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                            {recommendations.trendingHits.music.map((item, itemIndex) => (
-                                <MusicItemCard key={itemIndex} item={item} />
-                            ))}
-                        </div>
-                    </div>
-                )}
-                
-                {hasRegionalHighlights ? (
-                    recommendations.regionalHighlights.map((region, index) => (
+                {hasMusic ? (
+                    recommendations.musicCategories.map((category, index) => (
                         <div key={index} className="bg-white/30 backdrop-blur-lg p-6 rounded-2xl shadow-lg border border-white/50">
-                            <CategoryHeader category={region} />
+                            <CategoryHeader category={category} />
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                                {region.music.map((item, itemIndex) => (
+                                {category.music.map((item, itemIndex) => (
                                     <MusicItemCard key={itemIndex} item={item} />
                                 ))}
                             </div>
                         </div>
                     ))
-                ) : null }
-
-                {!hasTrendingHits && !hasRegionalHighlights && (
-                     <div className="text-center bg-white/20 backdrop-blur-xl border border-white/30 rounded-2xl p-12 shadow-lg">
+                ) : (
+                    <div className="text-center bg-white/20 backdrop-blur-xl border border-white/30 rounded-2xl p-12 shadow-lg">
                         <h2 className="text-2xl font-bold text-slate-800">No Specific Music Found</h2>
                         <p className="text-slate-600 mt-2">We couldn't find unique local music for {recommendations.destination}. Try exploring global charts on Spotify or Apple Music for popular hits!</p>
                     </div>

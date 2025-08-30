@@ -10,55 +10,47 @@ export const generateMusicRecommendations = async (data: MusicFinderRequestData)
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
   const prompt = `
-    You are a world-class Ethnomusicologist AI. Your primary mission is to recognize and represent the deep musical diversity of the destination: "${destination}". You must provide a traveler with culturally rich, regionally accurate, and popular music.
+    You are an expert Music Curator and Ethnomusicologist AI. Your mission is to provide a traveler with an authentic, popular, and well-organized music guide for "${destination}". Your output must be intelligent and adapt to the destination's unique musical landscape.
 
-    **MANDATORY TWO-PHASE PROTOCOL:**
+    **CRITICAL CURATION PROTOCOL:**
 
-    **PHASE 1: NATIONWIDE TRENDING HITS (NON-NEGOTIABLE)**
-    -   Your first and most critical task is to find the songs that are currently charting and trending across the *entire* nation of "${destination}".
-    -   These songs MUST be placed in the \`trendingHits\` object. This section is for the hottest, most current chart-toppers and viral hits.
+    **Step 1: Analyze & Strategize (Your Core Logic)**
+    - First, you MUST analyze "${destination}" to determine its musical character.
+    - Based on your analysis, CHOOSE the best categorization strategy:
+      - **A) REGIONAL Strategy:** For large, musically diverse countries (e.g., India, USA, China, Brazil), your main categories should be distinct musical regions.
+      - **B) GENRE-BASED Strategy:** For countries with a more unified but genre-rich music scene (e.g., Japan, Jamaica, South Korea, Ireland), your main categories should be the most prominent genres (e.g., J-Pop, Reggae, K-Pop, Traditional Folk).
+    - This decision will define the structure of the 'musicCategories' array.
 
-    **PHASE 2: REGIONAL DEEP-DIVE & ANTI-BIAS MANDATE**
-    -   After finding nationwide hits, you MUST perform a regional deep-dive. You MUST analyze if the destination is a large, culturally diverse country and create separate regional categories.
+    **Step 2: Curate the Categories & Songs**
+    - You MUST create a JSON object with a single top-level key: "musicCategories", which is an array of objects.
+    - **Category 1 (MANDATORY):** The FIRST object in the 'musicCategories' array MUST always be for "Top Trending Hits". Its 'description' should state that these are current, nationwide chart-toppers.
+    - **Categories 2-5:** Create 2-4 additional category objects based on the strategy you chose in Step 1 (either regions or genres).
+      - For each category, write a concise, insightful 'description'.
+      - For EACH category, you MUST find a mix of **currently popular songs** AND **timeless, iconic classics**.
+      - **QUALITY CHECK - "The Gandagana Test":** Ensure you find the kind of culturally iconic songs that locals cherish (like "Gandagana" for Georgia). Avoid generic or superficial results.
+      - **ANTI-BIAS RULE:** Give all significant regions/genres a fair representation. Do not let one mainstream style (like Bollywood in India or Pop in the USA) overshadow other important local music scenes.
 
-    -   **INDIA-SPECIFIC INSTRUCTIONS (MANDATORY & CRITICAL):** If the destination is **India**, you MUST give EQUAL weight and effort to all regions. You are strictly forbidden from letting Bollywood/Hindi music dominate or bleed into other regional categories.
-        -   Create a category for **North Indian Music**: Find current **Bollywood** hits (e.g., from artists like Arijit Singh), iconic classics, and popular **Punjabi** tracks (e.g., from artists like Diljit Dosanjh).
-        -   Create a category for **South Indian Music**: Find *authentic* chart-toppers from the **Tamil** (e.g., Anirudh Ravichander), **Telugu** (e.g., S. Thaman), **Malayalam** (e.g., Hesham Abdul Wahab), and **Kannada** (e.g., Vijay Prakash) industries.
-        -   Create a category for **East Indian Music**: Find beloved **Bengali** songs (both modern and classic Rabindra Sangeet) and popular **Assamese** or **Odia** music.
-        -   Create a category for **West Indian Music**: Find popular **Marathi** (e.g., Ajay-Atul) and **Gujarati** (e.g., Sachin-Jigar) songs that are cultural staples.
-        -   Place these regional findings into the \`regionalHighlights\` array.
-
-    -   **FOR OTHER DIVERSE COUNTRIES (e.g., USA, China, Brazil):** Use your knowledge to identify 2-4 primary musical regions and create categories for them in the \`regionalHighlights\` array (e.g., for the USA: 'Hip-Hop & R&B (East/West/South)', 'Country (Nashville)', 'Indie & Rock (PNW)').
-
-    -   **FOR SMALLER/HOMOGENEOUS COUNTRIES:** If the destination is smaller with a more unified music scene, create genre-based categories (e.g., 'Pop', 'Folk', 'Classical') within the \`regionalHighlights\` array.
-
-    **GENERAL CURATION RULES:**
-    -   **Sorting by Popularity (CRITICAL):** Within EACH category (\`trendingHits\` and every category in \`regionalHighlights\`), you MUST order the songs from most popular to least popular. The most famous, highest-viewed song MUST be listed first.
-    -   **Content:** For each region, find a mix of **Current Hits** and **Iconic Classics**. Apply **"The Gandagana Test"**—find the songs that are absolute, non-negotiable cultural anthems for that specific region.
-    -   **Quantity:** Provide at least 5-10 music items per category.
-    -   **Sourcing:** Identify availability on this specific list of apps: Spotify, Apple Music, YouTube, SoundCloud, Deezer, JioSaavn, Gaana, Wynk, Anghami, Boomplay.
-    -   **RESTRICTIONS:** NO URLs. NO album art. NO empty results.
+    **Step 3: Sort and Format**
+    - **POPULARITY SORT (CRITICAL):** Within EACH category, the 'music' array MUST be sorted by popularity. The most famous, highest-viewed song must be listed first.
+    - **App Links:** Find availability on: Spotify, Apple Music, YouTube, SoundCloud, Deezer, JioSaavn, Gaana, Wynk, Anghami, Boomplay.
+    - **RESTRICTIONS:** NO URLs. NO album art. Provide at least 4-8 songs per category.
 
     **JSON OUTPUT SPECIFICATION:**
     The response MUST be ONLY a single, valid JSON object. All text content must be in ${language}.
 
     {
       "destination": "${destination}",
-      "trendingHits": {
-        "genre": "Top Trending Hits",
-        "description": "The most popular songs currently trending across ${destination}.",
-        "music": [
-          {
-            "title": "string",
-            "artistOrDescription": "string",
-            "appLinks": [ { "appName": "Spotify" } ]
-          }
-        ]
-      },
-      "regionalHighlights": [
+      "musicCategories": [
         {
-          "genre": "North Indian Music",
-          "description": "A mix of Bollywood chartbusters, timeless classics, and vibrant Punjabi hits that define North India.",
+          "genre": "Top Trending Hits",
+          "description": "The most popular songs currently trending across ${destination}.",
+          "music": [
+            { "title": "string", "artistOrDescription": "string", "appLinks": [ { "appName": "Spotify" } ] }
+          ]
+        },
+        {
+          "genre": "Example Regional or Genre Category",
+          "description": "An insightful description of this category.",
           "music": [
              { "title": "string", "artistOrDescription": "string", "appLinks": [ { "appName": "YouTube" } ] }
           ]
