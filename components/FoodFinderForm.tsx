@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FoodFinderRequestData, FoodPreference } from '../types';
+import { FoodFinderRequestData, FoodPreference, LocationSuggestion } from '../types';
 import { getDestinationSuggestions } from '../services/geminiService';
 
 interface FoodFinderFormProps {
@@ -32,7 +32,7 @@ const Toggle: React.FC<{ label: string; description: string; enabled: boolean; o
     <button 
         type="button"
         onClick={() => onChange(!enabled)}
-        className={`w-full flex items-center justify-between p-4 rounded-lg cursor-pointer transition-all duration-200 border-2 ${enabled ? 'bg-violet-100/70 border-violet-500' : 'bg-white/40 border-white/40 hover:bg-white/60'}`}
+        className={`w-full flex items-center justify-between p-4 rounded-lg cursor-pointer transition-all duration-200 border-2 ${enabled ? 'bg-amber-100/70 border-amber-500' : 'bg-white/40 border-white/40 hover:bg-white/60'}`}
         role="switch"
         aria-checked={enabled}
     >
@@ -40,7 +40,7 @@ const Toggle: React.FC<{ label: string; description: string; enabled: boolean; o
           <p className="font-semibold text-slate-800">{label}</p>
           <p className="text-sm text-slate-600">{description}</p>
       </div>
-      <div className={`w-12 h-6 flex items-center rounded-full transition-colors duration-300 ${enabled ? 'bg-violet-500' : 'bg-slate-300'}`}>
+      <div className={`w-12 h-6 flex items-center rounded-full transition-colors duration-300 ${enabled ? 'bg-amber-500' : 'bg-slate-300'}`}>
           <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${enabled ? 'translate-x-6' : 'translate-x-1'}`}></div>
       </div>
     </button>
@@ -55,8 +55,9 @@ const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, er
     language: 'English (en)',
   });
 
-  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [suggestions, setSuggestions] = useState<LocationSuggestion[]>([]);
   const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false);
+  const [isDestinationSelected, setIsDestinationSelected] = useState(false);
   const debounceTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isSelectingSuggestion = useRef(false);
   const suggestionsRef = useRef<HTMLUListElement>(null);
@@ -87,6 +88,7 @@ const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, er
   const handleDestinationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     handleInputChange('destination', value);
+    setIsDestinationSelected(false); // Reset on change
     isSelectingSuggestion.current = false;
     if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
 
@@ -106,9 +108,11 @@ const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, er
     }
   };
 
-  const handleSuggestionClick = (suggestion: string) => {
+  const handleSuggestionClick = (suggestion: LocationSuggestion) => {
     isSelectingSuggestion.current = true;
-    handleInputChange('destination', suggestion);
+    const fullName = suggestion.parentHierarchy ? `${suggestion.name}, ${suggestion.parentHierarchy}` : suggestion.name;
+    handleInputChange('destination', fullName);
+    setIsDestinationSelected(true); // Set to true
     setSuggestions([]);
     setIsSuggestionsLoading(false);
     if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
@@ -132,6 +136,7 @@ const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, er
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isDestinationSelected) return;
     onSubmit(formData);
   };
 
@@ -188,7 +193,19 @@ const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, er
             <input id="destination" ref={inputRef} type="text" value={formData.destination} onChange={handleDestinationChange} placeholder="e.g., Kyoto, Japan" className="w-full pl-10 pr-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition" required autoComplete="off" />
           </div>
           {isSuggestionsLoading && <div className="absolute right-3 top-9"><svg className="animate-spin h-5 w-5 text-amber-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>}
-          {suggestions.length > 0 && (<ul ref={suggestionsRef} className="absolute z-10 w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg max-h-60 overflow-y-auto">{suggestions.map((s, i) => (<li key={i} onClick={() => handleSuggestionClick(s)} className="px-4 py-2 cursor-pointer hover:bg-amber-100">{s}</li>))}</ul>)}
+          {suggestions.length > 0 && (
+             <ul ref={suggestionsRef} className="absolute z-10 w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg max-h-60 overflow-y-auto">
+                {suggestions.map((s, i) => (
+                    <li key={i} onClick={() => handleSuggestionClick(s)} className="px-4 py-3 cursor-pointer hover:bg-amber-100/60 flex justify-between items-center transition-colors">
+                        <div>
+                            <span className="font-semibold text-slate-800">{s.name}</span>
+                            {s.parentHierarchy && <span className="text-sm text-slate-600">, {s.parentHierarchy}</span>}
+                        </div>
+                        <span className="text-xs bg-slate-200 text-slate-700 font-medium px-2 py-0.5 rounded-full">{s.type}</span>
+                    </li>
+                ))}
+            </ul>
+          )}
         </div>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -241,8 +258,8 @@ const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, er
         <div className="text-center pt-4">
           <button
             type="submit"
-            className="w-full sm:w-auto px-10 py-4 bg-amber-600 text-white font-bold rounded-full hover:bg-amber-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:bg-amber-400"
-            disabled={!formData.destination}
+            className="w-full sm:w-auto px-10 py-4 bg-amber-600 text-white font-bold rounded-full hover:bg-amber-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:bg-amber-400/80 disabled:cursor-not-allowed disabled:shadow-md disabled:scale-100"
+            disabled={!isDestinationSelected || isLoading}
           >
             🍴 Discover My Local Feast
           </button>

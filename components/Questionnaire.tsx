@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Budget, Vibe, FoodPreference, TripType, QuestionnaireData } from '../types';
+import { Budget, Vibe, FoodPreference, TripType, QuestionnaireData, LocationSuggestion } from '../types';
 import { getDestinationSuggestions } from '../services/geminiService';
 import { currencies } from '../data/currencies';
 
@@ -89,10 +89,13 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
     isRoundTrip: false,
   });
   
-  const [destinationSuggestions, setDestinationSuggestions] = useState<string[]>([]);
+  const [destinationSuggestions, setDestinationSuggestions] = useState<LocationSuggestion[]>([]);
   const [isDestinationSuggestionsLoading, setIsDestinationSuggestionsLoading] = useState(false);
-  const [startPointSuggestions, setStartPointSuggestions] = useState<string[]>([]);
+  const [isDestinationSelected, setIsDestinationSelected] = useState(!!initialData?.destination);
+
+  const [startPointSuggestions, setStartPointSuggestions] = useState<LocationSuggestion[]>([]);
   const [isStartPointSuggestionsLoading, setIsStartPointSuggestionsLoading] = useState(false);
+  const [isStartPointSelected, setIsStartPointSelected] = useState(!!initialData?.startPoint);
 
   const debounceTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isSelectingSuggestion = useRef(false);
@@ -132,6 +135,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
             if (value === 'Standard') {
                 newState.startPoint = '';
                 newState.isRoundTrip = false; // Reset when switching to standard
+                setIsStartPointSelected(false);
             } else if (prev.tripType === 'Standard') {
                 // When switching from Standard to Car/Bike, enable round trip by default
                 newState.isRoundTrip = true;
@@ -144,7 +148,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
   const handleDestinationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     handleInputChange('destination', value);
-    
+    setIsDestinationSelected(false);
     isSelectingSuggestion.current = false;
 
     if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
@@ -165,9 +169,11 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
     }
   };
 
-  const handleDestinationSuggestionClick = (suggestion: string) => {
+  const handleDestinationSuggestionClick = (suggestion: LocationSuggestion) => {
     isSelectingSuggestion.current = true;
-    handleInputChange('destination', suggestion);
+    const fullName = suggestion.parentHierarchy ? `${suggestion.name}, ${suggestion.parentHierarchy}` : suggestion.name;
+    handleInputChange('destination', fullName);
+    setIsDestinationSelected(true);
     setDestinationSuggestions([]);
     setIsDestinationSuggestionsLoading(false);
     if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
@@ -176,7 +182,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
   const handleStartPointChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     handleInputChange('startPoint', value);
-    
+    setIsStartPointSelected(false);
     isSelectingSuggestion.current = false;
 
     if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
@@ -197,9 +203,11 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
     }
   };
   
-  const handleStartPointSuggestionClick = (suggestion: string) => {
+  const handleStartPointSuggestionClick = (suggestion: LocationSuggestion) => {
     isSelectingSuggestion.current = true;
-    handleInputChange('startPoint', suggestion);
+    const fullName = suggestion.parentHierarchy ? `${suggestion.name}, ${suggestion.parentHierarchy}` : suggestion.name;
+    handleInputChange('startPoint', fullName);
+    setIsStartPointSelected(true);
     setStartPointSuggestions([]);
     setIsStartPointSuggestionsLoading(false);
     if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
@@ -306,6 +314,8 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
     );
   }
 
+  const showStartPoint = formData.tripType !== 'Standard' || !!formData.isRoundTrip;
+
   return (
     <div className="max-w-2xl mx-auto">
        <button onClick={onBack} className="text-slate-600 hover:text-slate-900 flex items-center space-x-2 mb-6">
@@ -383,37 +393,56 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-violet-600" viewBox="0 0 20 20" fill="currentColor"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" /><path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h.01a1 1 0 100-2H10zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h.01a1 1 0 100-2H10z" clipRule="evenodd" /></svg>
                 <span>Core Details</span>
             </h2>
-            {(() => {
-              const showStartPoint = formData.tripType !== 'Standard' || !!formData.isRoundTrip;
-              return (
-                <div className={`grid grid-cols-1 ${showStartPoint ? 'sm:grid-cols-2' : ''} gap-4`}>
-                   {showStartPoint && (
-                        <div className="relative min-w-0">
-                            <label htmlFor="startPoint" className="block text-sm font-medium text-slate-700 mb-1">Starting Point</label>
-                            <div className="relative">
-                              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-1.172-8.243a.75.75 0 01.12-1.06l3-3a.75.75 0 011.06 1.06l-3 3a.75.75 0 01-1.18 0z" clipRule="evenodd" /></svg>
-                              </div>
-                              <input id="startPoint" ref={startPointInputRef} type="text" value={formData.startPoint} onChange={handleStartPointChange} placeholder="e.g., Mumbai, India" className="w-full pl-10 pr-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition" required autoComplete="off"/>
-                            </div>
-                            {isStartPointSuggestionsLoading && <div className="absolute right-3 top-9"><svg className="animate-spin h-5 w-5 text-violet-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>}
-                            {startPointSuggestions.length > 0 && (<ul ref={startPointSuggestionsRef} className="absolute z-10 w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg max-h-60 overflow-y-auto">{startPointSuggestions.map((s, i) => (<li key={i} onClick={() => handleStartPointSuggestionClick(s)} className="px-4 py-2 cursor-pointer hover:bg-violet-100">{s}</li>))}</ul>)}
-                        </div>
-                    )}
-                    <div className={`relative min-w-0 ${!showStartPoint ? 'col-span-1 sm:col-span-2' : ''}`}>
-                        <label htmlFor="destination" className="block text-sm font-medium text-slate-700 mb-1">Destination</label>
+            <div className={`grid grid-cols-1 ${showStartPoint ? 'sm:grid-cols-2' : ''} gap-4`}>
+               {showStartPoint && (
+                    <div className="relative min-w-0">
+                        <label htmlFor="startPoint" className="block text-sm font-medium text-slate-700 mb-1">Starting Point</label>
                         <div className="relative">
                           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 20l-4.95-5.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-1.172-8.243a.75.75 0 01.12-1.06l3-3a.75.75 0 011.06 1.06l-3 3a.75.75 0 01-1.18 0z" clipRule="evenodd" /></svg>
                           </div>
-                          <input id="destination" ref={destinationInputRef} type="text" value={formData.destination} onChange={handleDestinationChange} placeholder="e.g., Paris, France" className="w-full pl-10 pr-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition" required autoComplete="off" />
+                          <input id="startPoint" ref={startPointInputRef} type="text" value={formData.startPoint} onChange={handleStartPointChange} placeholder="e.g., Mumbai, India" className="w-full pl-10 pr-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition" required autoComplete="off"/>
                         </div>
-                        {isDestinationSuggestionsLoading && <div className="absolute right-3 top-9"><svg className="animate-spin h-5 w-5 text-violet-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>}
-                        {destinationSuggestions.length > 0 && (<ul ref={destinationSuggestionsRef} className="absolute z-10 w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg max-h-60 overflow-y-auto">{destinationSuggestions.map((s, i) => (<li key={i} onClick={() => handleDestinationSuggestionClick(s)} className="px-4 py-2 cursor-pointer hover:bg-violet-100">{s}</li>))}</ul>)}
+                        {isStartPointSuggestionsLoading && <div className="absolute right-3 top-9"><svg className="animate-spin h-5 w-5 text-violet-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>}
+                        {startPointSuggestions.length > 0 && (
+                            <ul ref={startPointSuggestionsRef} className="absolute z-10 w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg max-h-60 overflow-y-auto">
+                                {startPointSuggestions.map((s, i) => (
+                                    <li key={i} onClick={() => handleStartPointSuggestionClick(s)} className="px-4 py-3 cursor-pointer hover:bg-violet-100/60 flex justify-between items-center transition-colors">
+                                        <div>
+                                            <span className="font-semibold text-slate-800">{s.name}</span>
+                                            {s.parentHierarchy && <span className="text-sm text-slate-600">, {s.parentHierarchy}</span>}
+                                        </div>
+                                        <span className="text-xs bg-slate-200 text-slate-700 font-medium px-2 py-0.5 rounded-full">{s.type}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
                     </div>
+                )}
+                <div className={`relative min-w-0 ${!showStartPoint ? 'col-span-1 sm:col-span-2' : ''}`}>
+                    <label htmlFor="destination" className="block text-sm font-medium text-slate-700 mb-1">Destination</label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 20l-4.95-5.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
+                      </div>
+                      <input id="destination" ref={destinationInputRef} type="text" value={formData.destination} onChange={handleDestinationChange} placeholder="e.g., Paris, France" className="w-full pl-10 pr-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition" required autoComplete="off" />
+                    </div>
+                    {isDestinationSuggestionsLoading && <div className="absolute right-3 top-9"><svg className="animate-spin h-5 w-5 text-violet-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>}
+                    {destinationSuggestions.length > 0 && (
+                         <ul ref={destinationSuggestionsRef} className="absolute z-10 w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg max-h-60 overflow-y-auto">
+                            {destinationSuggestions.map((s, i) => (
+                                <li key={i} onClick={() => handleDestinationSuggestionClick(s)} className="px-4 py-3 cursor-pointer hover:bg-violet-100/60 flex justify-between items-center transition-colors">
+                                    <div>
+                                        <span className="font-semibold text-slate-800">{s.name}</span>
+                                        {s.parentHierarchy && <span className="text-sm text-slate-600">, {s.parentHierarchy}</span>}
+                                    </div>
+                                    <span className="text-xs bg-slate-200 text-slate-700 font-medium px-2 py-0.5 rounded-full">{s.type}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
                 </div>
-              );
-            })()}
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="min-w-0">
                   <label htmlFor="startDate" className="block text-sm font-medium text-slate-700 mb-1">Start Date</label>
@@ -541,8 +570,8 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
         <div className="text-center pt-4">
           <button
             type="submit"
-            className="w-full sm:w-auto px-10 py-4 bg-indigo-600 text-white font-bold rounded-full hover:bg-indigo-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:bg-indigo-400 disabled:cursor-not-allowed"
-            disabled={!formData.destination || formData.vibe.length === 0}
+            className="w-full sm:w-auto px-10 py-4 bg-indigo-600 text-white font-bold rounded-full hover:bg-indigo-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:bg-indigo-400/80 disabled:cursor-not-allowed disabled:shadow-md disabled:scale-100"
+            disabled={!isDestinationSelected || (showStartPoint && !isStartPointSelected) || formData.vibe.length === 0 || isLoading}
           >
             ✨ Generate My Itinerary
           </button>

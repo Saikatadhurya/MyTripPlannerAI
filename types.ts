@@ -90,6 +90,12 @@ export interface PopularDestination {
   icon: string;
 }
 
+export interface LocationSuggestion {
+  type: 'Country' | 'State' | 'City' | 'Village';
+  name: string;
+  parentHierarchy: string;
+}
+
 
 export interface PackingListRequestData {
     destination: string;

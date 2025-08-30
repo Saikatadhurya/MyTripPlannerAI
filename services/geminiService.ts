@@ -1,11 +1,10 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
-import { Budget, Itinerary, Vibe, FoodPreference, BlogReference, TripType } from '../types';
+import { Budget, Itinerary, Vibe, FoodPreference, BlogReference, TripType, LocationSuggestion } from '../types';
 
 // Cache for destination suggestions to avoid redundant API calls
-const suggestionsCache = new Map<string, string[]>();
+const suggestionsCache = new Map<string, LocationSuggestion[]>();
 
-export const getDestinationSuggestions = async (query: string): Promise<string[]> => {
+export const getDestinationSuggestions = async (query: string): Promise<LocationSuggestion[]> => {
   const cacheKey = query.trim().toLowerCase();
   if (suggestionsCache.has(cacheKey)) {
     return suggestionsCache.get(cacheKey)!;
@@ -20,13 +19,28 @@ export const getDestinationSuggestions = async (query: string): Promise<string[]
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
     const prompt = query.trim()
-        ? `Based on the user input "${query}", suggest 5 travel locations. The locations can be cities, states, provinces, or entire countries. If the user's input "${query}" is a valid location itself, it must be included in the list, preferably as the first result. The other suggestions should be closely related popular destinations. For each location, provide its name in the most appropriate format: for cities, use "City, State, Country"; for states/provinces, use "State, Country"; for countries, just use the country's name. Provide only a JSON array of these strings.`
-        : `Suggest 5 popular and diverse travel locations from around the world, including a mix of cities, states/provinces, and countries. For each location, provide its name in the most appropriate format: for cities, use "City, State, Country"; for states/provinces, use "State, Country"; for countries, just use the country's name. Provide only a JSON array of these strings.`;
+        ? `You are a master geographer AI. Based on the user input "${query}", provide up to 5 location suggestions.
+        CRITICAL HIERARCHY RULE: You MUST rank the results in this strict order of importance:
+        1. Country
+        2. State / Region
+        3. City
+        4. Village / Locality
+        For example, if the user types "Georgia", the country "Georgia" MUST be the first result, followed by "Georgia, USA".
+        Provide only a JSON array of objects.`
+        : `Suggest 5 popular and diverse travel locations from around the world, including a mix of cities, states/provinces, and countries. Provide only a JSON array of objects.`;
 
     const responseSchema = {
         type: Type.ARRAY,
-        items: { type: Type.STRING },
-        description: "A list of 5 travel location suggestions, which can be cities, states, or countries."
+        items: {
+            type: Type.OBJECT,
+            properties: {
+                type: { type: Type.STRING, description: "The type of location, e.g., 'Country', 'State', 'City'." },
+                name: { type: Type.STRING, description: "The name of the location." },
+                parentHierarchy: { type: Type.STRING, description: "The parent region, e.g., 'USA' or 'France'. Empty for countries." },
+            },
+            required: ["type", "name", "parentHierarchy"]
+        },
+        description: "A hierarchically sorted list of up to 5 location suggestions."
     };
     
     const response = await ai.models.generateContent({
@@ -35,17 +49,14 @@ export const getDestinationSuggestions = async (query: string): Promise<string[]
       config: {
         responseMimeType: "application/json",
         responseSchema: responseSchema,
-        // Optimize for low-latency by disabling thinking
         thinkingConfig: { thinkingBudget: 0 },
       }
     });
 
-    // FIX: According to Gemini API guidelines, `response.text` is a non-nullable string.
-    // Optional chaining is not necessary.
     const resultText = response.text.trim();
     if (!resultText) {
         console.error("AI response for suggestions was empty or invalid:", response);
-        return []; // Fail gracefully for suggestions
+        return [];
     }
     const resultJson = JSON.parse(resultText);
 
@@ -54,8 +65,14 @@ export const getDestinationSuggestions = async (query: string): Promise<string[]
       return [];
     }
     
-    const suggestions = resultJson.filter(item => typeof item === 'string');
-    suggestionsCache.set(cacheKey, suggestions); // Cache the successful result
+    const suggestions: LocationSuggestion[] = resultJson.filter(item => 
+      typeof item === 'object' &&
+      item !== null &&
+      'type' in item &&
+      'name' in item &&
+      'parentHierarchy' in item
+    );
+    suggestionsCache.set(cacheKey, suggestions);
     return suggestions;
 
   } catch (error) {
