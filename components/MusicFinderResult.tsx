@@ -1,7 +1,7 @@
 import React from 'react';
 import { MusicRecommendations, MusicItem, MusicGenreCategory } from '../types';
 
-const AppLinkButton: React.FC<{ appName: MusicItem['appLinks'][0]['appName'], musicTitle: string }> = ({ appName, musicTitle }) => {
+const AppLinkButton: React.FC<{ appName: MusicItem['appLinks'][0]['appName'], musicTitle: string, artist: string }> = ({ appName, musicTitle, artist }) => {
     const styles = {
         'Spotify': 'bg-[#1DB954] hover:bg-[#1ED760] text-white',
         'Apple Music': 'bg-[#FC3C44] hover:bg-[#ff5a5f] text-white',
@@ -15,7 +15,7 @@ const AppLinkButton: React.FC<{ appName: MusicItem['appLinks'][0]['appName'], mu
         'SoundCloud': 'bg-[#FF5500] hover:bg-[#ff7029] text-white',
     };
 
-    const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(`${musicTitle} ${appName}`)}`;
+    const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(`${musicTitle} ${artist} ${appName}`)}`;
 
     return (
         <a
@@ -49,7 +49,7 @@ const MusicItemCard: React.FC<{ item: MusicItem }> = ({ item }) => {
         <p className="text-sm text-slate-700 truncate" title={item.artistOrDescription}>{item.artistOrDescription}</p>
         <div className="flex items-center flex-wrap gap-2 mt-3 pt-3 border-t border-fuchsia-200/50">
           {item.appLinks && item.appLinks.map((link, linkIndex) => (
-            <AppLinkButton key={linkIndex} appName={link.appName} musicTitle={item.title} />
+            <AppLinkButton key={linkIndex} appName={link.appName} musicTitle={item.title} artist={item.artistOrDescription} />
           ))}
         </div>
       </div>
