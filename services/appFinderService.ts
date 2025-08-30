@@ -38,10 +38,11 @@ export const generateAppRecommendations = async (data: AppFinderRequestData): Pr
     }
 
     **CRITICAL RULES & EXAMPLE:**
-    1.  **Icon:** The 'icon' field MUST be a single, relevant emoji.
-    2.  **Language:** The entire JSON response, including all names and descriptions, MUST be in ${language}.
-    3.  **Validity:** The output MUST be a perfectly valid JSON object starting with { and ending with }. No markdown or extra text. Use single quotes inside strings to avoid breaking JSON.
-    4.  **Example of a good entry:**
+    1.  **App Naming Convention (CRITICAL):** The 'name' field MUST be the proper, human-readable name of the app (e.g., "Google Maps", "Uber Eats"). It MUST NOT contain underscores, camelCase, or be in a programmatic format like \`hired_driver_on_demand\`. Always provide the clean, display-ready name.
+    2.  **Icon:** The 'icon' field MUST be a single, relevant emoji.
+    3.  **Language:** The entire JSON response, including all names and descriptions, MUST be in ${language}.
+    4.  **Validity:** The output MUST be a perfectly valid JSON object starting with { and ending with }. No markdown or extra text. Use single quotes inside strings to avoid breaking JSON.
+    5.  **Example of a good entry:**
         \`{ "name": "Rapido", "description": "India's largest bike taxi platform, offering quick and affordable rides, especially for solo commuters navigating traffic.", "platform": "Both", "icon": "🏍️" }\`
   `;
   

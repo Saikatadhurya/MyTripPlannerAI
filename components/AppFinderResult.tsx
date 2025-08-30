@@ -12,6 +12,14 @@ const PlatformBadge: React.FC<{ platform: MobileApp['platform'] }> = ({ platform
     return <span className={`${baseClasses} bg-blue-200 text-blue-800`}>Both</span>;
 };
 
+// Helper function to format app names as a fallback
+const formatAppName = (name: string): string => {
+  if (!name) return '';
+  return name
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, char => char.toUpperCase());
+};
+
 const AppCard: React.FC<{ app: MobileApp }> = ({ app }) => {
     const appStoreSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(`${app.name} App Store`)}`;
     const playStoreSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(`${app.name} Play Store`)}`;
@@ -22,7 +30,7 @@ const AppCard: React.FC<{ app: MobileApp }> = ({ app }) => {
                 <div className="flex items-center space-x-3">
                     <span className="text-3xl">{app.icon}</span>
                     <div>
-                        <h4 className="font-bold text-slate-800 break-words">{app.name}</h4>
+                        <h4 className="font-bold text-slate-800 break-words">{formatAppName(app.name)}</h4>
                         <PlatformBadge platform={app.platform} />
                     </div>
                 </div>
