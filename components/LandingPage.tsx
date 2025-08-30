@@ -9,17 +9,26 @@ interface LandingPageProps {
   onStartMusicFinder: () => void;
 }
 
-const FeatureCard: React.FC<{ icon: React.ReactNode; title: string; children: React.ReactNode }> = ({ icon, title, children }) => (
-  <div className="bg-white/40 backdrop-blur-md p-6 rounded-2xl border border-white/50 shadow-lg h-full">
-    <div className="flex items-center space-x-4">
-      <div className="bg-violet-100 text-violet-600 rounded-full p-3">{icon}</div>
-      <div>
-        <h3 className="text-lg font-semibold text-slate-800">{title}</h3>
-        <p className="text-slate-600 text-sm mt-1">{children}</p>
+const FeatureCard: React.FC<{ icon: React.ReactNode; title: string; children: React.ReactNode }> = ({ icon, title, children }) => {
+  const formattedTitle = title.split(' ').join('<br />');
+
+  return (
+    <div className="bg-white/40 backdrop-blur-md p-6 rounded-2xl border border-white/50 shadow-lg h-full flex items-start space-x-4 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl">
+      <div className="flex-shrink-0 bg-violet-500/10 text-violet-600 rounded-full p-3 mt-1">
+        {icon}
+      </div>
+      <div className="flex-1">
+        <h3
+          className="text-xl font-bold text-slate-800"
+          style={{ lineHeight: '1.2' }}
+          dangerouslySetInnerHTML={{ __html: formattedTitle }}
+        />
+        <p className="text-slate-600 text-sm mt-2">{children}</p>
       </div>
     </div>
-  </div>
-);
+  );
+};
+
 
 const LandingPage: React.FC<LandingPageProps> = ({ onPlanTrip, onStartPacking, onStartFoodFinder, onStartAppFinder, onStartMusicFinder }) => {
   const [destinations, setDestinations] = useState<PopularDestination[]>([]);
@@ -62,7 +71,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onPlanTrip, onStartPacking, o
 
       {/* Features Section */}
       <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
             <button
               onClick={onStartPacking}
               className="bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-white/30 shadow-lg text-center flex flex-col justify-between items-center group hover:border-violet-300/50 transition-all duration-300 transform hover:-translate-y-1 h-full"
@@ -136,7 +145,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onPlanTrip, onStartPacking, o
             </button>
         </div>
         
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
             <FeatureCard icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>} title="Day-wise Planning">
               Detailed itineraries with activities planned for each day.
             </FeatureCard>
