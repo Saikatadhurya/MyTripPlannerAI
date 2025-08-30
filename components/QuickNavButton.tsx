@@ -59,7 +59,7 @@ const QuickNavButton: React.FC<QuickNavButtonProps> = ({
       {/* Main toggle button */}
       <button
         onClick={toggleMenu}
-        className="w-16 h-16 rounded-full bg-gradient-to-br from-white/50 to-white/30 backdrop-blur-xl border-2 border-white/50 shadow-xl shadow-violet-500/25 flex items-center justify-center text-slate-800 transition-all duration-300 transform hover:scale-110 hover:shadow-2xl hover:shadow-violet-500/40 focus:outline-none focus:ring-4 focus:ring-white/50"
+        className="w-16 h-16 rounded-full bg-gradient-to-br from-slate-50/80 to-violet-100/80 backdrop-blur-lg border-2 border-white/90 shadow-lg shadow-violet-500/30 flex items-center justify-center text-slate-800 transition-all duration-300 transform hover:scale-110 hover:shadow-xl hover:shadow-violet-500/40 focus:outline-none focus:ring-4 focus:ring-white/50"
         aria-label="Open quick navigation"
         aria-expanded={isOpen}
       >
