@@ -184,7 +184,7 @@ export interface MusicItem {
     title: string;
     artistOrDescription: string;
     appLinks: {
-        appName: 'Spotify' | 'Apple Music' | 'YouTube Music' | 'JioSaavn' | 'Gaana' | 'Wynk' | 'Anghami' | 'Boomplay' | 'Deezer' | 'SoundCloud';
+        appName: 'Spotify' | 'Apple Music' | 'YouTube' | 'JioSaavn' | 'Gaana' | 'Wynk' | 'Anghami' | 'Boomplay' | 'Deezer' | 'SoundCloud';
     }[];
 }
 

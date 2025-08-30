@@ -26,7 +26,7 @@ export const generateMusicRecommendations = async (data: MusicFinderRequestData)
     4.  **DO NOT SEARCH FOR IMAGES:** You are strictly forbidden from searching for album art or any images. This is the most important rule for ensuring speed.
 
     5.  **App Sourcing (MANDATORY & RESTRICTED):** For each song or playlist, you MUST identify which of the following popular streaming platforms it is available on. To improve speed, you are ONLY allowed to suggest apps from this predefined list. Do not search for other apps.
-        - **Allowed Apps:** Spotify, Apple Music, YouTube Music, SoundCloud, Deezer, JioSaavn, Gaana, Wynk, Anghami, Boomplay.
+        - **Allowed Apps:** Spotify, Apple Music, YouTube, SoundCloud, Deezer, JioSaavn, Gaana, Wynk, Anghami, Boomplay.
     
     6.  **DO NOT PROVIDE URLs:** You are strictly forbidden from providing any listen URLs. Just provide the app's name.
     7.  **Categorization:** Group your findings into the specified genre categories. A description for each genre explaining its local relevance is mandatory.
@@ -60,7 +60,7 @@ export const generateMusicRecommendations = async (data: MusicFinderRequestData)
               "title": "string",
               "artistOrDescription": "string",
               "appLinks": [
-                { "appName": "YouTube Music" }
+                { "appName": "YouTube" }
               ]
             }
           ]

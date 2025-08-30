@@ -5,7 +5,7 @@ const AppLinkButton: React.FC<{ appName: MusicItem['appLinks'][0]['appName'], mu
     const styles = {
         'Spotify': 'bg-[#1DB954] hover:bg-[#1ED760] text-white',
         'Apple Music': 'bg-[#FC3C44] hover:bg-[#ff5a5f] text-white',
-        'YouTube Music': 'bg-[#FF0000] hover:bg-[#ff3333] text-white',
+        'YouTube': 'bg-[#FF0000] hover:bg-[#ff3333] text-white',
         'JioSaavn': 'bg-[#2BC5B4] hover:bg-[#30d9c8] text-white',
         'Gaana': 'bg-[#FF2800] hover:bg-[#ff5333] text-white',
         'Wynk': 'bg-[#E40035] hover:bg-[#fa003b] text-white',
