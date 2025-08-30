@@ -39,11 +39,11 @@ const QuickNavButton: React.FC<QuickNavButtonProps> = ({
   };
 
   const menuItems = [
-    { label: 'Plan My Trip', action: () => handleAction(onPlanTrip), color: 'from-indigo-500/50 to-violet-500/50', gradient: true, icon: '✨' },
-    { label: 'Smart Bag Packing', action: () => handleAction(onStartPacking), color: 'bg-violet-500/40', icon: '🧳' },
-    { label: 'Local Food Finder', action: () => handleAction(onStartFoodFinder), color: 'bg-amber-500/40', icon: '🍲' },
-    { label: 'Mobile App Finder', action: () => handleAction(onStartAppFinder), color: 'bg-teal-500/40', icon: '📱' },
-    { label: 'Local Music Finder', action: () => handleAction(onStartMusicFinder), color: 'bg-fuchsia-500/40', icon: '🎶' },
+    { label: 'Plan My Trip', action: () => handleAction(onPlanTrip), icon: '✨' },
+    { label: 'Smart Bag Packing', action: () => handleAction(onStartPacking), icon: '🧳' },
+    { label: 'Local Food Finder', action: () => handleAction(onStartFoodFinder), icon: '🍲' },
+    { label: 'Mobile App Finder', action: () => handleAction(onStartAppFinder), icon: '📱' },
+    { label: 'Local Music Finder', action: () => handleAction(onStartMusicFinder), icon: '🎶' },
   ];
 
   const toggleMenu = () => setIsOpen(!isOpen);
@@ -98,9 +98,18 @@ const QuickNavButton: React.FC<QuickNavButtonProps> = ({
         className={`flex flex-col-reverse items-center space-y-3 space-y-reverse transition-all duration-300 ease-in-out`}
       >
         {menuItems.map((item, index) => {
-          const buttonColor = item.gradient
-            ? `bg-gradient-to-br ${item.color}`
-            : item.color;
+          const isPrimary = item.label === 'Plan My Trip';
+          const secondaryColors: { [key: string]: string } = {
+            'Smart Bag Packing': 'bg-violet-500/40',
+            'Local Food Finder': 'bg-amber-500/40',
+            'Mobile App Finder': 'bg-teal-500/40',
+            'Local Music Finder': 'bg-fuchsia-500/40',
+          };
+          const buttonColor = isPrimary
+            ? 'bg-gradient-to-br from-indigo-500/80 to-violet-500/80 shadow-indigo-500/50'
+            : secondaryColors[item.label] || 'bg-slate-500/40';
+          
+          const buttonSize = isPrimary ? 'w-16 h-16' : 'w-14 h-14';
 
           return (
             <div
@@ -114,7 +123,7 @@ const QuickNavButton: React.FC<QuickNavButtonProps> = ({
             >
               <button
                 onClick={item.action}
-                className={`w-14 h-14 rounded-full flex items-center justify-center text-3xl shadow-lg transition-transform transform hover:scale-110 hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-white/50 backdrop-blur-md border border-white/20 ${buttonColor}`}
+                className={`rounded-full flex items-center justify-center text-3xl shadow-lg transition-transform transform hover:scale-110 hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-white/50 backdrop-blur-md border border-white/20 ${buttonColor} ${buttonSize}`}
                 title={item.label}
               >
                 <span style={{ textShadow: '0 2px 5px rgba(0,0,0,0.25)' }}>
