@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { PackingListRequestData, LocationSuggestion } from '../types';
 import { getDestinationSuggestions } from '../services/geminiService';
+import LoadingIndicator from './LoadingIndicator';
 
 interface PackingAssistantFormProps {
   onSubmit: (data: PackingListRequestData) => void;
@@ -37,24 +38,10 @@ const PackingAssistantForm: React.FC<PackingAssistantFormProps> = ({ onSubmit, i
   const isSelectingSuggestion = useRef(false);
   const suggestionsRef = useRef<HTMLUListElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const [loadingIndex, setLoadingIndex] = useState(0);
 
   const [languageQuery, setLanguageQuery] = useState('');
   const [languageDropdownOpen, setLanguageDropdownOpen] = useState(false);
   const languageRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    let interval: ReturnType<typeof setInterval>;
-    if (isLoading) {
-      setLoadingIndex(0);
-      interval = setInterval(() => {
-        setLoadingIndex(prev => (prev + 1) % loadingData.length);
-      }, 2500);
-    }
-    return () => {
-      if(interval) clearInterval(interval);
-    }
-  }, [isLoading]);
   
   const handleInputChange = (field: keyof PackingListRequestData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -138,22 +125,13 @@ const PackingAssistantForm: React.FC<PackingAssistantFormProps> = ({ onSubmit, i
   );
   
   if (isLoading) {
-    const { message, icon } = loadingData[loadingIndex];
     return (
-      <div className="text-center py-20 fade-in">
-        <div className="inline-block relative">
-          <div className="w-20 h-20 border-4 border-violet-200 border-t-violet-600 rounded-full animate-spin"></div>
-          <div className="absolute inset-0 flex items-center justify-center text-3xl">{icon}</div>
-        </div>
-        <p className="mt-6 text-xl font-semibold text-slate-800">{message}</p>
-        <p className="text-slate-600 mt-2">Crafting your packing list...</p>
-        <button
-          onClick={onCancel}
-          className="mt-8 px-6 py-2 bg-white/60 text-slate-700 font-bold rounded-full hover:bg-white/80 transition-colors"
-        >
-          Cancel Generation
-        </button>
-      </div>
+      <LoadingIndicator
+        messages={loadingData}
+        onCancel={onCancel}
+        subtext="Crafting your packing list..."
+        accentColor="violet"
+      />
     );
   }
 
