@@ -21,18 +21,23 @@ const AppCard: React.FC<{ app: MobileApp }> = ({ app }) => {
             <div className="flex items-start justify-between">
                 <div className="flex-1 min-w-0">
                     {app.category ? (
-                        <div className="flex items-baseline space-x-2">
-                            <h3 className="text-3xl font-bold text-slate-800 capitalize">{app.category}</h3>
-                            <h4 className="font-semibold text-slate-700">{app.name}</h4>
+                        <div>
+                            <h3 className="text-xl font-bold text-slate-800 capitalize truncate">{app.category}</h3>
+                            <div className="flex items-center space-x-2 mt-1">
+                                <span className="text-2xl">{app.icon}</span>
+                                <h4 className="font-semibold text-slate-700 truncate">{app.name}</h4>
+                            </div>
                         </div>
                     ) : (
                         <div className="flex items-center space-x-3">
                             <span className="text-3xl">{app.icon}</span>
-                            <h4 className="font-bold text-slate-800 text-lg">{app.name}</h4>
+                            <h4 className="font-bold text-slate-800 text-lg truncate">{app.name}</h4>
                         </div>
                     )}
                 </div>
-                <PlatformBadge platform={app.platform} />
+                <div className="flex-shrink-0 ml-2">
+                    <PlatformBadge platform={app.platform} />
+                </div>
             </div>
             <p className="text-sm text-slate-600 flex-grow">{app.description}</p>
             <div className="flex items-center space-x-2 pt-3 border-t border-violet-200/50">
