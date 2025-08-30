@@ -19,6 +19,7 @@ import AppFinderForm from './components/AppFinderForm';
 import AppFinderResult from './components/AppFinderResult';
 import MusicFinderForm from './components/MusicFinderForm';
 import MusicFinderResult from './components/MusicFinderResult';
+import ScrollToTopButton from './components/ScrollToTopButton';
 
 
 type View = 'landing' | 'questionnaire' | 'itinerary' | 'packingAssistantForm' | 'packingAssistantResult' | 'foodFinderForm' | 'foodFinderResult' | 'appFinderForm' | 'appFinderResult' | 'musicFinderForm' | 'musicFinderResult';
@@ -359,6 +360,7 @@ const App: React.FC = () => {
       <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {renderContent()}
       </main>
+      <ScrollToTopButton />
     </div>
   );
 };
