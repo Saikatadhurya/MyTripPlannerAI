@@ -12,27 +12,29 @@ export const generateMusicRecommendations = async (data: MusicFinderRequestData)
   const prompt = `
     You are a world-class Ethnomusicologist AI. Your primary mission is to recognize and represent the deep musical diversity of the destination: "${destination}". You must provide a traveler with culturally rich, regionally accurate, and popular music.
 
-    **CRITICAL DIVERSITY & REGIONAL BREAKDOWN MANDATE:**
-    This is your most important instruction. You MUST analyze if the destination is a large, culturally diverse country.
+    **MANDATORY TWO-PHASE PROTOCOL:**
 
-    1.  **INDIA-SPECIFIC INSTRUCTIONS (MANDATORY):** If the destination is **India**, you MUST create separate regional categories for **North Indian**, **South Indian**, **East Indian**, and **West Indian** music.
-        - **North:** Find a mix of current **Bollywood** hits, iconic classics, and popular **Punjabi** tracks.
-        - **South:** Find popular and classic songs from **Tamil (Kollywood)**, **Telugu (Tollywood)**, **Malayalam**, and **Kannada** cinema and music scenes.
-        - **East:** Find beloved **Bengali** songs (both modern and Rabindra Sangeet), and popular **Assamese** or **Odia** music.
-        - **West:** Find popular **Marathi** and **Gujarati** songs that are cultural staples.
-        - Place these regional findings into the \`regionalHighlights\` array.
+    **PHASE 1: NATIONWIDE TRENDING HITS (NON-NEGOTIABLE)**
+    -   Your first and most critical task is to find the songs that are currently charting and trending across the *entire* nation of "${destination}".
+    -   These songs MUST be placed in the \`trendingHits\` object. This section is for the hottest, most current chart-toppers and viral hits.
 
-    2.  **FOR OTHER DIVERSE COUNTRIES (e.g., USA, China, Brazil):** Use your knowledge to identify 2-4 primary musical regions and create categories for them in the \`regionalHighlights\` array (e.g., for the USA: 'Hip-Hop & R&B (East Coast/West Coast/Southern)', 'Country (Nashville)', 'Indie & Rock (Pacific Northwest)').
+    **PHASE 2: REGIONAL DEEP-DIVE & ANTI-BIAS MANDATE**
+    -   After finding nationwide hits, you MUST perform a regional deep-dive. You MUST analyze if the destination is a large, culturally diverse country and create separate regional categories.
 
-    3.  **FOR SMALLER/HOMOGENEOUS COUNTRIES:** If the destination is smaller with a more unified music scene, you can create genre-based categories (e.g., 'Pop', 'Folk', 'Classical') within the \`regionalHighlights\` array. The 'genre' field for the category should reflect the genre name.
+    -   **INDIA-SPECIFIC INSTRUCTIONS (MANDATORY & CRITICAL):** If the destination is **India**, you MUST give EQUAL weight and effort to all regions. You are strictly forbidden from letting Bollywood/Hindi music dominate or bleed into other regional categories.
+        -   Create a category for **North Indian Music**: Find current **Bollywood** hits (e.g., from artists like Arijit Singh), iconic classics, and popular **Punjabi** tracks (e.g., from artists like Diljit Dosanjh).
+        -   Create a category for **South Indian Music**: Find *authentic* chart-toppers from the **Tamil** (e.g., Anirudh Ravichander), **Telugu** (e.g., S. Thaman), **Malayalam** (e.g., Hesham Abdul Wahab), and **Kannada** (e.g., Vijay Prakash) industries.
+        -   Create a category for **East Indian Music**: Find beloved **Bengali** songs (both modern and classic Rabindra Sangeet) and popular **Assamese** or **Odia** music.
+        -   Create a category for **West Indian Music**: Find popular **Marathi** (e.g., Ajay-Atul) and **Gujarati** (e.g., Sachin-Jigar) songs that are cultural staples.
+        -   Place these regional findings into the \`regionalHighlights\` array.
 
-    **SEARCH & CURATION PROTOCOL:**
+    -   **FOR OTHER DIVERSE COUNTRIES (e.g., USA, China, Brazil):** Use your knowledge to identify 2-4 primary musical regions and create categories for them in the \`regionalHighlights\` array (e.g., for the USA: 'Hip-Hop & R&B (East/West/South)', 'Country (Nashville)', 'Indie & Rock (PNW)').
 
-    -   **Nationwide Trending Hits (Optional but Recommended):** First, try to find songs that are trending across the entire nation. Place these in the optional \`trendingHits\` object.
-    -   **Regional Deep Dive (Mandatory):** For each region you identified (like North India, South India, etc.), find a mix of:
-        -   **Current Hits:** What's popular in that region right now?
-        -   **Iconic Classics:** What timeless songs define that region's culture? This is where you apply **"The Gandagana Test"**—find the songs that are absolute, non-negotiable cultural anthems for that specific region.
-    -   **Sorting by Popularity (CRITICAL):** Within EACH category, you MUST order the songs from most popular to least popular. Use metrics like YouTube views and streaming numbers. The most famous song MUST be listed first.
+    -   **FOR SMALLER/HOMOGENEOUS COUNTRIES:** If the destination is smaller with a more unified music scene, create genre-based categories (e.g., 'Pop', 'Folk', 'Classical') within the \`regionalHighlights\` array.
+
+    **GENERAL CURATION RULES:**
+    -   **Sorting by Popularity (CRITICAL):** Within EACH category (\`trendingHits\` and every category in \`regionalHighlights\`), you MUST order the songs from most popular to least popular. The most famous, highest-viewed song MUST be listed first.
+    -   **Content:** For each region, find a mix of **Current Hits** and **Iconic Classics**. Apply **"The Gandagana Test"**—find the songs that are absolute, non-negotiable cultural anthems for that specific region.
     -   **Quantity:** Provide at least 5-10 music items per category.
     -   **Sourcing:** Identify availability on this specific list of apps: Spotify, Apple Music, YouTube, SoundCloud, Deezer, JioSaavn, Gaana, Wynk, Anghami, Boomplay.
     -   **RESTRICTIONS:** NO URLs. NO album art. NO empty results.
@@ -42,7 +44,7 @@ export const generateMusicRecommendations = async (data: MusicFinderRequestData)
 
     {
       "destination": "${destination}",
-      "trendingHits": { // Optional, for nationwide trends
+      "trendingHits": {
         "genre": "Top Trending Hits",
         "description": "The most popular songs currently trending across ${destination}.",
         "music": [
@@ -53,19 +55,12 @@ export const generateMusicRecommendations = async (data: MusicFinderRequestData)
           }
         ]
       },
-      "regionalHighlights": [ // This is the main array for regional music
+      "regionalHighlights": [
         {
-          "genre": "North Indian Music", // Example for India
+          "genre": "North Indian Music",
           "description": "A mix of Bollywood chartbusters, timeless classics, and vibrant Punjabi hits that define North India.",
           "music": [
              { "title": "string", "artistOrDescription": "string", "appLinks": [ { "appName": "YouTube" } ] }
-          ]
-        },
-        {
-          "genre": "South Indian Music", // Example for India
-          "description": "Iconic and trending songs from the powerful film and music industries of Tamil, Telugu, Malayalam, and Kannada.",
-          "music": [
-            { "title": "string", "artistOrDescription": "string", "appLinks": [ { "appName": "Spotify" } ] }
           ]
         }
       ]
