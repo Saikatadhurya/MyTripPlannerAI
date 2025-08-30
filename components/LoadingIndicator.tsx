@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 
 interface Stage {
   key: string;
@@ -62,6 +62,7 @@ const StageItem: React.FC<{ text: string, status: 'completed' | 'in_progress' | 
 const StreamingLoadingIndicator: React.FC<StreamingLoadingIndicatorProps> = ({ streamedText, stages, onCancel, title, accentColor }) => {
   const [completedStages, setCompletedStages] = useState<Set<string>>(new Set());
   const [currentStageIndex, setCurrentStageIndex] = useState(0);
+  const codePreviewRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const newCompleted = new Set<string>();
@@ -80,19 +81,11 @@ const StreamingLoadingIndicator: React.FC<StreamingLoadingIndicatorProps> = ({ s
 
   }, [streamedText, stages]);
 
-  const [visibleText, setVisibleText] = useState('');
   useEffect(() => {
-    const slicedText = streamedText.slice(-250);
-    let i = 0;
-    const interval = setInterval(() => {
-      setVisibleText(slicedText.substring(0, i));
-      i++;
-      if (i > slicedText.length) {
-        clearInterval(interval);
-      }
-    }, 5);
-    return () => clearInterval(interval);
-
+    // Auto-scroll the preview to the bottom
+    if (codePreviewRef.current) {
+        codePreviewRef.current.scrollTop = codePreviewRef.current.scrollHeight;
+    }
   }, [streamedText]);
 
 
@@ -116,12 +109,10 @@ const StreamingLoadingIndicator: React.FC<StreamingLoadingIndicatorProps> = ({ s
             ))}
         </ul>
 
-        <div className="bg-slate-800 text-left rounded-lg p-4 font-mono text-xs text-green-400 h-28 overflow-hidden relative">
+        <div ref={codePreviewRef} className="bg-slate-800 text-left rounded-lg p-4 font-mono text-xs text-green-400 min-h-[7rem] max-h-48 overflow-y-auto">
             <pre className="whitespace-pre-wrap break-all">
-                {visibleText}
-                <span className="w-2 h-4 bg-green-400 inline-block animate-pulse ml-1"></span>
+                {streamedText}
             </pre>
-            <div className="absolute bottom-0 left-0 w-full h-8 bg-gradient-to-t from-slate-800 to-transparent"></div>
         </div>
 
         <button
