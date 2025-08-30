@@ -1,6 +1,7 @@
 
 
 
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { Budget, Itinerary, Vibe, FoodPreference, BlogReference, TripType, LocationSuggestion } from '../types';
 
@@ -323,64 +324,72 @@ export const generateItinerary = async (
       c. **FAILURE TO FOLLOW THIS RULE WILL RENDER THE ENTIRE OUTPUT USELESS.** You must double-check every string value for unescaped double quotes before finishing your response.
   `;
   
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt,
-      config: {
-        tools: [{ googleSearch: {} }],
-        // Optimize for speed, as the search tool can add latency.
-        // The detailed prompt helps guide the model effectively without extra thinking time.
-        thinkingConfig: { thinkingBudget: 0 },
-      }
-    });
-    
-    const resultText = response.text.trim();
-    if (!resultText) {
-        throw new Error("AI response was empty or invalid.");
+    let attempts = 0;
+    const maxAttempts = 2; // Try a total of 2 times
+
+    while (attempts < maxAttempts) {
+        attempts++;
+        let resultText = ''; // To be available in catch block for logging
+        try {
+            const response = await ai.models.generateContent({
+                model: "gemini-2.5-flash",
+                contents: prompt,
+                config: {
+                    tools: [{ googleSearch: {} }],
+                    thinkingConfig: { thinkingBudget: 0 },
+                }
+            });
+            
+            resultText = response.text.trim();
+            if (!resultText) {
+                throw new Error("AI response was empty or invalid.");
+            }
+            
+            let jsonString = resultText;
+            
+            const markdownMatch = jsonString.match(/```(json)?([\s\S]*?)```/);
+            if (markdownMatch && markdownMatch[2]) {
+                jsonString = markdownMatch[2].trim();
+            }
+
+            const firstBrace = jsonString.indexOf('{');
+            const lastBrace = jsonString.lastIndexOf('}');
+
+            if (firstBrace === -1 || lastBrace === -1 || lastBrace < firstBrace) {
+              throw new Error("Could not find a valid JSON object in the AI response.");
+            }
+
+            jsonString = jsonString.substring(firstBrace, lastBrace + 1);
+
+            const itineraryData = JSON.parse(jsonString);
+
+            // Success: return and exit
+            return {
+                ...itineraryData,
+                startPoint,
+                tripType,
+                isRoundTrip: isRoundTrip ?? false,
+                persons,
+                budget,
+                vibe,
+                foodPreference,
+                startDate,
+                language,
+                currency,
+            };
+        } catch (error) {
+            console.error(`Attempt ${attempts}/${maxAttempts} failed to generate and parse itinerary:`, error);
+            console.error("Original AI response for failed attempt:", resultText);
+
+            if (attempts >= maxAttempts) {
+                // If all retries fail, throw the final error.
+                throw new Error("The AI returned an invalid response format. Please try generating the itinerary again.");
+            }
+            // Optional: wait a bit before the next attempt
+            await new Promise(resolve => setTimeout(resolve, 200));
+        }
     }
-    
-    let jsonString = resultText;
-    
-    // The model can sometimes wrap the JSON in markdown or add extra text.
-    // This block cleans the string before parsing.
-    const markdownMatch = jsonString.match(/```(json)?([\s\S]*?)```/);
-    if (markdownMatch && markdownMatch[2]) {
-        jsonString = markdownMatch[2].trim();
-    }
 
-    const firstBrace = jsonString.indexOf('{');
-    const lastBrace = jsonString.lastIndexOf('}');
-
-    if (firstBrace === -1 || lastBrace === -1 || lastBrace < firstBrace) {
-      console.error("Could not find a valid JSON object in the AI response.");
-      console.error("Original response:", resultText);
-      throw new Error("The AI returned an invalid response format. Please try generating the itinerary again.");
-    }
-
-    jsonString = jsonString.substring(firstBrace, lastBrace + 1);
-
-    let itineraryData;
-    try {
-        itineraryData = JSON.parse(jsonString);
-    } catch (e) {
-        console.error("Failed to parse JSON from AI response after cleaning:", e);
-        console.error("Cleaned JSON string that failed:", jsonString);
-        console.error("Original AI response:", resultText);
-        throw new Error("The AI returned an invalid response format. Please try generating the itinerary again.");
-    }
-
-    // Ensure the response has all the fields from the initial request
-    return {
-        ...itineraryData,
-        startPoint, // Ensure startPoint is passed through
-        tripType,
-        isRoundTrip: isRoundTrip ?? false,
-        persons,
-        budget,
-        vibe,
-        foodPreference,
-        startDate,
-        language,
-        currency,
-    };
+    // This should not be reachable if logic is correct, but as a fallback:
+    throw new Error("Failed to generate itinerary after multiple attempts.");
 };
