@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 
 interface Stage {
   key: string;
@@ -62,7 +61,6 @@ const StageItem: React.FC<{ text: string, status: 'completed' | 'in_progress' | 
 const StreamingLoadingIndicator: React.FC<StreamingLoadingIndicatorProps> = ({ streamedText, stages, onCancel, title, accentColor }) => {
   const [completedStages, setCompletedStages] = useState<Set<string>>(new Set());
   const [currentStageIndex, setCurrentStageIndex] = useState(0);
-  const codePreviewRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const newCompleted = new Set<string>();
@@ -81,12 +79,12 @@ const StreamingLoadingIndicator: React.FC<StreamingLoadingIndicatorProps> = ({ s
 
   }, [streamedText, stages]);
 
-  useEffect(() => {
-    // Auto-scroll the preview to the bottom
-    if (codePreviewRef.current) {
-        codePreviewRef.current.scrollTop = codePreviewRef.current.scrollHeight;
-    }
-  }, [streamedText]);
+  const colors = colorClasses[accentColor] || colorClasses.violet;
+  
+  const progress = useMemo(() => {
+    if (stages.length === 0) return 0;
+    return (completedStages.size / stages.length) * 100;
+  }, [completedStages, stages.length]);
 
 
   return (
@@ -109,11 +107,15 @@ const StreamingLoadingIndicator: React.FC<StreamingLoadingIndicatorProps> = ({ s
             ))}
         </ul>
 
-        <div ref={codePreviewRef} className="bg-slate-800 text-left rounded-lg p-4 font-mono text-xs text-green-400 min-h-[7rem] max-h-48 overflow-y-auto">
-            <pre className="whitespace-pre-wrap break-all">
-                {streamedText}
-            </pre>
+        <div className="w-full bg-slate-200/70 rounded-full h-2.5">
+            <div
+                className={`${colors.bg} h-2.5 rounded-full transition-all duration-500 ease-out`}
+                style={{ width: `${progress}%` }}
+            ></div>
         </div>
+        <p className={`text-sm font-semibold mt-2 ${colors.text}`}>
+            {Math.round(progress)}% Complete
+        </p>
 
         <button
           onClick={onCancel}
