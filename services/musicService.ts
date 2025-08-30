@@ -38,6 +38,7 @@ export const generateMusicRecommendations = async (data: MusicFinderRequestData)
 
     **STEP 3: Curation & Final Output**
 
+    *   **Sorting by Popularity (CRITICAL):** Within the \`popularHits\` category, and all other categories if possible, you MUST order the songs from most popular to least popular. Use metrics like YouTube views, streaming numbers, and historical chart performance to determine this ranking. The most famous and most-streamed song should be listed first.
     *   **Quantity Requirement (CRITICAL):** For EACH genre category, including \`popularHits\`, you MUST provide at least 10 music items. Be resourceful.
     *   **App Sourcing (RESTRICTED):** For each song, identify which platforms from this specific list it is on: Spotify, Apple Music, YouTube, SoundCloud, Deezer, JioSaavn, Gaana, Wynk, Anghami, Boomplay.
     *   **NO URLs:** Only provide the app's name.
