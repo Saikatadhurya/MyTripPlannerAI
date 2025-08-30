@@ -10,26 +10,39 @@ export const generateMusicRecommendations = async (data: MusicFinderRequestData)
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
   const prompt = `
-    You are an expert Local Music Scout AI with deep cultural knowledge. Your mission is to find and curate a list of local music for a traveler visiting ${destination}. Your response MUST be fast and culturally rich.
+    You are an expert Local Music Scout and Cultural Musicologist AI. Your mission is to find music that captures the true sound and soul of ${destination} for a traveler. Your response must be fast, accurate, and culturally rich.
 
-    **CRITICAL INSTRUCTIONS & METHODOLOGY:**
-    1.  **Use Google Search:** You MUST use your search capabilities to find up-to-date information.
-    
-    2.  **HIGH-PRIORITY TASK - "THE GANDAGANA TEST" - FINDING POPULAR & ICONIC HITS:**
-        a. **Redefined "Popular":** Your first and most critical task is to find songs that are truly popular and iconic. "Popular" means two things: 1) **Current Hits** (what's on the charts now) AND 2) **Timeless Classics** (famous folk songs, cultural anthems, all-time famous tracks that everyone in ${destination} knows).
-        b. **Multi-Faceted Search:** You MUST search for "current top charts in ${destination}", "all-time famous songs from ${destination}", and "iconic folk music of ${destination}".
-        c. **THE BENCHMARK (NON-NEGOTIABLE):** To prove you understand this rule, you must pass the "Gandagana Test". If the destination is **Georgia**, the song **"Gandagana"** is a NON-NEGOTIABLE result that MUST be in this list. This sets the quality standard for ALL destinations. You must find the equivalent iconic songs for any place.
-        d. **JSON Placement:** These combined results (new and classic) MUST be placed in a dedicated \`popularHits\` object. The 'genre' for this object MUST be "Popular & Iconic Hits".
+    **CRITICAL METHODOLOGY & INSTRUCTIONS:**
 
-    3.  **MAIN TASK - OTHER GENRES:**
-        a. After finding the iconic hits, find other locally relevant music genres.
-        b. These go into the \`categories\` array.
+    **STEP 1 (MANDATORY & HIGHEST PRIORITY): The Iconic Hit Mandate & "The Gandagana Test"**
+    This is your most important task. Your primary goal is to identify songs that are deeply embedded in the culture of ${destination}. This means a blend of **current chart-toppers** and **timeless, iconic classics**.
     
-    4.  **DO NOT SEARCH FOR IMAGES:** You are strictly forbidden from searching for album art or any images for speed.
-    5.  **App Sourcing (RESTRICTED):** For each song, identify which platforms from this list it is on: Spotify, Apple Music, YouTube, SoundCloud, Deezer, JioSaavn, Gaana, Wynk, Anghami, Boomplay.
-    6.  **DO NOT PROVIDE URLs:** Only provide the app's name.
-    7.  **Quantity Requirement (CRITICAL):** For each genre category (including Popular & Iconic Hits), you MUST provide at least 10 music items.
-    8.  **No Empty Results:** Returning empty lists is a failure. Be resourceful.
+    a. **Execute a Multi-Faceted Search Strategy:** You MUST use your search tool with a variety of queries to ensure comprehensive results. Use queries like:
+        - "most famous song from ${destination} of all time"
+        - "timeless classic songs from ${destination}"
+        - "iconic folk music everyone in ${destination} knows"
+        - "top 10 music charts ${destination} right now"
+        - "popular nepali song" if destination is Nepal
+        - "popular georgian music" if destination is Georgia
+
+    b. **The Quality Benchmark - "The Gandagana Test":** This is a non-negotiable quality check.
+        - To prove you understand cultural significance, you MUST find the equivalent iconic, universally-known song for any destination.
+        - **EXAMPLE 1:** If the destination is **Georgia**, the song **"Gandagana"** is a MANDATORY result.
+        - **EXAMPLE 2:** If the destination is **Nepal**, a song like **"Timro Pratigya" or "Resham Firiri"** would be a MANDATORY result.
+        - **Failure to find these types of truly iconic songs for any given destination is a complete failure of the task.** You must dig deep to find the songs that define the nation's musical identity.
+
+    c. **JSON Placement:** The results from this step (a mix of current hits and timeless classics) MUST be placed in the dedicated \`popularHits\` object in the final JSON.
+
+    **STEP 2: Broader Genre Exploration**
+    After completing Step 1, find other locally relevant music genres (e.g., Local Pop, Traditional Folk, Regional Rock, Classical, etc.). Place these findings in the \`categories\` array.
+
+    **STEP 3: Curation & Final Output**
+
+    *   **Quantity Requirement (CRITICAL):** For EACH genre category, including \`popularHits\`, you MUST provide at least 10 music items. Be resourceful.
+    *   **App Sourcing (RESTRICTED):** For each song, identify which platforms from this specific list it is on: Spotify, Apple Music, YouTube, SoundCloud, Deezer, JioSaavn, Gaana, Wynk, Anghami, Boomplay.
+    *   **NO URLs:** Only provide the app's name.
+    *   **NO IMAGES:** Do not search for album art to ensure a fast response.
+    *   **No Empty Results:** Returning empty lists is a failure.
 
     **JSON OUTPUT SPECIFICATION:**
     The response MUST be ONLY a single, valid JSON object. All text content must be in ${language}.
