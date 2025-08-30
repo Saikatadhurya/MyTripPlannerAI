@@ -1,9 +1,10 @@
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Itinerary, Vibe, QuestionnaireData, PackingListRequestData, PackingList, FoodFinderRequestData, FoodRecommendations, AppFinderRequestData, AppRecommendations } from './types';
 import { generateItinerary } from './services/geminiService';
 import { generatePackingList } from './services/packingService';
 import { generateFoodRecommendations } from './services/foodService';
-import { generateAppRecommendations, prefetchAppRecommendationsForPopularDestinations } from './services/appFinderService';
+import { generateAppRecommendations } from './services/appFinderService';
 
 
 import LandingPage from './components/LandingPage';
@@ -29,12 +30,6 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<QuestionnaireData | null>(null);
   const isGenerationCancelled = useRef(false);
-
-  useEffect(() => {
-    // Intelligently pre-fetch app recommendations for popular destinations
-    // when the app loads, improving perceived speed for common user journeys.
-    prefetchAppRecommendationsForPopularDestinations();
-  }, []); // Empty dependency array ensures it runs only on initial mount.
 
   useEffect(() => {
     window.scrollTo(0, 0);

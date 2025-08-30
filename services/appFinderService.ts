@@ -1,4 +1,5 @@
 
+
 import { GoogleGenAI } from "@google/genai";
 import { AppFinderRequestData, AppRecommendations } from '../types';
 
@@ -14,18 +15,15 @@ export const generateAppRecommendations = async (data: AppFinderRequestData): Pr
   const prompt = `
     You are a tech-savvy local guide and an expert global travel assistant. Your mission is to provide a traveler with a curated list of the most useful, relevant, and currently available mobile apps for their trip to ${destination}. Your recommendations MUST include popular local alternatives to global apps.
 
-    **CRITICAL INSTRUCTIONS:**
+    **CRITICAL INSTRUCTIONS & PROTOCOL:**
     1.  **Use Google Search:** You MUST use your search capabilities to find currently available applications for ${destination}.
     2.  **Local Expertise is Key:** For each category, you must find both internationally known apps (e.g., Uber) AND their popular local competitors. This is crucial. For example, for Delhi, India, in 'Transport', you MUST include Uber, but also critical local competitors like Ola and Rapido.
-    3.  **Find and VALIDATE Store Links (CRITICAL & MANDATORY):** For every single app you recommend, you MUST find and include the direct download URLs for both the Apple App Store (\`appStoreUrl\`) and the Google Play Store (\`playStoreUrl\`). This is not optional.
-        -   **SOURCE OF TRUTH:** Your search results are the primary source of truth. You **MUST** prioritize the URLs found in your real-time Google Search over any URLs from your internal training data, as app links can change frequently.
-        -   **URL Validation Rule:** The URLs you provide MUST be direct, official links to the app's page, not search results.
-            -   A valid Google Play Store URL **MUST** follow this pattern: \`https://play.google.com/store/apps/details?id=...\`
-            -   A valid Apple App Store URL **MUST** follow this pattern: \`https://apps.apple.com/{country_code}/app/{app-name-slug}/id{app_id_number}\`. You must find the correct, most recent ID from your search.
-        -   **FORBIDDEN URLs:** You are strictly forbidden from using search query URLs (e.g., \`.../search?q=...\`) or links to third-party app stores.
-        -   **Action:** If an app is available on both platforms, both \`appStoreUrl\` and \`playStoreUrl\` fields MUST be populated with valid, pattern-matching URLs from your search.
-        -   **Action:** If an app is exclusive to one platform, provide the valid, pattern-matching link for that platform and set the other URL field to \`null\`.
-        -   **FAILURE CONDITION:** If your search cannot find an official URL that matches these specific patterns for an app, you **MUST DISCARD THAT APP** and not include it in your response. It is better to return fewer apps with correct, working links than more apps with vague or broken links.
+    3.  **Ultra-Reliable Link Sourcing Protocol (MANDATORY):** For every single app you consider, you MUST follow this strict two-step process to source its store links. This is the most important instruction.
+        -   **Step 1: Find the Official Website.** Use Google Search to find the app's OFFICIAL homepage. This is your only trusted source. For example, for 'Bolt', you must find 'bolt.eu'. For 'Zomato', find 'zomato.com'.
+        -   **Step 2: Extract Links from the Official Source.** Once on the official website, you must locate the "Download on the App Store" and "Get it on Google Play" links. The URLs you provide in the final JSON **MUST** come directly from this official source. You are forbidden from using URLs found on blogs, news articles, or other secondary sources.
+        -   **Step 3: Validate and Discard.**
+            -   After extracting the URLs, validate them against the required patterns: \`https://play.google.com/store/apps/details?id=...\` and \`https://apps.apple.com/...\`.
+            -   **FAILURE CONDITION:** If you cannot find the official website, or if the official website does not provide direct links to the app stores, you **MUST DISCARD THAT APP** from your results. Do not guess or use unreliable links. It is better to return fewer apps with 100% accurate links than more apps with broken links.
     4.  **DO NOT FETCH RATINGS:** You MUST NOT spend time searching for app ratings. The goal is a fast response.
     5.  **Categorize Accurately:** Place each app in ONE of the specified categories. If a category has no relevant apps after an exhaustive search, return an empty array for it.
 
@@ -94,37 +92,4 @@ export const generateAppRecommendations = async (data: AppFinderRequestData): Pr
       console.error("Original AI response:", resultText);
       throw new Error("The AI returned an invalid response format. Please try again.");
   }
-};
-
-export const prefetchAppRecommendationsForPopularDestinations = async (): Promise<void> => {
-    console.log("Starting to pre-fetch app recommendations for popular destinations...");
-    try {
-        const response = await fetch('/data/destinations.json');
-        if (!response.ok) {
-            console.error("Failed to fetch popular destinations for pre-fetching.");
-            return;
-        }
-        const popularDestinations: { name: string }[] = await response.json();
-        
-        // Use a common default language for pre-fetching.
-        const defaultLanguage = 'English (en)';
-
-        const prefetchPromises = popularDestinations.map(dest => {
-            const requestData: AppFinderRequestData = {
-                destination: dest.name,
-                language: defaultLanguage,
-            };
-            // The generate function already handles caching, so it won't re-fetch if already present.
-            return generateAppRecommendations(requestData).catch(error => {
-                console.warn(`Failed to pre-fetch app recommendations for ${dest.name}:`, error.message);
-                return null;
-            });
-        });
-
-        await Promise.allSettled(prefetchPromises);
-        console.log("Pre-fetching of app recommendations completed.");
-
-    } catch (error) {
-        console.error("An error occurred during the pre-fetching process:", error);
-    }
 };
