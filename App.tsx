@@ -20,6 +20,7 @@ import AppFinderResult from './components/AppFinderResult';
 import MusicFinderForm from './components/MusicFinderForm';
 import MusicFinderResult from './components/MusicFinderResult';
 import ScrollToTopButton from './components/ScrollToTopButton';
+import QuickNavButton from './components/QuickNavButton';
 
 
 type View = 'landing' | 'questionnaire' | 'itinerary' | 'packingAssistantForm' | 'packingAssistantResult' | 'foodFinderForm' | 'foodFinderResult' | 'appFinderForm' | 'appFinderResult' | 'musicFinderForm' | 'musicFinderResult';
@@ -361,6 +362,13 @@ const App: React.FC = () => {
         {renderContent()}
       </main>
       <ScrollToTopButton />
+      <QuickNavButton 
+        onPlanTrip={() => handleStartPlanning()}
+        onStartPacking={handleStartPacking}
+        onStartFoodFinder={handleStartFoodFinder}
+        onStartAppFinder={handleStartAppFinder}
+        onStartMusicFinder={handleStartMusicFinder}
+      />
     </div>
   );
 };
