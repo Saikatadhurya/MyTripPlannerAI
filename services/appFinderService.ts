@@ -74,13 +74,33 @@ export const generateAppRecommendations = async (data: AppFinderRequestData, onC
       }
 
       const firstBrace = jsonString.indexOf('{');
-      const lastBrace = jsonString.lastIndexOf('}');
-
-      if (firstBrace === -1 || lastBrace === -1 || lastBrace < firstBrace) {
+      if (firstBrace === -1) {
           throw new Error("Could not find a valid JSON object in the AI response.");
       }
 
+      let braceCount = 0;
+      let lastBrace = -1;
+      for (let i = firstBrace; i < jsonString.length; i++) {
+        if (jsonString[i] === '{') {
+          braceCount++;
+        } else if (jsonString[i] === '}') {
+          braceCount--;
+        }
+        if (braceCount === 0) {
+          lastBrace = i;
+          break;
+        }
+      }
+
+      if (lastBrace === -1) {
+          throw new Error("Could not find a complete JSON object in the AI response.");
+      }
+
       jsonString = jsonString.substring(firstBrace, lastBrace + 1);
+
+      // Sanitize by removing trailing commas
+      jsonString = jsonString.replace(/,\s*([}\]])/g, '$1');
+      
       return JSON.parse(jsonString);
   } catch (error) {
       console.error("Failed to generate and parse app recommendations stream:", error);

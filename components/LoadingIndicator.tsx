@@ -97,7 +97,7 @@ const StreamingLoadingIndicator: React.FC<StreamingLoadingIndicatorProps> = ({ s
   
   const progress = useMemo(() => {
     if (!hasStreamStarted) {
-        return 5;
+      return 0;
     }
 
     const totalSteps = allStages.length;
@@ -133,13 +133,17 @@ const StreamingLoadingIndicator: React.FC<StreamingLoadingIndicatorProps> = ({ s
         </ul>
 
         <div className="w-full bg-slate-200/70 rounded-full h-2.5 overflow-hidden">
-            <div
-                className={`${colors.bg} h-2.5 rounded-full transition-all duration-500 ease-out ${!hasStreamStarted ? 'progress-bar-connecting' : ''}`}
-                style={{ width: `${progress}%` }}
-            ></div>
+            { !hasStreamStarted ? (
+              <div className={`${colors.bg} h-2.5 rounded-full progress-bar-indeterminate`}></div>
+            ) : (
+              <div
+                  className={`${colors.bg} h-2.5 rounded-full transition-all duration-500 ease-out`}
+                  style={{ width: `${progress}%` }}
+              ></div>
+            )}
         </div>
         <p className={`text-sm font-semibold mt-2 ${colors.text}`}>
-            {progress}% Complete
+          { !hasStreamStarted ? 'Connecting...' : `${progress}% Complete` }
         </p>
 
         <button
