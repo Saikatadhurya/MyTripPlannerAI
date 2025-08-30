@@ -173,3 +173,29 @@ export interface AppRecommendations {
     utilitiesAndSafety: MobileApp[];
     festivalsAndSeasonal: MobileApp[];
 }
+
+// Types for Local Music Finder
+export interface MusicFinderRequestData {
+    destination: string;
+    language: string;
+}
+
+export interface MusicItem {
+    title: string;
+    artistOrDescription: string;
+    appLinks: {
+        appName: 'Spotify' | 'Apple Music' | 'YouTube Music' | 'JioSaavn' | 'Gaana' | 'Wynk' | 'Anghami' | 'Boomplay' | 'Deezer' | 'SoundCloud' | 'Other';
+        url: string;
+    }[];
+}
+
+export interface MusicGenreCategory {
+    genre: string;
+    description: string;
+    music: MusicItem[];
+}
+
+export interface MusicRecommendations {
+    destination: string;
+    categories: MusicGenreCategory[];
+}

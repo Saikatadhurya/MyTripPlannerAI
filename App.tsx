@@ -1,10 +1,11 @@
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Itinerary, Vibe, QuestionnaireData, PackingListRequestData, PackingList, FoodFinderRequestData, FoodRecommendations, AppFinderRequestData, AppRecommendations } from './types';
+import { Itinerary, Vibe, QuestionnaireData, PackingListRequestData, PackingList, FoodFinderRequestData, FoodRecommendations, AppFinderRequestData, AppRecommendations, MusicFinderRequestData, MusicRecommendations } from './types';
 import { generateItinerary } from './services/geminiService';
 import { generatePackingList } from './services/packingService';
 import { generateFoodRecommendations } from './services/foodService';
 import { generateAppRecommendations } from './services/appFinderService';
+import { generateMusicRecommendations } from './services/musicService';
 
 
 import LandingPage from './components/LandingPage';
@@ -16,9 +17,11 @@ import FoodFinderForm from './components/FoodFinderForm';
 import FoodFinderResult from './components/FoodFinderResult';
 import AppFinderForm from './components/AppFinderForm';
 import AppFinderResult from './components/AppFinderResult';
+import MusicFinderForm from './components/MusicFinderForm';
+import MusicFinderResult from './components/MusicFinderResult';
 
 
-type View = 'landing' | 'questionnaire' | 'itinerary' | 'packingAssistantForm' | 'packingAssistantResult' | 'foodFinderForm' | 'foodFinderResult' | 'appFinderForm' | 'appFinderResult';
+type View = 'landing' | 'questionnaire' | 'itinerary' | 'packingAssistantForm' | 'packingAssistantResult' | 'foodFinderForm' | 'foodFinderResult' | 'appFinderForm' | 'appFinderResult' | 'musicFinderForm' | 'musicFinderResult';
 
 const App: React.FC = () => {
   const [view, setView] = useState<View>('landing');
@@ -26,6 +29,7 @@ const App: React.FC = () => {
   const [packingList, setPackingList] = useState<PackingList | null>(null);
   const [foodRecommendations, setFoodRecommendations] = useState<FoodRecommendations | null>(null);
   const [appRecommendations, setAppRecommendations] = useState<AppRecommendations | null>(null);
+  const [musicRecommendations, setMusicRecommendations] = useState<MusicRecommendations | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<QuestionnaireData | null>(null);
@@ -53,6 +57,11 @@ const App: React.FC = () => {
   const handleStartAppFinder = useCallback(() => {
     setView('appFinderForm');
   }, []);
+
+  const handleStartMusicFinder = useCallback(() => {
+    setView('musicFinderForm');
+  }, []);
+
 
   const handleGenerateItinerary = useCallback(async (data: QuestionnaireData) => {
     isGenerationCancelled.current = false;
@@ -176,6 +185,36 @@ const App: React.FC = () => {
     }
   }, []);
 
+  const handleGenerateMusicRecommendations = useCallback(async (data: MusicFinderRequestData) => {
+    isGenerationCancelled.current = false;
+    setIsLoading(true);
+    setError(null);
+    try {
+      const recommendations = await generateMusicRecommendations(data);
+      if (!isGenerationCancelled.current) {
+        setMusicRecommendations(recommendations);
+        setView('musicFinderResult');
+      }
+    } catch (err) {
+      if (!isGenerationCancelled.current) {
+        let errorMessage = 'Failed to generate music recommendations. Please try again.';
+        if (err instanceof Error) {
+            if (err.message.includes('503') || err.message.toLowerCase().includes('overloaded')) {
+                errorMessage = 'The AI model is currently busy handling many requests. Please wait a moment and try again.';
+            } else {
+                errorMessage = err.message;
+            }
+        }
+        setError(errorMessage);
+        setView('musicFinderForm');
+      }
+    } finally {
+      if (!isGenerationCancelled.current) {
+        setIsLoading(false);
+      }
+    }
+  }, []);
+
   const handleCancelGeneration = useCallback(() => {
     isGenerationCancelled.current = true;
     setIsLoading(false);
@@ -200,12 +239,19 @@ const App: React.FC = () => {
     setView('appFinderForm');
   }, []);
 
+  const handleBackToMusicForm = useCallback(() => {
+    setMusicRecommendations(null);
+    setView('musicFinderForm');
+  }, []);
+
+
   const handleBackToHome = useCallback(() => {
     setView('landing');
     setItinerary(null);
     setPackingList(null);
     setFoodRecommendations(null);
     setAppRecommendations(null);
+    setMusicRecommendations(null);
     setFormData(null);
     setError(null);
   }, []);
@@ -213,7 +259,7 @@ const App: React.FC = () => {
   const renderContent = () => {
     switch (view) {
       case 'landing':
-        return <LandingPage onPlanTrip={handleStartPlanning} onStartPacking={handleStartPacking} onStartFoodFinder={handleStartFoodFinder} onStartAppFinder={handleStartAppFinder} />;
+        return <LandingPage onPlanTrip={handleStartPlanning} onStartPacking={handleStartPacking} onStartFoodFinder={handleStartFoodFinder} onStartAppFinder={handleStartAppFinder} onStartMusicFinder={handleStartMusicFinder} />;
       case 'questionnaire':
         return (
           <Questionnaire
@@ -287,8 +333,24 @@ const App: React.FC = () => {
             </button>
           </div>
         );
+      case 'musicFinderForm':
+        return <MusicFinderForm onSubmit={handleGenerateMusicRecommendations} onBack={handleBackToHome} isLoading={isLoading} error={error} onCancel={handleCancelGeneration} />;
+      case 'musicFinderResult':
+        return musicRecommendations ? (
+          <MusicFinderResult recommendations={musicRecommendations} onRegenerate={handleBackToMusicForm} />
+        ) : (
+            <div className="text-center p-8">
+              <p>Something went wrong. Music recommendations are missing.</p>
+              <button
+                onClick={handleBackToMusicForm}
+                className="mt-4 px-6 py-2 bg-violet-600 text-white font-semibold rounded-full hover:bg-violet-700 transition-colors"
+              >
+                Try Again
+              </button>
+            </div>
+        );
       default:
-        return <LandingPage onPlanTrip={handleStartPlanning} onStartPacking={handleStartPacking} onStartFoodFinder={handleStartFoodFinder} onStartAppFinder={handleStartAppFinder} />;
+        return <LandingPage onPlanTrip={handleStartPlanning} onStartPacking={handleStartPacking} onStartFoodFinder={handleStartFoodFinder} onStartAppFinder={handleStartAppFinder} onStartMusicFinder={handleStartMusicFinder} />;
     }
   };
 
