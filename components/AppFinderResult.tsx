@@ -12,14 +12,6 @@ const PlatformBadge: React.FC<{ platform: MobileApp['platform'] }> = ({ platform
     return <span className={`${baseClasses} bg-blue-200 text-blue-800`}>Both</span>;
 };
 
-// Helper function to format app names as a fallback
-const formatAppName = (name: string): string => {
-  if (!name) return '';
-  return name
-    .replace(/_/g, ' ')
-    .replace(/\b\w/g, char => char.toUpperCase());
-};
-
 const AppCard: React.FC<{ app: MobileApp }> = ({ app }) => {
     const appStoreSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(`${app.name} App Store`)}`;
     const playStoreSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(`${app.name} Play Store`)}`;
@@ -27,23 +19,30 @@ const AppCard: React.FC<{ app: MobileApp }> = ({ app }) => {
     return (
         <div className="bg-white/40 backdrop-blur-lg p-4 rounded-xl shadow-md border border-white/50 space-y-3 h-full flex flex-col">
             <div className="flex items-start justify-between">
-                <div className="flex items-center space-x-3">
-                    <span className="text-3xl">{app.icon}</span>
-                    <div>
-                        <h4 className="font-bold text-slate-800 break-words">{formatAppName(app.name)}</h4>
-                        <PlatformBadge platform={app.platform} />
-                    </div>
+                <div className="flex-1 min-w-0">
+                    {app.category ? (
+                        <div className="flex items-baseline space-x-2">
+                            <h3 className="text-3xl font-bold text-slate-800 capitalize">{app.category}</h3>
+                            <h4 className="font-semibold text-slate-700">{app.name}</h4>
+                        </div>
+                    ) : (
+                        <div className="flex items-center space-x-3">
+                            <span className="text-3xl">{app.icon}</span>
+                            <h4 className="font-bold text-slate-800 text-lg">{app.name}</h4>
+                        </div>
+                    )}
                 </div>
+                <PlatformBadge platform={app.platform} />
             </div>
             <p className="text-sm text-slate-600 flex-grow">{app.description}</p>
-            <div className="flex items-center space-x-2 pt-2 border-t border-violet-200/50">
+            <div className="flex items-center space-x-2 pt-3 border-t border-violet-200/50">
                 {(app.platform === 'iOS' || app.platform === 'Both') && (
-                    <a href={appStoreSearchUrl} target="_blank" rel="noopener noreferrer" className="flex-1 text-center bg-black text-white px-3 py-1.5 rounded-md text-sm font-semibold hover:bg-gray-800 transition-colors flex items-center justify-center space-x-1">
+                    <a href={appStoreSearchUrl} target="_blank" rel="noopener noreferrer" className="flex-1 text-center bg-slate-800 text-white px-3 py-1.5 rounded-md text-sm font-semibold hover:bg-slate-900 transition-colors flex items-center justify-center space-x-1">
                         <span>App Store</span>
                     </a>
                 )}
                 {(app.platform === 'Android' || app.platform === 'Both') && (
-                    <a href={playStoreSearchUrl} target="_blank" rel="noopener noreferrer" className="flex-1 text-center bg-gray-200 text-black px-3 py-1.5 rounded-md text-sm font-semibold hover:bg-gray-300 transition-colors flex items-center justify-center space-x-1">
+                    <a href={playStoreSearchUrl} target="_blank" rel="noopener noreferrer" className="flex-1 text-center bg-slate-200 text-slate-800 px-3 py-1.5 rounded-md text-sm font-semibold hover:bg-slate-300 transition-colors flex items-center justify-center space-x-1">
                         <span>Play Store</span>
                     </a>
                 )}
@@ -81,7 +80,7 @@ const CategorySection: React.FC<{
                 </div>
                 <h3 className="text-xl font-bold text-slate-800">{title}</h3>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {items.map((app, index) => (
                     <AppCard key={index} app={app} />
                 ))}
@@ -94,18 +93,17 @@ const AppFinderResult: React.FC<{ recommendations: AppRecommendations; onRegener
     const iconClass = "h-6 w-6";
     
     const categoryDetails = {
-        transportAndTravel: { title: "Transport & Travel", icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C20.7 7.6 20 4 16 4c-1.1 0-2.1.2-3 .6"/><path d="M2 12h10"/><path d="M16 12h-2"/><path d="M12 11v4"/><path d="m10 15-1.5-1.5"/><path d="M14 15-1.5-1.5"/><path d="M4.5 11.5 3 10"/><path d="M4.5 13.5 3 15"/><circle cx="6.5" cy="17.5" r="2.5"/><circle cx="16.5" cy="17.5" r="2.5"/></svg>, color: "blue" },
-        stayAndLiving: { title: "Stay & Living", icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>, color: "green" },
-        foodAndDining: { title: "Food & Dining", icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 002-2V2"/><path d="M7 2v20"/><path d="M17 2v7c0 1.1.9 2 2 2h4a2 2 0 002-2V2h-2a2 2 0 00-2 2v2a2 2 0 00-2-2h-2a2 2 0 00-2-2z"/></svg>, color: "amber" },
-        entertainmentAndLeisure: { title: "Entertainment & Leisure", icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 20V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/><path d="M12 4h.01"/><path d="M8 4h.01"/><path d="M16 4h.01"/><path d="M12 20h.01"/><path d="M8 20h.01"/><path d="M16 20h.01"/><path d="M8 12h8"/></svg>, color: "red" },
-        shoppingAndEssentials: { title: "Shopping & Essentials", icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 01-8 0"/></svg>, color: "indigo" },
-        explorationAndTours: { title: "Exploration & Tours", icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2L12 22"/><path d="M2 12L22 12"/></svg>, color: "sky" },
-        utilitiesAndSafety: { title: "Utilities & Safety", icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>, color: "slate" },
-        festivalsAndSeasonal: { title: "Festivals & Seasonal", icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5.5V4M12 20v-1.5M5.5 12H4M20 12h-1.5M17.8 6.2l1-1M5.2 18.8l1-1M17.8 17.8l1 1M5.2 6.2l1 1"/><circle cx="12" cy="12" r="4"/><path d="M12 12a5 5 0 00-5 5h10a5 5 0 00-5-5z"/></svg>, color: "fuchsia" },
+        transportAndTravel: { title: "Transport & Travel", icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18.562 6.077C18.238 5.437 17.562 5 16.808 5H3.192c-.754 0-1.43.437-1.754 1.077L.05 9.423A.5.5 0 00.5 10h19a.5.5 0 00.45-.577l-1.388-3.346zM2 11v4a1 1 0 001 1h1a1 1 0 001-1v-4H2zm15 0v4a1 1 0 001 1h1a1 1 0 001-1v-4h-3zM5 11v4a1 1 0 001 1h8a1 1 0 001-1v-4H5z" clipRule="evenodd" /></svg>, color: "blue"},
+        stayAndLiving: { title: "Stay & Living", icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" /></svg>, color: "green"},
+        foodAndDining: { title: "Food & Dining", icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path d="M11 3a1 1 0 10-2 0v1.088A7 7 0 004.53 10.756.5.5 0 005 11h10a.5.5 0 00.47-.244A7 7 0 0011 4.088V3z" /><path fillRule="evenodd" d="M15 13a.5.5 0 01.5.5v2a.5.5 0 01-.5.5H5a.5.5 0 01-.5-.5v-2a.5.5 0 01.5-.5h10z" clipRule="evenodd" /></svg>, color: "amber"},
+        entertainmentAndLeisure: { title: "Entertainment & Leisure", icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path d="M2 6a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zm2 1.5a.5.5 0 00-.5.5v1a.5.5 0 00.5.5H16a.5.5 0 00.5-.5v-1a.5.5 0 00-.5-.5H4zM4 12a1 1 0 100 2h12a1 1 0 100-2H4z" /></svg>, color: "red"},
+        shoppingAndEssentials: { title: "Shopping & Essentials", icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" /></svg>, color: "indigo"},
+        explorationAndTours: { title: "Exploration & Tours", icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M12.586 2.586a2 2 0 012.828 0L18 5.172a2 2 0 010 2.828L12.172 14H14a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2a2 2 0 012-2h1.828L2 7.172a2 2 0 010-2.828L4.586 2.586a2 2 0 012.828 0L10 5.172l2.586-2.586zM10 13a1 1 0 100 2 1 1 0 000-2z" clipRule="evenodd" /></svg>, color: "sky"},
+        utilitiesAndSafety: { title: "Utilities & Safety", icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5C2.056 5.649 2 6.319 2 7c0 5.225 3.34 9.67 8 11.317C14.66 16.67 18 12.225 18 7c0-.682-.057-1.35-.166-2.001A11.954 11.954 0 0110 1.944zM11 14a1 1 0 11-2 0 1 1 0 012 0zm0-7a1 1 0 10-2 0v3a1 1 0 102 0V7z" clipRule="evenodd" /></svg>, color: "slate"},
+        festivalsAndSeasonal: { title: "Festivals & Seasonal", icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5 5a3 3 0 013-3h4a3 3 0 013 3v2a3 3 0 01-3 3H8a3 3 0 01-3-3V5zm3-1a1 1 0 00-1 1v2a1 1 0 001 1h4a1 1 0 001-1V5a1 1 0 00-1-1H8zM4 11a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1z" clipRule="evenodd" /></svg>, color: "fuchsia"},
     };
 
     const displayOrder = Object.keys(categoryDetails) as Array<keyof typeof categoryDetails>;
-    const allApps = displayOrder.flatMap(key => recommendations[key]);
 
     return (
         <div className="max-w-6xl mx-auto space-y-12 animated-card">
@@ -115,7 +113,7 @@ const AppFinderResult: React.FC<{ recommendations: AppRecommendations; onRegener
                     className="inline-flex items-center justify-center px-6 py-2 bg-white/60 text-slate-800 font-bold rounded-full hover:bg-white/80 transition-all duration-300 shadow-md border border-white/50"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h5M20 20v-5h-5" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 9a9 9 0 0114.13-5.22M20 15a9 9 0 01-14.13 5.22" /></svg>
-                    <span>Find Apps for another trip</span>
+                    <span>Find Apps for Another Trip</span>
                 </button>
             </div>
             
@@ -124,33 +122,25 @@ const AppFinderResult: React.FC<{ recommendations: AppRecommendations; onRegener
                     Essential Apps for {recommendations.destination}
                 </h1>
                 <p className="text-lg text-gray-700 mt-2">
-                    Your personalized guide to the best local mobile apps.
+                    Your personalized guide to local and international apps.
                 </p>
             </header>
             
-            {allApps.length > 0 ? (
-                <div className="space-y-8">
-                    {displayOrder.map(key => {
-                        const details = categoryDetails[key];
-                        const items = recommendations[key];
-                        return (
-                            <CategorySection
-                                key={key}
-                                title={details.title}
-                                icon={details.icon}
-                                items={items}
-                                accentColor={details.color}
-                            />
-                        );
-                    })}
-                </div>
-            ) : (
-                <div className="text-center bg-white/20 backdrop-blur-xl border border-white/30 rounded-2xl p-12 shadow-lg">
-                    <h2 className="text-2xl font-bold text-slate-800">No Specific Apps Found</h2>
-                    <p className="text-slate-600 mt-2">We couldn't find unique local apps for {recommendations.destination}. Standard international apps like Google Maps, Uber, and Airbnb are great choices!</p>
-                </div>
-            )}
-
+            <div className="space-y-10">
+                {displayOrder.map(key => {
+                    const details = categoryDetails[key];
+                    const items = recommendations[key];
+                    return (
+                        <CategorySection
+                            key={key}
+                            title={details.title}
+                            icon={details.icon}
+                            items={items}
+                            accentColor={details.color}
+                        />
+                    );
+                })}
+            </div>
 
             <div className="pt-8 text-center no-print">
                 <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4 mt-8">
@@ -168,7 +158,7 @@ const AppFinderResult: React.FC<{ recommendations: AppRecommendations; onRegener
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
                             <path fillRule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v-1a1 1 0 011-1h10a1 1 0 011 1v1h1a2 2 0 002-2v-3a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clipRule="evenodd" />
                         </svg>
-                        <span>Print App List</span>
+                        <span>Print App Guide</span>
                     </button>
                 </div>
             </div>

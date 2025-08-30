@@ -27,23 +27,25 @@ export const generateAppRecommendations = async (data: AppFinderRequestData): Pr
     JSON Structure:
     {
       "destination": "${destination}",
-      "transportAndTravel": [{ "name": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "icon": "emoji" }],
-      "stayAndLiving": [{ "name": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "icon": "emoji" }],
-      "foodAndDining": [{ "name": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "icon": "emoji" }],
-      "entertainmentAndLeisure": [{ "name": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "icon": "emoji" }],
-      "shoppingAndEssentials": [{ "name": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "icon": "emoji" }],
-      "explorationAndTours": [{ "name": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "icon": "emoji" }],
-      "utilitiesAndSafety": [{ "name": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "icon": "emoji" }],
-      "festivalsAndSeasonal": [{ "name": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "icon": "emoji" }]
+      "transportAndTravel": [{ "name": "string", "category": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "icon": "emoji" }],
+      "stayAndLiving": [{ "name": "string", "category": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "icon": "emoji" }],
+      "foodAndDining": [{ "name": "string", "category": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "icon": "emoji" }],
+      "entertainmentAndLeisure": [{ "name": "string", "category": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "icon": "emoji" }],
+      "shoppingAndEssentials": [{ "name": "string", "category": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "icon": "emoji" }],
+      "explorationAndTours": [{ "name": "string", "category": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "icon": "emoji" }],
+      "utilitiesAndSafety": [{ "name": "string", "category": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "icon": "emoji" }],
+      "festivalsAndSeasonal": [{ "name": "string", "category": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "icon": "emoji" }]
     }
 
     **CRITICAL RULES & EXAMPLE:**
-    1.  **App Naming Convention (CRITICAL):** The 'name' field MUST be the proper, human-readable name of the app (e.g., "Google Maps", "Uber Eats"). It MUST NOT contain underscores, camelCase, or be in a programmatic format like \`hired_driver_on_demand\`. Always provide the clean, display-ready name.
-    2.  **Icon:** The 'icon' field MUST be a single, relevant emoji.
-    3.  **Language:** The entire JSON response, including all names and descriptions, MUST be in ${language}.
-    4.  **Validity:** The output MUST be a perfectly valid JSON object starting with { and ending with }. No markdown or extra text. Use single quotes inside strings to avoid breaking JSON.
-    5.  **Example of a good entry:**
-        \`{ "name": "Rapido", "description": "India's largest bike taxi platform, offering quick and affordable rides, especially for solo commuters navigating traffic.", "platform": "Both", "icon": "🏍️" }\`
+    1.  **App Naming Convention (CRITICAL):** The 'name' field MUST be the proper, official name of the app (e.g., "Google Maps", "AllTrails", "Uber Eats"). It MUST NOT be a generic category. For example, for the app 'AllTrails', the name MUST be "AllTrails", NOT "hikes".
+    2.  **Category (CRITICAL):** The 'category' field MUST be a short, one-word, lowercase description of the app's primary function (e.g., "hikes", "navigation", "food delivery"). For apps that are very famous and instantly recognizable by their icon (like Google Maps), you can make this category an empty string "". For others, it is mandatory.
+    3.  **Icon:** The 'icon' field MUST be a single, relevant emoji.
+    4.  **Language:** The entire JSON response, including all names and descriptions, MUST be in ${language}.
+    5.  **Validity:** The output MUST be a perfectly valid JSON object starting with { and ending with }. No markdown or extra text. Use single quotes inside strings to avoid breaking JSON.
+    6.  **Example of a good entry:**
+        \`{ "name": "AllTrails", "category": "hikes", "description": "A popular app for discovering and navigating trekking trails...", "platform": "Both", "icon": "🌲" }\`
+        \`{ "name": "Google Maps", "category": "", "description": "The world's most popular navigation app...", "platform": "Both", "icon": "🗺️" }\`
   `;
   
   const response = await ai.models.generateContent({

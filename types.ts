@@ -158,6 +158,7 @@ export interface AppFinderRequestData {
 
 export interface MobileApp {
     name: string;
+    category: string;
     description: string;
     platform: 'iOS' | 'Android' | 'Both';
     icon: string; // Emoji
