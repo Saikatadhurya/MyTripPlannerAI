@@ -23,13 +23,15 @@ export const generateMusicRecommendations = async (data: MusicFinderRequestData)
         a. After finding popular hits, proceed with your blended research to find other locally relevant music (native genres, contemporary music locals listen to).
         b. These go into the \`categories\` array.
     
-    4.  **App Sourcing (MANDATORY & RESTRICTED):** For each song or playlist, you MUST identify which of the following popular streaming platforms it is available on. To improve speed, you are ONLY allowed to suggest apps from this predefined list. Do not search for other apps.
+    4.  **Image Sourcing (CRITICAL):** For each music item, you MUST perform a search to find a high-quality, representative image (album art, playlist cover, or artist photo) and provide a direct, publicly accessible URL in the \`imageUrl\` field. This is not optional.
+
+    5.  **App Sourcing (MANDATORY & RESTRICTED):** For each song or playlist, you MUST identify which of the following popular streaming platforms it is available on. To improve speed, you are ONLY allowed to suggest apps from this predefined list. Do not search for other apps.
         - **Allowed Apps:** Spotify, Apple Music, YouTube Music, SoundCloud, Deezer, JioSaavn, Gaana, Wynk, Anghami, Boomplay.
     
-    5.  **DO NOT PROVIDE URLs:** You are strictly forbidden from providing any URLs. Just provide the app's name.
-    6.  **Categorization:** Group your findings into the specified genre categories. A description for each genre explaining its local relevance is mandatory.
-    7.  **No Empty Results:** Returning empty lists is a failure. If a specific genre has no results, find more general popular music and place it in a suitable category like 'Pop & Rock' or 'Modern Fusion / Indie'.
-    8.  **Quantity Requirement (CRITICAL):** For each genre category (including Popular Hits), you MUST provide a substantial list of at least 10 music items (songs or playlists). A sparse list is not acceptable.
+    6.  **DO NOT PROVIDE URLs:** You are strictly forbidden from providing any listen URLs. Just provide the app's name.
+    7.  **Categorization:** Group your findings into the specified genre categories. A description for each genre explaining its local relevance is mandatory.
+    8.  **No Empty Results:** Returning empty lists is a failure. If a specific genre has no results, find more general popular music and place it in a suitable category like 'Pop & Rock' or 'Modern Fusion / Indie'.
+    9.  **Quantity Requirement (CRITICAL):** For each genre category (including Popular Hits), you MUST provide a substantial list of at least 10 music items (songs or playlists). A sparse list is not acceptable.
 
     **JSON OUTPUT SPECIFICATION:**
     The response MUST be ONLY a single, valid JSON object that strictly follows this structure. All text content must be in ${language}.
@@ -43,6 +45,7 @@ export const generateMusicRecommendations = async (data: MusicFinderRequestData)
           {
             "title": "string",
             "artistOrDescription": "string",
+            "imageUrl": "string (a direct, publicly accessible URL to the album art or a representative image)",
             "appLinks": [
               { "appName": "Spotify" }
             ]
@@ -57,6 +60,7 @@ export const generateMusicRecommendations = async (data: MusicFinderRequestData)
             {
               "title": "string",
               "artistOrDescription": "string",
+              "imageUrl": "string (a direct, publicly accessible URL to the album art or a representative image)",
               "appLinks": [
                 { "appName": "YouTube Music" }
               ]
