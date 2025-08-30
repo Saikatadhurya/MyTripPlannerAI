@@ -12,32 +12,37 @@ const PlatformBadge: React.FC<{ platform: MobileApp['platform'] }> = ({ platform
     return <span className={`${baseClasses} bg-blue-200 text-blue-800`}>Both</span>;
 };
 
-const AppCard: React.FC<{ app: MobileApp }> = ({ app }) => (
-    <div className="bg-white/40 backdrop-blur-lg p-4 rounded-xl shadow-md border border-white/50 space-y-3 h-full flex flex-col">
-        <div className="flex items-start justify-between">
-            <div className="flex items-center space-x-3">
-                <span className="text-3xl">{app.icon}</span>
-                <div>
-                    <h4 className="font-bold text-slate-800 break-words">{app.name}</h4>
-                    <PlatformBadge platform={app.platform} />
+const AppCard: React.FC<{ app: MobileApp }> = ({ app }) => {
+    const appStoreSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(`${app.name} App Store`)}`;
+    const playStoreSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(`${app.name} Play Store`)}`;
+
+    return (
+        <div className="bg-white/40 backdrop-blur-lg p-4 rounded-xl shadow-md border border-white/50 space-y-3 h-full flex flex-col">
+            <div className="flex items-start justify-between">
+                <div className="flex items-center space-x-3">
+                    <span className="text-3xl">{app.icon}</span>
+                    <div>
+                        <h4 className="font-bold text-slate-800 break-words">{app.name}</h4>
+                        <PlatformBadge platform={app.platform} />
+                    </div>
                 </div>
             </div>
+            <p className="text-sm text-slate-600 flex-grow">{app.description}</p>
+            <div className="flex items-center space-x-2 pt-2 border-t border-violet-200/50">
+                {(app.platform === 'iOS' || app.platform === 'Both') && (
+                    <a href={appStoreSearchUrl} target="_blank" rel="noopener noreferrer" className="flex-1 text-center bg-black text-white px-3 py-1.5 rounded-md text-sm font-semibold hover:bg-gray-800 transition-colors flex items-center justify-center space-x-1">
+                        <span>App Store</span>
+                    </a>
+                )}
+                {(app.platform === 'Android' || app.platform === 'Both') && (
+                    <a href={playStoreSearchUrl} target="_blank" rel="noopener noreferrer" className="flex-1 text-center bg-gray-200 text-black px-3 py-1.5 rounded-md text-sm font-semibold hover:bg-gray-300 transition-colors flex items-center justify-center space-x-1">
+                        <span>Play Store</span>
+                    </a>
+                )}
+            </div>
         </div>
-        <p className="text-sm text-slate-600 flex-grow">{app.description}</p>
-        <div className="flex items-center space-x-2 pt-2 border-t border-violet-200/50">
-            {(app.platform === 'iOS' || app.platform === 'Both') && app.appStoreUrl && (
-                <a href={app.appStoreUrl} target="_blank" rel="noopener noreferrer" className="flex-1 text-center bg-black text-white px-3 py-1.5 rounded-md text-sm font-semibold hover:bg-gray-800 transition-colors flex items-center justify-center space-x-1">
-                    <span>App Store</span>
-                </a>
-            )}
-            {(app.platform === 'Android' || app.platform === 'Both') && app.playStoreUrl && (
-                <a href={app.playStoreUrl} target="_blank" rel="noopener noreferrer" className="flex-1 text-center bg-gray-200 text-black px-3 py-1.5 rounded-md text-sm font-semibold hover:bg-gray-300 transition-colors flex items-center justify-center space-x-1">
-                    <span>Play Store</span>
-                </a>
-            )}
-        </div>
-    </div>
-);
+    );
+};
 
 const CategorySection: React.FC<{
     title: string;
