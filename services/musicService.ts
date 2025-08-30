@@ -33,7 +33,8 @@ export const generateMusicRecommendations = async (data: MusicFinderRequestData)
     **Step 3: Sort and Format**
     - **POPULARITY SORT (CRITICAL):** Within EACH category, the 'music' array MUST be sorted by popularity. The most famous, highest-viewed song must be listed first.
     - **App Links:** Find availability on: Spotify, Apple Music, YouTube, SoundCloud, Deezer, JioSaavn, Gaana, Wynk, Anghami, Boomplay.
-    - **RESTRICTIONS:** NO URLs. NO album art. Provide at least 4-8 songs per category.
+    - **SONG COUNT (CRITICAL):** For each category, you MUST provide an even number of songs. The list must contain a minimum of 6 songs and a maximum of 8 songs. This means each 'music' array should have **exactly 6 or 8 items**.
+    - **RESTRICTIONS:** NO URLs. NO album art.
 
     **JSON OUTPUT SPECIFICATION:**
     The response MUST be ONLY a single, valid JSON object. All text content must be in ${language}.
