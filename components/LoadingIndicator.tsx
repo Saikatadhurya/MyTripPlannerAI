@@ -14,10 +14,10 @@ interface StreamingLoadingIndicatorProps {
 }
 
 const colorClasses = {
-  violet: { text: 'text-violet-600', bg: 'bg-violet-600', ring: 'ring-violet-300' },
-  amber: { text: 'text-amber-600', bg: 'bg-amber-600', ring: 'ring-amber-300' },
-  teal: { text: 'text-teal-600', bg: 'bg-teal-600', ring: 'ring-teal-300' },
-  fuchsia: { text: 'text-fuchsia-600', bg: 'bg-fuchsia-600', ring: 'ring-fuchsia-300' },
+  violet: { text: 'text-violet-600', bg: 'bg-violet-600', ring: 'ring-violet-300', border: 'border-t-violet-600' },
+  amber: { text: 'text-amber-600', bg: 'bg-amber-600', ring: 'ring-amber-300', border: 'border-t-amber-600' },
+  teal: { text: 'text-teal-600', bg: 'bg-teal-600', ring: 'ring-teal-300', border: 'border-t-teal-600' },
+  fuchsia: { text: 'text-fuchsia-600', bg: 'bg-fuchsia-600', ring: 'ring-fuchsia-300', border: 'border-t-fuchsia-600' },
 };
 
 const StageItem: React.FC<{ text: string, status: 'completed' | 'in_progress' | 'pending', accentColor: string }> = ({ text, status, accentColor }) => {
@@ -35,7 +35,7 @@ const StageItem: React.FC<{ text: string, status: 'completed' | 'in_progress' | 
                 );
             case 'in_progress':
                 return (
-                    <div className={`w-6 h-6 rounded-full border-2 border-slate-300 border-t-${accentColor}-600 animate-spin`}></div>
+                    <div className={`w-6 h-6 rounded-full border-2 border-slate-300 ${colors.border} animate-spin`}></div>
                 );
             case 'pending':
                 return <div className="w-6 h-6 rounded-full border-2 border-slate-300"></div>;
@@ -59,33 +59,56 @@ const StageItem: React.FC<{ text: string, status: 'completed' | 'in_progress' | 
 };
 
 const StreamingLoadingIndicator: React.FC<StreamingLoadingIndicatorProps> = ({ streamedText, stages, onCancel, title, accentColor }) => {
+  const connectingStage: Stage = useMemo(() => ({ key: 'connecting', text: 'Connecting to AI...' }), []);
+  const allStages = useMemo(() => [connectingStage, ...stages], [stages, connectingStage]);
+
   const [completedStages, setCompletedStages] = useState<Set<string>>(new Set());
   const [currentStageIndex, setCurrentStageIndex] = useState(0);
 
   useEffect(() => {
+    const hasStreamStarted = streamedText.length > 0;
     const newCompleted = new Set<string>();
-    let firstPendingIndex = stages.length;
-
-    stages.forEach((stage, index) => {
+    
+    if (hasStreamStarted) {
+      newCompleted.add(connectingStage.key);
+    }
+    
+    stages.forEach((stage) => {
       if (streamedText.includes(stage.key)) {
         newCompleted.add(stage.key);
-      } else if (firstPendingIndex === stages.length) {
-        firstPendingIndex = index;
       }
     });
     
     setCompletedStages(newCompleted);
+
+    let firstPendingIndex = allStages.findIndex(stage => !newCompleted.has(stage.key));
+    if (firstPendingIndex === -1) { // all complete
+      firstPendingIndex = allStages.length;
+    }
     setCurrentStageIndex(firstPendingIndex);
 
-  }, [streamedText, stages]);
+  }, [streamedText, stages, allStages, connectingStage.key]);
 
   const colors = colorClasses[accentColor] || colorClasses.violet;
   
   const progress = useMemo(() => {
-    if (stages.length === 0) return 0;
-    return (completedStages.size / stages.length) * 100;
-  }, [completedStages, stages.length]);
+    const hasStreamStarted = streamedText.length > 0;
+    const realStagesCompleted = completedStages.size - (hasStreamStarted ? 1 : 0);
+    const totalRealStages = stages.length;
 
+    // Give an initial 5% for connecting.
+    if (!hasStreamStarted && completedStages.size === 0) {
+      return 5;
+    }
+
+    if (totalRealStages === 0) {
+      return 100;
+    }
+    
+    // After connecting, the progress goes from 5% to 100%
+    const mainProgress = (realStagesCompleted / totalRealStages) * 95;
+    return 5 + mainProgress;
+  }, [completedStages.size, streamedText.length, stages.length]);
 
   return (
     <div className="text-center py-12 px-4 fade-in">
@@ -94,7 +117,7 @@ const StreamingLoadingIndicator: React.FC<StreamingLoadingIndicatorProps> = ({ s
         <p className="text-slate-600 mt-2">The AI is working its magic. Here's the real-time progress:</p>
         
         <ul className="space-y-4 text-left my-8">
-            {stages.map((stage, index) => (
+            {allStages.map((stage, index) => (
                 <StageItem 
                     key={stage.key}
                     text={stage.text}
@@ -109,12 +132,12 @@ const StreamingLoadingIndicator: React.FC<StreamingLoadingIndicatorProps> = ({ s
 
         <div className="w-full bg-slate-200/70 rounded-full h-2.5">
             <div
-                className={`${colors.bg} h-2.5 rounded-full transition-all duration-500 ease-out`}
-                style={{ width: `${progress}%` }}
+                className={`${colors.bg} h-2.5 rounded-full transition-all duration-500 ease-out ${progress <= 5 ? 'animate-pulse' : ''}`}
+                style={{ width: `${Math.min(100, progress)}%` }}
             ></div>
         </div>
         <p className={`text-sm font-semibold mt-2 ${colors.text}`}>
-            {Math.round(progress)}% Complete
+            {Math.floor(progress)}% Complete
         </p>
 
         <button
