@@ -1,6 +1,7 @@
 
 
 
+
 import { GoogleGenAI } from "@google/genai";
 import { AppFinderRequestData, AppRecommendations } from '../types';
 
@@ -61,7 +62,6 @@ export const generateAppRecommendations = async (data: AppFinderRequestData): Pr
               contents: prompt,
               config: {
                   tools: [{ googleSearch: {} }],
-                  thinkingConfig: { thinkingBudget: 0 },
               }
           });
 

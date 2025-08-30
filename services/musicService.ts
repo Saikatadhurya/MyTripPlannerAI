@@ -1,4 +1,5 @@
 
+
 import { GoogleGenAI } from "@google/genai";
 import { MusicFinderRequestData, MusicRecommendations } from '../types';
 
@@ -81,7 +82,6 @@ export const generateMusicRecommendations = async (data: MusicFinderRequestData)
               contents: prompt,
               config: {
                   tools: [{ googleSearch: {} }],
-                  thinkingConfig: { thinkingBudget: 0 },
               }
           });
 

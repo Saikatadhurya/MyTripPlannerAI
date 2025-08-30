@@ -1,6 +1,7 @@
 
 
 
+
 import { GoogleGenAI } from "@google/genai";
 import { FoodFinderRequestData, FoodRecommendations } from '../types';
 
@@ -77,7 +78,6 @@ export const generateFoodRecommendations = async (data: FoodFinderRequestData): 
               contents: prompt,
               config: {
                   tools: [{ googleSearch: {} }],
-                  thinkingConfig: { thinkingBudget: 0 },
               }
           });
 

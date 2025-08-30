@@ -62,7 +62,6 @@ export const generatePackingList = async (data: PackingListRequestData): Promise
     config: {
       responseMimeType: "application/json",
       responseSchema: responseSchema,
-      thinkingConfig: { thinkingBudget: 0 },
     }
   });
 

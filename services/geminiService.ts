@@ -336,7 +336,6 @@ export const generateItinerary = async (
                 contents: prompt,
                 config: {
                     tools: [{ googleSearch: {} }],
-                    thinkingConfig: { thinkingBudget: 0 },
                 }
             });
             
