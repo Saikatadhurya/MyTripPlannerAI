@@ -28,13 +28,11 @@ const AppCard: React.FC<{ app: MobileApp }> = ({ app }) => (
             {(app.platform === 'iOS' || app.platform === 'Both') && app.appStoreUrl && (
                 <a href={app.appStoreUrl} target="_blank" rel="noopener noreferrer" className="flex-1 text-center bg-black text-white px-3 py-1.5 rounded-md text-sm font-semibold hover:bg-gray-800 transition-colors flex items-center justify-center space-x-1">
                     <span>App Store</span>
-                    {app.appStoreRating && <span>⭐ {app.appStoreRating}</span>}
                 </a>
             )}
             {(app.platform === 'Android' || app.platform === 'Both') && app.playStoreUrl && (
                 <a href={app.playStoreUrl} target="_blank" rel="noopener noreferrer" className="flex-1 text-center bg-gray-200 text-black px-3 py-1.5 rounded-md text-sm font-semibold hover:bg-gray-300 transition-colors flex items-center justify-center space-x-1">
                     <span>Play Store</span>
-                     {app.playStoreRating && <span>⭐ {app.playStoreRating}</span>}
                 </a>
             )}
         </div>

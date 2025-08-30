@@ -1,26 +1,41 @@
+
 import { GoogleGenAI } from "@google/genai";
 import { AppFinderRequestData, AppRecommendations } from '../types';
 
-// Helper function to get/set from sessionStorage for improved caching.
-const getFromSessionCache = (key: string): AppRecommendations | null => {
+// Cache configuration
+const CACHE_EXPIRATION_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+// Helper function to get/set from localStorage with an expiration time.
+const getFromLocalStorage = (key: string): AppRecommendations | null => {
     try {
-        const cachedData = sessionStorage.getItem(key);
-        if (cachedData) {
-            return JSON.parse(cachedData);
+        const cachedItem = localStorage.getItem(key);
+        if (cachedItem) {
+            const { timestamp, data } = JSON.parse(cachedItem);
+            // Check if cache is expired
+            if (Date.now() - timestamp < CACHE_EXPIRATION_MS) {
+                return data;
+            } else {
+                // Cache expired, remove it.
+                localStorage.removeItem(key);
+            }
         }
     } catch (error) {
-        console.error("Failed to read from session cache:", error);
+        console.error("Failed to read from local storage:", error);
         // If reading fails, clear the corrupted item to prevent future errors.
-        sessionStorage.removeItem(key);
+        localStorage.removeItem(key);
     }
     return null;
 };
 
-const setInSessionCache = (key: string, data: AppRecommendations): void => {
+const setInLocalStorage = (key: string, data: AppRecommendations): void => {
     try {
-        sessionStorage.setItem(key, JSON.stringify(data));
+        const item = {
+            timestamp: Date.now(),
+            data: data,
+        };
+        localStorage.setItem(key, JSON.stringify(item));
     } catch (error) {
-        console.error("Failed to write to session cache:", error);
+        console.error("Failed to write to local storage:", error);
     }
 };
 
@@ -32,7 +47,7 @@ export const generateAppRecommendations = async (data: AppFinderRequestData): Pr
   const { destination, language } = data;
   const cacheKey = `app-recs-${destination.trim().toLowerCase()}-${language}`;
 
-  const cachedResult = getFromSessionCache(cacheKey);
+  const cachedResult = getFromLocalStorage(cacheKey);
   if (cachedResult) {
     console.log(`[Cache HIT] for ${destination}`);
     return cachedResult;
@@ -45,34 +60,36 @@ export const generateAppRecommendations = async (data: AppFinderRequestData): Pr
     You are a tech-savvy local guide and an expert global travel assistant. Your mission is to provide a traveler with a curated list of the most useful, relevant, and currently available mobile apps for their trip to ${destination}. Your recommendations MUST include popular local alternatives to global apps.
 
     **CRITICAL INSTRUCTIONS:**
-    1.  **Use Google Search:** You MUST use your search capabilities to find currently available applications and their ratings for ${destination}.
-    2.  **Local Expertise is Key:** For each category, you must find both the internationally known apps (e.g., Uber) AND their popular local competitors. This is crucial for an authentic travel experience. For example, for Delhi, India, in 'Transport', you MUST include Uber, but also critical local competitors like Ola and the popular bike-taxi app Rapido.
-    3.  **Fetch Ratings:** For each app, you MUST find its current rating on both the Apple App Store and Google Play Store. Populate the \`appStoreRating\` and \`playStoreRating\` fields with the rating as a string (e.g., "4.7"). If an app is not on a platform or a rating is not available, omit that specific rating field.
-    4.  **Find Links:** Provide direct download links from the official Apple App Store or Google Play Store if available. Otherwise, omit the field.
+    1.  **Use Google Search:** You MUST use your search capabilities to find currently available applications for ${destination}.
+    2.  **Local Expertise is Key:** For each category, you must find both internationally known apps (e.g., Uber) AND their popular local competitors. This is crucial. For example, for Delhi, India, in 'Transport', you MUST include Uber, but also critical local competitors like Ola and Rapido.
+    3.  **Find Store Links (CRITICAL & MANDATORY):** For every single app you recommend, you MUST find and include the direct download URLs for both the Apple App Store (\`appStoreUrl\`) and the Google Play Store (\`playStoreUrl\`). This is not optional.
+        - If an app is available on both platforms, both \`appStoreUrl\` and \`playStoreUrl\` fields MUST be populated with valid URLs.
+        - If an app is exclusive to one platform (e.g., 'iOS'), provide the link for that platform and set the other URL field to \`null\`.
+        - If you absolutely cannot find the store links for an app, DO NOT INCLUDE THAT APP IN YOUR RESPONSE. It is better to return fewer apps with correct links than more apps without them.
+    4.  **DO NOT FETCH RATINGS:** You MUST NOT spend time searching for app ratings. The goal is a fast response.
     5.  **Categorize Accurately:** Place each app in ONE of the specified categories. If a category has no relevant apps after an exhaustive search, return an empty array for it.
-    6.  **Stability over Completeness:** It is more important to return a valid, stable JSON response than to fill every single optional field. If you cannot find a specific rating or URL, omit that field but still return the rest of the app's information.
 
     The response MUST be ONLY a single, valid JSON object that strictly follows this structure. All text content must be in ${language}.
 
     JSON Structure:
     {
       "destination": "${destination}",
-      "transportAndTravel": [{ "name": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "appStoreUrl"?: "string", "playStoreUrl"?: "string", "icon": "emoji", "appStoreRating"?: "string", "playStoreRating"?: "string" }],
-      "stayAndLiving": [{ "name": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "appStoreUrl"?: "string", "playStoreUrl"?: "string", "icon": "emoji", "appStoreRating"?: "string", "playStoreRating"?: "string" }],
-      "foodAndDining": [{ "name": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "appStoreUrl"?: "string", "playStoreUrl"?: "string", "icon": "emoji", "appStoreRating"?: "string", "playStoreRating"?: "string" }],
-      "entertainmentAndLeisure": [{ "name": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "appStoreUrl"?: "string", "playStoreUrl"?: "string", "icon": "emoji", "appStoreRating"?: "string", "playStoreRating"?: "string" }],
-      "shoppingAndEssentials": [{ "name": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "appStoreUrl"?: "string", "playStoreUrl"?: "string", "icon": "emoji", "appStoreRating"?: "string", "playStoreRating"?: "string" }],
-      "explorationAndTours": [{ "name": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "appStoreUrl"?: "string", "playStoreUrl"?: "string", "icon": "emoji", "appStoreRating"?: "string", "playStoreRating"?: "string" }],
-      "utilitiesAndSafety": [{ "name": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "appStoreUrl"?: "string", "playStoreUrl"?: "string", "icon": "emoji", "appStoreRating"?: "string", "playStoreRating"?: "string" }],
-      "festivalsAndSeasonal": [{ "name": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "appStoreUrl"?: "string", "playStoreUrl"?: "string", "icon": "emoji", "appStoreRating"?: "string", "playStoreRating"?: "string" }]
+      "transportAndTravel": [{ "name": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "appStoreUrl": "string | null", "playStoreUrl": "string | null", "icon": "emoji" }],
+      "stayAndLiving": [{ "name": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "appStoreUrl": "string | null", "playStoreUrl": "string | null", "icon": "emoji" }],
+      "foodAndDining": [{ "name": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "appStoreUrl": "string | null", "playStoreUrl": "string | null", "icon": "emoji" }],
+      "entertainmentAndLeisure": [{ "name": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "appStoreUrl": "string | null", "playStoreUrl": "string | null", "icon": "emoji" }],
+      "shoppingAndEssentials": [{ "name": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "appStoreUrl": "string | null", "playStoreUrl": "string | null", "icon": "emoji" }],
+      "explorationAndTours": [{ "name": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "appStoreUrl": "string | null", "playStoreUrl": "string | null", "icon": "emoji" }],
+      "utilitiesAndSafety": [{ "name": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "appStoreUrl": "string | null", "playStoreUrl": "string | null", "icon": "emoji" }],
+      "festivalsAndSeasonal": [{ "name": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "appStoreUrl": "string | null", "playStoreUrl": "string | null", "icon": "emoji" }]
     }
 
     **CRITICAL RULES & EXAMPLE:**
     1.  **Icon:** The 'icon' field MUST be a single, relevant emoji.
     2.  **Language:** The entire JSON response, including all names and descriptions, MUST be in ${language}.
     3.  **Validity:** The output MUST be a perfectly valid JSON object starting with { and ending with }. No markdown or extra text. Use single quotes inside strings to avoid breaking JSON.
-    4.  **Example of a good entry:** For a transport app in Delhi, a good entry would be:
-        \`{ "name": "Rapido", "description": "India's largest bike taxi platform, offering quick and affordable rides, especially for solo commuters navigating traffic.", "platform": "Both", "appStoreUrl": "https://apps.apple.com/in/app/rapido-bike-taxi-auto/id1198464606", "playStoreUrl": "https://play.google.com/store/apps/details?id=com.rapido.passenger", "icon": "🏍️", "appStoreRating": "4.8", "playStoreRating": "4.5" }\`
+    4.  **Example of a good entry:**
+        \`{ "name": "Rapido", "description": "India's largest bike taxi platform, offering quick and affordable rides, especially for solo commuters navigating traffic.", "platform": "Both", "appStoreUrl": "https://apps.apple.com/in/app/rapido-bike-taxi-auto/id1198464606", "playStoreUrl": "https://play.google.com/store/apps/details?id=com.rapido.passenger", "icon": "🏍️" }\`
   `;
   
   const response = await ai.models.generateContent({
@@ -80,6 +97,8 @@ export const generateAppRecommendations = async (data: AppFinderRequestData): Pr
     contents: prompt,
     config: {
       tools: [{ googleSearch: {} }],
+      // Optimize for speed by disabling thinking.
+      thinkingConfig: { thinkingBudget: 0 },
     }
   });
 
@@ -109,7 +128,7 @@ export const generateAppRecommendations = async (data: AppFinderRequestData): Pr
   try {
       const recommendations = JSON.parse(jsonString);
       // Cache the successful result before returning
-      setInSessionCache(cacheKey, recommendations);
+      setInLocalStorage(cacheKey, recommendations);
       return recommendations;
   } catch (e) {
       console.error("Failed to parse JSON from AI response after cleaning (app recommendations):", e);

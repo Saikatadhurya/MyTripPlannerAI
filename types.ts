@@ -153,11 +153,9 @@ export interface MobileApp {
     name: string;
     description: string;
     platform: 'iOS' | 'Android' | 'Both';
-    appStoreUrl?: string;
-    playStoreUrl?: string;
+    appStoreUrl?: string | null;
+    playStoreUrl?: string | null;
     icon: string; // Emoji
-    appStoreRating?: string;
-    playStoreRating?: string;
 }
 
 export interface AppRecommendations {
