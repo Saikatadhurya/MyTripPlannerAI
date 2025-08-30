@@ -62,10 +62,14 @@ export const generateAppRecommendations = async (data: AppFinderRequestData): Pr
     **CRITICAL INSTRUCTIONS:**
     1.  **Use Google Search:** You MUST use your search capabilities to find currently available applications for ${destination}.
     2.  **Local Expertise is Key:** For each category, you must find both internationally known apps (e.g., Uber) AND their popular local competitors. This is crucial. For example, for Delhi, India, in 'Transport', you MUST include Uber, but also critical local competitors like Ola and Rapido.
-    3.  **Find Store Links (CRITICAL & MANDATORY):** For every single app you recommend, you MUST find and include the direct download URLs for both the Apple App Store (\`appStoreUrl\`) and the Google Play Store (\`playStoreUrl\`). This is not optional.
-        - If an app is available on both platforms, both \`appStoreUrl\` and \`playStoreUrl\` fields MUST be populated with valid URLs.
-        - If an app is exclusive to one platform (e.g., 'iOS'), provide the link for that platform and set the other URL field to \`null\`.
-        - If you absolutely cannot find the store links for an app, DO NOT INCLUDE THAT APP IN YOUR RESPONSE. It is better to return fewer apps with correct links than more apps without them.
+    3.  **Find and VALIDATE Store Links (CRITICAL & MANDATORY):** For every single app you recommend, you MUST find and include the direct download URLs for both the Apple App Store (\`appStoreUrl\`) and the Google Play Store (\`playStoreUrl\`). This is not optional.
+        -   **URL Validation Rule:** The URLs you provide MUST be direct links to the app's page, not search results.
+            -   A valid Google Play Store URL **MUST** follow this pattern: \`https://play.google.com/store/apps/details?id=...\`
+            -   A valid Apple App Store URL **MUST** start with \`https://apps.apple.com/...\`.
+        -   **FORBIDDEN URLs:** You are strictly forbidden from using search query URLs (e.g., \`.../search?q=...\`). These are not direct links and are useless.
+        -   **Action:** If an app is available on both platforms, both \`appStoreUrl\` and \`playStoreUrl\` fields MUST be populated with valid, pattern-matching URLs.
+        -   **Action:** If an app is exclusive to one platform, provide the valid, pattern-matching link for that platform and set the other URL field to \`null\`.
+        -   **FAILURE CONDITION:** If you search and cannot find a URL that matches these specific patterns for an app, you **MUST DISCARD THAT APP** and not include it in your response. It is better to return fewer apps with correct, working links than more apps with vague or broken links.
     4.  **DO NOT FETCH RATINGS:** You MUST NOT spend time searching for app ratings. The goal is a fast response.
     5.  **Categorize Accurately:** Place each app in ONE of the specified categories. If a category has no relevant apps after an exhaustive search, return an empty array for it.
 
