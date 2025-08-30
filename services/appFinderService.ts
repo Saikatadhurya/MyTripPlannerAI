@@ -2,57 +2,12 @@
 import { GoogleGenAI } from "@google/genai";
 import { AppFinderRequestData, AppRecommendations } from '../types';
 
-// Cache configuration
-const CACHE_EXPIRATION_MS = 24 * 60 * 60 * 1000; // 24 hours
-
-// Helper function to get/set from localStorage with an expiration time.
-const getFromLocalStorage = (key: string): AppRecommendations | null => {
-    try {
-        const cachedItem = localStorage.getItem(key);
-        if (cachedItem) {
-            const { timestamp, data } = JSON.parse(cachedItem);
-            // Check if cache is expired
-            if (Date.now() - timestamp < CACHE_EXPIRATION_MS) {
-                return data;
-            } else {
-                // Cache expired, remove it.
-                localStorage.removeItem(key);
-            }
-        }
-    } catch (error) {
-        console.error("Failed to read from local storage:", error);
-        // If reading fails, clear the corrupted item to prevent future errors.
-        localStorage.removeItem(key);
-    }
-    return null;
-};
-
-const setInLocalStorage = (key: string, data: AppRecommendations): void => {
-    try {
-        const item = {
-            timestamp: Date.now(),
-            data: data,
-        };
-        localStorage.setItem(key, JSON.stringify(item));
-    } catch (error) {
-        console.error("Failed to write to local storage:", error);
-    }
-};
-
 export const generateAppRecommendations = async (data: AppFinderRequestData): Promise<AppRecommendations> => {
   if (!process.env.API_KEY) {
     throw new Error("API key is missing. Please set it in your environment variables.");
   }
 
   const { destination, language } = data;
-  const cacheKey = `app-recs-${destination.trim().toLowerCase()}-${language}`;
-
-  const cachedResult = getFromLocalStorage(cacheKey);
-  if (cachedResult) {
-    console.log(`[Cache HIT] for ${destination}`);
-    return cachedResult;
-  }
-  console.log(`[Cache MISS] for ${destination}. Fetching from AI...`);
 
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
@@ -63,13 +18,14 @@ export const generateAppRecommendations = async (data: AppFinderRequestData): Pr
     1.  **Use Google Search:** You MUST use your search capabilities to find currently available applications for ${destination}.
     2.  **Local Expertise is Key:** For each category, you must find both internationally known apps (e.g., Uber) AND their popular local competitors. This is crucial. For example, for Delhi, India, in 'Transport', you MUST include Uber, but also critical local competitors like Ola and Rapido.
     3.  **Find and VALIDATE Store Links (CRITICAL & MANDATORY):** For every single app you recommend, you MUST find and include the direct download URLs for both the Apple App Store (\`appStoreUrl\`) and the Google Play Store (\`playStoreUrl\`). This is not optional.
-        -   **URL Validation Rule:** The URLs you provide MUST be direct links to the app's page, not search results.
+        -   **SOURCE OF TRUTH:** Your search results are the primary source of truth. You **MUST** prioritize the URLs found in your real-time Google Search over any URLs from your internal training data, as app links can change frequently.
+        -   **URL Validation Rule:** The URLs you provide MUST be direct, official links to the app's page, not search results.
             -   A valid Google Play Store URL **MUST** follow this pattern: \`https://play.google.com/store/apps/details?id=...\`
-            -   A valid Apple App Store URL **MUST** start with \`https://apps.apple.com/...\`.
-        -   **FORBIDDEN URLs:** You are strictly forbidden from using search query URLs (e.g., \`.../search?q=...\`). These are not direct links and are useless.
-        -   **Action:** If an app is available on both platforms, both \`appStoreUrl\` and \`playStoreUrl\` fields MUST be populated with valid, pattern-matching URLs.
+            -   A valid Apple App Store URL **MUST** follow this pattern: \`https://apps.apple.com/{country_code}/app/{app-name-slug}/id{app_id_number}\`. You must find the correct, most recent ID from your search.
+        -   **FORBIDDEN URLs:** You are strictly forbidden from using search query URLs (e.g., \`.../search?q=...\`) or links to third-party app stores.
+        -   **Action:** If an app is available on both platforms, both \`appStoreUrl\` and \`playStoreUrl\` fields MUST be populated with valid, pattern-matching URLs from your search.
         -   **Action:** If an app is exclusive to one platform, provide the valid, pattern-matching link for that platform and set the other URL field to \`null\`.
-        -   **FAILURE CONDITION:** If you search and cannot find a URL that matches these specific patterns for an app, you **MUST DISCARD THAT APP** and not include it in your response. It is better to return fewer apps with correct, working links than more apps with vague or broken links.
+        -   **FAILURE CONDITION:** If your search cannot find an official URL that matches these specific patterns for an app, you **MUST DISCARD THAT APP** and not include it in your response. It is better to return fewer apps with correct, working links than more apps with vague or broken links.
     4.  **DO NOT FETCH RATINGS:** You MUST NOT spend time searching for app ratings. The goal is a fast response.
     5.  **Categorize Accurately:** Place each app in ONE of the specified categories. If a category has no relevant apps after an exhaustive search, return an empty array for it.
 
@@ -131,8 +87,6 @@ export const generateAppRecommendations = async (data: AppFinderRequestData): Pr
 
   try {
       const recommendations = JSON.parse(jsonString);
-      // Cache the successful result before returning
-      setInLocalStorage(cacheKey, recommendations);
       return recommendations;
   } catch (e) {
       console.error("Failed to parse JSON from AI response after cleaning (app recommendations):", e);
