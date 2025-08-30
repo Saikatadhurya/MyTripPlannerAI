@@ -10,44 +10,40 @@ export const generateMusicRecommendations = async (data: MusicFinderRequestData)
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
   const prompt = `
-    You are a Local Music Scout AI. Your mission is to find and curate a list of local music for a traveler visiting ${destination}, identifying the best platforms to listen on. Your response MUST be extremely fast.
+    You are an expert Local Music Scout AI with deep cultural knowledge. Your mission is to find and curate a list of local music for a traveler visiting ${destination}. Your response MUST be fast and culturally rich.
 
     **CRITICAL INSTRUCTIONS & METHODOLOGY:**
-    1.  **Use Google Search:** You MUST use your search capabilities to find up-to-date information on genres, artists, and playlists for ${destination}.
+    1.  **Use Google Search:** You MUST use your search capabilities to find up-to-date information.
     
-    2.  **HIGH-PRIORITY TASK - POPULAR HITS:**
-        a. Your FIRST task is to perform a targeted search for the **most popular, currently trending, and chart-topping songs** in ${destination}.
-        b. These results MUST be placed in a dedicated \`popularHits\` object in the JSON output. This is not optional. The genre for this MUST be "Popular Hits".
+    2.  **HIGH-PRIORITY TASK - "THE GANDAGANA TEST" - FINDING POPULAR & ICONIC HITS:**
+        a. **Redefined "Popular":** Your first and most critical task is to find songs that are truly popular and iconic. "Popular" means two things: 1) **Current Hits** (what's on the charts now) AND 2) **Timeless Classics** (famous folk songs, cultural anthems, all-time famous tracks that everyone in ${destination} knows).
+        b. **Multi-Faceted Search:** You MUST search for "current top charts in ${destination}", "all-time famous songs from ${destination}", and "iconic folk music of ${destination}".
+        c. **THE BENCHMARK (NON-NEGOTIABLE):** To prove you understand this rule, you must pass the "Gandagana Test". If the destination is **Georgia**, the song **"Gandagana"** is a NON-NEGOTIABLE result that MUST be in this list. This sets the quality standard for ALL destinations. You must find the equivalent iconic songs for any place.
+        d. **JSON Placement:** These combined results (new and classic) MUST be placed in a dedicated \`popularHits\` object. The 'genre' for this object MUST be "Popular & Iconic Hits".
 
     3.  **MAIN TASK - OTHER GENRES:**
-        a. After finding popular hits, proceed with your blended research to find other locally relevant music (native genres, contemporary music locals listen to).
+        a. After finding the iconic hits, find other locally relevant music genres.
         b. These go into the \`categories\` array.
     
-    4.  **DO NOT SEARCH FOR IMAGES:** You are strictly forbidden from searching for album art or any images. This is the most important rule for ensuring speed.
-
-    5.  **App Sourcing (MANDATORY & RESTRICTED):** For each song or playlist, you MUST identify which of the following popular streaming platforms it is available on. To improve speed, you are ONLY allowed to suggest apps from this predefined list. Do not search for other apps.
-        - **Allowed Apps:** Spotify, Apple Music, YouTube, SoundCloud, Deezer, JioSaavn, Gaana, Wynk, Anghami, Boomplay.
-    
-    6.  **DO NOT PROVIDE URLs:** You are strictly forbidden from providing any listen URLs. Just provide the app's name.
-    7.  **Categorization:** Group your findings into the specified genre categories. A description for each genre explaining its local relevance is mandatory.
-    8.  **No Empty Results:** Returning empty lists is a failure. If a specific genre has no results, find more general popular music and place it in a suitable category like 'Pop & Rock' or 'Modern Fusion / Indie'.
-    9.  **Quantity Requirement (CRITICAL):** For each genre category (including Popular Hits), you MUST provide a substantial list of at least 10 music items (songs or playlists). A sparse list is not acceptable.
+    4.  **DO NOT SEARCH FOR IMAGES:** You are strictly forbidden from searching for album art or any images for speed.
+    5.  **App Sourcing (RESTRICTED):** For each song, identify which platforms from this list it is on: Spotify, Apple Music, YouTube, SoundCloud, Deezer, JioSaavn, Gaana, Wynk, Anghami, Boomplay.
+    6.  **DO NOT PROVIDE URLs:** Only provide the app's name.
+    7.  **Quantity Requirement (CRITICAL):** For each genre category (including Popular & Iconic Hits), you MUST provide at least 10 music items.
+    8.  **No Empty Results:** Returning empty lists is a failure. Be resourceful.
 
     **JSON OUTPUT SPECIFICATION:**
-    The response MUST be ONLY a single, valid JSON object that strictly follows this structure. All text content must be in ${language}.
+    The response MUST be ONLY a single, valid JSON object. All text content must be in ${language}.
 
     {
       "destination": "${destination}",
       "popularHits": {
-        "genre": "Popular Hits",
-        "description": "The most popular and trending songs currently loved by locals in ${destination}.",
+        "genre": "Popular & Iconic Hits",
+        "description": "A mix of the most popular, currently trending songs and the timeless, iconic classics that define the sound of ${destination}.",
         "music": [
           {
             "title": "string",
             "artistOrDescription": "string",
-            "appLinks": [
-              { "appName": "Spotify" }
-            ]
+            "appLinks": [ { "appName": "Spotify" } ]
           }
         ]
       },
@@ -59,9 +55,7 @@ export const generateMusicRecommendations = async (data: MusicFinderRequestData)
             {
               "title": "string",
               "artistOrDescription": "string",
-              "appLinks": [
-                { "appName": "YouTube" }
-              ]
+              "appLinks": [ { "appName": "YouTube" } ]
             }
           ]
         }
@@ -69,8 +63,8 @@ export const generateMusicRecommendations = async (data: MusicFinderRequestData)
     }
 
     **CRITICAL RULES:**
-    1.  **Language:** The entire JSON response, including all names and descriptions, MUST be in ${language}.
-    2.  **JSON Format:** The output MUST be a perfectly valid JSON object starting with { and ending with }. No markdown, no extra text. Use single quotes or escaped quotes (\\") inside strings to avoid breaking JSON.
+    1.  **Language:** The entire JSON response MUST be in ${language}.
+    2.  **JSON Format:** The output MUST be a perfectly valid JSON object. No markdown, no extra text.
     `;
 
   const response = await ai.models.generateContent({

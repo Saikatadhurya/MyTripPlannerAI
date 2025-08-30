@@ -1,32 +1,62 @@
 [
   {
-    "name": "Goa",
-    "description": "Beautiful beaches and Portuguese heritage",
+    "name": "Goa, India",
+    "description": "Beautiful beaches and vibrant nightlife",
     "bestTime": "Best: November to March",
     "icon": "🏖️"
   },
   {
-    "name": "Kerala",
-    "description": "God's own country with backwaters and hills",
-    "bestTime": "Best: October to March",
-    "icon": "🌴"
-  },
-  {
-    "name": "Rajasthan",
+    "name": "Rajasthan, India",
     "description": "Royal palaces and desert landscapes",
     "bestTime": "Best: October to March",
-    "icon": "🕌"
+    "icon": "🏰"
   },
   {
-    "name": "Himachal Pradesh",
-    "description": "Mountain adventures and scenic beauty",
-    "bestTime": "Best: March to June; September to November",
+    "name": "Dubai, UAE",
+    "description": "Futuristic skyscrapers and luxurious shopping",
+    "bestTime": "Best: November to March",
+    "icon": "🏙️"
+  },
+  {
+    "name": "Bangkok, Thailand",
+    "description": "Ornate shrines and vibrant street life",
+    "bestTime": "Best: November to February",
+    "icon": "🛕"
+  },
+  {
+    "name": "Singapore",
+    "description": "A modern city-state with lush green spaces",
+    "bestTime": "Best: February to April",
+    "icon": "⛲"
+  },
+  {
+    "name": "Bali, Indonesia",
+    "description": "An island paradise with lush forests and beaches",
+    "bestTime": "Best: April to October",
+    "icon": "🏝️"
+  },
+  {
+    "name": "Maldives",
+    "description": "Luxury overwater bungalows and coral reefs",
+    "bestTime": "Best: November to April",
+    "icon": "🐠"
+  },
+  {
+    "name": "Kathmandu, Nepal",
+    "description": "Gateway to the Himalayas with ancient temples",
+    "bestTime": "Best: October to December",
     "icon": "🏔️"
   },
   {
-    "name": "Mumbai",
-    "description": "The city of dreams and Bollywood",
-    "bestTime": "Best: November to February",
-    "icon": "🏙️"
+    "name": "Sri Lanka",
+    "description": "Pristine beaches, ancient ruins, and tea plantations",
+    "bestTime": "Best: December to April",
+    "icon": "🐘"
+  },
+  {
+    "name": "Vietnam",
+    "description": "Bustling cities, lush rice paddies, and rich history",
+    "bestTime": "Best: March to April; September to November",
+    "icon": "🛶"
   }
 ]
