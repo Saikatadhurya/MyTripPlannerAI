@@ -52,6 +52,19 @@
         animation: card-enter 0.6s ease-out;
         animation-fill-mode: backwards;
       }
+      @keyframes connecting-pulse {
+        0%, 100% {
+          transform: scaleX(1);
+          transform-origin: left;
+        }
+        50% {
+          transform: scaleX(1.05);
+          transform-origin: left;
+        }
+      }
+      .connecting-pulse {
+        animation: connecting-pulse 2s ease-in-out infinite;
+      }
     </style>
   <script type="importmap">
 {
