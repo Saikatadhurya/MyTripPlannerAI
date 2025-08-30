@@ -73,8 +73,8 @@ const MusicItemCard: React.FC<{ item: MusicItem }> = ({ item }) => {
 
 
 const MusicFinderResult: React.FC<{ recommendations: MusicRecommendations; onRegenerate: () => void; }> = ({ recommendations, onRegenerate }) => {
-    const hasPopularHits = recommendations.popularHits && recommendations.popularHits.music.length > 0;
-    const hasOtherCategories = recommendations.categories && recommendations.categories.length > 0;
+    const hasTrendingHits = recommendations.trendingHits && recommendations.trendingHits.music.length > 0;
+    const hasRegionalHighlights = recommendations.regionalHighlights && recommendations.regionalHighlights.length > 0;
 
     return (
         <div className="max-w-5xl mx-auto space-y-12 animated-card">
@@ -98,28 +98,28 @@ const MusicFinderResult: React.FC<{ recommendations: MusicRecommendations; onReg
             </header>
             
             <div className="space-y-10">
-                {hasPopularHits && (
+                {hasTrendingHits && (
                     <div className="bg-gradient-to-br from-fuchsia-100 to-purple-100 backdrop-blur-lg p-6 rounded-2xl shadow-xl border-2 border-fuchsia-300/50">
                         <h2 className="text-2xl font-bold text-fuchsia-800 flex items-center space-x-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
-                            <span>Popular & Iconic Hits</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414l-3 3a1 1 0 01-1.414-1.414l3-3a1 1 0 011.414 0zm8 8a1 1 0 01-1.414 0l-3-3a1 1 0 011.414-1.414l3 3a1 1 0 010 1.414z" clipRule="evenodd" /></svg>
+                            <span>{recommendations.trendingHits!.genre}</span>
                         </h2>
-                        <p className="text-sm text-slate-600 mt-1 mb-6">{recommendations.popularHits!.description}</p>
+                        <p className="text-sm text-slate-600 mt-1 mb-6">{recommendations.trendingHits!.description}</p>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {recommendations.popularHits!.music.map((item, itemIndex) => (
+                            {recommendations.trendingHits!.music.map((item, itemIndex) => (
                                 <MusicItemCard key={itemIndex} item={item} />
                             ))}
                         </div>
                     </div>
                 )}
                 
-                {hasOtherCategories ? (
-                    recommendations.categories.map((category, index) => (
+                {hasRegionalHighlights ? (
+                    recommendations.regionalHighlights.map((region, index) => (
                         <div key={index} className="bg-white/30 backdrop-blur-lg p-6 rounded-2xl shadow-lg border border-white/50">
-                            <h2 className="text-2xl font-bold text-slate-800">{category.genre}</h2>
-                            <p className="text-sm text-slate-600 mt-1 mb-6">{category.description}</p>
+                            <h2 className="text-2xl font-bold text-slate-800">{region.genre}</h2>
+                            <p className="text-sm text-slate-600 mt-1 mb-6">{region.description}</p>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {category.music.map((item, itemIndex) => (
+                                {region.music.map((item, itemIndex) => (
                                     <MusicItemCard key={itemIndex} item={item} />
                                 ))}
                             </div>
@@ -127,7 +127,7 @@ const MusicFinderResult: React.FC<{ recommendations: MusicRecommendations; onReg
                     ))
                 ) : null }
 
-                {!hasPopularHits && !hasOtherCategories && (
+                {!hasTrendingHits && !hasRegionalHighlights && (
                      <div className="text-center bg-white/20 backdrop-blur-xl border border-white/30 rounded-2xl p-12 shadow-lg">
                         <h2 className="text-2xl font-bold text-slate-800">No Specific Music Found</h2>
                         <p className="text-slate-600 mt-2">We couldn't find unique local music for {recommendations.destination}. Try exploring global charts on Spotify or Apple Music for popular hits!</p>

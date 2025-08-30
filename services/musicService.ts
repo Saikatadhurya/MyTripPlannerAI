@@ -10,49 +10,41 @@ export const generateMusicRecommendations = async (data: MusicFinderRequestData)
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
   const prompt = `
-    You are an expert Local Music Scout and Cultural Musicologist AI. Your mission is to find music that captures the true sound and soul of ${destination} for a traveler. Your response must be fast, accurate, and culturally rich.
+    You are a world-class Ethnomusicologist AI. Your primary mission is to recognize and represent the deep musical diversity of the destination: "${destination}". You must provide a traveler with culturally rich, regionally accurate, and popular music.
 
-    **CRITICAL METHODOLOGY & INSTRUCTIONS:**
+    **CRITICAL DIVERSITY & REGIONAL BREAKDOWN MANDATE:**
+    This is your most important instruction. You MUST analyze if the destination is a large, culturally diverse country.
 
-    **STEP 1 (MANDATORY & HIGHEST PRIORITY): The Iconic Hit Mandate & "The Gandagana Test"**
-    This is your most important task. Your primary goal is to identify songs that are deeply embedded in the culture of ${destination}. This means a blend of **current chart-toppers** and **timeless, iconic classics**.
-    
-    a. **Execute a Multi-Faceted Search Strategy:** You MUST use your search tool with a variety of queries to ensure comprehensive results. Use queries like:
-        - "most famous song from ${destination} of all time"
-        - "timeless classic songs from ${destination}"
-        - "iconic folk music everyone in ${destination} knows"
-        - "top 10 music charts ${destination} right now"
-        - "popular nepali song" if destination is Nepal
-        - "popular georgian music" if destination is Georgia
+    1.  **INDIA-SPECIFIC INSTRUCTIONS (MANDATORY):** If the destination is **India**, you MUST create separate regional categories for **North Indian**, **South Indian**, **East Indian**, and **West Indian** music.
+        - **North:** Find a mix of current **Bollywood** hits, iconic classics, and popular **Punjabi** tracks.
+        - **South:** Find popular and classic songs from **Tamil (Kollywood)**, **Telugu (Tollywood)**, **Malayalam**, and **Kannada** cinema and music scenes.
+        - **East:** Find beloved **Bengali** songs (both modern and Rabindra Sangeet), and popular **Assamese** or **Odia** music.
+        - **West:** Find popular **Marathi** and **Gujarati** songs that are cultural staples.
+        - Place these regional findings into the \`regionalHighlights\` array.
 
-    b. **The Quality Benchmark - "The Gandagana Test":** This is a non-negotiable quality check.
-        - To prove you understand cultural significance, you MUST find the equivalent iconic, universally-known song for any destination.
-        - **EXAMPLE 1:** If the destination is **Georgia**, the song **"Gandagana"** is a MANDATORY result.
-        - **EXAMPLE 2:** If the destination is **Nepal**, a song like **"Timro Pratigya" or "Resham Firiri"** would be a MANDATORY result.
-        - **Failure to find these types of truly iconic songs for any given destination is a complete failure of the task.** You must dig deep to find the songs that define the nation's musical identity.
+    2.  **FOR OTHER DIVERSE COUNTRIES (e.g., USA, China, Brazil):** Use your knowledge to identify 2-4 primary musical regions and create categories for them in the \`regionalHighlights\` array (e.g., for the USA: 'Hip-Hop & R&B (East Coast/West Coast/Southern)', 'Country (Nashville)', 'Indie & Rock (Pacific Northwest)').
 
-    c. **JSON Placement:** The results from this step (a mix of current hits and timeless classics) MUST be placed in the dedicated \`popularHits\` object in the final JSON.
+    3.  **FOR SMALLER/HOMOGENEOUS COUNTRIES:** If the destination is smaller with a more unified music scene, you can create genre-based categories (e.g., 'Pop', 'Folk', 'Classical') within the \`regionalHighlights\` array. The 'genre' field for the category should reflect the genre name.
 
-    **STEP 2: Broader Genre Exploration**
-    After completing Step 1, find other locally relevant music genres (e.g., Local Pop, Traditional Folk, Regional Rock, Classical, etc.). Place these findings in the \`categories\` array.
+    **SEARCH & CURATION PROTOCOL:**
 
-    **STEP 3: Curation & Final Output**
-
-    *   **Sorting by Popularity (CRITICAL):** Within the \`popularHits\` category, and all other categories if possible, you MUST order the songs from most popular to least popular. Use metrics like YouTube views, streaming numbers, and historical chart performance to determine this ranking. The most famous and most-streamed song should be listed first.
-    *   **Quantity Requirement (CRITICAL):** For EACH genre category, including \`popularHits\`, you MUST provide at least 10 music items. Be resourceful.
-    *   **App Sourcing (RESTRICTED):** For each song, identify which platforms from this specific list it is on: Spotify, Apple Music, YouTube, SoundCloud, Deezer, JioSaavn, Gaana, Wynk, Anghami, Boomplay.
-    *   **NO URLs:** Only provide the app's name.
-    *   **NO IMAGES:** Do not search for album art to ensure a fast response.
-    *   **No Empty Results:** Returning empty lists is a failure.
+    -   **Nationwide Trending Hits (Optional but Recommended):** First, try to find songs that are trending across the entire nation. Place these in the optional \`trendingHits\` object.
+    -   **Regional Deep Dive (Mandatory):** For each region you identified (like North India, South India, etc.), find a mix of:
+        -   **Current Hits:** What's popular in that region right now?
+        -   **Iconic Classics:** What timeless songs define that region's culture? This is where you apply **"The Gandagana Test"**—find the songs that are absolute, non-negotiable cultural anthems for that specific region.
+    -   **Sorting by Popularity (CRITICAL):** Within EACH category, you MUST order the songs from most popular to least popular. Use metrics like YouTube views and streaming numbers. The most famous song MUST be listed first.
+    -   **Quantity:** Provide at least 5-10 music items per category.
+    -   **Sourcing:** Identify availability on this specific list of apps: Spotify, Apple Music, YouTube, SoundCloud, Deezer, JioSaavn, Gaana, Wynk, Anghami, Boomplay.
+    -   **RESTRICTIONS:** NO URLs. NO album art. NO empty results.
 
     **JSON OUTPUT SPECIFICATION:**
     The response MUST be ONLY a single, valid JSON object. All text content must be in ${language}.
 
     {
       "destination": "${destination}",
-      "popularHits": {
-        "genre": "Popular & Iconic Hits",
-        "description": "A mix of the most popular, currently trending songs and the timeless, iconic classics that define the sound of ${destination}.",
+      "trendingHits": { // Optional, for nationwide trends
+        "genre": "Top Trending Hits",
+        "description": "The most popular songs currently trending across ${destination}.",
         "music": [
           {
             "title": "string",
@@ -61,22 +53,25 @@ export const generateMusicRecommendations = async (data: MusicFinderRequestData)
           }
         ]
       },
-      "categories": [
+      "regionalHighlights": [ // This is the main array for regional music
         {
-          "genre": "string",
-          "description": "string",
+          "genre": "North Indian Music", // Example for India
+          "description": "A mix of Bollywood chartbusters, timeless classics, and vibrant Punjabi hits that define North India.",
           "music": [
-            {
-              "title": "string",
-              "artistOrDescription": "string",
-              "appLinks": [ { "appName": "YouTube" } ]
-            }
+             { "title": "string", "artistOrDescription": "string", "appLinks": [ { "appName": "YouTube" } ] }
+          ]
+        },
+        {
+          "genre": "South Indian Music", // Example for India
+          "description": "Iconic and trending songs from the powerful film and music industries of Tamil, Telugu, Malayalam, and Kannada.",
+          "music": [
+            { "title": "string", "artistOrDescription": "string", "appLinks": [ { "appName": "Spotify" } ] }
           ]
         }
       ]
     }
 
-    **CRITICAL RULES:**
+    **FINAL CRITICAL RULES:**
     1.  **Language:** The entire JSON response MUST be in ${language}.
     2.  **JSON Format:** The output MUST be a perfectly valid JSON object. No markdown, no extra text.
     `;
