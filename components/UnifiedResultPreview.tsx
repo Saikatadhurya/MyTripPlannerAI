@@ -1,7 +1,6 @@
 
 
-import React, { useState, Fragment, useRef, useEffect } from 'react';
-import ReactDOMServer from 'react-dom/server';
+import React, { useState, useEffect } from 'react';
 import { UnifiedPlan, UnifiedPlanLoadingStatus } from '../types';
 import ItineraryPreview from './ItineraryPreview';
 import PackingListPreview from './PackingListPreview';
@@ -36,6 +35,7 @@ interface UnifiedResultPreviewProps {
 const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadingStatus, stepErrors, onPlanNew, onRegenerate, onRegenerateStep, onCancel, onCancelStep, onTabChangeScrollToTop, itineraryStreamedText }) => {
     const [activeTab, setActiveTab] = useState<Tab>('itinerary');
     const [isExportingPdf, setIsExportingPdf] = useState(false);
+    const [isPrinting, setIsPrinting] = useState(false);
     
     const isPlanComplete = Object.values(loadingStatus).every(status => status === 'done');
 
@@ -43,99 +43,27 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
         onTabChangeScrollToTop();
     }, [activeTab, onTabChangeScrollToTop]);
 
-    const getGuidebookStyles = () => {
-        // This function embeds all necessary CSS for the guidebook to render correctly in a new window.
-        return `
-            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-            body {
-                font-family: 'Inter', sans-serif;
-                margin: 0;
-                padding: 0;
-                background: white;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            }
-            .guidebook-page {
-                page-break-before: always;
-                break-before: page;
-                padding: 2rem 1rem 1rem;
-                box-sizing: border-box;
-            }
-            .cover-page, .toc-page {
-                page-break-before: avoid !important;
-                break-before: auto !important;
-                height: 100vh;
-                display: flex !important;
-                flex-direction: column;
-                justify-content: center;
-                align-items: center;
-                text-align: center;
-            }
-            .cover-page {
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-                color: white !important;
-            }
-            .cover-subtitle { font-size: 1.25rem; letter-spacing: 0.1em; text-transform: uppercase; }
-            .cover-title { font-size: 4rem; font-weight: 800; margin: 1rem 0; line-height: 1.1; }
-            .cover-footer { font-size: 1rem; margin-top: 4rem; opacity: 0.8; }
-            .toc-page { page-break-after: always !important; }
-            .toc-title { font-size: 2.5rem; font-weight: bold; margin-bottom: 2rem; border-bottom: 2px solid #6366f1; padding-bottom: 0.5rem; }
-            .toc-list { list-style: none; padding: 0; display: inline-block; text-align: left; }
-            .toc-list li { font-size: 1.75rem; margin-bottom: 1rem; }
-            .toc-list a { text-decoration: none; color: #6366f1; font-weight: 500; }
-            h1, h2, h3, h4 { break-after: avoid; color: #1e293b; }
-            strong { color: #1e293b; }
-            .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; }
-            /* Add any other styles from the app that are needed for the guidebook components */
-            .bg-white\\/40 { background-color: rgba(255, 255, 255, 0.4); }
-            .backdrop-blur-lg { backdrop-filter: blur(16px); }
-            .p-6 { padding: 1.5rem; } .rounded-xl { border-radius: 0.75rem; }
-            .shadow-lg { box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); }
-            .border { border-width: 1px; } .border-white\\/50 { border-color: rgba(255, 255, 255, 0.5); }
-            .text-slate-800 { color: #1e293b; } .font-bold { font-weight: 700; }
-            .prose { max-width: 65ch; }
-            ul { list-style-position: inside; }
-        `;
+    const handleAfterPrint = () => {
+        setIsPrinting(false);
+        setIsExportingPdf(false);
+        window.removeEventListener('afterprint', handleAfterPrint);
     };
+
+    useEffect(() => {
+        if (isPrinting) {
+            window.addEventListener('afterprint', handleAfterPrint);
+            window.print();
+        }
+
+        return () => {
+            window.removeEventListener('afterprint', handleAfterPrint);
+        };
+    }, [isPrinting]);
 
     const handleExportPdf = () => {
         if (isExportingPdf || !isPlanComplete) return;
         setIsExportingPdf(true);
-
-        try {
-            const guidebookHTML = ReactDOMServer.renderToStaticMarkup(<Guidebook plan={plan} />);
-            const styles = getGuidebookStyles();
-            
-            const printWindow = window.open('', '_blank');
-            if (printWindow) {
-                printWindow.document.write(`
-                    <!DOCTYPE html>
-                    <html>
-                        <head>
-                            <title>Your Travel Guidebook for ${plan.itinerary?.destination || 'Trip'}</title>
-                            <script src="https://cdn.tailwindcss.com"></script>
-                            <style>${styles}</style>
-                        </head>
-                        <body>
-                            ${guidebookHTML}
-                        </body>
-                    </html>
-                `);
-                printWindow.document.close();
-                printWindow.onload = () => {
-                    printWindow.focus();
-                    printWindow.print();
-                    printWindow.close();
-                    setIsExportingPdf(false);
-                };
-            } else {
-                throw new Error("Could not open new window. Please disable your pop-up blocker.");
-            }
-        } catch (error) {
-            console.error("Failed to generate guidebook:", error);
-            alert(`Error generating PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
-            setIsExportingPdf(false);
-        }
+        setIsPrinting(true);
     };
     
     const getPlanDataForTab = (tab: Tab) => {
@@ -214,92 +142,99 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
     };
     
     return (
-        <div className="max-w-7xl mx-auto space-y-8 animated-card">
-            <header className="flex flex-col sm:flex-row justify-between items-center gap-4 py-4 no-print">
-                 <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight text-center sm:text-left">
-                    Your Unified Trip Plan to <span className="text-violet-700">{plan.itinerary?.destination || '...'}</span>
-                </h1>
-                <div className="flex-shrink-0 flex items-center space-x-3">             
-                    <button
-                        onClick={onPlanNew}
-                        className="inline-flex items-center px-4 py-2 bg-violet-600 text-white font-bold rounded-full hover:bg-violet-700 transition-all duration-300 shadow-md text-sm"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        <span>Home</span>
-                    </button>
-                     <button
-                        onClick={handleExportPdf}
-                        disabled={isExportingPdf || !isPlanComplete}
-                        className="inline-flex items-center px-4 py-2 bg-white/60 text-slate-800 font-semibold rounded-full hover:bg-white/80 transition-all duration-300 shadow-sm border border-white/50 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                        title={!isPlanComplete ? 'Please wait for all sections to finish generating.' : 'Export your plan as a PDF guidebook'}
-                    >
-                        {isExportingPdf ? (
-                            <svg className="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                        ) : (
-                             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" /></svg>
-                        )}
-                        <span>{isExportingPdf ? 'Creating...' : 'Export Guidebook'}</span>
-                         {!isPlanComplete && !isExportingPdf && (
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-2 text-slate-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clipRule="evenodd" /></svg>
-                        )}
-                    </button>
-                     <button
-                        onClick={onRegenerate}
-                        className="inline-flex items-center px-4 py-2 bg-white/60 text-slate-800 font-semibold rounded-full hover:bg-white/80 transition-all duration-300 shadow-sm border border-white/50 text-sm"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.898 2.566l-1.581.53a5.002 5.002 0 00-8.917-1.789v.962a1 1 0 01-2 0V3a1 1 0 011-1zm12 15a1 1 0 01-1-1v-2.101a7.002 7.002 0 01-11.898-2.566l1.581-.53a5.002 5.002 0 008.917 1.789v-.962a1 1 0 012 0V17a1 1 0 01-1 1z" clipRule="evenodd" /></svg>
-                        Regenerate
-                    </button>
+        <>
+            {isPrinting && (
+                <div className="printable-container">
+                    <Guidebook plan={plan} />
                 </div>
-            </header>
-            
-            {/* Responsive Navigation */}
-            <nav className="no-print fixed bottom-0 left-0 right-0 z-30 sm:sticky sm:top-4 sm:mb-2">
-                <div className="w-full bg-white/80 backdrop-blur-xl border-t border-white/50 shadow-[0_-5px_15px_-5px_rgba(0,0,0,0.1)] sm:max-w-max sm:mx-auto sm:rounded-full sm:p-1 sm:border sm:shadow-lg">
-                    <div className="flex justify-around sm:justify-center sm:space-x-1">
-                        {tabs.map(tab => {
-                            const status = loadingStatus[tab.id];
-                            const dataExists = !!getPlanDataForTab(tab.id);
-
-                            return (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => setActiveTab(tab.id)}
-                                    className={`relative flex flex-col items-center justify-center flex-1 pt-2 pb-1 transition-colors duration-200 sm:flex-row sm:flex-none sm:px-4 sm:py-2 sm:space-x-2 sm:rounded-full
-                                        ${activeTab === tab.id
-                                            ? 'text-violet-600 sm:bg-violet-600 sm:text-white sm:shadow'
-                                            : 'text-slate-600 hover:bg-violet-100/70'
-                                        }`}
-                                    aria-current={activeTab === tab.id ? 'page' : undefined}
-                                >
-                                    <div className="relative">
-                                        {tab.icon}
-                                        {/* Status Indicator Dot */}
-                                        {status !== 'pending' && (
-                                            <span className={`absolute -top-0.5 -right-0.5 block h-2.5 w-2.5 rounded-full border-2 border-white
-                                                ${status === 'loading' && 'animate-pulse bg-blue-500'}
-                                                ${status === 'done' && dataExists && 'bg-green-500'}
-                                                ${(status === 'error' || status === 'cancelled') && 'bg-red-500'}
-                                            `}></span>
-                                        )}
-                                    </div>
-                                    <span className="text-xs font-semibold sm:text-sm">{tab.name}</span>
-                                </button>
-                            );
-                        })}
+            )}
+            <div className={`max-w-7xl mx-auto space-y-8 animated-card ${isPrinting ? 'no-print' : ''}`}>
+                <header className="flex flex-col sm:flex-row justify-between items-center gap-4 py-4 no-print">
+                     <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight text-center sm:text-left">
+                        Your Unified Trip Plan to <span className="text-violet-700">{plan.itinerary?.destination || '...'}</span>
+                    </h1>
+                    <div className="flex-shrink-0 flex items-center space-x-3">             
+                        <button
+                            onClick={onPlanNew}
+                            className="inline-flex items-center px-4 py-2 bg-violet-600 text-white font-bold rounded-full hover:bg-violet-700 transition-all duration-300 shadow-md text-sm"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                            <span>Home</span>
+                        </button>
+                         <button
+                            onClick={handleExportPdf}
+                            disabled={isExportingPdf || !isPlanComplete}
+                            className="inline-flex items-center px-4 py-2 bg-white/60 text-slate-800 font-semibold rounded-full hover:bg-white/80 transition-all duration-300 shadow-sm border border-white/50 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                            title={!isPlanComplete ? 'Please wait for all sections to finish generating.' : 'Export your plan as a PDF guidebook'}
+                        >
+                            {isExportingPdf ? (
+                                <svg className="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                            ) : (
+                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" /></svg>
+                            )}
+                            <span>{isExportingPdf ? 'Creating...' : 'Export Guidebook'}</span>
+                             {!isPlanComplete && !isExportingPdf && (
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-2 text-slate-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clipRule="evenodd" /></svg>
+                            )}
+                        </button>
+                         <button
+                            onClick={onRegenerate}
+                            className="inline-flex items-center px-4 py-2 bg-white/60 text-slate-800 font-semibold rounded-full hover:bg-white/80 transition-all duration-300 shadow-sm border border-white/50 text-sm"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.898 2.566l-1.581.53a5.002 5.002 0 00-8.917-1.789v.962a1 1 0 01-2 0V3a1 1 0 011-1zm12 15a1 1 0 01-1-1v-2.101a7.002 7.002 0 01-11.898-2.566l1.581-.53a5.002 5.002 0 008.917 1.789v-.962a1 1 0 012 0V17a1 1 0 01-1 1z" clipRule="evenodd" /></svg>
+                            Regenerate
+                        </button>
                     </div>
-                </div>
-            </nav>
+                </header>
+                
+                {/* Responsive Navigation */}
+                <nav className="no-print fixed bottom-0 left-0 right-0 z-30 sm:sticky sm:top-4 sm:mb-2">
+                    <div className="w-full bg-white/80 backdrop-blur-xl border-t border-white/50 shadow-[0_-5px_15px_-5px_rgba(0,0,0,0.1)] sm:max-w-max sm:mx-auto sm:rounded-full sm:p-1 sm:border sm:shadow-lg">
+                        <div className="flex justify-around sm:justify-center sm:space-x-1">
+                            {tabs.map(tab => {
+                                const status = loadingStatus[tab.id];
+                                const dataExists = !!getPlanDataForTab(tab.id);
+
+                                return (
+                                    <button
+                                        key={tab.id}
+                                        onClick={() => setActiveTab(tab.id)}
+                                        className={`relative flex flex-col items-center justify-center flex-1 pt-2 pb-1 transition-colors duration-200 sm:flex-row sm:flex-none sm:px-4 sm:py-2 sm:space-x-2 sm:rounded-full
+                                            ${activeTab === tab.id
+                                                ? 'text-violet-600 sm:bg-violet-600 sm:text-white sm:shadow'
+                                                : 'text-slate-600 hover:bg-violet-100/70'
+                                            }`}
+                                        aria-current={activeTab === tab.id ? 'page' : undefined}
+                                    >
+                                        <div className="relative">
+                                            {tab.icon}
+                                            {/* Status Indicator Dot */}
+                                            {status !== 'pending' && (
+                                                <span className={`absolute -top-0.5 -right-0.5 block h-2.5 w-2.5 rounded-full border-2 border-white
+                                                    ${status === 'loading' && 'animate-pulse bg-blue-500'}
+                                                    ${status === 'done' && dataExists && 'bg-green-500'}
+                                                    ${(status === 'error' || status === 'cancelled') && 'bg-red-500'}
+                                                `}></span>
+                                            )}
+                                        </div>
+                                        <span className="text-xs font-semibold sm:text-sm">{tab.name}</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </nav>
 
 
-            <main className="mt-6 no-print">
-                {renderTabContent()}
-            </main>
-            {/* Spacer for bottom nav on mobile */}
-            <div className="h-20 sm:h-0" />
-        </div>
+                <main className="mt-6">
+                    {renderTabContent()}
+                </main>
+                {/* Spacer for bottom nav on mobile */}
+                <div className="h-20 sm:h-0" />
+            </div>
+        </>
     );
 };
 
