@@ -35,10 +35,9 @@ const ScrollToTopButton: React.FC<ScrollToTopButtonProps> = ({ isUnifiedView = f
     });
   };
 
-  // On mobile in the unified view, the bottom nav bar is present. We need to raise the button.
-  // The nav bar spacer is h-20 (5rem), so we add that height to the bottom positioning.
-  // bottom-6 is 1.5rem. 1.5rem + 5rem = 6.5rem which is bottom-26. We'll use bottom-24 (6rem) for extra spacing.
-  const bottomPositionClass = isUnifiedView ? 'bottom-24 sm:bottom-6' : 'bottom-6';
+  // On mobile, the bottom nav bar is present. We need to raise the button.
+  // The nav bar spacer is ~h-16 or h-20, so we use bottom-24 (6rem) to be safely above it.
+  const bottomPositionClass = 'bottom-24 sm:bottom-6';
 
   return (
     <button

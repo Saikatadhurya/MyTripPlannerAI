@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 
 interface QuickNavButtonProps {
@@ -70,7 +71,7 @@ const QuickNavButton: React.FC<QuickNavButtonProps> = ({
   let itemIndex = 0;
 
   return (
-    <div ref={navRef} className="fixed bottom-6 left-6 z-50 no-print" aria-live="polite">
+    <div ref={navRef} className="fixed bottom-6 left-6 z-50 no-print hidden sm:block" aria-live="polite">
       {/* Wrapper to handle positioning and animation context */}
       <div className="relative flex flex-col items-start">
 
