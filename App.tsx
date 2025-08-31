@@ -1,5 +1,7 @@
 
 
+
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { QuestionnaireData, PackingListRequestData, PackingList, FoodFinderRequestData, FoodRecommendations, AppFinderRequestData, AppRecommendations, MusicFinderRequestData, MusicRecommendations, QuestionnaireData as InitialQuestionnaireData, UnifiedPlan, UnifiedPlanLoadingStatus, Itinerary } from './types';
 import { generateItinerary } from './services/geminiService';
@@ -47,15 +49,10 @@ const itineraryFunFacts = [
 ];
 const packingStages = [
     { key: '"clothingAndFootwear":', text: 'Selecting outfits & footwear' },
-    { key: '"toiletriesAndPersonalCare":', text: 'Listing toiletries & care items' },
     { key: '"medicinesAndHealth":', text: 'Preparing health essentials' },
-    { key: '"electronicsAndGear":', text: 'Gathering electronics & gear' },
     { key: '"documentsAndMoney":', text: 'Securing documents & money' },
-    { key: '"optionalComfortItems":', text: 'Adding optional comfort items' },
-    { key: '"adventureClothing":', text: 'Packing adventure gear' },
     { key: '"bagSuggestion":', text: 'Recommending the perfect bag' },
-    { key: '"locallyAvailableItems":', text: 'Noting items to buy locally' },
-    { key: '"approximateTemperature":', text: 'Checking the weather forecast' },
+    { key: '"approximateTemperature":', text: 'Finalizing with weather check' },
 ];
 const packingFunFacts = [
     { icon: '🌤️', text: 'Checking the weather forecast...' },
@@ -66,12 +63,8 @@ const packingFunFacts = [
 ];
 const foodStages = [
     { key: '"breakfast":', text: 'Discovering breakfast options' },
-    { key: '"lunch":', text: 'Looking for midday meals' },
     { key: '"snacksAndStreetFood":', text: 'Finding popular street food' },
-    { key: '"dinner":', text: 'Sourcing dinner options' },
     { key: '"iconicDishes":', text: 'Identifying iconic local dishes' },
-    { key: '"hiddenRecipes":', text: 'Uncovering hidden recipes' },
-    { key: '"trendingOrViralFoods":', text: 'Checking for trending foods' },
     { key: '"streetFestivalsAndFoodMelas":', text: 'Finalizing recommendations' },
 ];
 const foodFunFacts = [
@@ -83,13 +76,10 @@ const foodFunFacts = [
 ];
 const appStages = [
     { key: '"transportAndTravel":', text: 'Finding transport & travel apps' },
-    { key: '"stayAndLiving":', text: 'Searching for stay & living apps' },
     { key: '"foodAndDining":', text: 'Discovering food & dining apps' },
-    { key: '"entertainmentAndLeisure":', text: 'Finding entertainment apps' },
-    { key: '"shoppingAndEssentials":', text: 'Locating shopping apps' },
     { key: '"explorationAndTours":', text: 'Locating exploration apps' },
     { key: '"utilitiesAndSafety":', text: 'Checking for utility & safety apps' },
-    { key: '"festivalsAndSeasonal":', text: 'Finding seasonal event apps' },
+    { key: '"festivalsAndSeasonal":', text: 'Finalizing recommendations' },
 ];
 const appFunFacts = [
     { icon: '📲', text: 'Scanning the local app stores...' },
@@ -99,10 +89,9 @@ const appFunFacts = [
     { icon: '💳', text: 'Checking for local payment apps...' },
 ];
 const musicStages = [
-    { key: '"musicCategories":', text: 'Starting the music search' },
+    { key: '"musicCategories":', text: 'Analyzing local music scene' },
     { key: '"genre":"Top Trending Hits"', text: 'Finding top trending hits' },
-    { key: '}, {', text: 'Exploring local genres' },
-    { key: '}]}', text: 'Building the final playlist' }
+    { key: '}]}', text: 'Finalizing your travel playlist' }
 ];
 const musicFunFacts = [
     { icon: '🎧', text: 'Tuning into local radio...' },
