@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 
 interface Stage {
@@ -26,44 +27,6 @@ const colorClasses = {
   fuchsia: { text: 'text-fuchsia-600', bg: 'bg-fuchsia-600', ring: 'ring-fuchsia-300', border: 'border-t-fuchsia-600' },
 };
 
-const StageItem: React.FC<{ text: string, status: 'completed' | 'in_progress' | 'pending', accentColor: string }> = ({ text, status, accentColor }) => {
-    const colors = colorClasses[accentColor as keyof typeof colorClasses] || colorClasses.violet;
-    
-    const getIcon = () => {
-        switch(status) {
-            case 'completed':
-                return (
-                    <div className={`w-6 h-6 rounded-full ${colors.bg} flex items-center justify-center`}>
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                    </div>
-                );
-            case 'in_progress':
-                return (
-                    <div className={`w-6 h-6 rounded-full border-2 border-slate-300 ${colors.border} animate-spin`}></div>
-                );
-            case 'pending':
-                return <div className="w-6 h-6 rounded-full border-2 border-slate-300"></div>;
-        }
-    };
-
-    const textClass = useMemo(() => {
-        switch(status) {
-            case 'completed': return 'text-slate-500 line-through';
-            case 'in_progress': return `${colors.text} font-semibold`;
-            case 'pending': return 'text-slate-400';
-        }
-    }, [status, colors.text]);
-
-    return (
-        <li className="flex items-center space-x-4 transition-all duration-300">
-            <div className="flex-shrink-0">{getIcon()}</div>
-            <span className={`transition-colors duration-300 ${textClass}`}>{text}</span>
-        </li>
-    );
-};
-
 const StreamingLoadingIndicator: React.FC<StreamingLoadingIndicatorProps> = ({ streamedText, stages, onCancel, title, accentColor, funFacts }) => {
   const [currentFactIndex, setCurrentFactIndex] = useState(0);
 
@@ -77,37 +40,55 @@ const StreamingLoadingIndicator: React.FC<StreamingLoadingIndicatorProps> = ({ s
 
 
   const colors = colorClasses[accentColor] || colorClasses.violet;
+  
+  const currentStageIndex = useMemo(() => {
+    if (!stages || stages.length === 0) return -1;
+    for (let i = stages.length - 1; i >= 0; i--) {
+      if (streamedText.includes(stages[i].key)) {
+        return i;
+      }
+    }
+    return -1;
+  }, [streamedText, stages]);
+  
+  const progress = useMemo(() => {
+    if (!stages || stages.length === 0) return 10; // Start with a small amount
+    if (currentStageIndex === -1) return 10;
+    const baseProgress = ((currentStageIndex + 1) / stages.length) * 90; // Go up to 90%
+    return 10 + baseProgress;
+  }, [currentStageIndex, stages]);
+
 
   return (
-    <div className="text-center py-12 px-4 fade-in">
-      <div className="max-w-md mx-auto bg-white/40 backdrop-blur-lg p-8 rounded-2xl border border-white/50 shadow-2xl">
-        <h2 className="text-2xl font-bold text-slate-800">{title}</h2>
+    <div className="flex items-center justify-center py-12 px-4 fade-in">
+      <div className="max-w-md w-full bg-white/80 backdrop-blur-xl p-8 rounded-3xl border border-white/50 shadow-2xl text-center">
+        <h2 className="text-3xl font-bold text-slate-900">{title}</h2>
 
         {funFacts && funFacts.length > 0 && (
-          <div className="mt-4 h-12 flex items-center justify-center">
-            <div key={currentFactIndex} style={{ animation: 'fun-fact-fade-in 4s ease-in-out' }}>
-                <p className="text-slate-600 flex items-center justify-center space-x-2">
-                    <span className="text-xl">{funFacts[currentFactIndex].icon}</span>
-                    <span>{funFacts[currentFactIndex].text}</span>
+          <div className="mt-6 h-8 flex items-center justify-center">
+            <div key={currentFactIndex} className="w-full" style={{ animation: 'fun-fact-fade-in 4s ease-in-out' }}>
+                <p className={`flex items-center justify-center space-x-3 font-medium ${colors.text}`}>
+                    <span className="text-2xl">{funFacts[currentFactIndex].icon}</span>
+                    <span className="text-lg">{funFacts[currentFactIndex].text}</span>
                 </p>
             </div>
           </div>
         )}
         
-        <div className="flex justify-center items-center my-8">
-            <div className={`w-16 h-16 rounded-full border-4 border-slate-200 ${colors.border} animate-spin`}></div>
+        <div className="flex justify-center items-center my-10">
+            <div className={`w-24 h-24 rounded-full border-4 border-slate-200/80 ${colors.border} animate-spin`}></div>
         </div>
 
-        <div className="w-full bg-slate-200/70 rounded-full h-2.5 overflow-hidden">
-            <div className={`${colors.bg} h-2.5 rounded-full progress-bar-indeterminate`}></div>
+        <div className="w-full bg-slate-200/80 rounded-full h-2.5 overflow-hidden">
+            <div className={`${colors.bg} h-2.5 rounded-full transition-all duration-500 ease-out`} style={{width: `${progress}%`}}></div>
         </div>
-        <p className={`text-sm font-semibold mt-2 ${colors.text}`}>
+        <p className={`text-md font-semibold mt-4 ${colors.text}`}>
           Hold tight, magic in progress...
         </p>
 
         <button
           onClick={onCancel}
-          className="mt-8 px-8 py-3 bg-white/60 text-slate-800 font-bold rounded-full hover:bg-white/90 transition-all duration-300 shadow-md border border-white/50"
+          className="mt-8 px-8 py-3 bg-white text-slate-700 font-bold rounded-full hover:bg-slate-100 transition-all duration-300 shadow-md border border-slate-200/90 focus:outline-none focus:ring-4 ${colors.ring}"
         >
           Cancel Generation
         </button>

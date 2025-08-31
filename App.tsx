@@ -20,11 +20,11 @@ import MusicFinderForm from './components/MusicFinderForm';
 import MusicFinderResult from './components/MusicFinderResult';
 import ScrollToTopButton from './components/ScrollToTopButton';
 import ContactUs from './components/ContactUs';
-import Header from './components/Header';
 import QuickNavButton from './components/QuickNavButton';
 import UnifiedResultPreview from './components/UnifiedResultPreview';
 import UnifiedPlannerForm from './components/UnifiedPlannerForm';
 import ItineraryPreview from './components/ItineraryPreview';
+import LoadingIndicator from './components/LoadingIndicator';
 
 
 type View = 'landing' | 'questionnaire' | 'itineraryResult' | 'packingAssistantForm' | 'packingAssistantResult' | 'foodFinderForm' | 'foodFinderResult' | 'appFinderForm' | 'appFinderResult' | 'musicFinderForm' | 'musicFinderResult' | 'contact' | 'unifiedPlannerForm' | 'unifiedResult';
@@ -454,6 +454,48 @@ const App: React.FC = () => {
           return null;
       }
     }
+    
+    const isUnifiedPlanFinished = Object.values(unifiedPlanLoadingStatus).every(
+        status => status === 'done' || status === 'error' || status === 'cancelled'
+    );
+
+    if (view === 'unifiedResult' && !isUnifiedPlanFinished) {
+        const unifiedFunFacts = [
+            { icon: '🗺️', text: 'Plotting scenic routes...' },
+            { icon: '💎', text: 'Finding hidden gems...' },
+            { icon: '🗓️', text: 'Scheduling daily activities...' },
+            { icon: '🏨', text: 'Scouting the best stays...' },
+            { icon: '🍜', text: 'Locating top-rated eats...' },
+            { icon: '🧳', text: 'Curating a smart packing list...' },
+            { icon: '📱', text: 'Finding essential local apps...' },
+            { icon: '🎶', text: 'Creating the perfect travel playlist...' },
+        ];
+        
+        let syntheticStreamedText = itineraryStreamedText;
+        if (unifiedPlanLoadingStatus.packing === 'done') syntheticStreamedText += 'packing_done';
+        if (unifiedPlanLoadingStatus.food === 'done') syntheticStreamedText += 'food_done';
+        if (unifiedPlanLoadingStatus.apps === 'done') syntheticStreamedText += 'apps_done';
+        if (unifiedPlanLoadingStatus.music === 'done') syntheticStreamedText += 'music_done';
+
+        const unifiedStages = [
+            { key: '"day":', text: 'Building the day-by-day plan' },
+            { key: 'packing_done', text: 'Creating packing list' },
+            { key: 'food_done', text: 'Finding food recommendations' },
+            { key: 'apps_done', text: 'Searching for local apps' },
+            { key: 'music_done', text: 'Curating music playlist' },
+        ];
+
+        return (
+            <LoadingIndicator
+                streamedText={syntheticStreamedText}
+                stages={unifiedStages}
+                onCancel={handleCancelGeneration}
+                title="Crafting Your Unified Plan..."
+                accentColor="violet"
+                funFacts={unifiedFunFacts}
+            />
+        );
+    }
 
     switch (view) {
       case 'landing':
@@ -497,9 +539,8 @@ const App: React.FC = () => {
 
   return (
     <>
-      <Header />
       <div ref={mainContentRef} className="min-h-screen">
-        <main className={`container mx-auto px-4 sm:px-6 lg:px-8 pb-8 relative pt-24`}>
+        <main className={`container mx-auto px-4 sm:px-6 lg:px-8 pb-8 relative pt-8`}>
             {renderContent()}
         </main>
       </div>
