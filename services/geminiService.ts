@@ -1,6 +1,3 @@
-
-
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { Budget, Itinerary, Vibe, FoodPreference, BlogReference, TripType, LocationSuggestion } from '../types';
 import { extractJson, cleanCitations } from './jsonUtils';
@@ -371,21 +368,24 @@ export const generateItinerary = async (
         console.error("Failed to generate and parse itinerary stream:", error);
         console.error("Original AI response text accumulated:", fullText);
         
-        if (error instanceof Error && error.message.startsWith('[')) {
-            throw error;
-        }
-
-        if (fullText.toLowerCase().includes("quota") || fullText.toLowerCase().includes("rate limit")) {
-            throw new Error("[429] You have exceeded the request limit. Please check your plan and billing details and try again later.");
-        }
-        if (fullText.toLowerCase().includes("overloaded") || fullText.toLowerCase().includes("server error")) {
-             throw new Error("[503] The AI model is currently busy. Please wait a moment and try again.");
-        }
-        
-        if (error instanceof SyntaxError) {
-             throw new Error(`The AI's response for the itinerary was malformed and could not be read. This can happen occasionally. Please try regenerating the plan.`);
-        }
         if (error instanceof Error) {
+            if (error.message.startsWith('[')) {
+                // It's already a custom-formatted error, re-throw it.
+                throw error;
+            }
+
+            const combinedErrorText = (error.message + fullText).toLowerCase();
+    
+            if (combinedErrorText.includes("quota") || combinedErrorText.includes("rate limit") || combinedErrorText.includes("429")) {
+                throw new Error("[429] You have exceeded the request limit. Please check your plan and billing details and try again later.");
+            }
+            if (combinedErrorText.includes("overloaded") || combinedErrorText.includes("server error") || combinedErrorText.includes("503")) {
+                 throw new Error("[503] The AI model is currently busy. Please wait a moment and try again.");
+            }
+            
+            if (error instanceof SyntaxError) {
+                 throw new Error(`The AI's response for the itinerary was malformed and could not be read. This can happen occasionally. Please try regenerating the plan.`);
+            }
             if (error.message.includes("Could not find a valid JSON object")) {
                  throw new Error("The AI did not provide a structured itinerary. It may have refused the request. Please adjust your query and try again.");
             }
