@@ -51,7 +51,10 @@ const packingStages = [
     { key: '"medicinesAndHealth":[', text: 'Preparing health essentials' },
     { key: '"electronicsAndGear":[', text: 'Gathering electronics & gear' },
     { key: '"documentsAndMoney":[', text: 'Securing documents & money' },
+    { key: '"optionalComfortItems":[', text: 'Adding optional comfort items' },
+    { key: '"adventureClothing":[', text: 'Packing adventure gear' },
     { key: '"bagSuggestion":"', text: 'Recommending the perfect bag' },
+    { key: '"locallyAvailableItems":[', text: 'Noting items to buy locally' },
     { key: '"approximateTemperature":"', text: 'Checking the weather forecast' },
 ];
 const packingFunFacts = [
@@ -67,7 +70,9 @@ const foodStages = [
     { key: '"snacksAndStreetFood":[', text: 'Finding popular street food' },
     { key: '"dinner":[', text: 'Sourcing dinner options' },
     { key: '"dessertAndSweets":[', text: 'Locating the best desserts' },
+    { key: '"drinksAndBeverages":[', text: 'Suggesting local drinks' },
     { key: '"iconicDishes":[', text: 'Identifying iconic local dishes' },
+    { key: '"trendingOrViralFoods":[', text: 'Finalizing recommendations' },
 ];
 const foodFunFacts = [
     { icon: '🧑‍🍳', text: 'Consulting with local chefs...' },
@@ -84,6 +89,7 @@ const appStages = [
     { key: '"shoppingAndEssentials":[', text: 'Locating shopping apps' },
     { key: '"explorationAndTours":[', text: 'Locating exploration apps' },
     { key: '"utilitiesAndSafety":[', text: 'Checking for utility & safety apps' },
+    { key: '"festivalsAndSeasonal":[', text: 'Finding seasonal event apps' },
 ];
 const appFunFacts = [
     { icon: '📲', text: 'Scanning the local app stores...' },
@@ -95,8 +101,8 @@ const appFunFacts = [
 const musicStages = [
     { key: '"musicCategories":[', text: 'Starting the music search' },
     { key: '"genre":"Top Trending Hits"', text: 'Finding top trending hits' },
-    { key: '"description":', text: 'Exploring local genres' },
-    { key: '"music":', text: 'Building the final playlist' },
+    { key: '"}],', text: 'Exploring local genres' },
+    { key: '"artistOrDescription":', text: 'Building the final playlist' }
 ];
 const musicFunFacts = [
     { icon: '🎧', text: 'Tuning into local radio...' },
