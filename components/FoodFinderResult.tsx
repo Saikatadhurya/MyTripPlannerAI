@@ -7,7 +7,7 @@ const CategoryCard: React.FC<{
     items: FoodItemGroup[];
     accentColor: string;
 }> = ({ title, icon, items, accentColor }) => {
-    if (!items || items.length === 0) return null;
+    if (!items || !items.some(group => group.items.length > 0)) return null;
 
     const accentClasses: { [key: string]: string } = {
         purple: 'border-purple-500 bg-purple-100 text-purple-600',
@@ -26,7 +26,14 @@ const CategoryCard: React.FC<{
     };
     
     const [borderColor, iconBgColor] = accentClasses[accentColor]?.split(' ') || ['border-gray-500', 'bg-gray-100', 'text-gray-600'];
-    const isMultiLocation = items.length > 1;
+    
+    // Create a flat list of items, each with its location
+    const flatItems = items.flatMap(group => 
+        group.items.map(item => ({ ...item, location: group.location }))
+    );
+
+    const uniqueLocations = new Set(items.map(group => group.location));
+    const isMultiLocation = uniqueLocations.size > 1;
 
     return (
         <div className={`bg-white/20 backdrop-blur-xl border border-white/30 rounded-2xl p-6 transition-transform hover:scale-105 shadow-lg border-l-4 ${borderColor}`}>
@@ -37,25 +44,21 @@ const CategoryCard: React.FC<{
                 <h3 className="text-xl font-bold text-slate-800">{title}</h3>
             </div>
             <div className="space-y-4">
-                 {items.map((group, groupIndex) => (
-                    group.items.length > 0 && (
-                        <div key={groupIndex}>
-                            {isMultiLocation && (
-                                <h4 className="font-bold text-slate-700 mt-2 mb-2 border-b border-slate-300 pb-1 text-base">
-                                    📍 {group.location}
-                                </h4>
-                            )}
-                            <ul className="space-y-4">
-                                {group.items.map((item, itemIndex) => (
-                                    <li key={itemIndex}>
-                                        <strong className="font-semibold text-slate-900 block">{item.name}</strong>
-                                        <p className="text-sm text-slate-600">{item.description}</p>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    )
-                ))}
+                 <ul className="space-y-4">
+                    {flatItems.map((item, itemIndex) => (
+                        <li key={itemIndex}>
+                            <strong className="font-semibold text-slate-900 block">
+                                {item.name}
+                                {isMultiLocation && (
+                                    <span className="ml-2 text-xs font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 align-middle">
+                                        📍 {item.location}
+                                    </span>
+                                )}
+                            </strong>
+                            <p className="text-sm text-slate-600">{item.description}</p>
+                        </li>
+                    ))}
+                </ul>
             </div>
         </div>
     );

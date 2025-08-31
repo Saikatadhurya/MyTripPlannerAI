@@ -59,6 +59,58 @@ interface UnifiedResultPreviewProps {
     onTabChangeScrollToTop: () => void;
 }
 
+const ProgressTracker: React.FC<{ loadingStatus: UnifiedPlanLoadingStatus }> = ({ loadingStatus }) => {
+    const totalSteps = tabs.length;
+    const completedSteps = tabs.filter(tab => loadingStatus[tab.id] === 'done').length;
+    const progress = totalSteps > 0 ? (completedSteps / totalSteps) * 100 : 0;
+
+    const getStatusIcon = (status: UnifiedPlanLoadingStatus[keyof UnifiedPlanLoadingStatus]) => {
+        switch (status) {
+            case 'loading':
+                return <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-violet-600"></div>;
+            case 'done':
+                return <svg className="h-5 w-5 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>;
+            case 'error':
+                return <svg className="h-5 w-5 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-1-5a1 1 0 102 0v-4a1 1 0 10-2 0v4zm0-6a1 1 0 102 0 1 1 0 00-2 0z" clipRule="evenodd" /></svg>;
+            case 'cancelled':
+                return <svg className="h-5 w-5 text-slate-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clipRule="evenodd" /></svg>;
+            case 'pending':
+            default:
+                return <div className="h-4 w-4 rounded-full border-2 border-slate-300"></div>;
+        }
+    };
+
+    const getTextColor = (status: UnifiedPlanLoadingStatus[keyof UnifiedPlanLoadingStatus]) => {
+        switch (status) {
+            case 'loading': return 'text-violet-700 font-semibold';
+            case 'done': return 'text-slate-800';
+            case 'error': return 'text-red-700 font-semibold';
+            case 'cancelled': return 'text-slate-500 line-through';
+            default: return 'text-slate-500';
+        }
+    };
+
+    return (
+        <div className="bg-white/40 backdrop-blur-lg p-6 rounded-2xl border border-white/50 shadow-lg mb-8 no-print">
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold text-slate-800">Your Plan is Generating...</h2>
+                <span className="text-sm font-semibold text-slate-600">{completedSteps} of {totalSteps} complete</span>
+            </div>
+            <div className="w-full bg-slate-200/70 rounded-full h-2.5 mb-4">
+                <div className="bg-gradient-to-r from-violet-500 to-indigo-600 h-2.5 rounded-full" style={{ width: `${progress}%`, transition: 'width 0.5s ease-in-out' }}></div>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-x-4 gap-y-2 text-sm">
+                {tabs.map(tab => (
+                    <div key={tab.id} className="flex items-center space-x-2">
+                        {getStatusIcon(loadingStatus[tab.id])}
+                        <span className={getTextColor(loadingStatus[tab.id])}>{tab.name}</span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
 
 const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadingStatus, stepErrors, onPlanNew, onRegenerate, onRegenerateStep, onCancel, onCancelStep, onTabChangeScrollToTop }) => {
     const [activeTab, setActiveTab] = useState<Tab>('itinerary');
@@ -299,6 +351,8 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
                 </div>
             </header>
             
+            {!isPlanComplete && <ProgressTracker loadingStatus={loadingStatus} />}
+
             <nav className="sticky top-0 z-30 bg-white/80 backdrop-blur-lg rounded-xl shadow-md p-2 mb-2 no-print">
                 <div className="flex items-center justify-center sm:justify-start space-x-1 sm:space-x-2 hide-scrollbar overflow-x-auto">
                     {tabs.map(tab => {
