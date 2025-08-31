@@ -92,7 +92,6 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
     language: 'English (en)',
     currency: 'India (INR) – ₹',
     isRoundTrip: false,
-    // FIX: Added missing 'includeAlcoholicDrinks' property to satisfy the QuestionnaireData type.
     includeAlcoholicDrinks: false,
   });
   

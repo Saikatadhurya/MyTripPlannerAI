@@ -44,7 +44,12 @@ export const generateAppRecommendations = async (data: AppFinderRequestData, onC
     2.  **Category (CRITICAL):** The 'category' field MUST be a short, one-word, lowercase description of the app's primary function (e.g., "hikes", "navigation", "food delivery"). For apps that are very famous and instantly recognizable by their icon (like Google Maps), you can make this category an empty string "". For others, it is mandatory.
     3.  **Icon:** The 'icon' field MUST be a single, relevant emoji.
     4.  **Language:** The entire JSON response, including all names and descriptions, MUST be in ${language}.
-    5.  **Validity:** The output MUST be a perfectly valid JSON object starting with { and ending with }. No markdown or extra text. Use single quotes inside strings to avoid breaking JSON.
+    5.  **CRITICAL JSON VALIDATION RULE**: The output MUST be a perfectly valid JSON object. This is the single most important instruction.
+        a. **NO UNESCAPED QUOTES**: Inside any JSON string value, you MUST NEVER use a double quote character ("). It will break the JSON and cause an error.
+        b. **HOW TO HANDLE QUOTES**: If you need to include a quote inside a description or title, you have two options:
+            i. **PREFERRED**: Use single quotes instead (e.g., "The 'all-in-one' travel app.").
+            ii. **ALTERNATIVE**: If you absolutely must use a double quote, you MUST escape it with a backslash (e.g., "The app is described as \\"essential\\"._").
+        c. **FAILURE TO FOLLOW THIS RULE WILL RENDER THE ENTIRE OUTPUT USELESS.** You must double-check every string value for unescaped double quotes before finishing your response.
     6.  **Example of a good entry:**
         \`{ "name": "AllTrails", "category": "hikes", "description": "A popular app for discovering and navigating trekking trails...", "platform": "Both", "icon": "🌲" }\`
         \`{ "name": "Google Maps", "category": "", "description": "The world's most popular navigation app...", "platform": "Both", "icon": "🗺️" }\`

@@ -63,7 +63,12 @@ export const generateFoodRecommendations = async (data: FoodFinderRequestData, o
     - Descriptions must be short, enticing, and informative, with local context where required.
     - The 'drinksAndBeverages' array should always contain **non-alcoholic** options appropriate for the destination. If 'Include Alcoholic Drinks' is 'Yes', you MUST also add recommendations for local alcoholic beverages (e.g., local beers, wines, spirits). If 'No', the array MUST NOT contain any alcoholic drinks.
     - The ENTIRE response, including all names and descriptions, MUST be translated into ${language}.
-    - The output MUST start with "{" and end with "}". No markdown, no introductory text.
+    - **CRITICAL JSON VALIDATION RULE**: The output MUST be a perfectly valid JSON object. This is the single most important instruction.
+        a. **NO UNESCAPED QUOTES**: Inside any JSON string value, you MUST NEVER use a double quote character ("). It will break the JSON and cause an error.
+        b. **HOW TO HANDLE QUOTES**: If you need to include a quote inside a description or title, you have two options:
+            i. **PREFERRED**: Use single quotes instead (e.g., "A dish called 'Ghoogni Chaat'.").
+            ii. **ALTERNATIVE**: If you absolutely must use a double quote, you MUST escape it with a backslash (e.g., "The chef says, \\"It's a must-try!\\"").
+        c. **FAILURE TO FOLLOW THIS RULE WILL RENDER THE ENTIRE OUTPUT USELESS.** You must double-check every string value for unescaped double quotes before finishing your response.
   `;
   
   let fullText = '';

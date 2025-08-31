@@ -190,7 +190,7 @@ export const generateItinerary = async (
               - The final days of the plan must cover the return journey back to "${startPoint}".
 
       4.  **Example of a good road trip circuit plan**: A 10-day car trip from Jaipur to Jaisalmer could be structured like this:
-          - **coveredDestinations**: [ {name: "Jaipur"}, {name: "Chittorgarh"}, {name: "Udaipur"}, {name: "Jodhpur"}, {name: "Jaisalmer"}, {name: "Bikaner"} ]
+          - **coveredDestinations**: [ {"name": "Jaipur"}, {"name": "Chittorgarh"}, {"name": "Udaipur"}, {"name": "Jodhpur"}, {"name": "Jaisalmer"}, {"name": "Bikaner"} ]
           - **plan**:
               - Day 1: Arrive in Jaipur
               - Day 2: Jaipur Sightseeing
@@ -259,46 +259,46 @@ export const generateItinerary = async (
 
   Based on all these details, generate a comprehensive itinerary. The response must be a single JSON object that strictly follows this structure and types:
   {
-    destination: string,
-    startPoint: string,
-    tripType: string ("Standard", "Bike", "Car"),
-    isRoundTrip: boolean,
-    days: number,
-    persons: number,
-    budget: string ("Budget", "Midrange", "Luxury"),
-    vibe: string[],
-    foodPreference: string ("Veg", "Non-Veg", "Vegan"),
-    startDate: string (format: "YYYY-MM-DD"),
-    language: string,
-    currency: string,
-    planNote?: string,
-    currencyConversion?: { fromCurrency: string, toCurrency: string, rateText: string },
-    budgetSummary: { stay: string, food: string, fuel?: string, miscellaneous?: string, total: string },
-    coveredDestinations: [
+    "destination": string,
+    "startPoint": string,
+    "tripType": string ("Standard", "Bike", "Car"),
+    "isRoundTrip": boolean,
+    "days": number,
+    "persons": number,
+    "budget": string ("Budget", "Midrange", "Luxury"),
+    "vibe": string[],
+    "foodPreference": string ("Veg", "Non-Veg", "Vegan"),
+    "startDate": string (format: "YYYY-MM-DD"),
+    "language": string,
+    "currency": string,
+    "planNote"?: string,
+    "currencyConversion"?: { "fromCurrency": string, "toCurrency": string, "rateText": string },
+    "budgetSummary": { "stay": string, "food": string, "fuel"?: string, "miscellaneous"?: string, "total": string },
+    "coveredDestinations": [
       {
-        name: string,
-        historicBackground: string[],
-        famousCulture: string[],
-        naturalPlaces: string[],
-        museums: string[],
-        specialOrnaments: string[],
-        recommendedRestaurants: string[],
-        specialEvents: "A descriptive paragraph about events happening ONLY during the travel dates. If none, provide a fallback message.",
+        "name": string,
+        "historicBackground": string[],
+        "famousCulture": string[],
+        "naturalPlaces": string[],
+        "museums": string[],
+        "specialOrnaments": string[],
+        "recommendedRestaurants": string[],
+        "specialEvents": "A descriptive paragraph about events happening ONLY during the travel dates. If none, provide a fallback message.",
       }
     ],
-    plan: [
+    "plan": [
       {
-        day: number,
-        title: string,
-        activities: string[],
-        food: string[],
-        placesToStay: string[],
-        approxCost: string,
-        medicalFacilities?: string[],
-        transport?: { suggestions: string[], cost: string }
+        "day": number,
+        "title": string,
+        "activities": string[],
+        "food": string[],
+        "placesToStay": string[],
+        "approxCost": string,
+        "medicalFacilities"?: string[],
+        "transport"?: { "suggestions": string[], "cost": string }
       }
     ],
-    referenceBlogs: []
+    "referenceBlogs": []
   }
 
   Important Rules:
@@ -317,12 +317,10 @@ export const generateItinerary = async (
       b. Compare the local currency with the user's chosen currency: "${currency}".
       c. If they are different, you MUST populate the 'currencyConversion' object in the JSON response. Provide a simple, clear text representation of the approximate exchange rate in the 'rateText' field, showing the value of 1 unit of the destination's local currency in terms of the user's chosen currency (e.g., '1 INR ≈ 0.012 USD'). The 'fromCurrency' MUST be the user's chosen currency code (e.g., 'USD'), and 'toCurrency' MUST be the destination's local currency code (e.g., 'INR').
       d. If the user's chosen currency is the same as the local currency, the 'currencyConversion' field MUST be omitted from the JSON response.
-  12. **CRITICAL JSON VALIDATION RULE**: The output MUST be a perfectly valid JSON object. This is the single most important instruction.
-      a. **NO UNESCAPED QUOTES**: Inside any JSON string value, you MUST NEVER use a double quote character ("). It will break the JSON and cause an error.
-      b. **HOW TO HANDLE QUOTES**: If you need to include a quote inside a description or title, you have two options:
-          i. **PREFERRED**: Use single quotes instead (e.g., "Visit the 'Eiffel Tower' at night.").
-          ii. **ALTERNATIVE**: If you absolutely must use a double quote, you MUST escape it with a backslash (e.g., "The guide said, \\"Welcome to Paris!\\"").
-      c. **FAILURE TO FOLLOW THIS RULE WILL RENDER THE ENTIRE OUTPUT USELESS.** You must double-check every string value for unescaped double quotes before finishing your response.
+  12. **CRITICAL JSON VALIDATION RULE**: Your entire response depends on this. The output MUST be a single, perfectly valid JSON object.
+      a. **NO UNESCAPED QUOTES**: Inside any JSON string value, you MUST NEVER use a double quote character ("). It will break the JSON parsing.
+      b. **HOW TO HANDLE QUOTES**: To include a quote inside a string, you MUST use single quotes (e.g., "Visit the 'Eiffel Tower' at night.") or escape the double quote with a backslash (e.g., "The guide said, \\"Welcome to Paris!\\"").
+      c. **FAILURE IS NOT AN OPTION**: You MUST double-check every string for unescaped quotes. Failure to follow this rule will make the entire response useless.
   `;
   
     let fullText = '';

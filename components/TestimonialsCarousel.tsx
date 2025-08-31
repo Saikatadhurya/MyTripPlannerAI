@@ -71,8 +71,6 @@ const TestimonialsCarousel: React.FC = () => {
     const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [currentIndex, setCurrentIndex] = useState(0);
-    // Fix: Replaced `NodeJS.Timeout` with `ReturnType<typeof setTimeout>` for browser compatibility.
-    // The `NodeJS` namespace is not available in a standard browser environment, and this change makes the type portable.
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const touchStartX = useRef(0);
     const touchEndX = useRef(0);
