@@ -126,7 +126,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onPlanUnifiedTrip, onPlanItin
       {/* Hero Section */}
       <div className="animated-card text-center max-w-4xl mx-auto p-6 md:p-8 rounded-3xl bg-white/50 backdrop-blur-lg border border-white/60 shadow-lg" style={{ animationDelay: '100ms' }}>
         <h1 className="text-4xl md:text-5xl font-bold text-slate-900 tracking-tight">Plan Your Next Adventure</h1>
-        <p className="mt-4 text-lg text-slate-600 max-w-2xl mx-auto">
+        <p className="mt-4 text-md text-slate-600 max-w-2xl mx-auto">
           Tell us your travel preferences, and our AI will craft a complete adventure plan, including a detailed itinerary, smart packing list, local food guide, essential apps, and a curated music playlist.
         </p>
         <div className="mt-8">
@@ -134,7 +134,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onPlanUnifiedTrip, onPlanItin
               onClick={() => onPlanUnifiedTrip()}
               className="inline-block px-10 py-4 bg-violet-600 text-white font-bold rounded-full text-lg shadow-lg shadow-violet-500/30 hover:bg-violet-700 hover:shadow-xl hover:shadow-violet-500/40 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-violet-300"
             >
-              ✨ Build My Complete Adventure
+              ✨ Build Your Itinerary
             </button>
             <p className="mt-4 text-sm text-violet-700/80 font-medium tracking-wide">
               Includes: Itinerary, Packing, Food, Apps & Music
