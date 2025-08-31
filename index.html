@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Plan Your Dream Trip with AI</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
       body {
@@ -27,6 +28,50 @@
         main {
           padding: 0 !important;
           margin: 0 !important;
+        }
+         /* Ensure background colors are printed */
+        * {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+        .printable-container {
+          display: block !important;
+          padding: 0;
+          margin: 0;
+          box-shadow: none !important;
+          border: none !important;
+        }
+        .printable-section {
+          page-break-before: always;
+          padding-top: 1rem;
+        }
+        #printable-toc {
+          page-break-after: always;
+          text-align: center;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          height: 100vh;
+        }
+        #printable-toc h1 {
+          font-size: 2.5rem;
+          font-weight: bold;
+          margin-bottom: 1rem;
+        }
+        #printable-toc ul {
+          list-style: none;
+          padding: 0;
+          display: inline-block;
+          text-align: left;
+        }
+        #printable-toc li {
+          font-size: 1.5rem;
+          margin-bottom: 0.75rem;
+        }
+        #printable-toc a {
+          text-decoration: none;
+          color: #6366f1;
         }
       }
       @keyframes fadeIn {
