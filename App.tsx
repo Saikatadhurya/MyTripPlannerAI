@@ -1,6 +1,7 @@
 
 
 
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { QuestionnaireData, PackingListRequestData, PackingList, FoodFinderRequestData, FoodRecommendations, AppFinderRequestData, AppRecommendations, MusicFinderRequestData, MusicRecommendations, QuestionnaireData as InitialQuestionnaireData, UnifiedPlan, UnifiedPlanLoadingStatus, Itinerary } from './types';
 import { generateItinerary } from './services/geminiService';
@@ -245,6 +246,7 @@ const App: React.FC = () => {
   const [unifiedStepErrors, setUnifiedStepErrors] = useState<Partial<Record<keyof UnifiedPlanLoadingStatus, string>>>({});
   const [streamedText, setStreamedText] = useState('');
   const [itineraryStreamedText, setItineraryStreamedText] = useState('');
+  const [itineraryAttemptCount, setItineraryAttemptCount] = useState(0);
   const [initialQuestionnaireData, setInitialQuestionnaireData] = useState<InitialQuestionnaireData | null>(null);
   
   const mainContentRef = useRef<HTMLDivElement>(null);
@@ -425,37 +427,59 @@ const App: React.FC = () => {
             });
             
             setUnifiedPlanLoadingStatus(prev => ({ ...prev, itinerary: 'loading' }));
-            setItineraryStreamedText(''); // Reset stream text for this run
             
-            try {
-                const result = await generateItinerary(
-                    data.destination, data.startPoint, data.tripType, data.days, data.budget, data.vibe, data.persons, data.foodPreference, data.startDate, data.includeMedical, data.language, data.isRoundTrip, data.currency,
-                    (chunk) => {
-                        if (cancellationFlags.current.itinerary) {
-                            throw new Error("Cancelled");
-                        }
-                        setItineraryStreamedText(prev => prev + chunk);
-                    }
-                );
-                
+            const maxRetries = 3;
+            let lastError: Error | null = null;
+
+            for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                setItineraryAttemptCount(attempt);
+                setItineraryStreamedText(''); // Reset for each attempt
+
                 if (cancellationFlags.current.itinerary) {
                     setUnifiedPlanLoadingStatus(prev => ({ ...prev, itinerary: 'cancelled' }));
                     return;
                 }
+                
+                try {
+                    const result = await generateItinerary(
+                        data.destination, data.startPoint, data.tripType, data.days, data.budget, data.vibe, data.persons, data.foodPreference, data.startDate, data.includeMedical, data.language, data.isRoundTrip, data.currency,
+                        (chunk) => {
+                            if (cancellationFlags.current.itinerary) {
+                                throw new Error("Cancelled");
+                            }
+                            setItineraryStreamedText(prev => prev + chunk);
+                        }
+                    );
+                    
+                    if (cancellationFlags.current.itinerary) {
+                        setUnifiedPlanLoadingStatus(prev => ({ ...prev, itinerary: 'cancelled' }));
+                        return;
+                    }
 
-                setUnifiedPlan(prev => ({ ...prev, itinerary: result }));
-                setUnifiedPlanLoadingStatus(prev => ({ ...prev, itinerary: 'done' }));
+                    setUnifiedPlan(prev => ({ ...prev, itinerary: result }));
+                    setUnifiedPlanLoadingStatus(prev => ({ ...prev, itinerary: 'done' }));
+                    setItineraryAttemptCount(0);
+                    return; // Success, exit loop
+                } catch(e) {
+                    console.error(`Attempt ${attempt} for itinerary failed:`, e);
+                    lastError = e instanceof Error ? e : new Error('An unknown error occurred');
+                    if ((e as Error).message === "Cancelled") {
+                        setUnifiedPlanLoadingStatus(prev => ({ ...prev, itinerary: 'cancelled' }));
+                        setItineraryAttemptCount(0);
+                        return;
+                    }
 
-            } catch(e) {
-                console.error('Itinerary step failed:', e);
-                if ((e as Error).message === "Cancelled") {
-                    setUnifiedPlanLoadingStatus(prev => ({ ...prev, itinerary: 'cancelled' }));
-                    return;
+                    if (attempt < maxRetries) {
+                        await new Promise(resolve => setTimeout(resolve, 1500)); // wait before retrying
+                    }
                 }
-                const message = e instanceof Error ? e.message : 'An unknown error occurred during itinerary generation.';
-                setUnifiedStepErrors(prev => ({ ...prev, itinerary: message }));
-                setUnifiedPlanLoadingStatus(prev => ({ ...prev, itinerary: 'error' }));
             }
+
+            // If loop finishes, it means all retries failed.
+            const message = lastError ? `After ${maxRetries} attempts, itinerary generation failed. Error: ${lastError.message}` : `An unknown error occurred after ${maxRetries} attempts during itinerary generation.`;
+            setUnifiedStepErrors(prev => ({ ...prev, itinerary: message }));
+            setUnifiedPlanLoadingStatus(prev => ({ ...prev, itinerary: 'error' }));
+            setItineraryAttemptCount(0);
         };
         runItineraryStep();
     }, [view, questionnaireDataForUnifiedPlan, unifiedPlanLoadingStatus.itinerary]);
@@ -522,6 +546,7 @@ const App: React.FC = () => {
     setUnifiedPlan({ itinerary: null, packingList: null, foodRecommendations: null, appRecommendations: null, musicRecommendations: null });
     setError(null);
     setItineraryStreamedText('');
+    setItineraryAttemptCount(0);
     setUnifiedStepErrors({});
     cancellationFlags.current = {};
     handleViewChange('unifiedResult');
@@ -678,6 +703,8 @@ const App: React.FC = () => {
                     title="Crafting Your Adventure..."
                     accentColor="violet"
                     funFacts={itineraryFunFacts}
+                    attemptCount={itineraryAttemptCount}
+                    maxAttempts={3}
                 />
             );
         }

@@ -1,5 +1,7 @@
 
 
+
+
 import React, { useState, useEffect, useMemo } from 'react';
 
 interface Stage {
@@ -19,6 +21,8 @@ interface StreamingLoadingIndicatorProps {
   title: string;
   accentColor: 'violet' | 'amber' | 'teal' | 'fuchsia';
   funFacts: FunFact[];
+  attemptCount?: number;
+  maxAttempts?: number;
 }
 
 const colorClasses = {
@@ -45,7 +49,7 @@ const PendingIcon: React.FC = () => (
 );
 
 
-const StreamingLoadingIndicator: React.FC<StreamingLoadingIndicatorProps> = ({ streamedText, stages, onCancel, title, accentColor, funFacts }) => {
+const StreamingLoadingIndicator: React.FC<StreamingLoadingIndicatorProps> = ({ streamedText, stages, onCancel, title, accentColor, funFacts, attemptCount, maxAttempts }) => {
   const [currentFactIndex, setCurrentFactIndex] = useState(0);
 
   useEffect(() => {
@@ -84,6 +88,12 @@ const StreamingLoadingIndicator: React.FC<StreamingLoadingIndicatorProps> = ({ s
       <div className="max-w-lg w-full bg-white/80 backdrop-blur-xl p-8 rounded-3xl border border-white/50 shadow-2xl text-center">
         <h2 className="text-3xl font-bold text-slate-900">{title}</h2>
 
+        {attemptCount && maxAttempts && attemptCount > 1 && (
+            <div className="mt-4 p-2 bg-amber-100/70 text-amber-800 rounded-lg text-sm font-semibold border border-amber-200/80" style={{ animation: 'fadeIn 0.5s ease-out' }}>
+                Generation failed, retrying... (Attempt {attemptCount} of {maxAttempts})
+            </div>
+        )}
+        
         {funFacts && funFacts.length > 0 && (
           <div className="mt-6 h-8 flex items-center justify-center">
             <div key={currentFactIndex} className="w-full" style={{ animation: 'fun-fact-fade-in 4s ease-in-out' }}>
