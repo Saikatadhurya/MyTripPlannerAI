@@ -48,6 +48,7 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [unifiedStepErrors, setUnifiedStepErrors] = useState<Partial<Record<keyof UnifiedPlanLoadingStatus, string>>>({});
   const [streamedText, setStreamedText] = useState('');
+  const [itineraryStreamedText, setItineraryStreamedText] = useState('');
   const [initialQuestionnaireData, setInitialQuestionnaireData] = useState<InitialQuestionnaireData | null>(null);
   
   const mainContentRef = useRef<HTMLDivElement>(null);
@@ -160,7 +161,7 @@ const App: React.FC = () => {
     }
   }, [handleViewChange]);
   
-    // Helper to run each generation step with a retry and cancellation mechanism
+    // Helper to run each non-streaming generation step with retry/cancellation
     const generateStep = useCallback(async <T,>(
       step: keyof UnifiedPlanLoadingStatus,
       generatorFn: () => Promise<T>,
@@ -212,7 +213,7 @@ const App: React.FC = () => {
         return map[step];
     };
 
-    // Effect for the first step of the pipeline: Itinerary Generation
+    // Effect for the first step of the pipeline: Itinerary Generation (Streaming)
     useEffect(() => {
         const runItineraryStep = async () => {
             if (view !== 'unifiedResult' || !questionnaireDataForUnifiedPlan) return;
@@ -226,13 +227,41 @@ const App: React.FC = () => {
                 return newErrors;
             });
             
-            await generateStep('itinerary',
-              () => generateItinerary(data.destination, data.startPoint, data.tripType, data.days, data.budget, data.vibe, data.persons, data.foodPreference, data.startDate, data.includeMedical, data.language, data.isRoundTrip, data.currency),
-              (result) => setUnifiedPlan(prev => ({ ...prev, itinerary: result }))
-            );
+            setUnifiedPlanLoadingStatus(prev => ({ ...prev, itinerary: 'loading' }));
+            setItineraryStreamedText(''); // Reset stream text for this run
+            
+            try {
+                const result = await generateItinerary(
+                    data.destination, data.startPoint, data.tripType, data.days, data.budget, data.vibe, data.persons, data.foodPreference, data.startDate, data.includeMedical, data.language, data.isRoundTrip, data.currency,
+                    (chunk) => {
+                        if (cancellationFlags.current.itinerary) {
+                            throw new Error("Cancelled");
+                        }
+                        setItineraryStreamedText(prev => prev + chunk);
+                    }
+                );
+                
+                if (cancellationFlags.current.itinerary) {
+                    setUnifiedPlanLoadingStatus(prev => ({ ...prev, itinerary: 'cancelled' }));
+                    return;
+                }
+
+                setUnifiedPlan(prev => ({ ...prev, itinerary: result }));
+                setUnifiedPlanLoadingStatus(prev => ({ ...prev, itinerary: 'done' }));
+
+            } catch(e) {
+                console.error('Itinerary step failed:', e);
+                if ((e as Error).message === "Cancelled") {
+                    setUnifiedPlanLoadingStatus(prev => ({ ...prev, itinerary: 'cancelled' }));
+                    return;
+                }
+                const message = e instanceof Error ? e.message : 'An unknown error occurred during itinerary generation.';
+                setUnifiedStepErrors(prev => ({ ...prev, itinerary: message }));
+                setUnifiedPlanLoadingStatus(prev => ({ ...prev, itinerary: 'error' }));
+            }
         };
         runItineraryStep();
-    }, [view, questionnaireDataForUnifiedPlan, unifiedPlanLoadingStatus.itinerary, generateStep]);
+    }, [view, questionnaireDataForUnifiedPlan, unifiedPlanLoadingStatus.itinerary]);
 
     // Effect for parallel generation of other steps, dependent on itinerary completion
     useEffect(() => {
@@ -295,6 +324,7 @@ const App: React.FC = () => {
     setQuestionnaireDataForUnifiedPlan(data);
     setUnifiedPlan({ itinerary: null, packingList: null, foodRecommendations: null, appRecommendations: null, musicRecommendations: null });
     setError(null);
+    setItineraryStreamedText('');
     setUnifiedStepErrors({});
     cancellationFlags.current = {};
     handleViewChange('unifiedResult');
@@ -436,7 +466,7 @@ const App: React.FC = () => {
         if (itinerary) return <ItineraryPreview itinerary={itinerary} onRegenerate={() => handleViewChange('questionnaire')} />;
         break;
       case 'unifiedResult':
-        return <UnifiedResultPreview plan={unifiedPlan} loadingStatus={unifiedPlanLoadingStatus} stepErrors={unifiedStepErrors} onPlanNew={handleBackToHome} onRegenerate={() => { if(questionnaireDataForUnifiedPlan) handleGenerateUnifiedPlan(questionnaireDataForUnifiedPlan)}} onRegenerateStep={handleRegenerateUnifiedPlanStep} onCancel={handleCancelGeneration} onCancelStep={handleCancelUnifiedPlanStep} onTabChangeScrollToTop={scrollToTop} />;
+        return <UnifiedResultPreview plan={unifiedPlan} loadingStatus={unifiedPlanLoadingStatus} stepErrors={unifiedStepErrors} onPlanNew={handleBackToHome} onRegenerate={() => { if(questionnaireDataForUnifiedPlan) handleGenerateUnifiedPlan(questionnaireDataForUnifiedPlan)}} onRegenerateStep={handleRegenerateUnifiedPlanStep} onCancel={handleCancelGeneration} onCancelStep={handleCancelUnifiedPlanStep} onTabChangeScrollToTop={scrollToTop} itineraryStreamedText={itineraryStreamedText} />;
       case 'packingAssistantForm':
         return <PackingAssistantForm onSubmit={handleGeneratePackingList} isLoading={false} error={error} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} />;
       case 'packingAssistantResult':
@@ -467,9 +497,9 @@ const App: React.FC = () => {
 
   return (
     <>
-      {view === 'landing' && <Header />}
+      <Header />
       <div ref={mainContentRef} className="min-h-screen">
-        <main className={`container mx-auto px-4 sm:px-6 lg:px-8 pb-8 relative ${view === 'landing' ? 'pt-24' : ''}`}>
+        <main className={`container mx-auto px-4 sm:px-6 lg:px-8 pb-8 relative pt-24`}>
             {renderContent()}
         </main>
       </div>

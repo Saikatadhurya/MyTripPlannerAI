@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 
 const Header: React.FC = () => {
@@ -16,11 +17,7 @@ const Header: React.FC = () => {
 
   return (
     <header
-      className={`w-full left-0 z-40 transition-all duration-300 ease-in-out no-print ${
-        isScrolled
-          ? 'h-16 fixed top-0 bg-white/90 backdrop-blur-md shadow-md slide-down-animation'
-          : 'h-24 absolute top-0 bg-transparent'
-      }`}
+      className={`w-full left-0 z-40 transition-all duration-300 ease-in-out no-print h-16 fixed top-0 bg-white/90 backdrop-blur-md shadow-md`}
       aria-label="Application Header"
     >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-start">

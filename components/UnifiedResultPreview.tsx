@@ -1,3 +1,4 @@
+
 import React, { useState, Fragment, useRef, useEffect } from 'react';
 import ReactDOMServer from 'react-dom/server';
 import { UnifiedPlan, UnifiedPlanLoadingStatus } from '../types';
@@ -19,33 +20,14 @@ const tabs: { id: Tab; name: string; icon: React.ReactNode }[] = [
     { id: 'music', name: 'Music', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3V4a1 1 0 00-1-1z" /></svg> },
 ];
 
-const loadingFunFacts = {
-    itinerary: [
-        { icon: '🗺️', text: 'Plotting scenic routes...' },
-        { icon: '💎', text: 'Finding hidden gems...' },
-        { icon: '🏨', text: 'Scouting the best stays...' },
-    ],
-    packing: [
-        { icon: '🌤️', text: 'Checking the weather forecast...' },
-        { icon: '👕', text: 'Choosing the perfect outfits...' },
-        { icon: '🔌', text: 'Remembering all the chargers...' },
-    ],
-    food: [
-        { icon: '🧑‍🍳', text: 'Consulting with local chefs...' },
-        { icon: '🌶️', text: 'Searching for the spiciest dishes...' },
-        { icon: '🤫', text: 'Discovering secret family recipes...' },
-    ],
-    apps: [
-        { icon: '📲', text: 'Scanning the local app stores...' },
-        { icon: '🧭', text: 'Finding the best navigation tools...' },
-        { icon: '🚕', text: 'Locating top ride-sharing apps...' },
-    ],
-    music: [
-        { icon: '🎧', text: 'Tuning into local radio...' },
-        { icon: '🎶', text: 'Discovering the local anthems...' },
-        { icon: '🎤', text: 'Checking the top of the charts...' },
-    ],
-};
+const itineraryStages = [
+    { key: '"stay":', text: 'Analyzing budget and costs' },
+    { key: '"fromCurrency":', text: 'Checking currency exchange rates' },
+    { key: '"historicBackground":', text: 'Researching destinations' },
+    { key: '"planNote":', text: 'Adding important travel notes' },
+    { key: '"day":', text: 'Building the day-by-day plan' },
+];
+
 
 interface UnifiedResultPreviewProps {
     plan: UnifiedPlan;
@@ -57,12 +39,34 @@ interface UnifiedResultPreviewProps {
     onCancel: () => void;
     onCancelStep: (step: Tab) => void;
     onTabChangeScrollToTop: () => void;
+    itineraryStreamedText: string;
 }
 
-const ProgressTracker: React.FC<{ loadingStatus: UnifiedPlanLoadingStatus }> = ({ loadingStatus }) => {
+const ProgressTracker: React.FC<{ loadingStatus: UnifiedPlanLoadingStatus; itineraryStreamedText: string }> = ({ loadingStatus, itineraryStreamedText }) => {
     const totalSteps = tabs.length;
     const completedSteps = tabs.filter(tab => loadingStatus[tab.id] === 'done').length;
-    const progress = totalSteps > 0 ? (completedSteps / totalSteps) * 100 : 0;
+    const isPlanComplete = completedSteps === totalSteps;
+
+    const calculateItineraryProgress = () => {
+        if (loadingStatus.itinerary === 'done') return 100;
+        if (loadingStatus.itinerary !== 'loading') return 0;
+        
+        let lastStageIndex = -1;
+        for (let i = itineraryStages.length - 1; i >= 0; i--) {
+            if (itineraryStreamedText.includes(itineraryStages[i].key)) {
+                lastStageIndex = i;
+                break;
+            }
+        }
+        
+        const baseProgress = ((lastStageIndex + 1) / itineraryStages.length) * 100;
+        return Math.max(5, baseProgress);
+    };
+
+    const overallProgress = (completedSteps / totalSteps) * 100;
+    const itineraryProgress = calculateItineraryProgress();
+    const mainProgress = loadingStatus.itinerary !== 'done' ? itineraryProgress : overallProgress;
+
 
     const getStatusIcon = (status: UnifiedPlanLoadingStatus[keyof UnifiedPlanLoadingStatus]) => {
         switch (status) {
@@ -93,11 +97,11 @@ const ProgressTracker: React.FC<{ loadingStatus: UnifiedPlanLoadingStatus }> = (
     return (
         <div className="bg-white/40 backdrop-blur-lg p-6 rounded-2xl border border-white/50 shadow-lg mb-8 no-print">
             <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-slate-800">Your Plan is Generating...</h2>
+                <h2 className="text-xl font-bold text-slate-800">{isPlanComplete ? 'Your Plan is Ready!' : 'Your Plan is Generating...'}</h2>
                 <span className="text-sm font-semibold text-slate-600">{completedSteps} of {totalSteps} complete</span>
             </div>
-            <div className="w-full bg-slate-200/70 rounded-full h-2.5 mb-4">
-                <div className="bg-gradient-to-r from-violet-500 to-indigo-600 h-2.5 rounded-full" style={{ width: `${progress}%`, transition: 'width 0.5s ease-in-out' }}></div>
+            <div className="w-full bg-slate-200/70 rounded-full h-2.5 mb-4 overflow-hidden">
+                <div className="bg-gradient-to-r from-violet-500 to-indigo-600 h-2.5 rounded-full" style={{ width: `${mainProgress}%`, transition: 'width 0.5s ease-in-out' }}></div>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-x-4 gap-y-2 text-sm">
                 {tabs.map(tab => (
@@ -112,7 +116,7 @@ const ProgressTracker: React.FC<{ loadingStatus: UnifiedPlanLoadingStatus }> = (
 };
 
 
-const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadingStatus, stepErrors, onPlanNew, onRegenerate, onRegenerateStep, onCancel, onCancelStep, onTabChangeScrollToTop }) => {
+const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadingStatus, stepErrors, onPlanNew, onRegenerate, onRegenerateStep, onCancel, onCancelStep, onTabChangeScrollToTop, itineraryStreamedText }) => {
     const [activeTab, setActiveTab] = useState<Tab>('itinerary');
     const [isExportingPdf, setIsExportingPdf] = useState(false);
     
@@ -234,16 +238,11 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
         const tabName = tabs.find(t => t.id === activeTab)?.name || 'This Section';
 
         if (currentStatus === 'loading' && !currentData) {
-            const activeTabDetails = tabs.find(t => t.id === activeTab);
             return (
-                <StreamingLoadingIndicator
-                    streamedText={''}
-                    stages={[]}
-                    onCancel={() => onCancelStep(activeTab)}
-                    title={`Crafting Your ${activeTabDetails?.name}...`}
-                    accentColor="violet"
-                    funFacts={loadingFunFacts[activeTab]}
-                />
+                 <div className="text-center py-20">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-600 mx-auto"></div>
+                    <p className="mt-4 text-slate-600 font-semibold">Generating {tabName}...</p>
+                </div>
             );
         }
         
@@ -297,21 +296,6 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
         }
     };
     
-    const isInitialLoading = loadingStatus.itinerary === 'loading' && !plan.itinerary;
-
-    if (isInitialLoading) {
-        return (
-            <StreamingLoadingIndicator
-                streamedText=""
-                stages={[]}
-                onCancel={onCancel}
-                title="Crafting Your Unified Plan..."
-                accentColor="violet"
-                funFacts={loadingFunFacts.itinerary}
-            />
-        );
-    }
-    
     return (
         <div className="max-w-7xl mx-auto space-y-8 animated-card">
             <header className="flex flex-col sm:flex-row justify-between items-center gap-4 py-4 no-print">
@@ -351,9 +335,9 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
                 </div>
             </header>
             
-            {!isPlanComplete && <ProgressTracker loadingStatus={loadingStatus} />}
+            {loadingStatus.itinerary !== 'pending' && !isPlanComplete && <ProgressTracker loadingStatus={loadingStatus} itineraryStreamedText={itineraryStreamedText} />}
 
-            <nav className="sticky top-0 z-30 bg-white/80 backdrop-blur-lg rounded-xl shadow-md p-2 mb-2 no-print">
+            <nav className="sticky top-28 z-30 bg-white/80 backdrop-blur-lg rounded-xl shadow-md p-2 mb-2 no-print">
                 <div className="flex items-center justify-center sm:justify-start space-x-1 sm:space-x-2 hide-scrollbar overflow-x-auto">
                     {tabs.map(tab => {
                          const status = loadingStatus[tab.id];
