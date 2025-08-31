@@ -1,4 +1,5 @@
 
+
 import React, { useState, Fragment, useRef, useEffect } from 'react';
 import ReactDOMServer from 'react-dom/server';
 import { UnifiedPlan, UnifiedPlanLoadingStatus } from '../types';
@@ -35,21 +36,12 @@ interface UnifiedResultPreviewProps {
 const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadingStatus, stepErrors, onPlanNew, onRegenerate, onRegenerateStep, onCancel, onCancelStep, onTabChangeScrollToTop, itineraryStreamedText }) => {
     const [activeTab, setActiveTab] = useState<Tab>('itinerary');
     const [isExportingPdf, setIsExportingPdf] = useState(false);
-    const [isScrolled, setIsScrolled] = useState(false);
     
     const isPlanComplete = Object.values(loadingStatus).every(status => status === 'done');
 
     useEffect(() => {
         onTabChangeScrollToTop();
     }, [activeTab, onTabChangeScrollToTop]);
-
-    useEffect(() => {
-        const handleScroll = () => {
-            setIsScrolled(window.scrollY > 20);
-        };
-        window.addEventListener('scroll', handleScroll, { passive: true });
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
 
     const getGuidebookStyles = () => {
         // This function embeds all necessary CSS for the guidebook to render correctly in a new window.
@@ -260,9 +252,9 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
                 </div>
             </header>
             
-            <nav className={`sticky top-0 z-30 p-2 mb-2 no-print transition-all duration-300 ease-in-out ${isScrolled ? 'bg-white/80 backdrop-blur-lg rounded-xl shadow-md' : 'bg-transparent'}`}>
-                <div className={`flex items-center transition-all duration-300 ${isScrolled ? 'justify-start' : 'justify-center'}`}>
-                    <div className="flex items-center justify-center sm:justify-start space-x-1 sm:space-x-2 hide-scrollbar overflow-x-auto">
+            <nav className={`sticky top-4 z-30 mb-2 no-print`}>
+                <div className="max-w-max mx-auto bg-white/80 backdrop-blur-xl border border-white/50 rounded-full shadow-lg p-1">
+                    <div className="flex items-center justify-center space-x-1 hide-scrollbar overflow-x-auto">
                         {tabs.map(tab => {
                             const status = loadingStatus[tab.id];
                             const dataExists = !!getPlanDataForTab(tab.id);
@@ -271,8 +263,8 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
                                 <button
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
-                                    className={`flex items-center justify-center space-x-2 px-3 sm:px-4 py-2.5 text-sm sm:text-base font-semibold rounded-lg transition-colors duration-200
-                                        ${activeTab === tab.id ? 'bg-violet-600 text-white shadow-md' : 'text-slate-600 hover:bg-violet-100/70'}`}
+                                    className={`flex items-center justify-center space-x-2 px-3 sm:px-4 py-2 text-sm sm:text-base font-semibold rounded-full transition-colors duration-200
+                                        ${activeTab === tab.id ? 'bg-violet-600 text-white shadow' : 'text-slate-600 hover:bg-violet-100/70'}`}
                                     aria-current={activeTab === tab.id ? 'page' : undefined}
                                 >
                                     {tab.icon}

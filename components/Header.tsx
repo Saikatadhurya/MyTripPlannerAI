@@ -6,22 +6,39 @@ const Header: React.FC = () => {
 
   useEffect(() => {
     const handleScroll = () => {
-      // Set to true if scrolled more than a small threshold (e.g., 10px)
       setIsScrolled(window.scrollY > 10);
     };
 
     window.addEventListener('scroll', handleScroll);
-    // Cleanup the event listener on component unmount
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
   }, []);
+
+  // Base classes for the fixed header
+  const headerBaseClasses = "fixed top-0 left-0 right-0 z-50 w-full transition-all duration-300 ease-in-out no-print";
+  
+  // Container for the content inside the header
+  const containerBaseClasses = "flex items-center transition-all duration-300 ease-in-out container mx-auto";
+
+  // Classes for the initial, transparent, centered state
+  const headerInitialClasses = "py-8";
+  const containerInitialClasses = "justify-center";
+  
+  // Classes for the scrolled, glassmorphic state
+  const headerScrolledClasses = "py-4 bg-white/70 backdrop-blur-xl shadow-md slide-down-animation";
+  const containerScrolledClasses = "justify-start px-4 sm:px-6 lg:px-8";
+  
+  // Logo scaling effect
+  const logoContainerBaseClasses = "flex items-center space-x-3 text-slate-800 transition-transform duration-300";
 
   return (
     <header
-      className={`w-full left-0 z-40 transition-all duration-300 ease-in-out no-print h-16 fixed top-0 bg-white/90 backdrop-blur-md shadow-md`}
+      className={`${headerBaseClasses} ${isScrolled ? headerScrolledClasses : headerInitialClasses}`}
       aria-label="Application Header"
     >
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-start">
-        <div className="flex items-center space-x-3 text-slate-800">
+      <div className={`${containerBaseClasses} ${isScrolled ? containerScrolledClasses : containerInitialClasses}`}>
+        <div className={`${logoContainerBaseClasses} ${isScrolled ? 'scale-90' : 'scale-100'}`}>
           {/* Simplified SVG Icon inspired by the Planora logo image */}
           <svg width="32" height="32" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="50" cy="50" r="45" />

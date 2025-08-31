@@ -1,7 +1,4 @@
 
-
-
-
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { QuestionnaireData, PackingListRequestData, PackingList, FoodFinderRequestData, FoodRecommendations, AppFinderRequestData, AppRecommendations, MusicFinderRequestData, MusicRecommendations, QuestionnaireData as InitialQuestionnaireData, UnifiedPlan, UnifiedPlanLoadingStatus, Itinerary } from './types';
 import { generateItinerary } from './services/geminiService';
@@ -49,10 +46,8 @@ const itineraryFunFacts = [
 ];
 const packingStages = [
     { key: '"clothingAndFootwear":', text: 'Selecting outfits & footwear' },
-    { key: '"medicinesAndHealth":', text: 'Preparing health essentials' },
     { key: '"documentsAndMoney":', text: 'Securing documents & money' },
     { key: '"bagSuggestion":', text: 'Recommending the perfect bag' },
-    { key: '"approximateTemperature":', text: 'Finalizing with weather check' },
 ];
 const packingFunFacts = [
     { icon: '🌤️', text: 'Checking the weather forecast...' },
@@ -63,7 +58,6 @@ const packingFunFacts = [
 ];
 const foodStages = [
     { key: '"breakfast":', text: 'Discovering breakfast options' },
-    { key: '"snacksAndStreetFood":', text: 'Finding popular street food' },
     { key: '"iconicDishes":', text: 'Identifying iconic local dishes' },
     { key: '"streetFestivalsAndFoodMelas":', text: 'Finalizing recommendations' },
 ];
@@ -76,10 +70,8 @@ const foodFunFacts = [
 ];
 const appStages = [
     { key: '"transportAndTravel":', text: 'Finding transport & travel apps' },
-    { key: '"foodAndDining":', text: 'Discovering food & dining apps' },
     { key: '"explorationAndTours":', text: 'Locating exploration apps' },
-    { key: '"utilitiesAndSafety":', text: 'Checking for utility & safety apps' },
-    { key: '"festivalsAndSeasonal":', text: 'Finalizing recommendations' },
+    { key: '"festivalsAndSeasonal":', text: 'Finalizing' },
 ];
 const appFunFacts = [
     { icon: '📲', text: 'Scanning the local app stores...' },
@@ -91,7 +83,7 @@ const appFunFacts = [
 const musicStages = [
     { key: '"musicCategories":', text: 'Analyzing local music scene' },
     { key: '"genre":"Top Trending Hits"', text: 'Finding top trending hits' },
-    { key: '}]}', text: 'Finalizing your travel playlist' }
+    { key: '}]}', text: 'Finalizing' }
 ];
 const musicFunFacts = [
     { icon: '🎧', text: 'Tuning into local radio...' },
@@ -576,7 +568,9 @@ const App: React.FC = () => {
 
     switch (view) {
       case 'landing':
-        return <LandingPage onPlanUnifiedTrip={handleStartUnifiedPlanner} onPlanItinerary={handleStartItineraryPlanner} onStartPacking={() => handleViewChange('packingAssistantForm')} onStartFoodFinder={() => handleViewChange('foodFinderForm')} onStartAppFinder={() => handleViewChange('appFinderForm')} onStartMusicFinder={() => handleViewChange('musicFinderForm')} />;
+        return (
+            <LandingPage onPlanUnifiedTrip={handleStartUnifiedPlanner} onPlanItinerary={handleStartItineraryPlanner} onStartPacking={() => handleViewChange('packingAssistantForm')} onStartFoodFinder={() => handleViewChange('foodFinderForm')} onStartAppFinder={() => handleViewChange('appFinderForm')} onStartMusicFinder={() => handleViewChange('musicFinderForm')} />
+        );
       case 'unifiedPlannerForm':
         return <UnifiedPlannerForm onSubmit={handleGenerateUnifiedPlan} initialData={initialQuestionnaireData} onBack={handleBackToHome} error={error} />;
       case 'questionnaire':
@@ -609,14 +603,16 @@ const App: React.FC = () => {
     }
     
     // Fallback for any unhandled case or error state where data is null
-    return <LandingPage onPlanUnifiedTrip={handleStartUnifiedPlanner} onPlanItinerary={handleStartItineraryPlanner} onStartPacking={() => handleViewChange('packingAssistantForm')} onStartFoodFinder={() => handleViewChange('foodFinderForm')} onStartAppFinder={() => handleViewChange('appFinderForm')} onStartMusicFinder={() => handleViewChange('musicFinderForm')} />;
+    return (
+        <LandingPage onPlanUnifiedTrip={handleStartUnifiedPlanner} onPlanItinerary={handleStartItineraryPlanner} onStartPacking={() => handleViewChange('packingAssistantForm')} onStartFoodFinder={() => handleViewChange('foodFinderForm')} onStartAppFinder={() => handleViewChange('appFinderForm')} onStartMusicFinder={() => handleViewChange('musicFinderForm')} />
+    );
   };
 
   return (
     <>
-      <Header />
-      <div ref={mainContentRef} className="min-h-screen pt-24">
-        <main className={`container mx-auto px-4 sm:px-6 lg:px-8 pb-8 relative`}>
+      {view === 'landing' && <Header />}
+      <div ref={mainContentRef} className="min-h-screen">
+        <main className={`container mx-auto px-4 sm:px-6 lg:px-8 pb-8 relative ${view === 'landing' ? 'pt-32' : 'pt-8'}`}>
             {renderContent()}
         </main>
       </div>
