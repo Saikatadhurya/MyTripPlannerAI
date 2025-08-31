@@ -21,11 +21,28 @@ interface StreamingLoadingIndicatorProps {
 }
 
 const colorClasses = {
-  violet: { text: 'text-violet-600', bg: 'bg-violet-600', ring: 'ring-violet-300', border: 'border-t-violet-600' },
-  amber: { text: 'text-amber-600', bg: 'bg-amber-600', ring: 'ring-amber-300', border: 'border-t-amber-600' },
-  teal: { text: 'text-teal-600', bg: 'bg-teal-600', ring: 'ring-teal-300', border: 'border-t-teal-600' },
-  fuchsia: { text: 'text-fuchsia-600', bg: 'bg-fuchsia-600', ring: 'ring-fuchsia-300', border: 'border-t-fuchsia-600' },
+  violet: { text: 'text-violet-600', bg: 'bg-violet-600', ring: 'ring-violet-300', border: 'border-violet-600' },
+  amber: { text: 'text-amber-600', bg: 'bg-amber-600', ring: 'ring-amber-300', border: 'border-amber-600' },
+  teal: { text: 'text-teal-600', bg: 'bg-teal-600', ring: 'ring-teal-300', border: 'border-teal-600' },
+  fuchsia: { text: 'text-fuchsia-600', bg: 'bg-fuchsia-600', ring: 'ring-fuchsia-300', border: 'border-fuchsia-600' },
 };
+
+const CheckmarkIcon: React.FC = () => (
+    <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white shadow-lg">
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+        </svg>
+    </div>
+);
+
+const SpinnerIcon: React.FC<{ colorClass: string }> = ({ colorClass }) => (
+    <div className={`w-8 h-8 border-4 ${colorClass} rounded-full border-t-transparent animate-spin`}></div>
+);
+
+const PendingIcon: React.FC = () => (
+    <div className="w-8 h-8 border-2 border-slate-300 rounded-full bg-slate-100"></div>
+);
+
 
 const StreamingLoadingIndicator: React.FC<StreamingLoadingIndicatorProps> = ({ streamedText, stages, onCancel, title, accentColor, funFacts }) => {
   const [currentFactIndex, setCurrentFactIndex] = useState(0);
@@ -41,27 +58,29 @@ const StreamingLoadingIndicator: React.FC<StreamingLoadingIndicatorProps> = ({ s
 
   const colors = colorClasses[accentColor] || colorClasses.violet;
   
-  const currentStageIndex = useMemo(() => {
+  const lastCompletedStageIndex = useMemo(() => {
     if (!stages || stages.length === 0) return -1;
-    for (let i = stages.length - 1; i >= 0; i--) {
-      if (streamedText.includes(stages[i].key)) {
-        return i;
-      }
+    let lastFoundIndex = -1;
+    for (let i = 0; i < stages.length; i++) {
+        if (streamedText.includes(stages[i].key)) {
+            lastFoundIndex = i;
+        }
     }
-    return -1;
+    return lastFoundIndex;
   }, [streamedText, stages]);
-  
+
   const progress = useMemo(() => {
-    if (!stages || stages.length === 0) return 10; // Start with a small amount
-    if (currentStageIndex === -1) return 10;
-    const baseProgress = ((currentStageIndex + 1) / stages.length) * 90; // Go up to 90%
-    return 10 + baseProgress;
-  }, [currentStageIndex, stages]);
+    if (!stages || stages.length === 0) return 10;
+    const completionRatio = (lastCompletedStageIndex + 1) / stages.length;
+    return 10 + (completionRatio * 90);
+  }, [lastCompletedStageIndex, stages]);
+
+  const inProgressIndex = lastCompletedStageIndex + 1;
 
 
   return (
     <div className="flex items-center justify-center py-12 px-4 fade-in">
-      <div className="max-w-md w-full bg-white/80 backdrop-blur-xl p-8 rounded-3xl border border-white/50 shadow-2xl text-center">
+      <div className="max-w-lg w-full bg-white/80 backdrop-blur-xl p-8 rounded-3xl border border-white/50 shadow-2xl text-center">
         <h2 className="text-3xl font-bold text-slate-900">{title}</h2>
 
         {funFacts && funFacts.length > 0 && (
@@ -75,20 +94,43 @@ const StreamingLoadingIndicator: React.FC<StreamingLoadingIndicatorProps> = ({ s
           </div>
         )}
         
-        <div className="flex justify-center items-center my-10">
-            <div className={`w-24 h-24 rounded-full border-4 border-slate-200/80 ${colors.border} animate-spin`}></div>
+        <div className="mt-10 mb-8 text-left relative">
+            <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-slate-200" aria-hidden="true"></div>
+            <div className="space-y-6">
+                {stages.map((stage, index) => {
+                    let status: 'done' | 'in_progress' | 'pending' = 'pending';
+                    if (index < inProgressIndex) {
+                        status = 'done';
+                    } else if (index === inProgressIndex && index < stages.length) {
+                        status = 'in_progress';
+                    }
+                    
+                    return (
+                        <div key={stage.key} className={`relative flex items-center space-x-4 transition-all duration-500`}>
+                            <div className={`z-10 flex-shrink-0 transition-transform duration-300 ${status === 'in_progress' ? 'scale-110' : ''}`}>
+                                {status === 'done' && <CheckmarkIcon />}
+                                {status === 'in_progress' && <SpinnerIcon colorClass={colors.border} />}
+                                {status === 'pending' && <PendingIcon />}
+                            </div>
+                            <span className={`font-semibold transition-colors duration-300 ${status === 'done' ? 'text-slate-800' : status === 'in_progress' ? `${colors.text} text-lg` : 'text-slate-500'}`}>
+                                {stage.text}
+                            </span>
+                        </div>
+                    );
+                })}
+            </div>
         </div>
 
-        <div className="w-full bg-slate-200/80 rounded-full h-2.5 overflow-hidden">
-            <div className={`${colors.bg} h-2.5 rounded-full transition-all duration-500 ease-out`} style={{width: `${progress}%`}}></div>
+        <div className="w-full bg-slate-200/80 rounded-full h-3 overflow-hidden">
+            <div className={`${colors.bg} h-3 rounded-full transition-all duration-500 ease-out`} style={{width: `${progress}%`}}></div>
         </div>
         <p className={`text-md font-semibold mt-4 ${colors.text}`}>
-          Hold tight, magic in progress...
+          {Math.min(99, progress).toFixed(0)}% Complete
         </p>
 
         <button
           onClick={onCancel}
-          className="mt-8 px-8 py-3 bg-white text-slate-700 font-bold rounded-full hover:bg-slate-100 transition-all duration-300 shadow-md border border-slate-200/90 focus:outline-none focus:ring-4 ${colors.ring}"
+          className={`mt-8 px-8 py-3 bg-white text-slate-700 font-bold rounded-full hover:bg-slate-100 transition-all duration-300 shadow-md border border-slate-200/90 focus:outline-none focus:ring-4 ${colors.ring}`}
         >
           Cancel Generation
         </button>

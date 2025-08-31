@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Budget, Vibe, FoodPreference, TripType, QuestionnaireData, LocationSuggestion } from '../types';
 import { getDestinationSuggestions } from '../services/geminiService';
@@ -44,11 +45,10 @@ const languages = [
 ];
 
 const itineraryStages = [
-    { key: '"stay":', text: 'Analyzing budget and costs' },
-    { key: '"fromCurrency":', text: 'Checking currency exchange rates' },
-    { key: '"historicBackground":', text: 'Researching destinations' },
-    { key: '"planNote":', text: 'Adding important travel notes' },
-    { key: '"day":', text: 'Building the day-by-day plan' },
+    { key: '"budgetSummary":', text: 'Calculating Budget Overview' },
+    { key: '"coveredDestinations":', text: 'Researching About the Destinations' },
+    { key: '"plan":', text: 'Constructing the Daily Itinerary' },
+    { key: '"referenceBlogs":', text: 'Finalizing and Polishing' },
 ];
 
 const funFacts = [

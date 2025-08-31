@@ -465,18 +465,17 @@ const App: React.FC = () => {
                 { icon: '🍜', text: 'Locating top-rated eats...' },
             ];
             const itineraryStages = [
-                { key: '"stay":', text: 'Analyzing budget and costs' },
-                { key: '"fromCurrency":', text: 'Checking currency exchange rates' },
-                { key: '"historicBackground":', text: 'Researching destinations' },
-                { key: '"planNote":', text: 'Adding important travel notes' },
-                { key: '"day":', text: 'Building the day-by-day plan' },
+                { key: '"budgetSummary":', text: 'Calculating Budget Overview' },
+                { key: '"coveredDestinations":', text: 'Researching About the Destinations' },
+                { key: '"plan":', text: 'Constructing the Daily Itinerary' },
+                { key: '"referenceBlogs":', text: 'Finalizing and Polishing' },
             ];
             return (
                 <LoadingIndicator
                     streamedText={itineraryStreamedText}
                     stages={itineraryStages}
                     onCancel={handleCancelGeneration}
-                    title="Crafting Your Itinerary..."
+                    title="Crafting Your Adventure..."
                     accentColor="violet"
                     funFacts={funFacts}
                 />
