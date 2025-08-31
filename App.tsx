@@ -1,6 +1,5 @@
-
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Itinerary, Vibe, QuestionnaireData, PackingListRequestData, PackingList, FoodFinderRequestData, FoodRecommendations, AppFinderRequestData, AppRecommendations, MusicFinderRequestData, MusicRecommendations } from './types';
+import { Itinerary, QuestionnaireData, PackingListRequestData, PackingList, FoodFinderRequestData, FoodRecommendations, AppFinderRequestData, AppRecommendations, MusicFinderRequestData, MusicRecommendations, QuestionnaireData as InitialQuestionnaireData } from './types';
 import { generateItinerary } from './services/geminiService';
 import { generatePackingList } from './services/packingService';
 import { generateFoodRecommendations } from './services/foodService';
@@ -20,10 +19,13 @@ import AppFinderResult from './components/AppFinderResult';
 import MusicFinderForm from './components/MusicFinderForm';
 import MusicFinderResult from './components/MusicFinderResult';
 import ScrollToTopButton from './components/ScrollToTopButton';
+import ContactUs from './components/ContactUs';
+import ContactUsButton from './components/ContactUsButton';
+import Header from './components/Header';
 import QuickNavButton from './components/QuickNavButton';
 
 
-type View = 'landing' | 'questionnaire' | 'itinerary' | 'packingAssistantForm' | 'packingAssistantResult' | 'foodFinderForm' | 'foodFinderResult' | 'appFinderForm' | 'appFinderResult' | 'musicFinderForm' | 'musicFinderResult';
+type View = 'landing' | 'questionnaire' | 'itinerary' | 'packingAssistantForm' | 'packingAssistantResult' | 'foodFinderForm' | 'foodFinderResult' | 'appFinderForm' | 'appFinderResult' | 'musicFinderForm' | 'musicFinderResult' | 'contact';
 
 const App: React.FC = () => {
   const [view, setView] = useState<View>('landing');
@@ -32,392 +34,237 @@ const App: React.FC = () => {
   const [foodRecommendations, setFoodRecommendations] = useState<FoodRecommendations | null>(null);
   const [appRecommendations, setAppRecommendations] = useState<AppRecommendations | null>(null);
   const [musicRecommendations, setMusicRecommendations] = useState<MusicRecommendations | null>(null);
+  
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [formData, setFormData] = useState<QuestionnaireData | null>(null);
   const [streamedText, setStreamedText] = useState('');
-  const isGenerationCancelled = useRef(false);
+  const [initialQuestionnaireData, setInitialQuestionnaireData] = useState<InitialQuestionnaireData | null>(null);
+  
+  const mainContentRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  const scrollToTop = useCallback(() => {
+    mainContentRef.current?.scrollTo(0, 0);
     window.scrollTo(0, 0);
-  }, [view]);
-
-  const handleStartPlanning = useCallback((destination?: string) => {
-    const today = new Date().toISOString().split('T')[0];
-    const defaultVibes: Vibe[] = ['Adventure & Thrill'];
-    setFormData(destination ? { destination, startPoint: '', tripType: 'Standard', days: 3, budget: 'Midrange', vibe: defaultVibes, persons: 1, foodPreference: 'Non-Veg', startDate: today, includeMedical: false, language: 'English (en)', currency: 'India (INR) – ₹', isRoundTrip: false } : null);
-    setView('questionnaire');
-  }, []);
-  
-  const handleStartPacking = useCallback(() => {
-    setView('packingAssistantForm');
   }, []);
 
-  const handleStartFoodFinder = useCallback(() => {
-    setView('foodFinderForm');
-  }, []);
-
-  const handleStartAppFinder = useCallback(() => {
-    setView('appFinderForm');
-  }, []);
-
-  const handleStartMusicFinder = useCallback(() => {
-    setView('musicFinderForm');
-  }, []);
-
-
-  const handleGenerateItinerary = useCallback(async (data: QuestionnaireData) => {
-    isGenerationCancelled.current = false;
-    setIsLoading(true);
-    setError(null);
-    setFormData(data);
-    setStreamedText('');
-    const onChunk = (chunk: string) => {
-        if (!isGenerationCancelled.current) {
-            setStreamedText(prev => prev + chunk);
-        }
-    };
-
-    try {
-      const generatedItinerary = await generateItinerary(data.destination, data.startPoint, data.tripType, data.days, data.budget, data.vibe, data.persons, data.foodPreference, data.startDate, data.includeMedical, data.language, data.isRoundTrip, data.currency, onChunk);
-      if (!isGenerationCancelled.current) {
-        setItinerary(generatedItinerary);
-        setView('itinerary');
-      }
-    } catch (err) {
-      if (!isGenerationCancelled.current) {
-        let errorMessage = 'Failed to generate itinerary. Please try again.';
-        if (err instanceof Error) {
-            const message = err.message;
-            if (message.includes('[429]') || message.toLowerCase().includes('quota')) {
-                errorMessage = 'You have exceeded the request limit. Please check your plan and billing details and try again later.';
-            } else if (message.includes('[503]') || message.toLowerCase().includes('overloaded')) {
-                errorMessage = 'The AI model is currently busy handling many requests. Please wait a moment and try again.';
-            } else {
-                errorMessage = message.replace(/^\[\d{3}\]\s*/, '');
-            }
-        }
-        setError(errorMessage);
-        setView('questionnaire'); // Stay on questionnaire to show the error
-      }
-    } finally {
-      if (!isGenerationCancelled.current) {
-        setIsLoading(false);
-      }
-    }
-  }, []);
-
-  const handleGeneratePackingList = useCallback(async (data: PackingListRequestData) => {
-    isGenerationCancelled.current = false;
-    setIsLoading(true);
+  const handleViewChange = useCallback((newView: View) => {
     setError(null);
     setStreamedText('');
-    const onChunk = (chunk: string) => {
-        if (!isGenerationCancelled.current) {
-            setStreamedText(prev => prev + chunk);
-        }
+    setView(newView);
+    scrollToTop();
+  }, [scrollToTop]);
+
+  const handlePlanTrip = useCallback((destination?: string) => {
+    let initialData: InitialQuestionnaireData | null = {
+        destination: '',
+        startPoint: '',
+        tripType: 'Standard',
+        days: 3,
+        budget: 'Midrange',
+        vibe: ['Adventure & Thrill'],
+        persons: 1,
+        foodPreference: 'Non-Veg',
+        startDate: new Date().toISOString().split('T')[0],
+        includeMedical: false,
+        language: 'English (en)',
+        currency: 'India (INR) – ₹',
+        isRoundTrip: false,
     };
-    try {
-        const generatedList = await generatePackingList(data, onChunk);
-        if (!isGenerationCancelled.current) {
-            setPackingList(generatedList);
-            setView('packingAssistantResult');
-        }
-    } catch (err) {
-      if (!isGenerationCancelled.current) {
-        let errorMessage = 'Failed to generate packing list. Please try again.';
-        if (err instanceof Error) {
-            const message = err.message;
-            if (message.includes('[429]') || message.toLowerCase().includes('quota')) {
-                errorMessage = 'You have exceeded the request limit. Please check your plan and billing details and try again later.';
-            } else if (message.includes('[503]') || message.toLowerCase().includes('overloaded')) {
-                errorMessage = 'The AI model is currently busy handling many requests. Please wait a moment and try again.';
-            } else {
-                errorMessage = message.replace(/^\[\d{3}\]\s*/, '');
-            }
-        }
-        setError(errorMessage);
-        setView('packingAssistantForm');
-      }
-    } finally {
-        if (!isGenerationCancelled.current) {
-            setIsLoading(false);
-        }
+
+    if (destination) {
+      initialData.destination = destination;
+    } else {
+      initialData = null; 
     }
-  }, []);
-
-  const handleGenerateFoodRecommendations = useCallback(async (data: FoodFinderRequestData) => {
-    isGenerationCancelled.current = false;
-    setIsLoading(true);
-    setError(null);
-    setStreamedText('');
-    const onChunk = (chunk: string) => {
-        if (!isGenerationCancelled.current) {
-            setStreamedText(prev => prev + chunk);
-        }
-    };
-    try {
-      const recommendations = await generateFoodRecommendations(data, onChunk);
-      if (!isGenerationCancelled.current) {
-        setFoodRecommendations(recommendations);
-        setView('foodFinderResult');
-      }
-    } catch (err) {
-      if (!isGenerationCancelled.current) {
-        let errorMessage = 'Failed to generate food recommendations. Please try again.';
-        if (err instanceof Error) {
-            const message = err.message;
-            if (message.includes('[429]') || message.toLowerCase().includes('quota')) {
-                errorMessage = 'You have exceeded the request limit. Please check your plan and billing details and try again later.';
-            } else if (message.includes('[503]') || message.toLowerCase().includes('overloaded')) {
-                errorMessage = 'The AI model is currently busy handling many requests. Please wait a moment and try again.';
-            } else {
-                errorMessage = message.replace(/^\[\d{3}\]\s*/, '');
-            }
-        }
-        setError(errorMessage);
-        setView('foodFinderForm');
-      }
-    } finally {
-      if (!isGenerationCancelled.current) {
-        setIsLoading(false);
-      }
-    }
-  }, []);
-
-  const handleGenerateAppRecommendations = useCallback(async (data: AppFinderRequestData) => {
-    isGenerationCancelled.current = false;
-    setIsLoading(true);
-    setError(null);
-    setStreamedText('');
-    const onChunk = (chunk: string) => {
-        if (!isGenerationCancelled.current) {
-            setStreamedText(prev => prev + chunk);
-        }
-    };
-    try {
-      const recommendations = await generateAppRecommendations(data, onChunk);
-      if (!isGenerationCancelled.current) {
-        setAppRecommendations(recommendations);
-        setView('appFinderResult');
-      }
-    } catch (err) {
-      if (!isGenerationCancelled.current) {
-        let errorMessage = 'Failed to generate app recommendations. Please try again.';
-        if (err instanceof Error) {
-            const message = err.message;
-            if (message.includes('[429]') || message.toLowerCase().includes('quota')) {
-                errorMessage = 'You have exceeded the request limit. Please check your plan and billing details and try again later.';
-            } else if (message.includes('[503]') || message.toLowerCase().includes('overloaded')) {
-                errorMessage = 'The AI model is currently busy handling many requests. Please wait a moment and try again.';
-            } else {
-                errorMessage = message.replace(/^\[\d{3}\]\s*/, '');
-            }
-        }
-        setError(errorMessage);
-        setView('appFinderForm');
-      }
-    } finally {
-      if (!isGenerationCancelled.current) {
-        setIsLoading(false);
-      }
-    }
-  }, []);
-
-  const handleGenerateMusicRecommendations = useCallback(async (data: MusicFinderRequestData) => {
-    isGenerationCancelled.current = false;
-    setIsLoading(true);
-    setError(null);
-    setStreamedText('');
-    const onChunk = (chunk: string) => {
-        if (!isGenerationCancelled.current) {
-            setStreamedText(prev => prev + chunk);
-        }
-    };
-    try {
-      const recommendations = await generateMusicRecommendations(data, onChunk);
-      if (!isGenerationCancelled.current) {
-        setMusicRecommendations(recommendations);
-        setView('musicFinderResult');
-      }
-    } catch (err) {
-      if (!isGenerationCancelled.current) {
-        let errorMessage = 'Failed to generate music recommendations. Please try again.';
-        if (err instanceof Error) {
-            const message = err.message;
-            if (message.includes('[429]') || message.toLowerCase().includes('quota')) {
-                errorMessage = 'You have exceeded the request limit. Please check your plan and billing details and try again later.';
-            } else if (message.includes('[503]') || message.toLowerCase().includes('overloaded')) {
-                errorMessage = 'The AI model is currently busy handling many requests. Please wait a moment and try again.';
-            } else {
-                errorMessage = message.replace(/^\[\d{3}\]\s*/, '');
-            }
-        }
-        setError(errorMessage);
-        setView('musicFinderForm');
-      }
-    } finally {
-      if (!isGenerationCancelled.current) {
-        setIsLoading(false);
-      }
-    }
-  }, []);
-
-  const handleCancelGeneration = useCallback(() => {
-    isGenerationCancelled.current = true;
-    setIsLoading(false);
-    setStreamedText('');
-  }, []);
-
-  const handleBackToQuestionnaire = useCallback(() => {
-    setView('questionnaire');
-  }, []);
-  
-  const handleBackToPackingForm = useCallback(() => {
-    setPackingList(null);
-    setView('packingAssistantForm');
-  }, []);
-
-  const handleBackToFoodForm = useCallback(() => {
-    setFoodRecommendations(null);
-    setView('foodFinderForm');
-  }, []);
-
-  const handleBackToAppForm = useCallback(() => {
-    setAppRecommendations(null);
-    setView('appFinderForm');
-  }, []);
-
-  const handleBackToMusicForm = useCallback(() => {
-    setMusicRecommendations(null);
-    setView('musicFinderForm');
-  }, []);
-
+    setInitialQuestionnaireData(initialData);
+    handleViewChange('questionnaire');
+  }, [handleViewChange]);
 
   const handleBackToHome = useCallback(() => {
-    setView('landing');
     setItinerary(null);
     setPackingList(null);
     setFoodRecommendations(null);
     setAppRecommendations(null);
     setMusicRecommendations(null);
-    setFormData(null);
-    setError(null);
-  }, []);
+    setInitialQuestionnaireData(null);
+    handleViewChange('landing');
+  }, [handleViewChange]);
+  
+  const handleCancelGeneration = useCallback(() => {
+    setIsLoading(false);
+    setError("Generation was cancelled.");
+    
+    const formViews: Partial<Record<View, View>> = {
+      'itinerary': 'questionnaire',
+      'packingAssistantResult': 'packingAssistantForm',
+      'foodFinderResult': 'foodFinderForm',
+      'appFinderResult': 'appFinderForm',
+      'musicFinderResult': 'musicFinderForm',
+    };
+    
+    const targetView = formViews[view] || 'landing';
+    handleViewChange(targetView as View);
 
-  const renderContent = () => {
-    switch (view) {
-      case 'landing':
-        return <LandingPage onPlanTrip={handleStartPlanning} onStartPacking={handleStartPacking} onStartFoodFinder={handleStartFoodFinder} onStartAppFinder={handleStartAppFinder} onStartMusicFinder={handleStartMusicFinder} />;
-      case 'questionnaire':
-        return (
-          <Questionnaire
-            onSubmit={handleGenerateItinerary}
-            isLoading={isLoading}
-            error={error}
-            initialData={formData}
-            onBack={handleBackToHome}
-            onCancel={handleCancelGeneration}
-            streamedText={streamedText}
-          />
-        );
-      case 'itinerary':
-        return itinerary ? (
-          <ItineraryPreview itinerary={itinerary} onRegenerate={handleBackToQuestionnaire} />
-        ) : (
-          <div className="text-center p-8">
-            <p>Something went wrong. Itinerary data is missing.</p>
-            <button
-              onClick={handleBackToQuestionnaire}
-              className="mt-4 px-6 py-2 bg-violet-600 text-white font-semibold rounded-full hover:bg-violet-700 transition-colors"
-            >
-              Try Again
-            </button>
-          </div>
-        );
-      case 'packingAssistantForm':
-        return <PackingAssistantForm onSubmit={handleGeneratePackingList} onBack={handleBackToHome} isLoading={isLoading} error={error} onCancel={handleCancelGeneration} streamedText={streamedText} />;
-      case 'packingAssistantResult':
-        return packingList ? (
-          <PackingListPreview packingList={packingList} onRegenerate={handleBackToPackingForm} />
-        ) : (
-          <div className="text-center p-8">
-            <p>Something went wrong. Packing list data is missing.</p>
-            <button
-              onClick={handleBackToPackingForm}
-              className="mt-4 px-6 py-2 bg-violet-600 text-white font-semibold rounded-full hover:bg-violet-700 transition-colors"
-            >
-              Try Again
-            </button>
-          </div>
-        );
-      case 'foodFinderForm':
-        return <FoodFinderForm onSubmit={handleGenerateFoodRecommendations} onBack={handleBackToHome} isLoading={isLoading} error={error} onCancel={handleCancelGeneration} streamedText={streamedText} />;
-      case 'foodFinderResult':
-        return foodRecommendations ? (
-          <FoodFinderResult recommendations={foodRecommendations} onRegenerate={handleBackToFoodForm} />
-        ) : (
-           <div className="text-center p-8">
-            <p>Something went wrong. Food recommendations are missing.</p>
-            <button
-              onClick={handleBackToFoodForm}
-              className="mt-4 px-6 py-2 bg-violet-600 text-white font-semibold rounded-full hover:bg-violet-700 transition-colors"
-            >
-              Try Again
-            </button>
-          </div>
-        );
-      case 'appFinderForm':
-        return <AppFinderForm onSubmit={handleGenerateAppRecommendations} onBack={handleBackToHome} isLoading={isLoading} error={error} onCancel={handleCancelGeneration} streamedText={streamedText} />;
-      case 'appFinderResult':
-        return appRecommendations ? (
-          <AppFinderResult recommendations={appRecommendations} onRegenerate={handleBackToAppForm} />
-        ) : (
-           <div className="text-center p-8">
-            <p>Something went wrong. App recommendations are missing.</p>
-            <button
-              onClick={handleBackToAppForm}
-              className="mt-4 px-6 py-2 bg-violet-600 text-white font-semibold rounded-full hover:bg-violet-700 transition-colors"
-            >
-              Try Again
-            </button>
-          </div>
-        );
-      case 'musicFinderForm':
-        return <MusicFinderForm onSubmit={handleGenerateMusicRecommendations} onBack={handleBackToHome} isLoading={isLoading} error={error} onCancel={handleCancelGeneration} streamedText={streamedText} />;
-      case 'musicFinderResult':
-        return musicRecommendations ? (
-          <MusicFinderResult recommendations={musicRecommendations} onRegenerate={handleBackToMusicForm} />
-        ) : (
-            <div className="text-center p-8">
-              <p>Something went wrong. Music recommendations are missing.</p>
-              <button
-                onClick={handleBackToMusicForm}
-                className="mt-4 px-6 py-2 bg-violet-600 text-white font-semibold rounded-full hover:bg-violet-700 transition-colors"
-              >
-                Try Again
-              </button>
-            </div>
-        );
-      default:
-        return <LandingPage onPlanTrip={handleStartPlanning} onStartPacking={handleStartPacking} onStartFoodFinder={handleStartFoodFinder} onStartAppFinder={handleStartAppFinder} onStartMusicFinder={handleStartMusicFinder} />;
+  }, [view, handleViewChange]);
+
+  const handleGenerateItinerary = async (data: QuestionnaireData) => {
+    setIsLoading(true);
+    setError(null);
+    setItinerary(null);
+    handleViewChange('itinerary');
+
+    try {
+      const result = await generateItinerary(
+        data.destination, data.startPoint, data.tripType, data.days, data.budget, data.vibe, data.persons, data.foodPreference, data.startDate, data.includeMedical, data.language, data.isRoundTrip, data.currency,
+        (chunk) => setStreamedText(prev => prev + chunk)
+      );
+      setItinerary(result);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'An unknown error occurred');
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  const handleGeneratePackingList = async (data: PackingListRequestData) => {
+    setIsLoading(true);
+    setError(null);
+    setPackingList(null);
+    handleViewChange('packingAssistantResult');
+    try {
+        const result = await generatePackingList(data, (chunk) => setStreamedText(prev => prev + chunk));
+        setPackingList(result);
+    } catch (e) {
+        setError(e instanceof Error ? e.message : 'An unknown error occurred');
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
+  const handleGenerateFoodRecommendations = async (data: FoodFinderRequestData) => {
+    setIsLoading(true);
+    setError(null);
+    setFoodRecommendations(null);
+    handleViewChange('foodFinderResult');
+    try {
+        const result = await generateFoodRecommendations(data, (chunk) => setStreamedText(prev => prev + chunk));
+        setFoodRecommendations(result);
+    } catch (e) {
+        setError(e instanceof Error ? e.message : 'An unknown error occurred');
+    } finally {
+        setIsLoading(false);
+    }
+  };
+  
+  const handleGenerateAppRecommendations = async (data: AppFinderRequestData) => {
+    setIsLoading(true);
+    setError(null);
+    setAppRecommendations(null);
+    handleViewChange('appFinderResult');
+    try {
+        const result = await generateAppRecommendations(data, (chunk) => setStreamedText(prev => prev + chunk));
+        setAppRecommendations(result);
+    } catch (e) {
+        setError(e instanceof Error ? e.message : 'An unknown error occurred');
+    } finally {
+        setIsLoading(false);
+    }
+  };
+  
+  const handleGenerateMusicRecommendations = async (data: MusicFinderRequestData) => {
+    setIsLoading(true);
+    setError(null);
+    setMusicRecommendations(null);
+    handleViewChange('musicFinderResult');
+    try {
+        const result = await generateMusicRecommendations(data, (chunk) => setStreamedText(prev => prev + chunk));
+        setMusicRecommendations(result);
+    } catch (e) {
+        setError(e instanceof Error ? e.message : 'An unknown error occurred');
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
+  const renderContent = () => {
+    if (isLoading) {
+      switch (view) {
+        case 'itinerary':
+          return <Questionnaire onSubmit={handleGenerateItinerary} isLoading={true} error={null} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} />;
+        case 'packingAssistantResult':
+          return <PackingAssistantForm onSubmit={handleGeneratePackingList} isLoading={true} error={null} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} />;
+        case 'foodFinderResult':
+          return <FoodFinderForm onSubmit={handleGenerateFoodRecommendations} isLoading={true} error={null} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} />;
+        case 'appFinderResult':
+          return <AppFinderForm onSubmit={handleGenerateAppRecommendations} isLoading={true} error={null} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} />;
+        case 'musicFinderResult':
+          return <MusicFinderForm onSubmit={handleGenerateMusicRecommendations} isLoading={true} error={null} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} />;
+        default:
+          return null;
+      }
+    }
+
+    switch (view) {
+      case 'landing':
+        return <LandingPage onPlanTrip={handlePlanTrip} onStartPacking={() => handleViewChange('packingAssistantForm')} onStartFoodFinder={() => handleViewChange('foodFinderForm')} onStartAppFinder={() => handleViewChange('appFinderForm')} onStartMusicFinder={() => handleViewChange('musicFinderForm')} />;
+      case 'questionnaire':
+        return <Questionnaire onSubmit={handleGenerateItinerary} isLoading={false} error={error} initialData={initialQuestionnaireData} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} />;
+      case 'itinerary':
+        if (itinerary) return <ItineraryPreview itinerary={itinerary} onRegenerate={() => { setItinerary(null); handleViewChange('questionnaire'); }} />;
+        break;
+      case 'packingAssistantForm':
+        return <PackingAssistantForm onSubmit={handleGeneratePackingList} isLoading={false} error={error} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} />;
+      case 'packingAssistantResult':
+        if (packingList) return <PackingListPreview packingList={packingList} onRegenerate={() => handleViewChange('packingAssistantForm')} />;
+        break;
+      case 'foodFinderForm':
+        return <FoodFinderForm onSubmit={handleGenerateFoodRecommendations} isLoading={false} error={error} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} />;
+      case 'foodFinderResult':
+        if (foodRecommendations) return <FoodFinderResult recommendations={foodRecommendations} onRegenerate={() => handleViewChange('foodFinderForm')} />;
+        break;
+      case 'appFinderForm':
+        return <AppFinderForm onSubmit={handleGenerateAppRecommendations} isLoading={false} error={error} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} />;
+      case 'appFinderResult':
+        if (appRecommendations) return <AppFinderResult recommendations={appRecommendations} onRegenerate={() => handleViewChange('appFinderForm')} />;
+        break;
+      case 'musicFinderForm':
+        return <MusicFinderForm onSubmit={handleGenerateMusicRecommendations} isLoading={false} error={error} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} />;
+      case 'musicFinderResult':
+        if (musicRecommendations) return <MusicFinderResult recommendations={musicRecommendations} onRegenerate={() => handleViewChange('musicFinderForm')} />;
+        break;
+      case 'contact':
+        return <ContactUs onBack={handleBackToHome} />;
+    }
+    // Fallback for when data isn't ready but loading is false (e.g., after an error)
+    if (error) {
+        handleViewChange('landing');
+    }
+    return <LandingPage onPlanTrip={handlePlanTrip} onStartPacking={() => handleViewChange('packingAssistantForm')} onStartFoodFinder={() => handleViewChange('foodFinderForm')} onStartAppFinder={() => handleViewChange('appFinderForm')} onStartMusicFinder={() => handleViewChange('musicFinderForm')} />;
+  };
+
   return (
-    <div className="min-h-screen flex flex-col">
-      <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {renderContent()}
-      </main>
+    <>
+      {view === 'landing' && <Header />}
+      <div ref={mainContentRef} className="min-h-screen">
+        <main className={`container mx-auto px-4 sm:px-6 lg:px-8 pb-8 relative ${view === 'landing' ? 'pt-24' : ''}`}>
+            {renderContent()}
+        </main>
+      </div>
+      {view === 'landing' ? (
+        <ContactUsButton onClick={() => handleViewChange('contact')} />
+      ) : (
+        <QuickNavButton
+          onGoHome={handleBackToHome}
+          onGoToContact={() => handleViewChange('contact')}
+          onPlanTrip={handlePlanTrip}
+          onStartPacking={() => handleViewChange('packingAssistantForm')}
+          onStartFoodFinder={() => handleViewChange('foodFinderForm')}
+          onStartAppFinder={() => handleViewChange('appFinderForm')}
+          onStartMusicFinder={() => handleViewChange('musicFinderForm')}
+        />
+      )}
       <ScrollToTopButton />
-      <QuickNavButton 
-        onPlanTrip={() => handleStartPlanning()}
-        onStartPacking={handleStartPacking}
-        onStartFoodFinder={handleStartFoodFinder}
-        onStartAppFinder={handleStartAppFinder}
-        onStartMusicFinder={handleStartMusicFinder}
-      />
-    </div>
+    </>
   );
 };
 

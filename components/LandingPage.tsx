@@ -1,4 +1,6 @@
 
+
+
 import React, { useState, useEffect } from 'react';
 import { PopularDestination } from '../types';
 import TestimonialsCarousel from './TestimonialsCarousel';
@@ -125,7 +127,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onPlanTrip, onStartPacking, o
   ];
   
   return (
-    <div className="space-y-16 py-8">
+    <div className="space-y-16 pb-8">
       {/* Hero Section */}
       <div className="animated-card text-center" style={{ animationDelay: '100ms' }}>
         <button

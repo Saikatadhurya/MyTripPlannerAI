@@ -82,6 +82,13 @@
         from { width: 0%; }
         to { width: 100%; }
       }
+      @keyframes slideDown {
+        from { transform: translateY(-100%); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+      }
+      .slide-down-animation {
+        animation: slideDown 0.3s ease-out;
+      }
     </style>
   <script type="importmap">
 {
