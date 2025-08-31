@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { QuestionnaireData, PackingListRequestData, PackingList, FoodFinderRequestData, FoodRecommendations, AppFinderRequestData, AppRecommendations, MusicFinderRequestData, MusicRecommendations, QuestionnaireData as InitialQuestionnaireData, UnifiedPlan, UnifiedPlanLoadingStatus, Itinerary } from './types';
 import { generateItinerary } from './services/geminiService';
@@ -48,10 +49,10 @@ const NavItem: React.FC<{
 }> = ({ icon, label, onClick, isActive }) => (
   <button
     onClick={onClick}
-    className={`flex flex-col items-center justify-center w-full pt-2 pb-1 transition-colors duration-200 ${isActive ? 'text-violet-600' : 'text-slate-500 hover:text-violet-600'}`}
+    className={`flex flex-1 flex-col items-center justify-center pt-2 pb-1 transition-colors duration-200 ${isActive ? 'text-violet-600' : 'text-slate-500 hover:text-violet-600'}`}
   >
     {icon}
-    <span className="text-xs font-semibold mt-1">{label}</span>
+    <span className="text-xs font-semibold mt-1 text-center">{label}</span>
   </button>
 );
 
@@ -67,7 +68,7 @@ const MoreMenu: React.FC<{
     };
 
     return (
-        <div className="absolute bottom-full right-0 mb-2 w-56 bg-white/80 backdrop-blur-xl border border-white/40 rounded-xl shadow-lg p-2 flex flex-col z-40">
+        <div className="absolute bottom-full right-0 mb-2 w-56 bg-white/95 backdrop-blur-xl border border-slate-200/70 rounded-xl shadow-lg p-2 flex flex-col z-40">
             <button onClick={() => handleAction(onStartAppFinder)} className="w-full flex items-center text-left px-3 py-2.5 rounded-lg text-slate-800 font-semibold transition-colors duration-200 hover:bg-violet-100/80">
                 <span className="text-xl w-8 text-center">📱</span>
                 <span>App Finder</span>
@@ -122,7 +123,7 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({
   return (
     <div className="fixed bottom-0 left-0 right-0 z-40 sm:hidden no-print">
       <div className="w-full bg-white/80 backdrop-blur-xl border-t border-white/50 shadow-[0_-5px_15px_-5px_rgba(0,0,0,0.1)]">
-        <div className="flex justify-around items-stretch h-16">
+        <div className="flex items-stretch h-16">
           {navItems.map(item => (
             <NavItem
               key={item.label}
