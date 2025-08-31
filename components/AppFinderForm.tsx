@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { AppFinderRequestData, LocationSuggestion } from '../types';
 import { getDestinationSuggestions } from '../services/geminiService';
@@ -14,11 +13,19 @@ interface AppFinderFormProps {
 }
 
 const appStages = [
-    { key: '"transportAndTravel"', text: 'Finding transport and travel apps' },
-    { key: '"stayAndLiving"', text: 'Searching for stay and living apps' },
-    { key: '"foodAndDining"', text: 'Discovering food and dining apps' },
-    { key: '"explorationAndTours"', text: 'Locating exploration apps' },
-    { key: '"utilitiesAndSafety"', text: 'Checking for utility and safety apps' },
+    { key: '"transportAndTravel":[', text: 'Finding transport and travel apps' },
+    { key: '"stayAndLiving":[', text: 'Searching for stay and living apps' },
+    { key: '"foodAndDining":[', text: 'Discovering food and dining apps' },
+    { key: '"explorationAndTours":[', text: 'Locating exploration apps' },
+    { key: '"utilitiesAndSafety":[', text: 'Checking for utility and safety apps' },
+];
+
+const funFacts = [
+    { icon: '📲', text: 'Scanning the local app stores...' },
+    { icon: '🧭', text: 'Finding the best navigation tools...' },
+    { icon: '🚕', text: 'Locating top ride-sharing apps...' },
+    { icon: '💬', text: 'Searching for translation apps...' },
+    { icon: '💳', text: 'Checking for local payment apps...' },
 ];
 
 const languages = [
@@ -116,6 +123,7 @@ const AppFinderForm: React.FC<AppFinderFormProps> = ({ onSubmit, isLoading, erro
         onCancel={onCancel}
         title="Scanning for Local Apps..."
         accentColor="teal"
+        funFacts={funFacts}
       />
     );
   }

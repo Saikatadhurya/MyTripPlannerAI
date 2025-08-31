@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Budget, Vibe, FoodPreference, TripType, QuestionnaireData, LocationSuggestion } from '../types';
 import { getDestinationSuggestions } from '../services/geminiService';
@@ -44,11 +43,19 @@ const languages = [
 ];
 
 const itineraryStages = [
-    { key: '"budgetSummary"', text: 'Analyzing budget and costs' },
-    { key: '"currencyConversion"', text: 'Checking currency exchange rates' },
-    { key: '"coveredDestinations"', text: 'Researching destinations' },
-    { key: '"planNote"', text: 'Adding important travel notes' },
-    { key: '"plan"', text: 'Building the day-by-day plan' },
+    { key: '"budgetSummary":{', text: 'Analyzing budget and costs' },
+    { key: '"currencyConversion":{', text: 'Checking currency exchange rates' },
+    { key: '"coveredDestinations":[', text: 'Researching destinations' },
+    { key: '"planNote":"', text: 'Adding important travel notes' },
+    { key: '"plan":[', text: 'Building the day-by-day plan' },
+];
+
+const funFacts = [
+    { icon: '🗺️', text: 'Plotting scenic routes...' },
+    { icon: '💎', text: 'Finding hidden gems...' },
+    { icon: '🗓️', text: 'Scheduling daily activities...' },
+    { icon: '🏨', text: 'Scouting the best stays...' },
+    { icon: '🍜', text: 'Locating top-rated eats...' },
 ];
 
 const Toggle: React.FC<{ label: string; description: string; enabled: boolean; onChange: (enabled: boolean) => void; }> = ({ label, description, enabled, onChange }) => (
@@ -284,6 +291,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
         onCancel={onCancel}
         title="Crafting Your Itinerary..."
         accentColor="violet"
+        funFacts={funFacts}
       />
     );
   }

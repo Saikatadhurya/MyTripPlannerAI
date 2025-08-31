@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { PackingListRequestData, LocationSuggestion } from '../types';
 import { getDestinationSuggestions } from '../services/geminiService';
@@ -14,12 +13,20 @@ interface PackingAssistantFormProps {
 }
 
 const packingStages = [
-    { key: '"approximateTemperature"', text: 'Checking the weather forecast' },
-    { key: '"clothingAndFootwear"', text: 'Selecting outfits and shoes' },
-    { key: '"adventureClothing"', text: 'Packing for adventure' },
-    { key: '"electronicsAndGear"', text: 'Gathering electronics and gear' },
-    { key: '"documentsAndMoney"', text: 'Securing documents and money' },
-    { key: '"bagSuggestion"', text: 'Recommending the perfect bag' },
+    { key: '"approximateTemperature":"', text: 'Checking the weather forecast' },
+    { key: '"clothingAndFootwear":[', text: 'Selecting outfits and shoes' },
+    { key: '"adventureClothing":[', text: 'Packing for adventure' },
+    { key: '"electronicsAndGear":[', text: 'Gathering electronics and gear' },
+    { key: '"documentsAndMoney":[', text: 'Securing documents and money' },
+    { key: '"bagSuggestion":"', text: 'Recommending the perfect bag' },
+];
+
+const funFacts = [
+    { icon: '🌤️', text: 'Checking the weather forecast...' },
+    { icon: '👕', text: 'Choosing the perfect outfits...' },
+    { icon: '🔌', text: 'Remembering all the chargers...' },
+    { icon: '🪥', text: 'Making sure you don\'t forget your toothbrush...' },
+    { icon: '✈️', text: 'Optimizing for carry-on...' },
 ];
 
 const languages = [
@@ -136,6 +143,7 @@ const PackingAssistantForm: React.FC<PackingAssistantFormProps> = ({ onSubmit, i
         onCancel={onCancel}
         title="Building Your Packing List..."
         accentColor="violet"
+        funFacts={funFacts}
       />
     );
   }

@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { MusicFinderRequestData, LocationSuggestion } from '../types';
 import { getDestinationSuggestions } from '../services/geminiService';
@@ -14,11 +13,17 @@ interface MusicFinderFormProps {
 }
 
 const musicStages = [
-    { key: '"genre": "Top Trending Hits"', text: 'Finding top trending hits' },
-    { key: '"musicCategories"', text: 'Discovering local genres and artists' },
-    { key: '"appLinks"', text: 'Locating songs on streaming apps' },
+    { key: '"musicCategories":[', text: 'Curating music categories' },
+    { key: '"genre":"TopTrendingHits"', text: 'Finding top trending hits' },
 ];
 
+const funFacts = [
+    { icon: '🎧', text: 'Tuning into local radio...' },
+    { icon: '🎶', text: 'Discovering the local anthems...' },
+    { icon: '🎸', text: 'Finding iconic folk songs...' },
+    { icon: '🎤', text: 'Checking the top of the charts...' },
+    { icon: '💿', text: 'Building the perfect travel playlist...' },
+];
 
 const languages = [
     'Afrikaans (af)', 'Akan (ak)', 'Albanian (sq)', 'Amharic (am)', 'Arabic (ar)', 'Armenian (hy)', 'Assamese (as)', 'Aymara (ay)', 'Azerbaijani (az)', 
@@ -115,6 +120,7 @@ const MusicFinderForm: React.FC<MusicFinderFormProps> = ({ onSubmit, isLoading, 
         onCancel={onCancel}
         title="Curating Your Playlist..."
         accentColor="fuchsia"
+        funFacts={funFacts}
       />
     );
   }

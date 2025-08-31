@@ -5,12 +5,18 @@ interface Stage {
   text: string;
 }
 
+interface FunFact {
+  icon: string;
+  text: string;
+}
+
 interface StreamingLoadingIndicatorProps {
   streamedText: string;
   stages: Stage[];
   onCancel: () => void;
   title: string;
   accentColor: 'violet' | 'amber' | 'teal' | 'fuchsia';
+  funFacts: FunFact[];
 }
 
 const colorClasses = {
@@ -58,15 +64,24 @@ const StageItem: React.FC<{ text: string, status: 'completed' | 'in_progress' | 
     );
 };
 
-const StreamingLoadingIndicator: React.FC<StreamingLoadingIndicatorProps> = ({ streamedText, stages, onCancel, title, accentColor }) => {
+const StreamingLoadingIndicator: React.FC<StreamingLoadingIndicatorProps> = ({ streamedText, stages, onCancel, title, accentColor, funFacts }) => {
   const connectingStage: Stage = useMemo(() => ({ key: 'connecting', text: 'Connecting to AI...' }), []);
   const finalizingStage: Stage = useMemo(() => ({ key: 'finalizing', text: 'Finalizing your results...' }), []);
   
   const allStages = useMemo(() => [connectingStage, ...stages, finalizingStage], [stages, connectingStage, finalizingStage]);
 
   const [currentStageIndex, setCurrentStageIndex] = useState(0);
+  const [currentFactIndex, setCurrentFactIndex] = useState(0);
 
   const hasStreamStarted = useMemo(() => streamedText.length > 0, [streamedText]);
+
+  useEffect(() => {
+    if (!funFacts || funFacts.length === 0) return;
+    const interval = setInterval(() => {
+      setCurrentFactIndex(prev => (prev + 1) % funFacts.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [funFacts]);
 
   useEffect(() => {
     const newCompleted = new Set<string>();
@@ -75,8 +90,12 @@ const StreamingLoadingIndicator: React.FC<StreamingLoadingIndicatorProps> = ({ s
       newCompleted.add(connectingStage.key);
     }
     
+    // Remove all whitespace from the stream for a more robust check
+    const cleanedStream = streamedText.replace(/\s/g, '');
+
     stages.forEach((stage) => {
-      if (streamedText.includes(stage.key)) {
+      // Check the cleaned stream against the whitespace-less key
+      if (cleanedStream.includes(stage.key)) {
         newCompleted.add(stage.key);
       }
     });
@@ -116,7 +135,17 @@ const StreamingLoadingIndicator: React.FC<StreamingLoadingIndicatorProps> = ({ s
     <div className="text-center py-12 px-4 fade-in">
       <div className="max-w-md mx-auto bg-white/40 backdrop-blur-lg p-8 rounded-2xl border border-white/50 shadow-2xl">
         <h2 className="text-2xl font-bold text-slate-800">{title}</h2>
-        <p className="text-slate-600 mt-2">The AI is working its magic. Here's the real-time progress:</p>
+
+        {funFacts && funFacts.length > 0 && (
+          <div className="mt-4 h-12 flex items-center justify-center">
+            <div key={currentFactIndex} style={{ animation: 'fun-fact-fade-in 4s ease-in-out' }}>
+                <p className="text-slate-600 flex items-center justify-center space-x-2">
+                    <span className="text-xl">{funFacts[currentFactIndex].icon}</span>
+                    <span>{funFacts[currentFactIndex].text}</span>
+                </p>
+            </div>
+          </div>
+        )}
         
         <ul className="space-y-4 text-left my-8">
             {allStages.map((stage, index) => (
