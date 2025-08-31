@@ -1,7 +1,9 @@
 
 
+
 import { GoogleGenAI } from "@google/genai";
 import { AppFinderRequestData, AppRecommendations } from '../types';
+import { extractJson, cleanCitations } from './jsonUtils';
 
 export const generateAppRecommendations = async (data: AppFinderRequestData, onChunk: (chunk: string) => void): Promise<AppRecommendations> => {
   if (!process.env.API_KEY) {
@@ -68,67 +70,41 @@ export const generateAppRecommendations = async (data: AppFinderRequestData, onC
           throw new Error("The AI returned an empty response.");
       }
       
-      let jsonString = fullText;
-      const markdownMatch = jsonString.match(/```(json)?([\s\S]*?)```/);
-      if (markdownMatch && markdownMatch[2]) {
-          jsonString = markdownMatch[2].trim();
-      }
-
-      const firstBrace = jsonString.indexOf('{');
-      if (firstBrace === -1) {
-          throw new Error("Could not find a valid JSON object in the AI response.");
-      }
-
-      let braceCount = 0;
-      let lastBrace = -1;
-      for (let i = firstBrace; i < jsonString.length; i++) {
-        if (jsonString[i] === '{') {
-          braceCount++;
-        } else if (jsonString[i] === '}') {
-          braceCount--;
-        }
-        if (braceCount === 0) {
-          lastBrace = i;
-          break;
-        }
-      }
-
-      if (lastBrace === -1) {
-          throw new Error("Could not find a complete JSON object in the AI response.");
-      }
-
-      jsonString = jsonString.substring(firstBrace, lastBrace + 1);
-      jsonString = jsonString.replace(/,\s*([}\]])/g, '$1');
-      
+      const jsonString = extractJson(fullText);
       const parsedJson = JSON.parse(jsonString);
       
-      const cleanCitations = (obj: any): any => {
-        if (Array.isArray(obj)) {
-            return obj.map(v => cleanCitations(v));
-        } else if (obj !== null && typeof obj === 'object') {
-            return Object.fromEntries(
-                Object.entries(obj).map(([k, v]) => [k, cleanCitations(v)])
-            );
-        } else if (typeof obj === 'string') {
-            return obj.replace(/\s*\[\d+(,\s*\d+)*\]$/g, '').trim();
-        }
-        return obj;
-      };
-
-      const cleanedJson = cleanCitations(parsedJson);
-
-      if (cleanedJson.error && cleanedJson.error.code) {
-          const { code, message } = cleanedJson.error;
+      if (parsedJson.error && parsedJson.error.code) {
+          const { code, message } = parsedJson.error;
           throw new Error(`[${code}] ${message}`);
       }
+
+      const cleanedJson = cleanCitations(parsedJson);
 
       return cleanedJson;
   } catch (error) {
       console.error("Failed to generate and parse app recommendations stream:", error);
       console.error("Original AI response text accumulated:", fullText);
+      
       if (error instanceof Error && error.message.startsWith('[')) {
           throw error;
       }
+
+      if (fullText.toLowerCase().includes("quota") || fullText.toLowerCase().includes("rate limit")) {
+          throw new Error("[429] You have exceeded the request limit. Please check your plan and billing details and try again later.");
+      }
+      if (fullText.toLowerCase().includes("overloaded") || fullText.toLowerCase().includes("server error")) {
+           throw new Error("[503] The AI model is currently busy. Please wait a moment and try again.");
+      }
+      
+      if (error instanceof SyntaxError) {
+           throw new Error(`The AI's response was malformed and could not be read. Please try again.`);
+      }
+      if (error instanceof Error) {
+          if (error.message.includes("Could not find a valid JSON object")) {
+               throw new Error("The AI did not provide a structured response. It may have refused the request. Please adjust your query and try again.");
+          }
+      }
+      
       throw new Error("The AI returned an invalid response format. Please try again.");
   }
 };
