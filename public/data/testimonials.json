@@ -1,0 +1,63 @@
+
+[
+  {
+    "name": "Priya Nair",
+    "location": "Mumbai, Maharashtra",
+    "rating": 5,
+    "text": "The trip planning was absolutely seamless! Every detail was perfectly organized and the local recommendations were spot-on."
+  },
+  {
+    "name": "Arjun Sharma",
+    "location": "Delhi, Delhi",
+    "rating": 5,
+    "text": "Found some incredible hidden gems I never would have discovered on my own. The local food suggestions were amazing!"
+  },
+  {
+    "name": "Kavya Reddy",
+    "location": "Hyderabad, Telangana",
+    "rating": 5,
+    "text": "Excellent service and attention to detail. Made our family vacation stress-free and memorable."
+  },
+  {
+    "name": "Vikram Patel",
+    "location": "Ahmedabad, Gujarat",
+    "rating": 4.5,
+    "text": "Outstanding cultural insights and perfect timing for all activities. The AI recommendations were surprisingly accurate."
+  },
+  {
+    "name": "Ananya Iyer",
+    "location": "Chennai, Tamil Nadu",
+    "rating": 5,
+    "text": "Best travel experience ever! The personalized itinerary was exactly what we needed for our anniversary trip."
+  },
+  {
+    "name": "Rahul Gupta",
+    "location": "Pune, Maharashtra",
+    "rating": 4,
+    "text": "Great value for money and fantastic customer support. The mobile app made everything so convenient during our journey."
+  },
+  {
+    "name": "Shreya Bansal",
+    "location": "Jaipur, Rajasthan",
+    "rating": 5,
+    "text": "Transformed our chaotic travel plans into a beautiful, organized adventure. Highly recommend to all travelers!"
+  },
+  {
+    "name": "Aman Singh",
+    "location": "Chandigarh, Punjab",
+    "rating": 4.5,
+    "text": "The local music and food recommendations were absolutely perfect. Made our trip authentic and unforgettable."
+  },
+  {
+    "name": "Neha Agarwal",
+    "location": "Kolkata, West Bengal",
+    "rating": 5,
+    "text": "Incredible attention to detail and wonderful customer service. The smart packing suggestions saved us so much space!"
+  },
+  {
+    "name": "Rohan Joshi",
+    "location": "Bangalore, Karnataka",
+    "rating": 4,
+    "text": "Excellent platform with innovative features. The budget planning tools helped us stay within our limits perfectly."
+  }
+]

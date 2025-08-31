@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { PopularDestination } from '../types';
+import TestimonialsCarousel from './TestimonialsCarousel';
 
 interface LandingPageProps {
   onPlanTrip: (destination?: string) => void;
@@ -124,7 +125,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onPlanTrip, onStartPacking, o
   ];
   
   return (
-    <div className="space-y-12 py-8">
+    <div className="space-y-16 py-8">
       {/* Hero Section */}
       <div className="animated-card text-center" style={{ animationDelay: '100ms' }}>
         <button
@@ -225,6 +226,17 @@ const LandingPage: React.FC<LandingPageProps> = ({ onPlanTrip, onStartPacking, o
           ))}
         </div>
       </div>
+
+      {/* Testimonials Section */}
+      <section>
+        <h2 className="text-2xl font-bold text-center text-slate-900 mb-8 animated-card" style={{ animationDelay: '1600ms' }}>
+          What Our Travelers Say
+        </h2>
+        <div className="animated-card" style={{ animationDelay: '1700ms' }}>
+          <TestimonialsCarousel />
+        </div>
+      </section>
+
     </div>
   );
 };
