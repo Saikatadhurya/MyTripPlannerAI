@@ -104,6 +104,7 @@ export interface PackingListRequestData {
     startDate: string;
     days: number;
     language: string;
+    coveredDestinations?: DestinationDetails[];
 }
 
 export interface PackingList {
@@ -128,6 +129,7 @@ export interface FoodFinderRequestData {
     foodPreference: FoodPreference;
     includeAlcoholicDrinks: boolean;
     language: string;
+    coveredDestinations?: DestinationDetails[];
 }
 
 export interface FoodItem {
@@ -155,6 +157,7 @@ export interface FoodRecommendations {
 export interface AppFinderRequestData {
     destination: string;
     language: string;
+    coveredDestinations?: DestinationDetails[];
 }
 
 export interface MobileApp {
@@ -181,6 +184,7 @@ export interface AppRecommendations {
 export interface MusicFinderRequestData {
     destination: string;
     language: string;
+    coveredDestinations?: DestinationDetails[];
 }
 
 export interface MusicItem {

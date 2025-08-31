@@ -1,3 +1,4 @@
+
 import { GoogleGenAI } from "@google/genai";
 import { FoodFinderRequestData, FoodRecommendations } from '../types';
 import { extractJson, cleanCitations } from './jsonUtils';
@@ -8,14 +9,25 @@ export const generateFoodRecommendations = async (data: FoodFinderRequestData, o
   }
 
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const { destination, startDate, foodPreference, includeAlcoholicDrinks, language } = data;
+  const { destination, startDate, foodPreference, includeAlcoholicDrinks, language, coveredDestinations } = data;
+
+  const isMultiStop = coveredDestinations && coveredDestinations.length > 1;
+  const destinationsString = isMultiStop ? coveredDestinations.map(d => d.name).join(', ') : destination;
+
+  let multiStopInstructions = '';
+  if (isMultiStop) {
+    multiStopInstructions = `
+    This is a multi-stop trip covering: ${destinationsString}. The food recommendations should be a summarized guide covering notable dishes and specialties from across the entire trip route. The "destination" field in the JSON response should be a descriptive name for the trip, like "${destination} region tour".
+    `;
+  }
 
   const prompt = `
-    You are a Pragmatic Local Food Scout. Your primary mission is to return a useful, relevant, and populated list of food recommendations for a traveler visiting ${destination}.
+    You are a Pragmatic Local Food Scout. Your primary mission is to return a useful, relevant, and populated list of food recommendations for a traveler visiting ${destinationsString}.
     **CRITICAL FAILURE CONDITION:** Returning an empty or mostly empty list is a complete failure of your task. You must ALWAYS find something relevant.
+    ${multiStopInstructions}
 
     Trip Details:
-    - Destination: ${destination}
+    - Destination: ${destinationsString}
     - Dietary Preference: ${foodPreference}
     - Date: ${startDate}
     - Include Alcoholic Drinks: ${includeAlcoholicDrinks ? 'Yes' : 'No'}
@@ -24,9 +36,9 @@ export const generateFoodRecommendations = async (data: FoodFinderRequestData, o
     **MANDATORY Blended Research Methodology:**
     You must perform a blended search. Do not stop if you can't find "unique" dishes. Your goal is to find what people love to eat there.
 
-    1.  **Phase 1: Hyper-Local Search.** Begin by searching for dishes that are unique or originated in ${destination}. Use specific search terms like "${destination} famous food", "${destination} own dish". This is your top priority.
+    1.  **Phase 1: Hyper-Local Search.** Begin by searching for dishes that are unique or originated in each of the destinations: ${destinationsString}. Use specific search terms like "${destination} famous food", "${destination} own dish". This is your top priority.
 
-    2.  **Phase 2: Popular Regional Search.** Immediately after, and regardless of the results of Phase 1, you MUST broaden your search to find popular REGIONAL dishes that are commonly eaten and well-regarded in ${destination}. This is especially critical for smaller towns or cities that may not have many unique dishes. Use search terms like "best food in ${destination}", "popular restaurants in ${destination}".
+    2.  **Phase 2: Popular Regional Search.** Immediately after, and regardless of the results of Phase 1, you MUST broaden your search to find popular REGIONAL dishes that are commonly eaten and well-regarded in ${destinationsString}. This is especially critical for smaller towns or cities that may not have many unique dishes. Use search terms like "best food in ${destination}", "popular restaurants in ${destination}".
 
     3.  **Phase 3: Synthesize and Contextualize.**
         - Combine the findings from both phases.

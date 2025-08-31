@@ -1,3 +1,4 @@
+
 import { GoogleGenAI } from "@google/genai";
 import { MusicFinderRequestData, MusicRecommendations } from '../types';
 import { extractJson, cleanCitations } from './jsonUtils';
@@ -7,16 +8,27 @@ export const generateMusicRecommendations = async (data: MusicFinderRequestData,
     throw new Error("API key is missing. Please set it in your environment variables.");
   }
 
-  const { destination, language } = data;
+  const { destination, language, coveredDestinations } = data;
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
+  const isMultiStop = coveredDestinations && coveredDestinations.length > 1;
+  const destinationsString = isMultiStop ? coveredDestinations.map(d => d.name).join(', ') : destination;
+  
+  let multiStopInstructions = '';
+  if (isMultiStop) {
+    multiStopInstructions = `
+    This is a multi-stop trip covering: ${destinationsString}. Your music guide should reflect the diverse musical landscape of all the locations covered in the itinerary. The categories should represent the different regions or a blend of genres from the entire route.
+    `;
+  }
+
   const prompt = `
-    You are an expert Music Curator and Ethnomusicologist AI. Your mission is to provide a traveler with an authentic, popular, and well-organized music guide for "${destination}". Your output must be intelligent and adapt to the destination's unique musical landscape.
+    You are an expert Music Curator and Ethnomusicologist AI. Your mission is to provide a traveler with an authentic, popular, and well-organized music guide for "${destinationsString}". Your output must be intelligent and adapt to the destination's unique musical landscape.
+    ${multiStopInstructions}
 
     **CRITICAL CURATION PROTOCOL:**
 
     **Step 1: Analyze & Strategize (Your Core Logic)**
-    - First, you MUST analyze "${destination}" to determine its musical character.
+    - First, you MUST analyze "${destinationsString}" to determine its musical character.
     - Based on your analysis, CHOOSE the best categorization strategy:
       - **A) REGIONAL Strategy:** For large, musically diverse countries (e.g., India, USA, China, Brazil), your main categories should be distinct musical regions.
       - **B) GENRE-BASED Strategy:** For countries with a more unified but genre-rich music scene (e.g., Japan, Jamaica, South Korea, Ireland), your main categories should be the most prominent genres (e.g., J-Pop, Reggae, K-Pop, Traditional Folk).

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { PackingList } from '../types';
 
@@ -112,14 +113,14 @@ const PackingListPreview: React.FC<PackingListPreviewProps> = ({ packingList, on
             </header>
 
             <section className="space-y-6">
-                <div className="bg-white/20 backdrop-blur-xl border border-white/30 rounded-2xl p-6 shadow-lg flex items-center space-x-6">
+                <div className="bg-white/20 backdrop-blur-xl border border-white/30 rounded-2xl p-6 shadow-lg flex items-start space-x-6">
                     <div className="flex-shrink-0 bg-white/30 p-4 rounded-xl">
                         {getWeatherIcon(packingList.approximateTemperature)}
                     </div>
                     <div>
                         <h3 className="text-lg font-bold text-slate-800">Expected Weather</h3>
                         <p className="text-sm text-slate-600 -mt-1">{formattedStartDate}</p>
-                        <p className="text-3xl font-bold text-violet-700 mt-1">{packingList.approximateTemperature}</p>
+                        <p className="text-2xl font-bold text-violet-700 mt-1 leading-tight break-words whitespace-pre-wrap">{packingList.approximateTemperature}</p>
                         <p className="text-sm text-slate-600 mt-2">Pack accordingly for the weather conditions.</p>
                     </div>
                 </div>

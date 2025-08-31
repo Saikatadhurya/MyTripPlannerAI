@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { PackingList, PackingListRequestData } from '../types';
 import { extractJson, cleanCitations } from './jsonUtils';
@@ -9,12 +10,26 @@ export const generatePackingList = async (data: PackingListRequestData, onChunk:
 
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-  const { destination, startDate, days, language } = data;
+  const { destination, startDate, days, language, coveredDestinations } = data;
+
+  const isMultiStop = coveredDestinations && coveredDestinations.length > 1;
+  const destinationsString = isMultiStop ? coveredDestinations.map(d => d.name).join(', ') : destination;
+
+  let multiStopInstructions = '';
+  if (isMultiStop) {
+    multiStopInstructions = `
+    This is a multi-stop trip covering: ${destinationsString}.
+    CRITICAL INSTRUCTIONS:
+    1.  The packing list must be a consolidated summary suitable for ALL listed destinations.
+    2.  The 'approximateTemperature' field is MANDATORY and MUST provide a separate, clearly-labeled temperature forecast for each major destination. For example: "Paris: 15-20°C, Nice: 22-27°C, Lyon: 18-23°C".
+    `;
+  }
 
   const prompt = `
-    Based on a ${days}-day trip to ${destination} starting around ${startDate}, generate a smart, weather-aware packing list in ${language}.
+    Based on a ${days}-day trip to ${destinationsString} starting around ${startDate}, generate a smart, weather-aware packing list in ${language}.
     Consider the typical climate and weather for that location and time of year.
     Provide practical advice. For clothing, suggest layers if the weather is variable.
+    ${multiStopInstructions}
     The response MUST be a single, valid JSON object that strictly follows this structure and types, with all text content in ${language}:
     {
       "clothingAndFootwear": string[],
@@ -30,7 +45,7 @@ export const generatePackingList = async (data: PackingListRequestData, onChunk:
     }
 
     Important Rules:
-    1. The 'approximateTemperature' must be a string representing the estimated temperature range in Celsius (e.g., "25-30°C").
+    1. The 'approximateTemperature' must be a string representing the estimated temperature range in Celsius (e.g., "25-30°C"). If it's a multi-stop trip, you MUST follow the multi-stop instructions for this field.
     2. The 'adventureClothing' list must contain recommendations for gear and clothing suitable for common adventure activities in ${destination} (like hiking, swimming, skiing, etc.). If no specific adventure activities are obvious, provide general outdoor/activewear suggestions.
     3. The items in each list should be concise and practical.
     4. The 'bagSuggestion' should recommend a type and size of bag (e.g., "A 40L backpack" or "A medium-sized suitcase").

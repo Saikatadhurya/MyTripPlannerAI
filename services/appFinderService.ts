@@ -1,3 +1,4 @@
+
 import { GoogleGenAI } from "@google/genai";
 import { AppFinderRequestData, AppRecommendations } from '../types';
 import { extractJson, cleanCitations } from './jsonUtils';
@@ -7,15 +8,25 @@ export const generateAppRecommendations = async (data: AppFinderRequestData, onC
     throw new Error("API key is missing. Please set it in your environment variables.");
   }
 
-  const { destination, language } = data;
-
+  const { destination, language, coveredDestinations } = data;
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  
+  const isMultiStop = coveredDestinations && coveredDestinations.length > 1;
+  const destinationsString = isMultiStop ? coveredDestinations.map(d => d.name).join(', ') : destination;
+
+  let multiStopInstructions = '';
+  if (isMultiStop) {
+    multiStopInstructions = `
+    This is a multi-stop trip covering: ${destinationsString}. Your app recommendations MUST be relevant for the entire region covered by the trip, including apps useful for travel between these locations.
+    `;
+  }
 
   const prompt = `
-    You are a tech-savvy local guide and an expert global travel assistant. Your mission is to provide a traveler with a curated list of the most useful, relevant, and currently available mobile apps for their trip to ${destination}. Your recommendations MUST include popular local alternatives to global apps.
+    You are a tech-savvy local guide and an expert global travel assistant. Your mission is to provide a traveler with a curated list of the most useful, relevant, and currently available mobile apps for their trip to ${destinationsString}. Your recommendations MUST include popular local alternatives to global apps.
+    ${multiStopInstructions}
 
     **CRITICAL INSTRUCTIONS & PROTOCOL:**
-    1.  **Use Google Search:** You MUST use your search capabilities to find currently available applications for ${destination}.
+    1.  **Use Google Search:** You MUST use your search capabilities to find currently available applications for ${destinationsString}.
     2.  **Local Expertise is Key:** For each category, you must find both internationally known apps (e.g., Uber) AND their popular local competitors. This is crucial. For example, for Delhi, India, in 'Transport', you MUST include Uber, but also critical local competitors like Ola and Rapido.
     3.  **DO NOT PROVIDE URLs:** You are strictly forbidden from providing any App Store or Play Store URLs. Your only task is to identify the app's name and platform.
     4.  **DO NOT FETCH RATINGS:** You MUST NOT spend time searching for app ratings. The goal is a fast response.
