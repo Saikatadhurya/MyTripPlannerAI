@@ -1,5 +1,5 @@
-
 import React, { useState, Fragment, useRef, useEffect } from 'react';
+import ReactDOMServer from 'react-dom/server';
 import { UnifiedPlan, UnifiedPlanLoadingStatus } from '../types';
 import ItineraryPreview from './ItineraryPreview';
 import PackingListPreview from './PackingListPreview';
@@ -85,46 +85,113 @@ interface UnifiedResultPreviewProps {
     onCancel: () => void;
     onCancelStep: (step: Tab) => void;
     currentlyGeneratingStep: keyof UnifiedPlanLoadingStatus | null;
+    onTabChangeScrollToTop: () => void;
 }
 
 
-const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadingStatus, stepErrors, onPlanNew, onRegenerate, onRegenerateStep, unifiedStreamedText, onCancel, onCancelStep, currentlyGeneratingStep }) => {
+const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadingStatus, stepErrors, onPlanNew, onRegenerate, onRegenerateStep, unifiedStreamedText, onCancel, onCancelStep, currentlyGeneratingStep, onTabChangeScrollToTop }) => {
     const [activeTab, setActiveTab] = useState<Tab>('itinerary');
     const [isExportingPdf, setIsExportingPdf] = useState(false);
-    const contentRef = useRef<HTMLDivElement>(null);
-
+    
     const isPlanComplete = Object.values(loadingStatus).every(status => status === 'done');
 
     useEffect(() => {
-        contentRef.current?.scrollTo(0, 0);
-    }, [activeTab]);
+        onTabChangeScrollToTop();
+    }, [activeTab, onTabChangeScrollToTop]);
+
+    const getGuidebookStyles = () => {
+        // This function embeds all necessary CSS for the guidebook to render correctly in a new window.
+        return `
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+            body {
+                font-family: 'Inter', sans-serif;
+                margin: 0;
+                padding: 0;
+                background: white;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .guidebook-page {
+                page-break-before: always;
+                break-before: page;
+                padding: 2rem 1rem 1rem;
+                box-sizing: border-box;
+            }
+            .cover-page, .toc-page {
+                page-break-before: avoid !important;
+                break-before: auto !important;
+                height: 100vh;
+                display: flex !important;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                text-align: center;
+            }
+            .cover-page {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+                color: white !important;
+            }
+            .cover-subtitle { font-size: 1.25rem; letter-spacing: 0.1em; text-transform: uppercase; }
+            .cover-title { font-size: 4rem; font-weight: 800; margin: 1rem 0; line-height: 1.1; }
+            .cover-footer { font-size: 1rem; margin-top: 4rem; opacity: 0.8; }
+            .toc-page { page-break-after: always !important; }
+            .toc-title { font-size: 2.5rem; font-weight: bold; margin-bottom: 2rem; border-bottom: 2px solid #6366f1; padding-bottom: 0.5rem; }
+            .toc-list { list-style: none; padding: 0; display: inline-block; text-align: left; }
+            .toc-list li { font-size: 1.75rem; margin-bottom: 1rem; }
+            .toc-list a { text-decoration: none; color: #6366f1; font-weight: 500; }
+            h1, h2, h3, h4 { break-after: avoid; color: #1e293b; }
+            strong { color: #1e293b; }
+            .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; }
+            /* Add any other styles from the app that are needed for the guidebook components */
+            .bg-white\\/40 { background-color: rgba(255, 255, 255, 0.4); }
+            .backdrop-blur-lg { backdrop-filter: blur(16px); }
+            .p-6 { padding: 1.5rem; } .rounded-xl { border-radius: 0.75rem; }
+            .shadow-lg { box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); }
+            .border { border-width: 1px; } .border-white\\/50 { border-color: rgba(255, 255, 255, 0.5); }
+            .text-slate-800 { color: #1e293b; } .font-bold { font-weight: 700; }
+            .prose { max-width: 65ch; }
+            ul { list-style-position: inside; }
+        `;
+    };
 
     const handleExportPdf = () => {
+        if (isExportingPdf || !isPlanComplete) return;
         setIsExportingPdf(true);
-        const element = document.getElementById('printable-plan');
-        if (!element) {
-            alert("Could not find content to print.");
-            setIsExportingPdf(false);
-            return;
-        }
-        const destinationName = plan.itinerary?.destination.split(',')[0] || 'Trip';
-        const opt = {
-            margin: 0,
-            filename: `Planora-Guide-${destinationName}.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-            jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
-            enableLinks: true
-        };
 
-        // Use the global html2pdf object from the CDN
-        (window as any).html2pdf().from(element).set(opt).save().then(() => {
+        try {
+            const guidebookHTML = ReactDOMServer.renderToStaticMarkup(<Guidebook plan={plan} />);
+            const styles = getGuidebookStyles();
+            
+            const printWindow = window.open('', '_blank');
+            if (printWindow) {
+                printWindow.document.write(`
+                    <!DOCTYPE html>
+                    <html>
+                        <head>
+                            <title>Your Travel Guidebook for ${plan.itinerary?.destination || 'Trip'}</title>
+                            <script src="https://cdn.tailwindcss.com"></script>
+                            <style>${styles}</style>
+                        </head>
+                        <body>
+                            ${guidebookHTML}
+                        </body>
+                    </html>
+                `);
+                printWindow.document.close();
+                printWindow.onload = () => {
+                    printWindow.focus();
+                    printWindow.print();
+                    printWindow.close();
+                    setIsExportingPdf(false);
+                };
+            } else {
+                throw new Error("Could not open new window. Please disable your pop-up blocker.");
+            }
+        } catch (error) {
+            console.error("Failed to generate guidebook:", error);
+            alert(`Error generating PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
             setIsExportingPdf(false);
-        }).catch((err: any) => {
-            console.error("PDF export failed:", err);
-            setIsExportingPdf(false);
-            alert("Sorry, there was an error creating the PDF. Please try again.");
-        });
+        }
     };
     
     const getPlanDataForTab = (tab: Tab) => {
@@ -286,14 +353,9 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
                 </div>
             </nav>
 
-            <main ref={contentRef} className="mt-6 max-h-[70vh] overflow-y-auto pr-2 no-print">
+            <main className="mt-6 no-print">
                 {renderTabContent()}
             </main>
-
-            {/* Hidden Printable Container */}
-            <div id="printable-plan" className="hidden printable-container">
-                <Guidebook plan={plan} />
-            </div>
         </div>
     );
 };

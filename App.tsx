@@ -1,11 +1,3 @@
-
-
-
-
-
-
-
-
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { QuestionnaireData, PackingListRequestData, PackingList, FoodFinderRequestData, FoodRecommendations, AppFinderRequestData, AppRecommendations, MusicFinderRequestData, MusicRecommendations, QuestionnaireData as InitialQuestionnaireData, UnifiedPlan, UnifiedPlanLoadingStatus, Itinerary } from './types';
 import { generateItinerary } from './services/geminiService';
@@ -403,7 +395,7 @@ const App: React.FC = () => {
         if (itinerary) return <ItineraryPreview itinerary={itinerary} onRegenerate={() => handleViewChange('questionnaire')} />;
         break;
       case 'unifiedResult':
-        return <UnifiedResultPreview plan={unifiedPlan} loadingStatus={unifiedPlanLoadingStatus} stepErrors={unifiedStepErrors} onPlanNew={handleBackToHome} onRegenerate={() => { if(questionnaireDataForUnifiedPlan) handleGenerateUnifiedPlan(questionnaireDataForUnifiedPlan)}} onRegenerateStep={handleRegenerateUnifiedPlanStep} unifiedStreamedText={unifiedStreamedText} onCancel={handleCancelGeneration} onCancelStep={handleCancelUnifiedPlanStep} currentlyGeneratingStep={currentlyGeneratingStep} />;
+        return <UnifiedResultPreview plan={unifiedPlan} loadingStatus={unifiedPlanLoadingStatus} stepErrors={unifiedStepErrors} onPlanNew={handleBackToHome} onRegenerate={() => { if(questionnaireDataForUnifiedPlan) handleGenerateUnifiedPlan(questionnaireDataForUnifiedPlan)}} onRegenerateStep={handleRegenerateUnifiedPlanStep} unifiedStreamedText={unifiedStreamedText} onCancel={handleCancelGeneration} onCancelStep={handleCancelUnifiedPlanStep} currentlyGeneratingStep={currentlyGeneratingStep} onTabChangeScrollToTop={scrollToTop} />;
       case 'packingAssistantForm':
         return <PackingAssistantForm onSubmit={handleGeneratePackingList} isLoading={false} error={error} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} />;
       case 'packingAssistantResult':
