@@ -88,10 +88,13 @@ const App: React.FC = () => {
       if (!isGenerationCancelled.current) {
         let errorMessage = 'Failed to generate itinerary. Please try again.';
         if (err instanceof Error) {
-            if (err.message.includes('503') || err.message.toLowerCase().includes('overloaded')) {
+            const message = err.message;
+            if (message.includes('[429]') || message.toLowerCase().includes('quota')) {
+                errorMessage = 'You have exceeded the request limit. Please check your plan and billing details and try again later.';
+            } else if (message.includes('[503]') || message.toLowerCase().includes('overloaded')) {
                 errorMessage = 'The AI model is currently busy handling many requests. Please wait a moment and try again.';
             } else {
-                errorMessage = err.message;
+                errorMessage = message.replace(/^\[\d{3}\]\s*/, '');
             }
         }
         setError(errorMessage);
@@ -124,10 +127,13 @@ const App: React.FC = () => {
       if (!isGenerationCancelled.current) {
         let errorMessage = 'Failed to generate packing list. Please try again.';
         if (err instanceof Error) {
-            if (err.message.includes('503') || err.message.toLowerCase().includes('overloaded')) {
+            const message = err.message;
+            if (message.includes('[429]') || message.toLowerCase().includes('quota')) {
+                errorMessage = 'You have exceeded the request limit. Please check your plan and billing details and try again later.';
+            } else if (message.includes('[503]') || message.toLowerCase().includes('overloaded')) {
                 errorMessage = 'The AI model is currently busy handling many requests. Please wait a moment and try again.';
             } else {
-                errorMessage = err.message;
+                errorMessage = message.replace(/^\[\d{3}\]\s*/, '');
             }
         }
         setError(errorMessage);
@@ -160,10 +166,13 @@ const App: React.FC = () => {
       if (!isGenerationCancelled.current) {
         let errorMessage = 'Failed to generate food recommendations. Please try again.';
         if (err instanceof Error) {
-            if (err.message.includes('503') || err.message.toLowerCase().includes('overloaded')) {
+            const message = err.message;
+            if (message.includes('[429]') || message.toLowerCase().includes('quota')) {
+                errorMessage = 'You have exceeded the request limit. Please check your plan and billing details and try again later.';
+            } else if (message.includes('[503]') || message.toLowerCase().includes('overloaded')) {
                 errorMessage = 'The AI model is currently busy handling many requests. Please wait a moment and try again.';
             } else {
-                errorMessage = err.message;
+                errorMessage = message.replace(/^\[\d{3}\]\s*/, '');
             }
         }
         setError(errorMessage);
@@ -196,10 +205,13 @@ const App: React.FC = () => {
       if (!isGenerationCancelled.current) {
         let errorMessage = 'Failed to generate app recommendations. Please try again.';
         if (err instanceof Error) {
-            if (err.message.includes('503') || err.message.toLowerCase().includes('overloaded')) {
+            const message = err.message;
+            if (message.includes('[429]') || message.toLowerCase().includes('quota')) {
+                errorMessage = 'You have exceeded the request limit. Please check your plan and billing details and try again later.';
+            } else if (message.includes('[503]') || message.toLowerCase().includes('overloaded')) {
                 errorMessage = 'The AI model is currently busy handling many requests. Please wait a moment and try again.';
             } else {
-                errorMessage = err.message;
+                errorMessage = message.replace(/^\[\d{3}\]\s*/, '');
             }
         }
         setError(errorMessage);
@@ -232,10 +244,13 @@ const App: React.FC = () => {
       if (!isGenerationCancelled.current) {
         let errorMessage = 'Failed to generate music recommendations. Please try again.';
         if (err instanceof Error) {
-            if (err.message.includes('503') || err.message.toLowerCase().includes('overloaded')) {
+            const message = err.message;
+            if (message.includes('[429]') || message.toLowerCase().includes('quota')) {
+                errorMessage = 'You have exceeded the request limit. Please check your plan and billing details and try again later.';
+            } else if (message.includes('[503]') || message.toLowerCase().includes('overloaded')) {
                 errorMessage = 'The AI model is currently busy handling many requests. Please wait a moment and try again.';
             } else {
-                errorMessage = err.message;
+                errorMessage = message.replace(/^\[\d{3}\]\s*/, '');
             }
         }
         setError(errorMessage);

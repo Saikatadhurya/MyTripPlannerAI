@@ -54,7 +54,7 @@ export const generatePackingList = async (data: PackingListRequestData, onChunk:
       }
 
       if (!fullText) {
-        throw new Error("AI response was empty or invalid.");
+        throw new Error("The AI returned an empty response.");
       }
       
       let jsonString = fullText;
@@ -87,14 +87,17 @@ export const generatePackingList = async (data: PackingListRequestData, onChunk:
       }
       
       jsonString = jsonString.substring(firstBrace, lastBrace + 1);
-      
-      // Sanitize by removing trailing commas
       jsonString = jsonString.replace(/,\s*([}\]])/g, '$1');
 
-      const packingData = JSON.parse(jsonString);
+      const parsedJson = JSON.parse(jsonString);
+
+      if (parsedJson.error && parsedJson.error.code) {
+          const { code, message } = parsedJson.error;
+          throw new Error(`[${code}] ${message}`);
+      }
 
       return {
-        ...packingData,
+        ...parsedJson,
         destination,
         days,
         startDate,
@@ -102,6 +105,9 @@ export const generatePackingList = async (data: PackingListRequestData, onChunk:
   } catch (error) {
       console.error("Failed to generate and parse packing list stream:", error);
       console.error("Original AI response text accumulated:", fullText);
+      if (error instanceof Error && error.message.startsWith('[')) {
+          throw error;
+      }
       throw new Error("The AI returned an invalid response format. Please try again.");
   }
 };
