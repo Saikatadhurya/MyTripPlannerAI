@@ -46,13 +46,13 @@ const itineraryFunFacts = [
     { icon: '🍜', text: 'Locating top-rated eats...' },
 ];
 const packingStages = [
-    { key: '"approximateTemperature":"', text: 'Checking weather forecast' },
     { key: '"clothingAndFootwear":[', text: 'Selecting outfits & footwear' },
-    { key: '"adventureClothing":[', text: 'Packing for adventure activities' },
+    { key: '"toiletriesAndPersonalCare":[', text: 'Listing toiletries & care items' },
+    { key: '"medicinesAndHealth":[', text: 'Preparing health essentials' },
     { key: '"electronicsAndGear":[', text: 'Gathering electronics & gear' },
-    { key: '"medicinesAndHealth":[', text: 'Preparing health items' },
     { key: '"documentsAndMoney":[', text: 'Securing documents & money' },
     { key: '"bagSuggestion":"', text: 'Recommending the perfect bag' },
+    { key: '"approximateTemperature":"', text: 'Checking the weather forecast' },
 ];
 const packingFunFacts = [
     { icon: '🌤️', text: 'Checking the weather forecast...' },
@@ -62,12 +62,12 @@ const packingFunFacts = [
     { icon: '✈️', text: 'Optimizing for carry-on...' },
 ];
 const foodStages = [
-    { key: '"iconicDishes":[', text: 'Identifying iconic local dishes' },
-    { key: '"breakfast":[', text: 'Discovering morning bites' },
+    { key: '"breakfast":[', text: 'Discovering breakfast options' },
     { key: '"lunch":[', text: 'Looking for midday meals' },
-    { key: '"dinner":[', text: 'Sourcing dinner options' },
     { key: '"snacksAndStreetFood":[', text: 'Finding popular street food' },
+    { key: '"dinner":[', text: 'Sourcing dinner options' },
     { key: '"dessertAndSweets":[', text: 'Locating the best desserts' },
+    { key: '"iconicDishes":[', text: 'Identifying iconic local dishes' },
 ];
 const foodFunFacts = [
     { icon: '🧑‍🍳', text: 'Consulting with local chefs...' },
