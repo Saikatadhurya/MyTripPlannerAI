@@ -1,4 +1,5 @@
 
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { Budget, Itinerary, Vibe, FoodPreference, BlogReference, TripType, LocationSuggestion } from '../types';
 
@@ -376,13 +377,29 @@ export const generateItinerary = async (
 
         const parsedJson = JSON.parse(jsonString);
 
-        if (parsedJson.error && parsedJson.error.code) {
-            const { code, message } = parsedJson.error;
+        const cleanCitations = (obj: any): any => {
+            if (Array.isArray(obj)) {
+                return obj.map(v => cleanCitations(v));
+            } else if (obj !== null && typeof obj === 'object') {
+                return Object.fromEntries(
+                    Object.entries(obj).map(([k, v]) => [k, cleanCitations(v)])
+                );
+            } else if (typeof obj === 'string') {
+                return obj.replace(/\s*\[\d+(,\s*\d+)*\]$/g, '').trim();
+            }
+            return obj;
+        };
+
+        const cleanedJson = cleanCitations(parsedJson);
+
+
+        if (cleanedJson.error && cleanedJson.error.code) {
+            const { code, message } = cleanedJson.error;
             throw new Error(`[${code}] ${message}`);
         }
 
         return {
-            ...parsedJson,
+            ...cleanedJson,
             startPoint,
             tripType,
             isRoundTrip: isRoundTrip ?? false,
