@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { Budget, Itinerary, Vibe, FoodPreference, BlogReference, TripType, LocationSuggestion } from '../types';
 import { extractJson, cleanCitations } from './jsonUtils';
@@ -163,6 +164,14 @@ export const generateItinerary = async (
 
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
+  const regionalTripInstructions = `
+  REGIONAL TRAVEL INSTRUCTION:
+  If the destination "${destination}" appears to be a large region (e.g., a country, state, province, or a well-known tourist circuit), you MUST create a logical tour itinerary that covers multiple key cities or locations within that region. In this case:
+  1.  The 'coveredDestinations' array MUST be populated with detailed information for each of these key locations visited.
+  2.  The 'destination' field in the JSON response should be updated to a more descriptive name for this circuit (e.g., 'Rajasthan Heritage Tour').
+  3.  The daily 'plan' should logically reflect travel between these locations.
+  `;
+
   let roundTripInstructions = '';
   if ((tripType === 'Car' || tripType === 'Bike') && isRoundTrip && startPoint) {
       const dailyLimit = tripType === 'Car' ? '300-400 km/day' : '150-250 km/day';
@@ -252,6 +261,8 @@ export const generateItinerary = async (
   5.  **plan.transport.cost**: This field is CRITICAL. It MUST represent the estimated fuel cost for driving **ONE SINGLE VEHICLE** for that specific day's travel leg. The frontend will use this to calculate group costs. If there's no inter-city travel, this should be "0". You are FORBIDDEN from returning any non-numeric text.
   ` : ''}
 
+  ${regionalTripInstructions}
+
   ${roundTripInstructions}
 
   Based on all these details, generate a comprehensive itinerary. The response must be a single JSON object that strictly follows this structure and types:
@@ -301,7 +312,7 @@ export const generateItinerary = async (
   Important Rules:
   1.  All string values in the JSON must be in ${language}.
   2.  The 'plan' array must have exactly ${days} elements.
-  3.  For round trips, the 'coveredDestinations' array is mandatory and must contain detailed information for each significant place visited. For standard one-way trips, it should contain details for just the main destination.
+  3.  The 'coveredDestinations' array is mandatory and must be populated if the trip covers multiple locations (e.g., a round trip or a regional tour). For a trip to a single city, it should contain details for just that destination.
   4.  **COST FORMATTING (MANDATORY)**: All cost fields ('stay', 'food', 'fuel', 'miscellaneous', 'total' in 'budgetSummary'; 'approxCost' in 'plan'; 'cost' in 'transport') MUST be a string containing ONLY numbers (e.g., "1500", "250.50"). Do NOT include currency symbols, currency codes, or any text. All costs must be per person (unless specified otherwise in instructions) and calculated in the user's chosen currency: "${currency}".
   5.  **MANDATORY BOLDING**: You MUST use bold markdown (**text**) to highlight key information. This includes, but is not limited to: names of specific attractions, restaurants, hotels, important timings, unique cultural items, and critical travel advice. This is crucial for readability.
   6.  If 'includeMedical' is true, the 'medicalFacilities' array for each day must list at least one nearby hospital or pharmacy.

@@ -268,7 +268,7 @@ const App: React.FC = () => {
         const runParallelSteps = async () => {
             const data = questionnaireDataForUnifiedPlan!;
             const currentItinerary = unifiedPlan.itinerary!;
-            const isMultiStop = data.isRoundTrip && currentItinerary && currentItinerary.coveredDestinations.length > 1;
+            const isMultiStop = currentItinerary && currentItinerary.coveredDestinations.length > 1;
 
             const stepGenerators: Partial<Record<keyof Omit<UnifiedPlanLoadingStatus, 'itinerary'>, { generator: () => Promise<any>, onSuccess: (result: any) => void }>> = {
                 packing: {
