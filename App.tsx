@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { QuestionnaireData, PackingListRequestData, PackingList, FoodFinderRequestData, FoodRecommendations, AppFinderRequestData, AppRecommendations, MusicFinderRequestData, MusicRecommendations, QuestionnaireData as InitialQuestionnaireData, UnifiedPlan, UnifiedPlanLoadingStatus, Itinerary } from './types';
 import { generateItinerary } from './services/geminiService';
@@ -129,7 +130,7 @@ const App: React.FC = () => {
 
   }, [view, handleViewChange]);
 
-  const handleGenerateItinerary = async (data: QuestionnaireData) => {
+  const handleGenerateItinerary = useCallback(async (data: QuestionnaireData) => {
     setIsLoading(true);
     setError(null);
     setItinerary(null);
@@ -147,64 +148,74 @@ const App: React.FC = () => {
     } finally {
         setIsLoading(false);
     }
-  };
+  }, [handleViewChange]);
   
-  const handleGenerateUnifiedPlan = async (data: QuestionnaireData) => {
+  const handleGenerateUnifiedPlan = useCallback(async (data: QuestionnaireData) => {
     setQuestionnaireDataForUnifiedPlan(data);
     setUnifiedPlan({ itinerary: null, packingList: null, foodRecommendations: null, appRecommendations: null, musicRecommendations: null });
+    setError(null); // Reset errors at the start
+    setUnifiedPlanLoadingStatus({ itinerary: 'pending', packing: 'pending', food: 'pending', apps: 'pending', music: 'pending' });
     handleViewChange('unifiedResult');
 
-    const updateStatus = (statusUpdater: (prev: UnifiedPlanLoadingStatus) => UnifiedPlanLoadingStatus) => {
-        setUnifiedPlanLoadingStatus(statusUpdater);
+    const streamCallback = (chunk: string) => setUnifiedStreamedText(prev => prev + chunk);
+
+    // Helper to run each generation step sequentially and handle errors independently
+    const generateStep = async <T,>(
+      step: keyof UnifiedPlanLoadingStatus,
+      generatorFn: () => Promise<T>,
+      onSuccess: (result: T) => void
+    ) => {
+      setUnifiedPlanLoadingStatus(prev => ({ ...prev, [step]: 'loading' }));
+      setUnifiedStreamedText('');
+      try {
+        const result = await generatorFn();
+        onSuccess(result);
+        setUnifiedPlanLoadingStatus(prev => ({ ...prev, [step]: 'done' }));
+      } catch (e) {
+        const message = e instanceof Error ? e.message : `An unknown error occurred during ${step} generation.`;
+        // Append new error messages instead of overwriting
+        setError(prevError => prevError ? `${prevError}\n\n${message}` : message);
+        setUnifiedPlanLoadingStatus(prev => ({ ...prev, [step]: 'error' }));
+      }
     };
     
-    const streamCallback = (chunk: string) => setUnifiedStreamedText(prev => prev + chunk);
+    // Itinerary
+    await generateStep('itinerary',
+      () => generateItinerary(data.destination, data.startPoint, data.tripType, data.days, data.budget, data.vibe, data.persons, data.foodPreference, data.startDate, data.includeMedical, data.language, data.isRoundTrip, data.currency, streamCallback),
+      (result) => setUnifiedPlan(prev => ({ ...prev, itinerary: result }))
+    );
+
+    // Packing List
+    const packingData: PackingListRequestData = { destination: data.destination, startDate: data.startDate, days: data.days, language: data.language };
+    await generateStep('packing',
+      () => generatePackingList(packingData, streamCallback),
+      (result) => setUnifiedPlan(prev => ({ ...prev, packingList: result }))
+    );
     
-    updateStatus(() => ({ itinerary: 'loading', packing: 'pending', food: 'pending', apps: 'pending', music: 'pending' }));
+    // Food Recommendations
+    const foodData: FoodFinderRequestData = { destination: data.destination, startDate: data.startDate, foodPreference: data.foodPreference, includeAlcoholicDrinks: data.includeAlcoholicDrinks, language: data.language };
+    await generateStep('food',
+      () => generateFoodRecommendations(foodData, streamCallback),
+      (result) => setUnifiedPlan(prev => ({ ...prev, foodRecommendations: result }))
+    );
 
-    try {
-        setUnifiedStreamedText('');
-        const itineraryResult = await generateItinerary(data.destination, data.startPoint, data.tripType, data.days, data.budget, data.vibe, data.persons, data.foodPreference, data.startDate, data.includeMedical, data.language, data.isRoundTrip, data.currency, streamCallback);
-        setUnifiedPlan(prev => ({ ...prev, itinerary: itineraryResult }));
-        updateStatus(prev => ({ ...prev, itinerary: 'done', packing: 'loading' }));
+    // App Recommendations
+    const appData: AppFinderRequestData = { destination: data.destination, language: data.language };
+    await generateStep('apps',
+      () => generateAppRecommendations(appData, streamCallback),
+      (result) => setUnifiedPlan(prev => ({ ...prev, appRecommendations: result }))
+    );
 
-        setUnifiedStreamedText('');
-        const packingData: PackingListRequestData = { destination: data.destination, startDate: data.startDate, days: data.days, language: data.language };
-        const packingResult = await generatePackingList(packingData, streamCallback);
-        setUnifiedPlan(prev => ({ ...prev, packingList: packingResult }));
-        updateStatus(prev => ({ ...prev, packing: 'done', food: 'loading' }));
-        
-        setUnifiedStreamedText('');
-        const foodData: FoodFinderRequestData = { destination: data.destination, startDate: data.startDate, foodPreference: data.foodPreference, includeAlcoholicDrinks: data.includeAlcoholicDrinks, language: data.language };
-        const foodResult = await generateFoodRecommendations(foodData, streamCallback);
-        setUnifiedPlan(prev => ({ ...prev, foodRecommendations: foodResult }));
-        updateStatus(prev => ({ ...prev, food: 'done', apps: 'loading' }));
-        
-        setUnifiedStreamedText('');
-        const appData: AppFinderRequestData = { destination: data.destination, language: data.language };
-        const appResult = await generateAppRecommendations(appData, streamCallback);
-        setUnifiedPlan(prev => ({ ...prev, appRecommendations: appResult }));
-        updateStatus(prev => ({ ...prev, apps: 'done', music: 'loading' }));
+    // Music Recommendations
+    const musicData: MusicFinderRequestData = { destination: data.destination, language: data.language };
+    await generateStep('music',
+      () => generateMusicRecommendations(musicData, streamCallback),
+      (result) => setUnifiedPlan(prev => ({ ...prev, musicRecommendations: result }))
+    );
+  }, [handleViewChange]);
 
-        setUnifiedStreamedText('');
-        const musicData: MusicFinderRequestData = { destination: data.destination, language: data.language };
-        const musicResult = await generateMusicRecommendations(musicData, streamCallback);
-        setUnifiedPlan(prev => ({ ...prev, musicRecommendations: musicResult }));
-        updateStatus(prev => ({ ...prev, music: 'done' }));
 
-    } catch (e) {
-        setError(e instanceof Error ? e.message : 'An unknown error occurred during plan generation.');
-        updateStatus(prev => {
-            const newStatus = { ...prev };
-            (Object.keys(newStatus) as Array<keyof UnifiedPlanLoadingStatus>).forEach(key => {
-                if (newStatus[key] === 'loading' || newStatus[key] === 'pending') newStatus[key] = 'error';
-            });
-            return newStatus;
-        });
-    }
-  };
-
-  const handleGeneratePackingList = async (data: PackingListRequestData) => {
+  const handleGeneratePackingList = useCallback(async (data: PackingListRequestData) => {
     setIsLoading(true);
     setError(null);
     setPackingList(null);
@@ -218,9 +229,9 @@ const App: React.FC = () => {
     } finally {
         setIsLoading(false);
     }
-  };
+  }, [handleViewChange]);
 
-  const handleGenerateFoodRecommendations = async (data: FoodFinderRequestData) => {
+  const handleGenerateFoodRecommendations = useCallback(async (data: FoodFinderRequestData) => {
     setIsLoading(true);
     setError(null);
     setFoodRecommendations(null);
@@ -234,9 +245,9 @@ const App: React.FC = () => {
     } finally {
         setIsLoading(false);
     }
-  };
+  }, [handleViewChange]);
   
-  const handleGenerateAppRecommendations = async (data: AppFinderRequestData) => {
+  const handleGenerateAppRecommendations = useCallback(async (data: AppFinderRequestData) => {
     setIsLoading(true);
     setError(null);
     setAppRecommendations(null);
@@ -250,9 +261,9 @@ const App: React.FC = () => {
     } finally {
         setIsLoading(false);
     }
-  };
+  }, [handleViewChange]);
   
-  const handleGenerateMusicRecommendations = async (data: MusicFinderRequestData) => {
+  const handleGenerateMusicRecommendations = useCallback(async (data: MusicFinderRequestData) => {
     setIsLoading(true);
     setError(null);
     setMusicRecommendations(null);
@@ -266,7 +277,7 @@ const App: React.FC = () => {
     } finally {
         setIsLoading(false);
     }
-  };
+  }, [handleViewChange]);
 
   const renderContent = () => {
     if (isLoading) {

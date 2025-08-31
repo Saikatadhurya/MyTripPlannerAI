@@ -321,6 +321,7 @@ export const generateItinerary = async (
       a. **NO UNESCAPED QUOTES**: Inside any JSON string value, you MUST NEVER use a double quote character ("). It will break the JSON parsing.
       b. **HOW TO HANDLE QUOTES**: To include a quote inside a string, you MUST use single quotes (e.g., "Visit the 'Eiffel Tower' at night.") or escape the double quote with a backslash (e.g., "The guide said, \\"Welcome to Paris!\\"").
       c. **FAILURE IS NOT AN OPTION**: You MUST double-check every string for unescaped quotes. Failure to follow this rule will make the entire response useless.
+  13. **ABSOLUTE FINAL INSTRUCTION**: Your entire response MUST be the raw JSON object. It MUST start with the character '{' and end with the character '}'. You MUST NOT wrap it in markdown (like \`\`\`json), and you MUST NOT add any introductory text like "Here is your itinerary:". The response should be immediately parsable as JSON.
   `;
   
     let fullText = '';
@@ -382,7 +383,7 @@ export const generateItinerary = async (
         }
         
         if (error instanceof SyntaxError) {
-             throw new Error(`The AI's response was malformed and could not be read. Please try again.`);
+             throw new Error(`The AI's response for the itinerary was malformed and could not be read. This can happen occasionally. Please try regenerating the plan.`);
         }
         if (error instanceof Error) {
             if (error.message.includes("Could not find a valid JSON object")) {
@@ -390,6 +391,6 @@ export const generateItinerary = async (
             }
         }
         
-        throw new Error("The AI returned an invalid response format. Please try again.");
+        throw new Error("The AI returned an invalid response format for the itinerary. Please try again.");
     }
 };

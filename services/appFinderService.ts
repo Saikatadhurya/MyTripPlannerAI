@@ -53,6 +53,7 @@ export const generateAppRecommendations = async (data: AppFinderRequestData, onC
     6.  **Example of a good entry:**
         \`{ "name": "AllTrails", "category": "hikes", "description": "A popular app for discovering and navigating trekking trails...", "platform": "Both", "icon": "🌲" }\`
         \`{ "name": "Google Maps", "category": "", "description": "The world's most popular navigation app...", "platform": "Both", "icon": "🗺️" }\`
+    7. **ABSOLUTE FINAL INSTRUCTION**: Your entire response MUST be the raw JSON object. It MUST start with the character '{' and end with the character '}'. You MUST NOT wrap it in markdown (like \`\`\`json), and you MUST NOT add any introductory text. The response must be immediately parsable as JSON.
   `;
   
   let fullText = '';
@@ -102,14 +103,14 @@ export const generateAppRecommendations = async (data: AppFinderRequestData, onC
       }
       
       if (error instanceof SyntaxError) {
-           throw new Error(`The AI's response was malformed and could not be read. Please try again.`);
+           throw new Error(`The AI's response for the app finder was malformed and could not be read. Please try again.`);
       }
       if (error instanceof Error) {
           if (error.message.includes("Could not find a valid JSON object")) {
-               throw new Error("The AI did not provide a structured response. It may have refused the request. Please adjust your query and try again.");
+               throw new Error("The AI did not provide a structured list of apps. It may have refused the request. Please adjust your query and try again.");
           }
       }
       
-      throw new Error("The AI returned an invalid response format. Please try again.");
+      throw new Error("The AI returned an invalid response format for the app finder. Please try again.");
   }
 };

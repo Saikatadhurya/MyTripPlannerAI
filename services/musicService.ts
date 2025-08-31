@@ -71,6 +71,7 @@ export const generateMusicRecommendations = async (data: MusicFinderRequestData,
             i. **PREFERRED**: Use single quotes instead (e.g., "A song called 'The Best' by...").
             ii. **ALTERNATIVE**: If you absolutely must use a double quote, you MUST escape it with a backslash (e.g., "The review said, \\"It's a hit!\\"").
         c. **FAILURE TO FOLLOW THIS RULE WILL RENDER THE ENTIRE OUTPUT USELESS.** You must double-check every string value for unescaped double quotes before finishing your response.
+    3. **ABSOLUTE FINAL INSTRUCTION**: Your entire response MUST be the raw JSON object. It MUST start with the character '{' and end with the character '}'. You MUST NOT wrap it in markdown (like \`\`\`json), and you MUST NOT add any introductory text. The response must be immediately parsable as JSON.
   `;
 
   let fullText = '';
@@ -120,14 +121,14 @@ export const generateMusicRecommendations = async (data: MusicFinderRequestData,
       }
       
       if (error instanceof SyntaxError) {
-           throw new Error(`The AI's response was malformed and could not be read. Please try again.`);
+           throw new Error(`The AI's response for the music finder was malformed and could not be read. Please try again.`);
       }
       if (error instanceof Error) {
           if (error.message.includes("Could not find a valid JSON object")) {
-               throw new Error("The AI did not provide a structured response. It may have refused the request. Please adjust your query and try again.");
+               throw new Error("The AI did not provide a structured list of music. It may have refused the request. Please adjust your query and try again.");
           }
       }
       
-      throw new Error("The AI returned an invalid response format. Please try again.");
+      throw new Error("The AI returned an invalid response format for the music finder. Please try again.");
   }
 };
