@@ -1,5 +1,9 @@
 
 
+
+
+
+
 import React, { useState, Fragment } from 'react';
 import { UnifiedPlan, UnifiedPlanLoadingStatus } from '../types';
 import ItineraryPreview from './ItineraryPreview';
@@ -77,22 +81,18 @@ const loadingFunFacts = {
 interface UnifiedResultPreviewProps {
     plan: UnifiedPlan;
     loadingStatus: UnifiedPlanLoadingStatus;
-    error: string | null;
+    stepErrors: Partial<Record<keyof UnifiedPlanLoadingStatus, string>>;
     onPlanNew: () => void;
     onRegenerate: () => void;
+    onRegenerateStep: (step: Tab) => void;
     unifiedStreamedText: string;
     onCancel: () => void;
+    onCancelStep: (step: Tab) => void;
+    currentlyGeneratingStep: keyof UnifiedPlanLoadingStatus | null;
 }
 
-const ErrorState: React.FC<{ message: string }> = ({ message }) => (
-    <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-6 rounded-md my-8">
-        <p className="font-bold">An Error Occurred</p>
-        <p>{message}</p>
-    </div>
-);
 
-
-const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadingStatus, error, onPlanNew, onRegenerate, unifiedStreamedText, onCancel }) => {
+const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadingStatus, stepErrors, onPlanNew, onRegenerate, onRegenerateStep, unifiedStreamedText, onCancel, onCancelStep, currentlyGeneratingStep }) => {
     const [activeTab, setActiveTab] = useState<Tab>('itinerary');
 
     const getPlanDataForTab = (tab: Tab) => {
@@ -109,6 +109,7 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
     const renderTabContent = () => {
         const currentStatus = loadingStatus[activeTab];
         const currentData = getPlanDataForTab(activeTab);
+        const tabName = tabs.find(t => t.id === activeTab)?.name || 'This Section';
 
         if (currentStatus === 'loading' && !currentData) {
             const activeTabDetails = tabs.find(t => t.id === activeTab);
@@ -116,15 +117,43 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
                 <StreamingLoadingIndicator
                     streamedText={unifiedStreamedText}
                     stages={loadingStages[activeTab]}
-                    onCancel={onCancel}
+                    onCancel={() => onCancelStep(activeTab)}
                     title={`Crafting Your ${activeTabDetails?.name}...`}
                     accentColor="violet"
                     funFacts={loadingFunFacts[activeTab]}
                 />
             );
         }
+        
+        const renderActionCard = (title: string, message: string) => (
+             <div className={`backdrop-blur-sm p-6 rounded-2xl my-8 shadow-lg animated-card ${currentStatus === 'error' ? 'bg-red-100/60 border-l-4 border-red-500 text-red-800' : 'bg-yellow-100/60 border-l-4 border-yellow-500 text-yellow-800'}`}>
+                <div className="flex items-start space-x-4">
+                    <div className="flex-shrink-0 pt-1">
+                        {currentStatus === 'error' ? 
+                            <svg className="h-6 w-6 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg> :
+                            <svg className="h-6 w-6 text-yellow-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg>
+                        }
+                    </div>
+                    <div className="flex-1">
+                        <p className="font-bold text-lg">{title}</p>
+                        <p className="mt-1 text-sm whitespace-pre-wrap">{message}</p>
+                        <button
+                            onClick={() => onRegenerateStep(activeTab)}
+                            className="mt-4 inline-flex items-center px-4 py-2 bg-violet-600 text-white font-semibold rounded-full hover:bg-violet-700 transition-all duration-300 shadow-md text-sm"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.898 2.566l-1.581.53a5.002 5.002 0 00-8.917-1.789v.962a1 1 0 01-2 0V3a1 1 0 011-1zm12 15a1 1 0 01-1-1v-2.101a7.002 7.002 0 01-11.898-2.566l1.581-.53a5.002 5.002 0 008.917 1.789v-.962a1 1 0 012 0V17a1 1 0 01-1 1z" clipRule="evenodd" /></svg>
+                            Regenerate {tabName}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+
         if (currentStatus === 'error') {
-            return <ErrorState message={error || "Failed to load this section. Please try regenerating."} />;
+            return renderActionCard(`Failed to Generate ${tabName}`, stepErrors[activeTab] || `An unknown error occurred.`);
+        }
+        if (currentStatus === 'cancelled') {
+            return renderActionCard(`${tabName} Generation Cancelled`, `The process was cancelled. You can try generating it again.`);
         }
         if (!currentData) {
              return <div className="text-center py-20 text-slate-500">Waiting for data...</div>;
@@ -188,7 +217,10 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
                 <div className="flex items-center justify-center sm:justify-start space-x-1 sm:space-x-2 hide-scrollbar overflow-x-auto">
                     {tabs.map(tab => {
                          const status = loadingStatus[tab.id];
+                         const isAnotherStepGenerating = currentlyGeneratingStep !== null && currentlyGeneratingStep !== tab.id;
+                         const isQueued = status === 'pending' && isAnotherStepGenerating;
                          const dataExists = !!getPlanDataForTab(tab.id);
+
                         return (
                              <button
                                 key={tab.id}
@@ -200,8 +232,9 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
                                 {tab.icon}
                                 <span className="hidden sm:inline">{tab.name}</span>
                                 {status === 'loading' && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>}
+                                {isQueued && <span className="text-xs font-bold">(Queued)</span>}
                                 {status === 'done' && dataExists && <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-green-300" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>}
-                                {status === 'error' && <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-red-300" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-7-8a7 7 0 1114 0 7 7 0 01-14 0z" clipRule="evenodd" /><path fillRule="evenodd" d="M10 4a1 1 0 011 1v4a1 1 0 11-2 0V5a1 1 0 011-1zm0 8a1 1 0 100 2 1 1 0 000-2z" clipRule="evenodd" /></svg>}
+                                {(status === 'error' || status === 'cancelled') && <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-red-300" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg>}
                             </button>
                         );
                     })}

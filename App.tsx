@@ -1,6 +1,11 @@
 
 
 
+
+
+
+
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { QuestionnaireData, PackingListRequestData, PackingList, FoodFinderRequestData, FoodRecommendations, AppFinderRequestData, AppRecommendations, MusicFinderRequestData, MusicRecommendations, QuestionnaireData as InitialQuestionnaireData, UnifiedPlan, UnifiedPlanLoadingStatus, Itinerary } from './types';
 import { generateItinerary } from './services/geminiService';
@@ -48,11 +53,17 @@ const App: React.FC = () => {
   
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [unifiedStepErrors, setUnifiedStepErrors] = useState<Partial<Record<keyof UnifiedPlanLoadingStatus, string>>>({});
   const [streamedText, setStreamedText] = useState('');
   const [unifiedStreamedText, setUnifiedStreamedText] = useState('');
   const [initialQuestionnaireData, setInitialQuestionnaireData] = useState<InitialQuestionnaireData | null>(null);
   
   const mainContentRef = useRef<HTMLDivElement>(null);
+
+  // --- Unified Planner Pipeline State ---
+  const [currentlyGeneratingStep, setCurrentlyGeneratingStep] = useState<keyof UnifiedPlanLoadingStatus | null>(null);
+  const cancellationFlags = useRef<Partial<Record<keyof UnifiedPlanLoadingStatus, boolean>>>({});
+
 
   const scrollToTop = useCallback(() => {
     mainContentRef.current?.scrollTo(0, 0);
@@ -116,6 +127,12 @@ const App: React.FC = () => {
     setIsLoading(false);
     setError("Generation was cancelled.");
     
+    // For unified plan, handle cancellation via its own logic
+    if (view === 'unifiedResult' && currentlyGeneratingStep) {
+        cancellationFlags.current[currentlyGeneratingStep] = true;
+        return;
+    }
+
     const formViews: Partial<Record<View, View>> = {
       'itineraryResult': 'questionnaire',
       'packingAssistantResult': 'packingAssistantForm',
@@ -128,7 +145,7 @@ const App: React.FC = () => {
     const targetView = formViews[view] || 'landing';
     handleViewChange(targetView as View);
 
-  }, [view, handleViewChange]);
+  }, [view, handleViewChange, currentlyGeneratingStep]);
 
   const handleGenerateItinerary = useCallback(async (data: QuestionnaireData) => {
     setIsLoading(true);
@@ -150,69 +167,147 @@ const App: React.FC = () => {
     }
   }, [handleViewChange]);
   
+    // Helper to run each generation step with a retry and cancellation mechanism
+    const generateStep = useCallback(async <T,>(
+      step: keyof UnifiedPlanLoadingStatus,
+      generatorFn: () => Promise<T>,
+      onSuccess: (result: T) => void,
+      maxRetries = 3
+    ): Promise<boolean> => {
+      setUnifiedPlanLoadingStatus(prev => ({ ...prev, [step]: 'loading' }));
+      cancellationFlags.current[step] = false; // Reset flag for this specific run
+      setUnifiedStreamedText('');
+      let lastError: Error | null = null;
+  
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        if (cancellationFlags.current[step]) {
+            setUnifiedPlanLoadingStatus(prev => ({ ...prev, [step]: 'cancelled' }));
+            return false;
+        }
+
+        try {
+          const result = await generatorFn();
+          if (cancellationFlags.current[step]) {
+            setUnifiedPlanLoadingStatus(prev => ({ ...prev, [step]: 'cancelled' }));
+            return false;
+          }
+          onSuccess(result);
+          setUnifiedPlanLoadingStatus(prev => ({ ...prev, [step]: 'done' }));
+          return true; // Success
+        } catch (e) {
+          console.error(`Attempt ${attempt} for ${step} failed:`, e);
+          lastError = e instanceof Error ? e : new Error('An unknown error occurred');
+          if (attempt < maxRetries) {
+            await new Promise(resolve => setTimeout(resolve, 1000)); 
+          }
+        }
+      }
+  
+      const message = lastError ? `After ${maxRetries} attempts, generation failed. Error: ${lastError.message}` : `An unknown error occurred after ${maxRetries} attempts during ${step} generation.`;
+      setUnifiedStepErrors(prev => ({ ...prev, [step]: message }));
+      setUnifiedPlanLoadingStatus(prev => ({ ...prev, [step]: 'error' }));
+      return false; // Failure
+    }, []);
+
+    const stepToPlanKey = (step: keyof UnifiedPlanLoadingStatus): keyof UnifiedPlan => {
+        const map: Record<keyof UnifiedPlanLoadingStatus, keyof UnifiedPlan> = {
+            itinerary: 'itinerary',
+            packing: 'packingList',
+            food: 'foodRecommendations',
+            apps: 'appRecommendations',
+            music: 'musicRecommendations',
+        };
+        return map[step];
+    };
+
+    // Effect to manage the generation pipeline
+    useEffect(() => {
+        const runPipeline = async () => {
+            if (currentlyGeneratingStep) return; // A step is already running
+
+            const stepsOrder: (keyof UnifiedPlanLoadingStatus)[] = ['itinerary', 'packing', 'food', 'apps', 'music'];
+            const nextStep = stepsOrder.find(step => unifiedPlanLoadingStatus[step] === 'pending');
+
+            if (nextStep) {
+                setCurrentlyGeneratingStep(nextStep);
+                
+                const data = questionnaireDataForUnifiedPlan;
+                if (!data) {
+                    setCurrentlyGeneratingStep(null);
+                    return; // Should not happen
+                }
+
+                setUnifiedStepErrors(prev => {
+                    const newErrors = { ...prev };
+                    delete newErrors[nextStep];
+                    return newErrors;
+                });
+
+                const streamCallback = (chunk: string) => setUnifiedStreamedText(prev => prev + chunk);
+                let success = false;
+                
+                switch (nextStep) {
+                    case 'itinerary':
+                        success = await generateStep('itinerary', () => generateItinerary(data.destination, data.startPoint, data.tripType, data.days, data.budget, data.vibe, data.persons, data.foodPreference, data.startDate, data.includeMedical, data.language, data.isRoundTrip, data.currency, streamCallback), (result) => setUnifiedPlan(prev => ({ ...prev, itinerary: result })));
+                        break;
+                    case 'packing':
+                        const packingData: PackingListRequestData = { destination: data.destination, startDate: data.startDate, days: data.days, language: data.language };
+                        success = await generateStep('packing', () => generatePackingList(packingData, streamCallback), (result) => setUnifiedPlan(prev => ({ ...prev, packingList: result })));
+                        break;
+                    case 'food':
+                        const foodData: FoodFinderRequestData = { destination: data.destination, startDate: data.startDate, foodPreference: data.foodPreference, includeAlcoholicDrinks: data.includeAlcoholicDrinks, language: data.language };
+                        success = await generateStep('food', () => generateFoodRecommendations(foodData, streamCallback), (result) => setUnifiedPlan(prev => ({ ...prev, foodRecommendations: result })));
+                        break;
+                    case 'apps':
+                        const appData: AppFinderRequestData = { destination: data.destination, language: data.language };
+                        success = await generateStep('apps', () => generateAppRecommendations(appData, streamCallback), (result) => setUnifiedPlan(prev => ({ ...prev, appRecommendations: result })));
+                        break;
+                    case 'music':
+                        const musicData: MusicFinderRequestData = { destination: data.destination, language: data.language };
+                        success = await generateStep('music', () => generateMusicRecommendations(musicData, streamCallback), (result) => setUnifiedPlan(prev => ({ ...prev, musicRecommendations: result })));
+                        break;
+                }
+                
+                if (success && !cancellationFlags.current[nextStep]) {
+                    setTimeout(() => setCurrentlyGeneratingStep(null), 2000);
+                } else {
+                    setCurrentlyGeneratingStep(null);
+                }
+            }
+        };
+
+        if (view === 'unifiedResult') {
+             runPipeline();
+        }
+    }, [currentlyGeneratingStep, unifiedPlanLoadingStatus, questionnaireDataForUnifiedPlan, generateStep, view]);
+
   const handleGenerateUnifiedPlan = useCallback(async (data: QuestionnaireData) => {
     setQuestionnaireDataForUnifiedPlan(data);
     setUnifiedPlan({ itinerary: null, packingList: null, foodRecommendations: null, appRecommendations: null, musicRecommendations: null });
-    setError(null); // Reset errors at the start
-    setUnifiedPlanLoadingStatus({ itinerary: 'pending', packing: 'pending', food: 'pending', apps: 'pending', music: 'pending' });
+    setError(null);
+    setUnifiedStepErrors({});
+    cancellationFlags.current = {};
     handleViewChange('unifiedResult');
-
-    const streamCallback = (chunk: string) => setUnifiedStreamedText(prev => prev + chunk);
-
-    // Helper to run each generation step sequentially and handle errors independently
-    const generateStep = async <T,>(
-      step: keyof UnifiedPlanLoadingStatus,
-      generatorFn: () => Promise<T>,
-      onSuccess: (result: T) => void
-    ) => {
-      setUnifiedPlanLoadingStatus(prev => ({ ...prev, [step]: 'loading' }));
-      setUnifiedStreamedText('');
-      try {
-        const result = await generatorFn();
-        onSuccess(result);
-        setUnifiedPlanLoadingStatus(prev => ({ ...prev, [step]: 'done' }));
-      } catch (e) {
-        const message = e instanceof Error ? e.message : `An unknown error occurred during ${step} generation.`;
-        // Append new error messages instead of overwriting
-        setError(prevError => prevError ? `${prevError}\n\n${message}` : message);
-        setUnifiedPlanLoadingStatus(prev => ({ ...prev, [step]: 'error' }));
-      }
-    };
-    
-    // Itinerary
-    await generateStep('itinerary',
-      () => generateItinerary(data.destination, data.startPoint, data.tripType, data.days, data.budget, data.vibe, data.persons, data.foodPreference, data.startDate, data.includeMedical, data.language, data.isRoundTrip, data.currency, streamCallback),
-      (result) => setUnifiedPlan(prev => ({ ...prev, itinerary: result }))
-    );
-
-    // Packing List
-    const packingData: PackingListRequestData = { destination: data.destination, startDate: data.startDate, days: data.days, language: data.language };
-    await generateStep('packing',
-      () => generatePackingList(packingData, streamCallback),
-      (result) => setUnifiedPlan(prev => ({ ...prev, packingList: result }))
-    );
-    
-    // Food Recommendations
-    const foodData: FoodFinderRequestData = { destination: data.destination, startDate: data.startDate, foodPreference: data.foodPreference, includeAlcoholicDrinks: data.includeAlcoholicDrinks, language: data.language };
-    await generateStep('food',
-      () => generateFoodRecommendations(foodData, streamCallback),
-      (result) => setUnifiedPlan(prev => ({ ...prev, foodRecommendations: result }))
-    );
-
-    // App Recommendations
-    const appData: AppFinderRequestData = { destination: data.destination, language: data.language };
-    await generateStep('apps',
-      () => generateAppRecommendations(appData, streamCallback),
-      (result) => setUnifiedPlan(prev => ({ ...prev, appRecommendations: result }))
-    );
-
-    // Music Recommendations
-    const musicData: MusicFinderRequestData = { destination: data.destination, language: data.language };
-    await generateStep('music',
-      () => generateMusicRecommendations(musicData, streamCallback),
-      (result) => setUnifiedPlan(prev => ({ ...prev, musicRecommendations: result }))
-    );
+    // This state change will trigger the pipeline `useEffect`
+    setUnifiedPlanLoadingStatus({ itinerary: 'pending', packing: 'pending', food: 'pending', apps: 'pending', music: 'pending' });
   }, [handleViewChange]);
+
+  const handleRegenerateUnifiedPlanStep = useCallback((step: keyof UnifiedPlanLoadingStatus) => {
+    if (!questionnaireDataForUnifiedPlan) return;
+    
+    // Clear old data for the step being regenerated
+    const planKey = stepToPlanKey(step);
+    setUnifiedPlan(prev => ({ ...prev, [planKey]: null }));
+
+    // Set the status to 'pending' to have the pipeline pick it up
+    setUnifiedPlanLoadingStatus(prev => ({ ...prev, [step]: 'pending' }));
+  }, [questionnaireDataForUnifiedPlan]);
+
+  const handleCancelUnifiedPlanStep = useCallback((step: keyof UnifiedPlanLoadingStatus) => {
+    if (currentlyGeneratingStep === step) {
+        cancellationFlags.current[step] = true;
+    }
+  }, [currentlyGeneratingStep]);
 
 
   const handleGeneratePackingList = useCallback(async (data: PackingListRequestData) => {
@@ -308,7 +403,7 @@ const App: React.FC = () => {
         if (itinerary) return <ItineraryPreview itinerary={itinerary} onRegenerate={() => handleViewChange('questionnaire')} />;
         break;
       case 'unifiedResult':
-        return <UnifiedResultPreview plan={unifiedPlan} loadingStatus={unifiedPlanLoadingStatus} error={error} onPlanNew={handleBackToHome} onRegenerate={() => { if(questionnaireDataForUnifiedPlan) handleGenerateUnifiedPlan(questionnaireDataForUnifiedPlan)}} unifiedStreamedText={unifiedStreamedText} onCancel={handleCancelGeneration} />;
+        return <UnifiedResultPreview plan={unifiedPlan} loadingStatus={unifiedPlanLoadingStatus} stepErrors={unifiedStepErrors} onPlanNew={handleBackToHome} onRegenerate={() => { if(questionnaireDataForUnifiedPlan) handleGenerateUnifiedPlan(questionnaireDataForUnifiedPlan)}} onRegenerateStep={handleRegenerateUnifiedPlanStep} unifiedStreamedText={unifiedStreamedText} onCancel={handleCancelGeneration} onCancelStep={handleCancelUnifiedPlanStep} currentlyGeneratingStep={currentlyGeneratingStep} />;
       case 'packingAssistantForm':
         return <PackingAssistantForm onSubmit={handleGeneratePackingList} isLoading={false} error={error} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} />;
       case 'packingAssistantResult':

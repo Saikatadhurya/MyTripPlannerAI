@@ -210,7 +210,7 @@ export interface UnifiedPlan {
   musicRecommendations: MusicRecommendations | null;
 }
 
-export type UnifiedPlanLoadingState = 'pending' | 'loading' | 'done' | 'error';
+export type UnifiedPlanLoadingState = 'pending' | 'loading' | 'done' | 'error' | 'cancelled';
 
 export interface UnifiedPlanLoadingStatus {
   itinerary: UnifiedPlanLoadingState;
