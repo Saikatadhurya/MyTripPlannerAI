@@ -35,12 +35,21 @@ interface UnifiedResultPreviewProps {
 const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadingStatus, stepErrors, onPlanNew, onRegenerate, onRegenerateStep, onCancel, onCancelStep, onTabChangeScrollToTop, itineraryStreamedText }) => {
     const [activeTab, setActiveTab] = useState<Tab>('itinerary');
     const [isExportingPdf, setIsExportingPdf] = useState(false);
+    const [isScrolled, setIsScrolled] = useState(false);
     
     const isPlanComplete = Object.values(loadingStatus).every(status => status === 'done');
 
     useEffect(() => {
         onTabChangeScrollToTop();
     }, [activeTab, onTabChangeScrollToTop]);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            setIsScrolled(window.scrollY > 20);
+        };
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
 
     const getGuidebookStyles = () => {
         // This function embeds all necessary CSS for the guidebook to render correctly in a new window.
@@ -251,28 +260,48 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
                 </div>
             </header>
             
-            <nav className="sticky top-0 z-30 bg-white/80 backdrop-blur-lg rounded-xl shadow-md p-2 mb-2 no-print">
-                <div className="flex items-center justify-center sm:justify-start space-x-1 sm:space-x-2 hide-scrollbar overflow-x-auto">
-                    {tabs.map(tab => {
-                         const status = loadingStatus[tab.id];
-                         const dataExists = !!getPlanDataForTab(tab.id);
+            <nav className={`sticky top-0 z-30 p-2 mb-2 no-print transition-all duration-300 ease-in-out ${isScrolled ? 'bg-white/80 backdrop-blur-lg rounded-xl shadow-md' : 'bg-transparent'}`}>
+                <div className={`flex items-center transition-all duration-300 ${isScrolled ? 'justify-start' : 'justify-center'}`}>
+                    <div className={`flex-shrink-0 flex items-center space-x-2 text-slate-800 transition-all duration-300 ease-in-out overflow-hidden ${isScrolled ? 'w-40 opacity-100' : 'w-0 opacity-0'}`}>
+                        <svg width="24" height="24" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="50" cy="50" r="45" />
+                            <line x1="50" y1="5" x2="50" y2="50" />
+                            <line x1="50" y1="50" x2="95" y2="50" />
+                            <path d="M25 15 v 25" />
+                            <path d="M35 15 v 25" />
+                            <path d="M30 15 v 28" />
+                            <path d="M25 15 C 25 10, 35 10, 35 15" />
+                            <circle cx="75" cy="25" r="8" />
+                            <line x1="75" y1="33" x2="75" y2="45" />
+                            <path d="M20 60 l25 25 l-5 -10 l15 -5 l-20 -15Z" fill="currentColor" stroke="none" />
+                        </svg>
+                        <span className="text-xl font-bold tracking-widest uppercase whitespace-nowrap">
+                            PLANORA
+                        </span>
+                    </div>
 
-                        return (
-                             <button
-                                key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
-                                className={`flex items-center justify-center space-x-2 px-3 sm:px-4 py-2.5 text-sm sm:text-base font-semibold rounded-lg transition-colors duration-200
-                                    ${activeTab === tab.id ? 'bg-violet-600 text-white shadow-md' : 'text-slate-600 hover:bg-violet-100/70'}`}
-                                aria-current={activeTab === tab.id ? 'page' : undefined}
-                            >
-                                {tab.icon}
-                                <span className="hidden sm:inline">{tab.name}</span>
-                                {status === 'loading' && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>}
-                                {status === 'done' && dataExists && <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-green-300" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>}
-                                {(status === 'error' || status === 'cancelled') && <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-red-300" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg>}
-                            </button>
-                        );
-                    })}
+                    <div className="flex items-center justify-center sm:justify-start space-x-1 sm:space-x-2 hide-scrollbar overflow-x-auto">
+                        {tabs.map(tab => {
+                            const status = loadingStatus[tab.id];
+                            const dataExists = !!getPlanDataForTab(tab.id);
+
+                            return (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id)}
+                                    className={`flex items-center justify-center space-x-2 px-3 sm:px-4 py-2.5 text-sm sm:text-base font-semibold rounded-lg transition-colors duration-200
+                                        ${activeTab === tab.id ? 'bg-violet-600 text-white shadow-md' : 'text-slate-600 hover:bg-violet-100/70'}`}
+                                    aria-current={activeTab === tab.id ? 'page' : undefined}
+                                >
+                                    {tab.icon}
+                                    <span className="hidden sm:inline">{tab.name}</span>
+                                    {status === 'loading' && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>}
+                                    {status === 'done' && dataExists && <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-green-300" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>}
+                                    {(status === 'error' || status === 'cancelled') && <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-red-300" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg>}
+                                </button>
+                            );
+                        })}
+                    </div>
                 </div>
             </nav>
 

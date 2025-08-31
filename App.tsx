@@ -454,47 +454,48 @@ const App: React.FC = () => {
           return null;
       }
     }
-    
-    const isUnifiedPlanFinished = Object.values(unifiedPlanLoadingStatus).every(
-        status => status === 'done' || status === 'error' || status === 'cancelled'
-    );
 
-    if (view === 'unifiedResult' && !isUnifiedPlanFinished) {
-        const unifiedFunFacts = [
-            { icon: '🗺️', text: 'Plotting scenic routes...' },
-            { icon: '💎', text: 'Finding hidden gems...' },
-            { icon: '🗓️', text: 'Scheduling daily activities...' },
-            { icon: '🏨', text: 'Scouting the best stays...' },
-            { icon: '🍜', text: 'Locating top-rated eats...' },
-            { icon: '🧳', text: 'Curating a smart packing list...' },
-            { icon: '📱', text: 'Finding essential local apps...' },
-            { icon: '🎶', text: 'Creating the perfect travel playlist...' },
-        ];
-        
-        let syntheticStreamedText = itineraryStreamedText;
-        if (unifiedPlanLoadingStatus.packing === 'done') syntheticStreamedText += 'packing_done';
-        if (unifiedPlanLoadingStatus.food === 'done') syntheticStreamedText += 'food_done';
-        if (unifiedPlanLoadingStatus.apps === 'done') syntheticStreamedText += 'apps_done';
-        if (unifiedPlanLoadingStatus.music === 'done') syntheticStreamedText += 'music_done';
-
-        const unifiedStages = [
-            { key: '"day":', text: 'Building the day-by-day plan' },
-            { key: 'packing_done', text: 'Creating packing list' },
-            { key: 'food_done', text: 'Finding food recommendations' },
-            { key: 'apps_done', text: 'Searching for local apps' },
-            { key: 'music_done', text: 'Curating music playlist' },
-        ];
-
-        return (
-            <LoadingIndicator
-                streamedText={syntheticStreamedText}
-                stages={unifiedStages}
-                onCancel={handleCancelGeneration}
-                title="Crafting Your Unified Plan..."
-                accentColor="violet"
-                funFacts={unifiedFunFacts}
-            />
-        );
+    if (view === 'unifiedResult') {
+        if (unifiedPlanLoadingStatus.itinerary === 'pending' || unifiedPlanLoadingStatus.itinerary === 'loading') {
+            const funFacts = [
+                { icon: '🗺️', text: 'Plotting scenic routes...' },
+                { icon: '💎', text: 'Finding hidden gems...' },
+                { icon: '🗓️', text: 'Scheduling daily activities...' },
+                { icon: '🏨', text: 'Scouting the best stays...' },
+                { icon: '🍜', text: 'Locating top-rated eats...' },
+            ];
+            const itineraryStages = [
+                { key: '"stay":', text: 'Analyzing budget and costs' },
+                { key: '"fromCurrency":', text: 'Checking currency exchange rates' },
+                { key: '"historicBackground":', text: 'Researching destinations' },
+                { key: '"planNote":', text: 'Adding important travel notes' },
+                { key: '"day":', text: 'Building the day-by-day plan' },
+            ];
+            return (
+                <LoadingIndicator
+                    streamedText={itineraryStreamedText}
+                    stages={itineraryStages}
+                    onCancel={handleCancelGeneration}
+                    title="Crafting Your Itinerary..."
+                    accentColor="violet"
+                    funFacts={funFacts}
+                />
+            );
+        }
+        // If itinerary is done, error, or cancelled, show the result page.
+        // The result page itself will handle loading states for other tabs.
+        return <UnifiedResultPreview 
+            plan={unifiedPlan} 
+            loadingStatus={unifiedPlanLoadingStatus} 
+            stepErrors={unifiedStepErrors} 
+            onPlanNew={handleBackToHome} 
+            onRegenerate={() => { if(questionnaireDataForUnifiedPlan) handleGenerateUnifiedPlan(questionnaireDataForUnifiedPlan)}} 
+            onRegenerateStep={handleRegenerateUnifiedPlanStep} 
+            onCancel={handleCancelGeneration} 
+            onCancelStep={handleCancelUnifiedPlanStep} 
+            onTabChangeScrollToTop={scrollToTop} 
+            itineraryStreamedText={itineraryStreamedText} 
+        />;
     }
 
     switch (view) {
@@ -507,8 +508,6 @@ const App: React.FC = () => {
       case 'itineraryResult':
         if (itinerary) return <ItineraryPreview itinerary={itinerary} onRegenerate={() => handleViewChange('questionnaire')} />;
         break;
-      case 'unifiedResult':
-        return <UnifiedResultPreview plan={unifiedPlan} loadingStatus={unifiedPlanLoadingStatus} stepErrors={unifiedStepErrors} onPlanNew={handleBackToHome} onRegenerate={() => { if(questionnaireDataForUnifiedPlan) handleGenerateUnifiedPlan(questionnaireDataForUnifiedPlan)}} onRegenerateStep={handleRegenerateUnifiedPlanStep} onCancel={handleCancelGeneration} onCancelStep={handleCancelUnifiedPlanStep} onTabChangeScrollToTop={scrollToTop} itineraryStreamedText={itineraryStreamedText} />;
       case 'packingAssistantForm':
         return <PackingAssistantForm onSubmit={handleGeneratePackingList} isLoading={false} error={error} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} />;
       case 'packingAssistantResult':
