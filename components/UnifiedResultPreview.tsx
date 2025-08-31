@@ -1,3 +1,4 @@
+
 import React, { useState, Fragment, useRef, useEffect } from 'react';
 import { UnifiedPlan, UnifiedPlanLoadingStatus } from '../types';
 import ItineraryPreview from './ItineraryPreview';
@@ -6,6 +7,7 @@ import FoodFinderResult from './FoodFinderResult';
 import AppFinderResult from './AppFinderResult';
 import MusicFinderResult from './MusicFinderResult';
 import StreamingLoadingIndicator from './LoadingIndicator';
+import Guidebook from './Guidebook';
 
 type Tab = 'itinerary' | 'packing' | 'food' | 'apps' | 'music';
 
@@ -91,6 +93,8 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
     const [isExportingPdf, setIsExportingPdf] = useState(false);
     const contentRef = useRef<HTMLDivElement>(null);
 
+    const isPlanComplete = Object.values(loadingStatus).every(status => status === 'done');
+
     useEffect(() => {
         contentRef.current?.scrollTo(0, 0);
     }, [activeTab]);
@@ -105,7 +109,7 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
         }
         const destinationName = plan.itinerary?.destination.split(',')[0] || 'Trip';
         const opt = {
-            margin: 0.5,
+            margin: 0,
             filename: `Planora-Guide-${destinationName}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { scale: 2, useCORS: true, letterRendering: true },
@@ -227,8 +231,9 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
                 <div className="flex-shrink-0 flex items-center space-x-3">
                      <button
                         onClick={handleExportPdf}
-                        disabled={isExportingPdf}
-                        className="inline-flex items-center px-4 py-2 bg-white/60 text-slate-800 font-semibold rounded-full hover:bg-white/80 transition-all duration-300 shadow-sm border border-white/50 text-sm disabled:opacity-50 disabled:cursor-wait"
+                        disabled={isExportingPdf || !isPlanComplete}
+                        className="inline-flex items-center px-4 py-2 bg-white/60 text-slate-800 font-semibold rounded-full hover:bg-white/80 transition-all duration-300 shadow-sm border border-white/50 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                        title={!isPlanComplete ? 'Please wait for all sections to finish generating.' : 'Export your plan as a PDF guidebook'}
                     >
                         {isExportingPdf ? (
                             <svg className="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
@@ -236,6 +241,9 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" /></svg>
                         )}
                         <span>{isExportingPdf ? 'Creating...' : 'Export Guidebook'}</span>
+                         {!isPlanComplete && !isExportingPdf && (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-2 text-slate-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clipRule="evenodd" /></svg>
+                        )}
                     </button>
                      <button
                         onClick={onRegenerate}
@@ -284,49 +292,7 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
 
             {/* Hidden Printable Container */}
             <div id="printable-plan" className="hidden printable-container">
-                {plan.itinerary && (
-                <>
-                    <div id="printable-toc">
-                        <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">Your Adventure Guide</h1>
-                        <h2 className="text-2xl text-violet-700 font-bold mb-8">to {plan.itinerary.destination}</h2>
-                        <nav>
-                            <ul className="space-y-3">
-                                {plan.itinerary && <li><a href="#printable-itinerary">Full Itinerary</a></li>}
-                                {plan.packingList && <li><a href="#printable-packing">Packing List</a></li>}
-                                {plan.foodRecommendations && <li><a href="#printable-food">Food Guide</a></li>}
-                                {plan.appRecommendations && <li><a href="#printable-apps">Local Apps</a></li>}
-                                {plan.musicRecommendations && <li><a href="#printable-music">Music Playlist</a></li>}
-                            </ul>
-                        </nav>
-                    </div>
-
-                    {plan.itinerary && (
-                        <div id="printable-itinerary" className="printable-section">
-                            <ItineraryPreview itinerary={plan.itinerary} onRegenerate={() => {}} isUnifiedView />
-                        </div>
-                    )}
-                    {plan.packingList && (
-                        <div id="printable-packing" className="printable-section">
-                            <PackingListPreview packingList={plan.packingList} onRegenerate={() => {}} isUnifiedView />
-                        </div>
-                    )}
-                    {plan.foodRecommendations && (
-                        <div id="printable-food" className="printable-section">
-                            <FoodFinderResult recommendations={plan.foodRecommendations} onRegenerate={() => {}} isUnifiedView />
-                        </div>
-                    )}
-                    {plan.appRecommendations && (
-                        <div id="printable-apps" className="printable-section">
-                            <AppFinderResult recommendations={plan.appRecommendations} onRegenerate={() => {}} isUnifiedView />
-                        </div>
-                    )}
-                    {plan.musicRecommendations && (
-                        <div id="printable-music" className="printable-section">
-                            <MusicFinderResult recommendations={plan.musicRecommendations} onRegenerate={() => {}} isUnifiedView />
-                        </div>
-                    )}
-                </>
-                )}
+                <Guidebook plan={plan} />
             </div>
         </div>
     );
