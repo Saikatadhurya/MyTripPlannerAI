@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 
 interface QuickNavButtonProps {
   onPlanTrip: () => void;
+  onPlanItinerary: () => void;
   onStartPacking: () => void;
   onStartFoodFinder: () => void;
   onStartAppFinder: () => void;
@@ -12,6 +13,7 @@ interface QuickNavButtonProps {
 
 const QuickNavButton: React.FC<QuickNavButtonProps> = ({
   onPlanTrip,
+  onPlanItinerary,
   onStartPacking,
   onStartFoodFinder,
   onStartAppFinder,
@@ -39,15 +41,33 @@ const QuickNavButton: React.FC<QuickNavButtonProps> = ({
     setIsOpen(false);
   };
 
-  const menuItems = [
-    { label: 'Go Home', action: onGoHome, icon: '🏠' },
-    { label: 'Plan New Trip', action: onPlanTrip, icon: '✨' },
-    { label: 'Smart Bag Packing', action: onStartPacking, icon: '🧳' },
-    { label: 'Local Food Finder', action: onStartFoodFinder, icon: '🍲' },
-    { label: 'Mobile App Finder', action: onStartAppFinder, icon: '📱' },
-    { label: 'Local Music Finder', action: onStartMusicFinder, icon: '🎶' },
-    { label: 'Contact Us', action: onGoToContact, icon: '✉️' },
+  const menuSections = [
+    {
+        title: 'Start a New Plan',
+        items: [
+            { label: 'Complete Adventure Plan', action: onPlanTrip, icon: '✨' },
+        ]
+    },
+    {
+        title: 'Quick Tools',
+        items: [
+            { label: 'Day-by-Day Itinerary', action: onPlanItinerary, icon: '🗓️' },
+            { label: 'Smart Bag Packing', action: onStartPacking, icon: '🧳' },
+            { label: 'Local Food Finder', action: onStartFoodFinder, icon: '🍲' },
+            { label: 'Mobile App Finder', action: onStartAppFinder, icon: '📱' },
+            { label: 'Local Music Finder', action: onStartMusicFinder, icon: '🎶' },
+        ]
+    },
+    {
+        title: 'General',
+        items: [
+            { label: 'Go Home', action: onGoHome, icon: '🏠' },
+            { label: 'Contact Us', action: onGoToContact, icon: '✉️' },
+        ]
+    }
   ];
+
+  let itemIndex = 0;
 
   return (
     <div ref={navRef} className="fixed bottom-6 left-6 z-50 no-print" aria-live="polite">
@@ -57,32 +77,41 @@ const QuickNavButton: React.FC<QuickNavButtonProps> = ({
         {/* Menu Panel */}
         <div
           id="quick-nav-menu"
-          className={`absolute bottom-full mb-4 w-64 origin-bottom-left transition-all duration-300 ease-out ${
+          className={`absolute bottom-full mb-4 w-72 origin-bottom-left transition-all duration-300 ease-out ${
             isOpen ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4 pointer-events-none'
           }`}
           aria-hidden={!isOpen}
         >
-          <div className="bg-white/70 backdrop-blur-xl border border-white/40 rounded-xl shadow-lg p-2 flex flex-col space-y-1">
-            {menuItems.map((item, index) => (
-              <button
-                key={item.label}
-                onClick={() => handleAction(item.action)}
-                title={item.label}
-                aria-label={item.label}
-                tabIndex={isOpen ? 0 : -1}
-                className="w-full flex items-center text-left px-3 py-2.5 rounded-lg text-slate-800 font-semibold transition-colors duration-200 hover:bg-violet-100/80 focus:outline-none focus:ring-2 focus:ring-violet-400"
-                style={{
-                    transitionDelay: isOpen ? `${index * 30}ms` : '0ms',
-                    opacity: isOpen ? 1 : 0,
-                    transform: isOpen ? 'translateY(0)' : 'translateY(5px)',
-                    transitionProperty: 'opacity, transform, background-color',
-                    transitionDuration: '300ms',
-                    transitionTimingFunction: 'ease-out',
-                }}
-              >
-                <span className="text-xl w-8 text-center">{item.icon}</span>
-                <span>{item.label}</span>
-              </button>
+          <div className="bg-white/70 backdrop-blur-xl border border-white/40 rounded-xl shadow-lg p-2 flex flex-col">
+            {menuSections.map((section, sectionIndex) => (
+              <React.Fragment key={section.title}>
+                {sectionIndex > 0 && <hr className="border-slate-200/80 mx-2 my-1" />}
+                {section.title && <p className="px-3 pt-2 pb-1 text-xs font-bold text-slate-500 uppercase tracking-wider">{section.title}</p>}
+                {section.items.map((item) => {
+                  const currentItemIndex = itemIndex++;
+                  return (
+                    <button
+                      key={item.label}
+                      onClick={() => handleAction(item.action)}
+                      title={item.label}
+                      aria-label={item.label}
+                      tabIndex={isOpen ? 0 : -1}
+                      className="w-full flex items-center text-left px-3 py-2.5 rounded-lg text-slate-800 font-semibold transition-colors duration-200 hover:bg-violet-100/80 focus:outline-none focus:ring-2 focus:ring-violet-400"
+                      style={{
+                          transitionDelay: isOpen ? `${currentItemIndex * 30}ms` : '0ms',
+                          opacity: isOpen ? 1 : 0,
+                          transform: isOpen ? 'translateY(0)' : 'translateY(5px)',
+                          transitionProperty: 'opacity, transform, background-color',
+                          transitionDuration: '300ms',
+                          transitionTimingFunction: 'ease-out',
+                      }}
+                    >
+                      <span className="text-xl w-8 text-center">{item.icon}</span>
+                      <span>{item.label}</span>
+                    </button>
+                  );
+                })}
+              </React.Fragment>
             ))}
           </div>
         </div>

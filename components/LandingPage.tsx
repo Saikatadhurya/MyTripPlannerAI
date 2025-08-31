@@ -100,22 +100,22 @@ const LandingPage: React.FC<LandingPageProps> = ({ onPlanUnifiedTrip, onPlanItin
   
   const supportingFeatures = [
     {
-      icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
+      icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
       title: 'Day-wise Planning',
       description: 'Get a detailed, step-by-step plan for each day of your trip.'
     },
     {
-      icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" /></svg>,
+      icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" /></svg>,
       title: 'Cultural Discovery',
       description: 'Learn about the history, culture, and must-see sights.'
     },
     {
-      icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10.343 3.94c.09-.542.56-1.007 1.11-1.11a12.003 12.003 0 015.655 5.655c.103.55.568 1.02 1.11 1.11a11.97 11.97 0 010 2.828c-.542.09-1.007.56-1.11 1.11a12.003 12.003 0 01-5.655 5.655c-.55.103-1.02.568-1.11 1.11a11.97 11.97 0 01-2.828 0c-.09-.542-.56-1.007-1.11-1.11a12.003 12.003 0 01-5.655-5.655c-.103-.55-.568-1.02-1.11-1.11a11.97 11.97 0 010-2.828c.542-.09 1.007.56 1.11-1.11a12.003 12.003 0 015.655-5.655z" /><path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5a4.5 4.5 0 100-9 4.5 4.5 0 000 9z" /></svg>,
+      icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10.343 3.94c.09-.542.56-1.007 1.11-1.11a12.003 12.003 0 015.655 5.655c.103.55.568 1.02 1.11 1.11a11.97 11.97 0 010 2.828c-.542.09-1.007.56-1.11 1.11a12.003 12.003 0 01-5.655 5.655c-.55.103-1.02.568-1.11 1.11a11.97 11.97 0 01-2.828 0c-.09-.542-.56-1.007-1.11-1.11a12.003 12.003 0 01-5.655-5.655c-.103-.55-.568-1.02-1.11-1.11a11.97 11.97 0 010-2.828c.542-.09 1.007.56 1.11-1.11a12.003 12.003 0 015.655-5.655z" /><path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5a4.5 4.5 0 100-9 4.5 4.5 0 000 9z" /></svg>,
       title: 'Smart Travel Tools',
       description: 'Find packing lists, local apps, music, and food recommendations.'
     },
     {
-      icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>,
+      icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>,
       title: 'Budget Friendly',
       description: 'Get cost estimates for your entire trip, from stay to food.'
     }
@@ -127,15 +127,18 @@ const LandingPage: React.FC<LandingPageProps> = ({ onPlanUnifiedTrip, onPlanItin
       <div className="animated-card text-center max-w-4xl mx-auto p-6 md:p-8 rounded-3xl bg-white/50 backdrop-blur-lg border border-white/60 shadow-lg" style={{ animationDelay: '100ms' }}>
         <h1 className="text-4xl md:text-5xl font-bold text-slate-900 tracking-tight">Plan Your Next Adventure</h1>
         <p className="mt-4 text-lg text-slate-600 max-w-2xl mx-auto">
-          Tell us your travel preferences, and our AI will craft a personalized, day-by-day itinerary just for you.
+          Tell us your travel preferences, and our AI will craft a complete adventure plan, including a detailed itinerary, smart packing list, local food guide, essential apps, and a curated music playlist.
         </p>
         <div className="mt-8">
             <button
               onClick={() => onPlanUnifiedTrip()}
               className="inline-block px-10 py-4 bg-violet-600 text-white font-bold rounded-full text-lg shadow-lg shadow-violet-500/30 hover:bg-violet-700 hover:shadow-xl hover:shadow-violet-500/40 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-violet-300"
             >
-              ✨ Plan My Trip
+              ✨ Build My Complete Adventure
             </button>
+            <p className="mt-4 text-sm text-violet-700/80 font-medium tracking-wide">
+              Includes: Itinerary, Packing, Food, Apps & Music
+            </p>
         </div>
       </div>
       
@@ -149,25 +152,31 @@ const LandingPage: React.FC<LandingPageProps> = ({ onPlanUnifiedTrip, onPlanItin
             return (
               <div
                 key={app.id}
-                className="animated-card h-full w-full text-center bg-white/50 backdrop-blur-lg p-6 rounded-2xl border border-white/60 shadow-lg flex flex-col justify-between group transition-all duration-300 transform hover:scale-105 hover:shadow-xl"
+                onClick={app.onClick}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        app.onClick();
+                    }
+                }}
+                role="button"
+                tabIndex={0}
+                className={`animated-card h-full w-full flex flex-col text-center bg-white/50 backdrop-blur-lg p-6 rounded-2xl border border-white/60 shadow-lg group transition-all duration-300 transform hover:scale-105 hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-${app.color}-400/50 cursor-pointer`}
                 style={{ animationDelay: `${300 + index * 100}ms` }}
               >
-                <div>
-                  <div className={`mx-auto w-20 h-20 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 ${colors.iconBg} ${colors.iconText}`}>
-                    {app.icon}
-                  </div>
-                  <h3 className="text-xl font-bold text-slate-900 mt-5">{app.title}</h3>
-                  <p className="text-sm text-slate-600 mt-1 h-10">
-                    {app.description}
-                  </p>
+                <div className="flex-grow">
+                    <div className={`mx-auto w-20 h-20 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 ${colors.iconBg} ${colors.iconText}`}>
+                        {app.icon}
+                    </div>
+                    <h3 className="text-xl font-bold text-slate-900 mt-5">{app.title}</h3>
+                    <p className="text-sm text-slate-600 mt-1">
+                        {app.description}
+                    </p>
                 </div>
-                <div className="mt-6">
-                  <button
-                    onClick={app.onClick}
-                    className={`w-full px-5 py-3 rounded-full text-base font-semibold flex items-center justify-center space-x-2 transition-all duration-300 transform group-hover:shadow-lg ${colors.button} focus:outline-none focus:ring-4 focus:ring-offset-2 ${colors.button.replace('bg-', 'ring-')}`}
-                  >
-                    <span>{app.buttonText}</span>
-                  </button>
+                <div className="mt-6 flex-shrink-0">
+                    <span className={`inline-block px-6 py-2.5 font-semibold rounded-full text-sm shadow-md transition-all duration-300 group-hover:shadow-lg ${colors.button}`}>
+                        {app.buttonText}
+                    </span>
                 </div>
               </div>
             );
@@ -183,10 +192,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onPlanUnifiedTrip, onPlanItin
           {supportingFeatures.map((feature, index) => (
             <div 
               key={index} 
-              className="animated-card bg-white/50 backdrop-blur-lg p-6 rounded-xl border border-white/60 shadow-lg text-center transition-all duration-300 transform hover:scale-105 hover:shadow-xl" 
+              className="animated-card bg-slate-50/50 backdrop-blur-sm p-6 rounded-2xl border border-white/60 text-center" 
               style={{ animationDelay: `${700 + index * 100}ms` }}
             >
-              <div className="mx-auto w-14 h-14 rounded-full flex items-center justify-center bg-violet-100 text-violet-600">
+              <div className="mx-auto w-16 h-16 flex items-center justify-center text-violet-500">
                 {feature.icon}
               </div>
               <h3 className="text-lg font-semibold text-slate-800 mt-4">{feature.title}</h3>
@@ -201,7 +210,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onPlanUnifiedTrip, onPlanItin
         <h2 className="text-3xl font-bold text-center text-slate-900 mb-6 animated-card" style={{ animationDelay: '1100ms' }}>Popular Destinations</h2>
         <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
           {destinations.map((dest, index) => (
-            <button key={dest.name} onClick={() => onPlanUnifiedTrip(dest.name)} className="animated-card text-left bg-white/50 backdrop-blur-lg p-5 rounded-2xl border border-white/60 shadow-lg hover:shadow-xl hover:border-violet-300/50 transition-all duration-300 transform hover:scale-105" style={{ animationDelay: `${1200 + index * 50}ms` }}>
+            <button key={dest.name} onClick={() => onPlanUnifiedTrip(dest.name)} className="animated-card text-left bg-white/50 backdrop-blur-lg p-5 rounded-2xl border border-white/60 shadow-lg hover:shadow-xl hover:border-violet-300/50 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-violet-400/50" style={{ animationDelay: `${1200 + index * 50}ms` }}>
               <span className="text-4xl" role="img" aria-label="">{dest.icon}</span>
               <h3 className="text-lg font-semibold mt-3 text-slate-800">{dest.name}</h3>
               <p className="text-slate-600 text-sm">{dest.description}</p>

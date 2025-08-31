@@ -1,4 +1,5 @@
 
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { QuestionnaireData, PackingListRequestData, PackingList, FoodFinderRequestData, FoodRecommendations, AppFinderRequestData, AppRecommendations, MusicFinderRequestData, MusicRecommendations, QuestionnaireData as InitialQuestionnaireData, UnifiedPlan, UnifiedPlanLoadingStatus, Itinerary } from './types';
 import { generateItinerary } from './services/geminiService';
@@ -337,6 +338,7 @@ const App: React.FC = () => {
         onGoHome={handleBackToHome}
         onGoToContact={() => handleViewChange('contact')}
         onPlanTrip={handleStartUnifiedPlanner}
+        onPlanItinerary={handleStartItineraryPlanner}
         onStartPacking={() => handleViewChange('packingAssistantForm')}
         onStartFoodFinder={() => handleViewChange('foodFinderForm')}
         onStartAppFinder={() => handleViewChange('appFinderForm')}
