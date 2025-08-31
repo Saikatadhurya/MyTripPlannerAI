@@ -39,6 +39,7 @@ const MusicFinderForm: React.FC<MusicFinderFormProps> = ({ onSubmit, isLoading, 
   const [suggestions, setSuggestions] = useState<LocationSuggestion[]>([]);
   const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false);
   const [isDestinationSelected, setIsDestinationSelected] = useState(false);
+  const [destinationError, setDestinationError] = useState<string | null>(null);
   const debounceTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isSelectingSuggestion = useRef(false);
   const suggestionsRef = useRef<HTMLUListElement>(null);
@@ -56,6 +57,7 @@ const MusicFinderForm: React.FC<MusicFinderFormProps> = ({ onSubmit, isLoading, 
     const value = e.target.value;
     handleInputChange('destination', value);
     setIsDestinationSelected(false);
+    setDestinationError(null);
     isSelectingSuggestion.current = false;
 
     if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
@@ -81,9 +83,18 @@ const MusicFinderForm: React.FC<MusicFinderFormProps> = ({ onSubmit, isLoading, 
     const fullName = suggestion.parentHierarchy ? `${suggestion.name}, ${suggestion.parentHierarchy}` : suggestion.name;
     handleInputChange('destination', fullName);
     setIsDestinationSelected(true);
+    setDestinationError(null);
     setSuggestions([]);
     setIsSuggestionsLoading(false);
     if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
+  };
+
+  const handleDestinationBlur = () => {
+    setTimeout(() => {
+      if (!isSelectingSuggestion.current && formData.destination.trim().length > 0 && !isDestinationSelected) {
+        setDestinationError("Please pick a location from the list to lock it in! 🗺️");
+      }
+    }, 200);
   };
 
   useEffect(() => {
@@ -151,7 +162,7 @@ const MusicFinderForm: React.FC<MusicFinderFormProps> = ({ onSubmit, isLoading, 
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 20l-4.95-5.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
             </div>
-            <input id="destination" ref={inputRef} type="text" value={formData.destination} onChange={handleDestinationChange} placeholder="e.g., Havana, Cuba" className="w-full pl-10 pr-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-fuchsia-500 focus:border-fuchsia-500 transition" required autoComplete="off" />
+            <input id="destination" ref={inputRef} type="text" value={formData.destination} onChange={handleDestinationChange} onBlur={handleDestinationBlur} placeholder="e.g., Havana, Cuba" className="w-full pl-10 pr-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-fuchsia-500 focus:border-fuchsia-500 transition" required autoComplete="off" />
           </div>
           {isSuggestionsLoading && <div className="absolute right-3 top-9"><svg className="animate-spin h-5 w-5 text-fuchsia-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>}
           {suggestions.length > 0 && (
@@ -166,6 +177,12 @@ const MusicFinderForm: React.FC<MusicFinderFormProps> = ({ onSubmit, isLoading, 
                     </li>
                 ))}
             </ul>
+          )}
+          {destinationError && (
+            <div style={{ animation: 'validation-fade-in 0.3s ease' }} className="mt-2 text-sm text-rose-700 bg-rose-100/60 p-2 rounded-md flex items-center space-x-2">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
+                <span>{destinationError}</span>
+            </div>
           )}
         </div>
         
@@ -193,7 +210,7 @@ const MusicFinderForm: React.FC<MusicFinderFormProps> = ({ onSubmit, isLoading, 
           <button
             type="submit"
             className="w-full sm:w-auto px-10 py-4 bg-fuchsia-600 text-white font-bold rounded-full hover:bg-fuchsia-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:bg-fuchsia-400/80 disabled:cursor-not-allowed disabled:shadow-md disabled:scale-100"
-            disabled={!isDestinationSelected || isLoading}
+            disabled={!isDestinationSelected || !!destinationError || isLoading}
           >
             🎶 Discover Local Music
           </button>
