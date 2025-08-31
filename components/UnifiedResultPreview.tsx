@@ -219,7 +219,16 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
                  <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight text-center sm:text-left">
                     Your Unified Trip Plan to <span className="text-violet-700">{plan.itinerary?.destination || '...'}</span>
                 </h1>
-                <div className="flex-shrink-0 flex items-center space-x-3">
+                <div className="flex-shrink-0 flex items-center space-x-3">             
+                    <button
+                        onClick={onPlanNew}
+                        className="inline-flex items-center px-4 py-2 bg-violet-600 text-white font-bold rounded-full hover:bg-violet-700 transition-all duration-300 shadow-md text-sm"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                        <span>Home</span>
+                    </button>
                      <button
                         onClick={handleExportPdf}
                         disabled={isExportingPdf || !isPlanComplete}
@@ -243,18 +252,13 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.898 2.566l-1.581.53a5.002 5.002 0 00-8.917-1.789v.962a1 1 0 01-2 0V3a1 1 0 011-1zm12 15a1 1 0 01-1-1v-2.101a7.002 7.002 0 01-11.898-2.566l1.581-.53a5.002 5.002 0 008.917 1.789v-.962a1 1 0 012 0V17a1 1 0 01-1 1z" clipRule="evenodd" /></svg>
                         Regenerate
                     </button>
-                    <button
-                        onClick={onPlanNew}
-                        className="inline-flex items-center px-4 py-2 bg-violet-600 text-white font-bold rounded-full hover:bg-violet-700 transition-all duration-300 shadow-md text-sm"
-                    >
-                       ✨ Plan New Trip
-                    </button>
                 </div>
             </header>
             
-            <nav className={`sticky top-4 z-30 mb-2 no-print`}>
-                <div className="max-w-max mx-auto bg-white/80 backdrop-blur-xl border border-white/50 rounded-full shadow-lg p-1">
-                    <div className="flex items-center justify-center space-x-1 hide-scrollbar overflow-x-auto">
+            {/* Responsive Navigation */}
+            <nav className="no-print fixed bottom-0 left-0 right-0 z-30 sm:sticky sm:top-4 sm:mb-2">
+                <div className="w-full bg-white/80 backdrop-blur-xl border-t border-white/50 shadow-[0_-5px_15px_-5px_rgba(0,0,0,0.1)] sm:max-w-max sm:mx-auto sm:rounded-full sm:p-1 sm:border sm:shadow-lg">
+                    <div className="flex justify-around sm:justify-center sm:space-x-1">
                         {tabs.map(tab => {
                             const status = loadingStatus[tab.id];
                             const dataExists = !!getPlanDataForTab(tab.id);
@@ -263,15 +267,25 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
                                 <button
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
-                                    className={`flex items-center justify-center space-x-2 px-3 sm:px-4 py-2 text-sm sm:text-base font-semibold rounded-full transition-colors duration-200
-                                        ${activeTab === tab.id ? 'bg-violet-600 text-white shadow' : 'text-slate-600 hover:bg-violet-100/70'}`}
+                                    className={`relative flex flex-col items-center justify-center flex-1 pt-2 pb-1 transition-colors duration-200 sm:flex-row sm:flex-none sm:px-4 sm:py-2 sm:space-x-2 sm:rounded-full
+                                        ${activeTab === tab.id
+                                            ? 'text-violet-600 sm:bg-violet-600 sm:text-white sm:shadow'
+                                            : 'text-slate-600 hover:bg-violet-100/70'
+                                        }`}
                                     aria-current={activeTab === tab.id ? 'page' : undefined}
                                 >
-                                    {tab.icon}
-                                    <span className="hidden sm:inline">{tab.name}</span>
-                                    {status === 'loading' && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>}
-                                    {status === 'done' && dataExists && <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-green-300" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>}
-                                    {(status === 'error' || status === 'cancelled') && <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-red-300" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg>}
+                                    <div className="relative">
+                                        {tab.icon}
+                                        {/* Status Indicator Dot */}
+                                        {status !== 'pending' && (
+                                            <span className={`absolute -top-0.5 -right-0.5 block h-2.5 w-2.5 rounded-full border-2 border-white
+                                                ${status === 'loading' && 'animate-pulse bg-blue-500'}
+                                                ${status === 'done' && dataExists && 'bg-green-500'}
+                                                ${(status === 'error' || status === 'cancelled') && 'bg-red-500'}
+                                            `}></span>
+                                        )}
+                                    </div>
+                                    <span className="text-xs font-semibold sm:text-sm">{tab.name}</span>
                                 </button>
                             );
                         })}
@@ -279,9 +293,12 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
                 </div>
             </nav>
 
+
             <main className="mt-6 no-print">
                 {renderTabContent()}
             </main>
+            {/* Spacer for bottom nav on mobile */}
+            <div className="h-20 sm:h-0" />
         </div>
     );
 };

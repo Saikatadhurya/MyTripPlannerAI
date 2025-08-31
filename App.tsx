@@ -71,7 +71,7 @@ const foodFunFacts = [
 const appStages = [
     { key: '"transportAndTravel":', text: 'Finding transport & travel apps' },
     { key: '"explorationAndTours":', text: 'Locating exploration apps' },
-    { key: '"festivalsAndSeasonal":', text: 'Finalizing' },
+    { key: '}]}', text: 'Finalizing' },
 ];
 const appFunFacts = [
     { icon: '📲', text: 'Scanning the local app stores...' },
@@ -616,16 +616,18 @@ const App: React.FC = () => {
             {renderContent()}
         </main>
       </div>
-      <QuickNavButton
-        onGoHome={handleBackToHome}
-        onGoToContact={() => handleViewChange('contact')}
-        onPlanTrip={handleStartUnifiedPlanner}
-        onPlanItinerary={handleStartItineraryPlanner}
-        onStartPacking={() => handleViewChange('packingAssistantForm')}
-        onStartFoodFinder={() => handleViewChange('foodFinderForm')}
-        onStartAppFinder={() => handleViewChange('appFinderForm')}
-        onStartMusicFinder={() => handleViewChange('musicFinderForm')}
-      />
+      {view !== 'unifiedResult' && (
+        <QuickNavButton
+          onGoHome={handleBackToHome}
+          onGoToContact={() => handleViewChange('contact')}
+          onPlanTrip={handleStartUnifiedPlanner}
+          onPlanItinerary={handleStartItineraryPlanner}
+          onStartPacking={() => handleViewChange('packingAssistantForm')}
+          onStartFoodFinder={() => handleViewChange('foodFinderForm')}
+          onStartAppFinder={() => handleViewChange('appFinderForm')}
+          onStartMusicFinder={() => handleViewChange('musicFinderForm')}
+        />
+      )}
       <ScrollToTopButton />
     </>
   );
