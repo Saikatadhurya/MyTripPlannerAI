@@ -1,3 +1,4 @@
+
 export type Budget = 'Budget' | 'Midrange' | 'Luxury';
 export type Vibe = 'Adventure & Thrill' | 'Relaxation & Wellness' | 'Cultural & Heritage' | 'Nature & Wildlife' | 'Food & Culinary' | 'Nightlife & Entertainment' | 'Luxury & Leisure' | 'Romantic & Family Getaways';
 export type FoodPreference = 'Veg' | 'Non-Veg' | 'Vegan';
@@ -17,6 +18,7 @@ export interface QuestionnaireData {
     includeMedical: boolean;
     language: string;
     currency: string;
+    includeAlcoholicDrinks: boolean;
 }
 
 export interface DayPlan {
@@ -87,7 +89,6 @@ export interface Itinerary {
 export interface PopularDestination {
   name: string;
   description: string;
-  bestTime: string;
   icon: string;
 }
 
@@ -125,7 +126,7 @@ export interface FoodFinderRequestData {
     destination: string;
     startDate: string;
     foodPreference: FoodPreference;
-    includeBeverages: boolean;
+    includeAlcoholicDrinks: boolean;
     language: string;
 }
 
@@ -199,4 +200,22 @@ export interface MusicGenreCategory {
 export interface MusicRecommendations {
     destination: string;
     musicCategories: MusicGenreCategory[];
+}
+
+export interface UnifiedPlan {
+  itinerary: Itinerary | null;
+  packingList: PackingList | null;
+  appRecommendations: AppRecommendations | null;
+  foodRecommendations: FoodRecommendations | null;
+  musicRecommendations: MusicRecommendations | null;
+}
+
+export type UnifiedPlanLoadingState = 'pending' | 'loading' | 'done' | 'error';
+
+export interface UnifiedPlanLoadingStatus {
+  itinerary: UnifiedPlanLoadingState;
+  packing: UnifiedPlanLoadingState;
+  apps: UnifiedPlanLoadingState;
+  food: UnifiedPlanLoadingState;
+  music: UnifiedPlanLoadingState;
 }

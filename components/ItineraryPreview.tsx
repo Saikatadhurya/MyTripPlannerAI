@@ -112,7 +112,13 @@ const isTransportBlog = (blog: Itinerary['referenceBlogs'][0]): boolean => {
     return keywords.some(keyword => content.includes(keyword));
 };
 
-const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => void; }> = ({ itinerary, onRegenerate }) => {
+interface ItineraryPreviewProps {
+  itinerary: Itinerary;
+  onRegenerate: () => void;
+  isUnifiedView?: boolean;
+}
+
+const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegenerate, isUnifiedView = false }) => {
   const [blogs, setBlogs] = useState<Itinerary['referenceBlogs']>([]);
   const [isLoadingBlogs, setIsLoadingBlogs] = useState(true);
   
@@ -243,6 +249,7 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
 
   return (
     <div className="max-w-4xl mx-auto space-y-12" id="itinerary-preview-content">
+       {!isUnifiedView && (
        <div className="flex justify-start items-center no-print animated-card">
         <button
           onClick={onRegenerate}
@@ -254,6 +261,7 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
           <span>Plan Another Trip</span>
         </button>
       </div>
+      )}
       <header className="space-y-4 animated-card">
         <div className="text-center">
             <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight break-words" dangerouslySetInnerHTML={parseBold(`Trip to ${itinerary.destination}`)} />
@@ -579,6 +587,7 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
 
       <div className="pt-8 text-center no-print">
         <ExportOptions itinerary={itinerary} />
+        {!isUnifiedView && (
         <button
             onClick={onRegenerate}
             className="mt-8 inline-flex items-center px-8 py-3 bg-indigo-600 text-white font-bold rounded-full hover:bg-indigo-700 transition-all duration-300 transform hover:scale-105 shadow-lg"
@@ -588,6 +597,7 @@ const ItineraryPreview: React.FC<{ itinerary: Itinerary; onRegenerate: () => voi
             </svg>
             <span>Plan Another Trip</span>
         </button>
+        )}
       </div>
     </div>
   );

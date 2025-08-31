@@ -1,18 +1,15 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Budget, Vibe, FoodPreference, TripType, QuestionnaireData, LocationSuggestion } from '../types';
 import { getDestinationSuggestions } from '../services/geminiService';
 import { currencies } from '../data/currencies';
-import StreamingLoadingIndicator from './LoadingIndicator';
 import BackToHomeButton from './BackToHomeButton';
 
-interface QuestionnaireProps {
+interface UnifiedPlannerFormProps {
   onSubmit: (data: QuestionnaireData) => void;
-  isLoading: boolean;
-  error: string | null;
   initialData?: QuestionnaireData | null;
   onBack: () => void;
-  onCancel: () => void;
-  streamedText: string;
+  error: string | null;
 }
 
 const budgets: Budget[] = ['Budget', 'Midrange', 'Luxury'];
@@ -43,27 +40,11 @@ const languages = [
     'Bambara (bm)', 'Basque (eu)', 'Belarusian (be)', 'Bengali (bn)', 'Bhojpuri (bho)', 'Bosnian (bs)', 'Bulgarian (bg)', 'Catalan (ca)', 'Cebuano (ceb)', 'Chinese (Simplified) (zh-CN)', 'Chinese (Traditional) (zh-TW)', 'Corsican (co)', 'Croatian (hr)', 'Czech (cs)', 'Danish (da)', 'Dhivehi (dv)', 'Dogri (doi)', 'Dutch (nl)', 'English (en)', 'Esperanto (eo)', 'Estonian (et)', 'Ewe (ee)', 'Filipino (Tagalog) (fil)', 'Finnish (fi)', 'French (fr)', 'Frisian (fy)', 'Galician (gl)', 'Ganda (lg)', 'Georgian (ka)', 'German (de)', 'Goan Konkani (gom)', 'Greek (el)', 'Guarani (gn)', 'Gujarati (gu)', 'Haitian Creole (ht)', 'Hausa (ha)', 'Hawaiian (haw)', 'Hebrew (iw)', 'Hindi (hi)', 'Hmong (hmn)', 'Hungarian (hu)', 'Icelandic (is)', 'Igbo (ig)', 'Ilocano (ilo)', 'Indonesian (id)', 'Irish (ga)', 'Italian (it)', 'Japanese (ja)', 'Javanese (jv)', 'Kannada (kn)', 'Kazakh (kk)', 'Khmer (km)', 'Kinyarwanda (rw)', 'Korean (ko)', 'Krio (kri)', 'Kurdish (ku)', 'Kurdish (Sorani) (ckb)', 'Kyrgyz (ky)', 'Lao (lo)', 'Latin (la)', 'Latvian (lv)', 'Lingala (ln)', 'Lithuanian (lt)', 'Luganda (lg)', 'Luxembourgish (lb)', 'Macedonian (mk)', 'Maithili (mai)', 'Malagasy (mg)', 'Malay (ms)', 'Malayalam (ml)', 'Maltese (mt)', 'Maori (mi)', 'Marathi (mr)', 'Meiteilon (Manipuri) (mni-Mtei)', 'Mizo (lus)', 'Mongolian (mn)', 'Myanmar (Burmese) (my)', 'Nepali (ne)', 'Norwegian (no)', 'Nyanja (Chichewa) (ny)', 'Odia (Oriya) (or)', 'Oromo (om)', 'Pashto (ps)', 'Persian (fa)', 'Polish (pl)', 'Portuguese (Brazil) (pt-BR)', 'Portuguese (Portugal) (pt-PT)', 'Punjabi (pa)', 'Quechua (qu)', 'Romanian (ro)', 'Russian (ru)', 'Samoan (sm)', 'Sanskrit (sa)', 'Scots Gaelic (gd)', 'Sepedi (nso)', 'Serbian (sr)', 'Sesotho (st)', 'Shona (sn)', 'Sindhi (sd)', 'Sinhala (si)', 'Slovak (sk)', 'Slovenian (sl)', 'Somali (so)', 'Spanish (es)', 'Sundanese (su)', 'Swahili (sw)', 'Swedish (sv)', 'Tagalog (Filipino) (tl)', 'Tajik (tg)', 'Tamil (ta)', 'Tatar (tt)', 'Telugu (te)', 'Thai (th)', 'Tigrinya (ti)', 'Tsonga (ts)', 'Turkish (tr)', 'Turkmen (tk)', 'Ukrainian (uk)', 'Urdu (ur)', 'Uyghur (ug)', 'Uzbek (uz)', 'Vietnamese (vi)', 'Welsh (cy)', 'Xhosa (xh)', 'Yiddish (yi)', 'Yoruba (yo)', 'Zulu (zu)',
 ];
 
-const itineraryStages = [
-    { key: '"stay":', text: 'Analyzing budget and costs' },
-    { key: '"fromCurrency":', text: 'Checking currency exchange rates' },
-    { key: '"historicBackground":', text: 'Researching destinations' },
-    { key: '"planNote":', text: 'Adding important travel notes' },
-    { key: '"day":', text: 'Building the day-by-day plan' },
-];
-
-const funFacts = [
-    { icon: '🗺️', text: 'Plotting scenic routes...' },
-    { icon: '💎', text: 'Finding hidden gems...' },
-    { icon: '🗓️', text: 'Scheduling daily activities...' },
-    { icon: '🏨', text: 'Scouting the best stays...' },
-    { icon: '🍜', text: 'Locating top-rated eats...' },
-];
-
 const Toggle: React.FC<{ label: string; description: string; enabled: boolean; onChange: (enabled: boolean) => void; }> = ({ label, description, enabled, onChange }) => (
     <button 
         type="button"
         onClick={() => onChange(!enabled)}
-        className={`w-full flex items-center justify-between p-4 rounded-lg cursor-pointer transition-all duration-200 border-2 ${enabled ? 'bg-blue-100/70 border-blue-500' : 'bg-white/40 border-white/40 hover:bg-white/60'}`}
+        className={`w-full flex items-center justify-between p-4 rounded-lg cursor-pointer transition-all duration-200 border-2 ${enabled ? 'bg-violet-100/70 border-violet-500' : 'bg-white/40 border-white/40 hover:bg-white/60'}`}
         role="switch"
         aria-checked={enabled}
     >
@@ -71,13 +52,13 @@ const Toggle: React.FC<{ label: string; description: string; enabled: boolean; o
           <p className="font-semibold text-slate-800">{label}</p>
           <p className="text-sm text-slate-600">{description}</p>
       </div>
-      <div className={`w-12 h-6 flex items-center rounded-full transition-colors duration-300 ${enabled ? 'bg-blue-500' : 'bg-slate-300'}`}>
+      <div className={`w-12 h-6 flex items-center rounded-full transition-colors duration-300 ${enabled ? 'bg-violet-500' : 'bg-slate-300'}`}>
           <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${enabled ? 'translate-x-6' : 'translate-x-1'}`}></div>
       </div>
     </button>
 );
 
-const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, error, initialData, onBack, onCancel, streamedText }) => {
+const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, initialData, onBack, error }) => {
   const [formData, setFormData] = useState<QuestionnaireData>(initialData || {
     destination: '',
     startPoint: '',
@@ -92,7 +73,6 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
     language: 'English (en)',
     currency: 'India (INR) – ₹',
     isRoundTrip: false,
-    // FIX: Added missing 'includeAlcoholicDrinks' property to satisfy the QuestionnaireData type.
     includeAlcoholicDrinks: false,
   });
   
@@ -308,20 +288,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
   const filteredCurrencies = currencies.filter(curr =>
     curr.toLowerCase().includes(currencyQuery.toLowerCase())
   );
-
-  if (isLoading) {
-    return (
-      <StreamingLoadingIndicator
-        streamedText={streamedText}
-        stages={itineraryStages}
-        onCancel={onCancel}
-        title="Crafting Your Itinerary..."
-        accentColor="violet"
-        funFacts={funFacts}
-      />
-    );
-  }
-
+  
   const showStartPoint = formData.tripType !== 'Standard' || !!formData.isRoundTrip;
 
   return (
@@ -329,8 +296,8 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
       <BackToHomeButton onClick={onBack} />
 
       <div className="text-center mb-10">
-        <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Tell Us About Your Trip</h1>
-        <p className="mt-2 text-lg text-slate-600">Fill in the details below to generate a personalized itinerary.</p>
+        <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Plan a Unified Trip</h1>
+        <p className="mt-2 text-lg text-slate-600">Fill in the details to generate a complete plan: itinerary, packing, food, apps, and music.</p>
       </div>
 
       {error && (
@@ -339,25 +306,25 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
           <p>{error}</p>
         </div>
       )}
-
+      
       <form onSubmit={handleSubmit} className="space-y-10">
         <div className="space-y-6 bg-white/40 backdrop-blur-md p-6 rounded-2xl border border-white/50 shadow-lg z-20 relative">
              <h2 className="flex items-center space-x-3 text-2xl font-bold text-slate-800 border-b pb-3">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-blue-600" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 004 0 2 2 0 011.523-1.943A5.998 5.998 0 0116 10c0 .954-.225 1.852-.635 2.667a2.5 2.5 0 01-5.033 0 2.5 2.5 0 00-4.667 0c-.35-.74-.533-1.554-.533-2.394a6.01 6.01 0 011.567-4.243z" clipRule="evenodd" /></svg>
-                <span>Itinerary Language</span>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-violet-600" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 004 0 2 2 0 011.523-1.943A5.998 5.998 0 0116 10c0 .954-.225 1.852-.635 2.667a2.5 2.5 0 01-5.033 0 2.5 2.5 0 00-4.667 0c-.35-.74-.533-1.554-.533-2.394a6.01 6.01 0 011.567-4.243z" clipRule="evenodd" /></svg>
+                <span>Plan Language</span>
             </h2>
             <div ref={languageRef} className="relative">
                 <div className="relative">
-                    <button type="button" onClick={() => setLanguageDropdownOpen(!languageDropdownOpen)} className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition flex justify-between items-center text-left" aria-haspopup="listbox" aria-expanded={languageDropdownOpen}>
+                    <button type="button" onClick={() => setLanguageDropdownOpen(!languageDropdownOpen)} className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition flex justify-between items-center text-left" aria-haspopup="listbox" aria-expanded={languageDropdownOpen}>
                         <span className="truncate">{formData.language}</span>
                         <svg className={`h-5 w-5 text-slate-400 transition-transform ${languageDropdownOpen ? 'rotate-180' : ''}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
                     </button>
                     {languageDropdownOpen && (
                         <div className="absolute z-20 w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg">
-                            <div className="p-2"><input type="text" value={languageQuery} onChange={(e) => setLanguageQuery(e.target.value)} placeholder="Search languages..." className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500" /></div>
+                            <div className="p-2"><input type="text" value={languageQuery} onChange={(e) => setLanguageQuery(e.target.value)} placeholder="Search languages..." className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-md focus:ring-1 focus:ring-violet-500 focus:border-violet-500" /></div>
                             <ul className="max-h-60 overflow-y-auto p-1">
                                 {filteredLanguages.length > 0 ? filteredLanguages.map(lang => (
-                                    <li key={lang} onClick={() => { handleInputChange('language', lang); setLanguageDropdownOpen(false); setLanguageQuery(''); }} className="px-3 py-2 text-sm rounded-md cursor-pointer hover:bg-blue-100 text-slate-800">
+                                    <li key={lang} onClick={() => { handleInputChange('language', lang); setLanguageDropdownOpen(false); setLanguageQuery(''); }} className="px-3 py-2 text-sm rounded-md cursor-pointer hover:bg-violet-100 text-slate-800">
                                         {lang}
                                     </li>
                                 )) : <li className="px-3 py-2 text-sm text-slate-500">No languages found.</li>}
@@ -370,20 +337,20 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
 
         <div className="space-y-6 bg-white/40 backdrop-blur-md p-6 rounded-2xl border border-white/50 shadow-lg">
             <h2 className="flex items-center space-x-3 text-2xl font-bold text-slate-800 border-b pb-3">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 9m-6 3l6-3m0 0l6-3m-6 3v6.382" />
               </svg>
               <span>Trip Type</span>
             </h2>
             <div className="grid grid-cols-3 gap-3">
               {tripTypes.map(({ label, icon }) => (
-                <button key={label} type="button" onClick={() => handleInputChange('tripType', label)} className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 border-2 flex items-center justify-center space-x-2 ${formData.tripType === label ? 'bg-blue-600 text-white border-blue-600' : 'bg-white/50 border-white/50 hover:border-blue-400'}`}>
+                <button key={label} type="button" onClick={() => handleInputChange('tripType', label)} className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 border-2 flex items-center justify-center space-x-2 ${formData.tripType === label ? 'bg-violet-600 text-white border-violet-600' : 'bg-white/50 border-white/50 hover:border-violet-400'}`}>
                   <span>{icon}</span>
                   <span>{label}</span>
                 </button>
               ))}
             </div>
-            <div className="mt-4 pt-4 border-t border-blue-200/50">
+            <div className="mt-4 pt-4 border-t border-violet-200/50">
               <Toggle
                 label="Round Trip"
                 description={formData.tripType === 'Standard' ? "Plan a multi-stop circuit using public transport" : "Create a road trip circuit back to the start"}
@@ -395,7 +362,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
 
         <div className="space-y-6 bg-white/40 backdrop-blur-md p-6 rounded-2xl border border-white/50 shadow-lg">
             <h2 className="flex items-center space-x-3 text-2xl font-bold text-slate-800 border-b pb-3">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-blue-600" viewBox="0 0 20 20" fill="currentColor"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" /><path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h.01a1 1 0 100-2H10zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h.01a1 1 0 100-2H10z" clipRule="evenodd" /></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-violet-600" viewBox="0 0 20 20" fill="currentColor"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" /><path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h.01a1 1 0 100-2H10zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h.01a1 1 0 100-2H10z" clipRule="evenodd" /></svg>
                 <span>Core Details</span>
             </h2>
             <div className={`grid grid-cols-1 ${showStartPoint ? 'sm:grid-cols-2' : ''} gap-4`}>
@@ -406,13 +373,13 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-1.172-8.243a.75.75 0 01.12-1.06l3-3a.75.75 0 011.06 1.06l-3 3a.75.75 0 01-1.18 0z" clipRule="evenodd" /></svg>
                           </div>
-                          <input id="startPoint" ref={startPointInputRef} type="text" value={formData.startPoint} onChange={handleStartPointChange} onBlur={handleStartPointBlur} placeholder="e.g., Mumbai, India" className="w-full pl-10 pr-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" required autoComplete="off"/>
+                          <input id="startPoint" ref={startPointInputRef} type="text" value={formData.startPoint} onChange={handleStartPointChange} onBlur={handleStartPointBlur} placeholder="e.g., Mumbai, India" className="w-full pl-10 pr-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition" required autoComplete="off"/>
                         </div>
-                        {isStartPointSuggestionsLoading && <div className="absolute right-3 top-9"><svg className="animate-spin h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>}
+                        {isStartPointSuggestionsLoading && <div className="absolute right-3 top-9"><svg className="animate-spin h-5 w-5 text-violet-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>}
                         {startPointSuggestions.length > 0 && (
                             <ul ref={startPointSuggestionsRef} className="absolute z-10 w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg max-h-60 overflow-y-auto">
                                 {startPointSuggestions.map((s, i) => (
-                                    <li key={i} onClick={() => handleStartPointSuggestionClick(s)} className="px-4 py-3 cursor-pointer hover:bg-blue-100/60 flex justify-between items-center transition-colors">
+                                    <li key={i} onClick={() => handleStartPointSuggestionClick(s)} className="px-4 py-3 cursor-pointer hover:bg-violet-100/60 flex justify-between items-center transition-colors">
                                         <div>
                                             <span className="font-semibold text-slate-800">{s.name}</span>
                                             {s.parentHierarchy && <span className="text-sm text-slate-600">, {s.parentHierarchy}</span>}
@@ -436,13 +403,13 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 20l-4.95-5.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
                       </div>
-                      <input id="destination" ref={destinationInputRef} type="text" value={formData.destination} onChange={handleDestinationChange} onBlur={handleDestinationBlur} placeholder="e.g., Paris, France" className="w-full pl-10 pr-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" required autoComplete="off" />
+                      <input id="destination" ref={destinationInputRef} type="text" value={formData.destination} onChange={handleDestinationChange} onBlur={handleDestinationBlur} placeholder="e.g., Paris, France" className="w-full pl-10 pr-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition" required autoComplete="off" />
                     </div>
-                    {isDestinationSuggestionsLoading && <div className="absolute right-3 top-9"><svg className="animate-spin h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>}
+                    {isDestinationSuggestionsLoading && <div className="absolute right-3 top-9"><svg className="animate-spin h-5 w-5 text-violet-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>}
                     {destinationSuggestions.length > 0 && (
                          <ul ref={destinationSuggestionsRef} className="absolute z-10 w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg max-h-60 overflow-y-auto">
                             {destinationSuggestions.map((s, i) => (
-                                <li key={i} onClick={() => handleDestinationSuggestionClick(s)} className="px-4 py-3 cursor-pointer hover:bg-blue-100/60 flex justify-between items-center transition-colors">
+                                <li key={i} onClick={() => handleDestinationSuggestionClick(s)} className="px-4 py-3 cursor-pointer hover:bg-violet-100/60 flex justify-between items-center transition-colors">
                                     <div>
                                         <span className="font-semibold text-slate-800">{s.name}</span>
                                         {s.parentHierarchy && <span className="text-sm text-slate-600">, {s.parentHierarchy}</span>}
@@ -467,15 +434,15 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" /></svg>
                       </div>
-                      <input id="startDate" type="date" value={formData.startDate} min={new Date().toISOString().split('T')[0]} onChange={e => handleInputChange('startDate', e.target.value)} className="w-full pl-10 pr-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" required />
+                      <input id="startDate" type="date" value={formData.startDate} min={new Date().toISOString().split('T')[0]} onChange={e => handleInputChange('startDate', e.target.value)} className="w-full pl-10 pr-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition" required />
                   </div>
               </div>
               <div>
                 <label htmlFor="persons" className="block text-sm font-medium text-slate-700 mb-1">Travelers</label>
-                <div className="flex items-center w-full bg-white border border-slate-300 rounded-lg focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition">
-                  <button type="button" onClick={() => handleInputChange('persons', Math.max(1, formData.persons - 1))} disabled={formData.persons <= 1} className="p-3 text-blue-600 rounded-l-lg hover:bg-blue-50 transition disabled:text-slate-300 disabled:cursor-not-allowed" aria-label="Decrease number of travelers"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clipRule="evenodd" /></svg></button>
+                <div className="flex items-center w-full bg-white border border-slate-300 rounded-lg focus-within:ring-2 focus-within:ring-violet-500 focus-within:border-violet-500 transition">
+                  <button type="button" onClick={() => handleInputChange('persons', Math.max(1, formData.persons - 1))} disabled={formData.persons <= 1} className="p-3 text-violet-600 rounded-l-lg hover:bg-violet-50 transition disabled:text-slate-300 disabled:cursor-not-allowed" aria-label="Decrease number of travelers"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clipRule="evenodd" /></svg></button>
                   <input id="persons" type="text" inputMode="numeric" pattern="[0-9]*" value={formData.persons === 0 ? '' : formData.persons} onChange={handleTravelersChange} onBlur={handleTravelersBlur} className="font-semibold text-lg text-center flex-grow tabular-nums w-full bg-transparent border-none text-gray-800 focus:ring-0 focus:outline-none" aria-label="Number of travelers" />
-                  <button type="button" onClick={() => handleInputChange('persons', Math.min(20, formData.persons + 1))} disabled={formData.persons >= 20} className="p-3 text-blue-600 rounded-r-lg hover:bg-blue-50 transition disabled:text-slate-300 disabled:cursor-not-allowed" aria-label="Increase number of travelers"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" /></svg></button>
+                  <button type="button" onClick={() => handleInputChange('persons', Math.min(20, formData.persons + 1))} disabled={formData.persons >= 20} className="p-3 text-violet-600 rounded-r-lg hover:bg-violet-50 transition disabled:text-slate-300 disabled:cursor-not-allowed" aria-label="Increase number of travelers"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" /></svg></button>
                 </div>
               </div>
             </div>
@@ -489,7 +456,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                       key={d}
                       onClick={() => handleInputChange('days', d)}
                       className={`px-3 py-1 text-sm w-10 text-center rounded-md font-semibold transition ${
-                        formData.days === d ? 'bg-white text-blue-600 shadow' : 'text-slate-600 hover:bg-white/70'
+                        formData.days === d ? 'bg-white text-violet-600 shadow' : 'text-slate-600 hover:bg-white/70'
                       }`}
                     >
                       {d}
@@ -504,7 +471,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                   min="1"
                   max="30"
                   onChange={handleDaysChange}
-                  className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                  className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
                   required
                 />
               </div>
@@ -513,25 +480,25 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
 
         <div className="space-y-4 bg-white/40 backdrop-blur-md p-6 rounded-2xl border border-white/50 shadow-lg relative z-10">
             <h2 className="flex items-center space-x-3 text-2xl font-bold text-slate-800 border-b pb-3">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-blue-600" viewBox="0 0 20 20" fill="currentColor"><path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.5 2.5 0 00-1.168-.217c-1.36.0-2.5 1.119-2.5 2.5s1.14 2.5 2.5 2.5c.346 0 .682-.07.98-.2a2.5 2.5 0 001.52-2.3z" /><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.5 4.5 0 00-1.879.938.5.5 0 00-.22.643l.612 1.224a.5.5 0 00.643.22A3.49 3.49 0 0110 7.5v1.698a2.5 2.5 0 00-1.168-.217c-1.36.0-2.5 1.119-2.5 2.5s1.14 2.5 2.5 2.5c.346 0 .682-.07.98-.2a2.5 2.5 0 001.52-2.3V9.5a1 1 0 10-2 0v1a.5.5 0 01-1 0V9.5a.5.5 0 01.5-.5h1V8a1 1 0 10-2 0v.092a4.5 4.5 0 00-1.879.938.5.5 0 00-.22.643l.612 1.224a.5.5 0 00.643.22A3.49 3.49 0 0110 7.5v1.698a2.5 2.5 0 00-1.168-.217c-1.36.0-2.5 1.119-2.5 2.5s1.14 2.5 2.5 2.5c.346 0 .682-.07.98-.2a2.5 2.5 0 001.52-2.3V9.5a1 1 0 10-2 0v1a.5.5 0 01-1 0V9.5a.5.5 0 01.5-.5h1V8a1 1 0 00-2 0z" clipRule="evenodd" /></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-violet-600" viewBox="0 0 20 20" fill="currentColor"><path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.5 2.5 0 00-1.168-.217c-1.36.0-2.5 1.119-2.5 2.5s1.14 2.5 2.5 2.5c.346 0 .682-.07.98-.2a2.5 2.5 0 001.52-2.3z" /><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.5 4.5 0 00-1.879.938.5.5 0 00-.22.643l.612 1.224a.5.5 0 00.643.22A3.49 3.49 0 0110 7.5v1.698a2.5 2.5 0 00-1.168-.217c-1.36.0-2.5 1.119-2.5 2.5s1.14 2.5 2.5 2.5c.346 0 .682-.07.98-.2a2.5 2.5 0 001.52-2.3V9.5a1 1 0 10-2 0v1a.5.5 0 01-1 0V9.5a.5.5 0 01.5-.5h1V8a1 1 0 10-2 0v.092a4.5 4.5 0 00-1.879.938.5.5 0 00-.22.643l.612 1.224a.5.5 0 00.643.22A3.49 3.49 0 0110 7.5v1.698a2.5 2.5 0 00-1.168-.217c-1.36.0-2.5 1.119-2.5 2.5s1.14 2.5 2.5 2.5c.346 0 .682-.07.98-.2a2.5 2.5 0 001.52-2.3V9.5a1 1 0 10-2 0v1a.5.5 0 01-1 0V9.5a.5.5 0 01.5-.5h1V8a1 1 0 00-2 0z" clipRule="evenodd" /></svg>
               <span>Budget</span>
             </h2>
             <div className="grid grid-cols-3 gap-3">
-                {budgets.map(b => (<button key={b} type="button" onClick={() => handleInputChange('budget', b)} className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 border-2 ${formData.budget === b ? 'bg-blue-600 text-white border-blue-600' : 'bg-white/50 border-white/50 hover:border-blue-400'}`}>{b}</button>))}
+                {budgets.map(b => (<button key={b} type="button" onClick={() => handleInputChange('budget', b)} className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 border-2 ${formData.budget === b ? 'bg-violet-600 text-white border-violet-600' : 'bg-white/50 border-white/50 hover:border-violet-400'}`}>{b}</button>))}
             </div>
-            <div className="pt-4 border-t border-blue-200/50">
-                <label className="block text-sm font-medium text-slate-700 mb-1">Currency for Itinerary</label>
+            <div className="pt-4 border-t border-violet-200/50">
+                <label className="block text-sm font-medium text-slate-700 mb-1">Currency for Plan</label>
                  <div ref={currencyRef} className="relative">
-                    <button type="button" onClick={() => setCurrencyDropdownOpen(!currencyDropdownOpen)} className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition flex justify-between items-center text-left" aria-haspopup="listbox" aria-expanded={currencyDropdownOpen}>
+                    <button type="button" onClick={() => setCurrencyDropdownOpen(!currencyDropdownOpen)} className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition flex justify-between items-center text-left" aria-haspopup="listbox" aria-expanded={currencyDropdownOpen}>
                         <span className="truncate">{formData.currency}</span>
                         <svg className={`h-5 w-5 text-slate-400 transition-transform ${currencyDropdownOpen ? 'rotate-180' : ''}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
                     </button>
                     {currencyDropdownOpen && (
                         <div className="absolute z-20 w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg">
-                            <div className="p-2"><input type="text" value={currencyQuery} onChange={(e) => setCurrencyQuery(e.target.value)} placeholder="Search currency..." className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500" /></div>
+                            <div className="p-2"><input type="text" value={currencyQuery} onChange={(e) => setCurrencyQuery(e.target.value)} placeholder="Search currency..." className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-md focus:ring-1 focus:ring-violet-500 focus:border-violet-500" /></div>
                             <ul className="max-h-60 overflow-y-auto p-1">
                                 {filteredCurrencies.length > 0 ? filteredCurrencies.map(curr => (
-                                    <li key={curr} onClick={() => { handleInputChange('currency', curr); setCurrencyDropdownOpen(false); setCurrencyQuery(''); }} className="px-3 py-2 text-sm rounded-md cursor-pointer hover:bg-blue-100 text-slate-800">
+                                    <li key={curr} onClick={() => { handleInputChange('currency', curr); setCurrencyDropdownOpen(false); setCurrencyQuery(''); }} className="px-3 py-2 text-sm rounded-md cursor-pointer hover:bg-violet-100 text-slate-800">
                                         {curr}
                                     </li>
                                 )) : <li className="px-3 py-2 text-sm text-slate-500">No currency found.</li>}
@@ -544,23 +511,23 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
 
         <div className="space-y-4 bg-white/40 backdrop-blur-md p-6 rounded-2xl border border-white/50 shadow-lg">
           <h2 className="flex items-center space-x-3 text-2xl font-bold text-slate-800 border-b pb-3">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-blue-600" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" /></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-violet-600" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" /></svg>
             <span>What's your vibe?</span>
           </h2>
           <p className="text-sm text-slate-600">Select one or more vibes that best describe your ideal trip.</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {vibes.map(v => (<button key={v.label} type="button" onClick={() => handleVibeToggle(v.label)} className={`p-4 rounded-lg text-left transition-all duration-200 border-2 flex items-start space-x-3 ${formData.vibe.includes(v.label) ? 'bg-blue-100/70 border-blue-500' : 'bg-white/40 border-white/40 hover:bg-white/60'}`}><span className="text-2xl mt-1">{v.icon}</span><div><p className="font-semibold text-slate-800">{v.label}</p><p className="text-xs text-slate-500">{v.description}</p></div></button>))}
+            {vibes.map(v => (<button key={v.label} type="button" onClick={() => handleVibeToggle(v.label)} className={`p-4 rounded-lg text-left transition-all duration-200 border-2 flex items-start space-x-3 ${formData.vibe.includes(v.label) ? 'bg-violet-100/70 border-violet-500' : 'bg-white/40 border-white/40 hover:bg-white/60'}`}><span className="text-2xl mt-1">{v.icon}</span><div><p className="font-semibold text-slate-800">{v.label}</p><p className="text-xs text-slate-500">{v.description}</p></div></button>))}
           </div>
         </div>
         
         <div className="space-y-4 bg-white/40 backdrop-blur-md p-6 rounded-2xl border border-white/50 shadow-lg">
            <h2 className="flex items-center space-x-3 text-2xl font-bold text-slate-800 border-b pb-3">
-             <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-blue-600" viewBox="0 0 20 20" fill="currentColor"><path d="M11 3a1 1 0 10-2 0v1.088A7 7 0 004.53 10.756.5.5 0 005 11h10a.5.5 0 00.47-.244A7 7 0 0011 4.088V3z" /><path fillRule="evenodd" d="M15 13a.5.5 0 01.5.5v2a.5.5 0 01-.5.5H5a.5.5 0 01-.5-.5v-2a.5.5 0 01.5-.5h10z" clipRule="evenodd" /></svg>
+             <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-violet-600" viewBox="0 0 20 20" fill="currentColor"><path d="M11 3a1 1 0 10-2 0v1.088A7 7 0 004.53 10.756.5.5 0 005 11h10a.5.5 0 00.47-.244A7 7 0 0011 4.088V3z" /><path fillRule="evenodd" d="M15 13a.5.5 0 01.5.5v2a.5.5 0 01-.5.5H5a.5.5 0 01-.5-.5v-2a.5.5 0 01.5-.5h10z" clipRule="evenodd" /></svg>
              <span>Food Preference</span>
            </h2>
             <div className="grid grid-cols-3 gap-3">
                 {foodPreferences.map(({ label, icon }) => (
-                    <button key={label} type="button" onClick={() => handleInputChange('foodPreference', label)} className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 border-2 flex items-center justify-center space-x-2 ${formData.foodPreference === label ? 'bg-blue-600 text-white border-blue-600' : 'bg-white/50 border-white/50 hover:border-blue-400'}`}>
+                    <button key={label} type="button" onClick={() => handleInputChange('foodPreference', label)} className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 border-2 flex items-center justify-center space-x-2 ${formData.foodPreference === label ? 'bg-violet-600 text-white border-violet-600' : 'bg-white/50 border-white/50 hover:border-violet-400'}`}>
                         <span className="text-xl">{icon}</span>
                         <span>{label}</span>
                     </button>
@@ -570,10 +537,10 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
 
         <div className="space-y-4 bg-white/40 backdrop-blur-md p-6 rounded-2xl border border-white/50 shadow-lg">
             <h2 className="flex items-center space-x-3 text-2xl font-bold text-slate-800 border-b pb-3">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-blue-600" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" /></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-violet-600" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" /></svg>
               <span>Trip Add-ons</span>
             </h2>
-            <p className="text-sm text-slate-600">Add extra details to your itinerary for a more comprehensive plan.</p>
+            <p className="text-sm text-slate-600">Add extra details to your plan for a more comprehensive experience.</p>
             <div className="space-y-4">
               <Toggle
                 label="Medical Facilities"
@@ -581,16 +548,22 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                 enabled={formData.includeMedical}
                 onChange={(enabled) => handleInputChange('includeMedical', enabled)}
               />
+              <Toggle
+                label="Include Alcoholic Drinks"
+                description="Suggest local beers, wines, and cocktails."
+                enabled={formData.includeAlcoholicDrinks}
+                onChange={(enabled) => handleInputChange('includeAlcoholicDrinks', enabled)}
+              />
             </div>
         </div>
 
         <div className="text-center pt-4">
           <button
             type="submit"
-            className="w-full sm:w-auto px-10 py-4 bg-blue-600 text-white font-bold rounded-full hover:bg-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:bg-blue-400/80 disabled:cursor-not-allowed disabled:shadow-md disabled:scale-100"
-            disabled={!isDestinationSelected || !!destinationError || (showStartPoint && (!isStartPointSelected || !!startPointError)) || formData.vibe.length === 0}
+            className="w-full sm:w-auto px-10 py-4 bg-indigo-600 text-white font-bold rounded-full hover:bg-indigo-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:bg-indigo-400/80 disabled:cursor-not-allowed disabled:shadow-md disabled:scale-100"
+            disabled={!isDestinationSelected || !!destinationError || (showStartPoint && (!isStartPointSelected || !!startPointError))}
           >
-            ✨ Generate My Itinerary
+            ✨ Generate My Unified Plan
           </button>
         </div>
       </form>
@@ -598,4 +571,4 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
   );
 };
 
-export default Questionnaire;
+export default UnifiedPlannerForm;

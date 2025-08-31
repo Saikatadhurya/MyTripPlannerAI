@@ -1,5 +1,6 @@
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Itinerary, QuestionnaireData, PackingListRequestData, PackingList, FoodFinderRequestData, FoodRecommendations, AppFinderRequestData, AppRecommendations, MusicFinderRequestData, MusicRecommendations, QuestionnaireData as InitialQuestionnaireData } from './types';
+import { QuestionnaireData, PackingListRequestData, PackingList, FoodFinderRequestData, FoodRecommendations, AppFinderRequestData, AppRecommendations, MusicFinderRequestData, MusicRecommendations, QuestionnaireData as InitialQuestionnaireData, UnifiedPlan, UnifiedPlanLoadingStatus, Itinerary } from './types';
 import { generateItinerary } from './services/geminiService';
 import { generatePackingList } from './services/packingService';
 import { generateFoodRecommendations } from './services/foodService';
@@ -9,7 +10,6 @@ import { generateMusicRecommendations } from './services/musicService';
 
 import LandingPage from './components/LandingPage';
 import Questionnaire from './components/Questionnaire';
-import ItineraryPreview from './components/ItineraryPreview';
 import PackingAssistantForm from './components/PackingAssistantForm';
 import PackingListPreview from './components/PackingListPreview';
 import FoodFinderForm from './components/FoodFinderForm';
@@ -22,21 +22,32 @@ import ScrollToTopButton from './components/ScrollToTopButton';
 import ContactUs from './components/ContactUs';
 import Header from './components/Header';
 import QuickNavButton from './components/QuickNavButton';
+import UnifiedResultPreview from './components/UnifiedResultPreview';
+import UnifiedPlannerForm from './components/UnifiedPlannerForm';
+import ItineraryPreview from './components/ItineraryPreview';
 
 
-type View = 'landing' | 'questionnaire' | 'itinerary' | 'packingAssistantForm' | 'packingAssistantResult' | 'foodFinderForm' | 'foodFinderResult' | 'appFinderForm' | 'appFinderResult' | 'musicFinderForm' | 'musicFinderResult' | 'contact';
+type View = 'landing' | 'questionnaire' | 'itineraryResult' | 'packingAssistantForm' | 'packingAssistantResult' | 'foodFinderForm' | 'foodFinderResult' | 'appFinderForm' | 'appFinderResult' | 'musicFinderForm' | 'musicFinderResult' | 'contact' | 'unifiedPlannerForm' | 'unifiedResult';
 
 const App: React.FC = () => {
   const [view, setView] = useState<View>('landing');
+  
+  // State for individual mini-apps
   const [itinerary, setItinerary] = useState<Itinerary | null>(null);
   const [packingList, setPackingList] = useState<PackingList | null>(null);
   const [foodRecommendations, setFoodRecommendations] = useState<FoodRecommendations | null>(null);
   const [appRecommendations, setAppRecommendations] = useState<AppRecommendations | null>(null);
   const [musicRecommendations, setMusicRecommendations] = useState<MusicRecommendations | null>(null);
   
+  // State for the new unified plan
+  const [unifiedPlan, setUnifiedPlan] = useState<UnifiedPlan>({ itinerary: null, packingList: null, foodRecommendations: null, appRecommendations: null, musicRecommendations: null });
+  const [unifiedPlanLoadingStatus, setUnifiedPlanLoadingStatus] = useState<UnifiedPlanLoadingStatus>({ itinerary: 'pending', packing: 'pending', food: 'pending', apps: 'pending', music: 'pending' });
+  const [questionnaireDataForUnifiedPlan, setQuestionnaireDataForUnifiedPlan] = useState<QuestionnaireData | null>(null);
+  
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [streamedText, setStreamedText] = useState('');
+  const [unifiedStreamedText, setUnifiedStreamedText] = useState('');
   const [initialQuestionnaireData, setInitialQuestionnaireData] = useState<InitialQuestionnaireData | null>(null);
   
   const mainContentRef = useRef<HTMLDivElement>(null);
@@ -53,8 +64,8 @@ const App: React.FC = () => {
     scrollToTop();
   }, [scrollToTop]);
 
-  const handlePlanTrip = useCallback((destination?: string) => {
-    let initialData: InitialQuestionnaireData | null = {
+  const createInitialData = (destination?: string) => {
+    const data: QuestionnaireData = {
         destination: '',
         startPoint: '',
         tripType: 'Standard',
@@ -68,16 +79,24 @@ const App: React.FC = () => {
         language: 'English (en)',
         currency: 'India (INR) – ₹',
         isRoundTrip: false,
+        includeAlcoholicDrinks: false,
     };
-
     if (destination) {
-      initialData.destination = destination;
-    } else {
-      initialData = null; 
+      data.destination = destination;
     }
-    setInitialQuestionnaireData(initialData);
+    return data;
+  }
+
+  const handleStartUnifiedPlanner = useCallback((destination?: string) => {
+    setInitialQuestionnaireData(createInitialData(destination));
+    handleViewChange('unifiedPlannerForm');
+  }, [handleViewChange]);
+  
+  const handleStartItineraryPlanner = useCallback(() => {
+    setInitialQuestionnaireData(createInitialData());
     handleViewChange('questionnaire');
   }, [handleViewChange]);
+
 
   const handleBackToHome = useCallback(() => {
     setItinerary(null);
@@ -86,6 +105,8 @@ const App: React.FC = () => {
     setAppRecommendations(null);
     setMusicRecommendations(null);
     setInitialQuestionnaireData(null);
+    setUnifiedPlan({ itinerary: null, packingList: null, foodRecommendations: null, appRecommendations: null, musicRecommendations: null });
+    setQuestionnaireDataForUnifiedPlan(null);
     handleViewChange('landing');
   }, [handleViewChange]);
   
@@ -94,11 +115,12 @@ const App: React.FC = () => {
     setError("Generation was cancelled.");
     
     const formViews: Partial<Record<View, View>> = {
-      'itinerary': 'questionnaire',
+      'itineraryResult': 'questionnaire',
       'packingAssistantResult': 'packingAssistantForm',
       'foodFinderResult': 'foodFinderForm',
       'appFinderResult': 'appFinderForm',
       'musicFinderResult': 'musicFinderForm',
+      'unifiedResult': 'unifiedPlannerForm',
     };
     
     const targetView = formViews[view] || 'landing';
@@ -110,18 +132,74 @@ const App: React.FC = () => {
     setIsLoading(true);
     setError(null);
     setItinerary(null);
-    handleViewChange('itinerary');
+    setStreamedText('');
+    handleViewChange('itineraryResult');
+    try {
+        const result = await generateItinerary(
+            data.destination, data.startPoint, data.tripType, data.days, data.budget, data.vibe, data.persons, data.foodPreference, data.startDate, data.includeMedical, data.language, data.isRoundTrip, data.currency,
+            (chunk) => setStreamedText(prev => prev + chunk)
+        );
+        setItinerary(result);
+    } catch (e) {
+        setError(e instanceof Error ? e.message : 'An unknown error occurred');
+        handleViewChange('questionnaire');
+    } finally {
+        setIsLoading(false);
+    }
+  };
+  
+  const handleGenerateUnifiedPlan = async (data: QuestionnaireData) => {
+    setQuestionnaireDataForUnifiedPlan(data);
+    setUnifiedPlan({ itinerary: null, packingList: null, foodRecommendations: null, appRecommendations: null, musicRecommendations: null });
+    handleViewChange('unifiedResult');
+
+    const updateStatus = (statusUpdater: (prev: UnifiedPlanLoadingStatus) => UnifiedPlanLoadingStatus) => {
+        setUnifiedPlanLoadingStatus(statusUpdater);
+    };
+    
+    const streamCallback = (chunk: string) => setUnifiedStreamedText(prev => prev + chunk);
+    
+    updateStatus(() => ({ itinerary: 'loading', packing: 'pending', food: 'pending', apps: 'pending', music: 'pending' }));
 
     try {
-      const result = await generateItinerary(
-        data.destination, data.startPoint, data.tripType, data.days, data.budget, data.vibe, data.persons, data.foodPreference, data.startDate, data.includeMedical, data.language, data.isRoundTrip, data.currency,
-        (chunk) => setStreamedText(prev => prev + chunk)
-      );
-      setItinerary(result);
+        setUnifiedStreamedText('');
+        const itineraryResult = await generateItinerary(data.destination, data.startPoint, data.tripType, data.days, data.budget, data.vibe, data.persons, data.foodPreference, data.startDate, data.includeMedical, data.language, data.isRoundTrip, data.currency, streamCallback);
+        setUnifiedPlan(prev => ({ ...prev, itinerary: itineraryResult }));
+        updateStatus(prev => ({ ...prev, itinerary: 'done', packing: 'loading' }));
+
+        setUnifiedStreamedText('');
+        const packingData: PackingListRequestData = { destination: data.destination, startDate: data.startDate, days: data.days, language: data.language };
+        const packingResult = await generatePackingList(packingData, streamCallback);
+        setUnifiedPlan(prev => ({ ...prev, packingList: packingResult }));
+        updateStatus(prev => ({ ...prev, packing: 'done', food: 'loading' }));
+        
+        setUnifiedStreamedText('');
+        const foodData: FoodFinderRequestData = { destination: data.destination, startDate: data.startDate, foodPreference: data.foodPreference, includeAlcoholicDrinks: data.includeAlcoholicDrinks, language: data.language };
+        const foodResult = await generateFoodRecommendations(foodData, streamCallback);
+        setUnifiedPlan(prev => ({ ...prev, foodRecommendations: foodResult }));
+        updateStatus(prev => ({ ...prev, food: 'done', apps: 'loading' }));
+        
+        setUnifiedStreamedText('');
+        const appData: AppFinderRequestData = { destination: data.destination, language: data.language };
+        const appResult = await generateAppRecommendations(appData, streamCallback);
+        setUnifiedPlan(prev => ({ ...prev, appRecommendations: appResult }));
+        updateStatus(prev => ({ ...prev, apps: 'done', music: 'loading' }));
+
+        setUnifiedStreamedText('');
+        const musicData: MusicFinderRequestData = { destination: data.destination, language: data.language };
+        const musicResult = await generateMusicRecommendations(musicData, streamCallback);
+        setUnifiedPlan(prev => ({ ...prev, musicRecommendations: musicResult }));
+        updateStatus(prev => ({ ...prev, music: 'done' }));
+
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'An unknown error occurred');
-    } finally {
-      setIsLoading(false);
+        setError(e instanceof Error ? e.message : 'An unknown error occurred during plan generation.');
+        updateStatus(prev => {
+            const newStatus = { ...prev };
+            (Object.keys(newStatus) as Array<keyof UnifiedPlanLoadingStatus>).forEach(key => {
+                if (newStatus[key] === 'loading' || newStatus[key] === 'pending') newStatus[key] = 'error';
+            });
+            return newStatus;
+        });
     }
   };
 
@@ -135,6 +213,7 @@ const App: React.FC = () => {
         setPackingList(result);
     } catch (e) {
         setError(e instanceof Error ? e.message : 'An unknown error occurred');
+        handleViewChange('packingAssistantForm');
     } finally {
         setIsLoading(false);
     }
@@ -150,6 +229,7 @@ const App: React.FC = () => {
         setFoodRecommendations(result);
     } catch (e) {
         setError(e instanceof Error ? e.message : 'An unknown error occurred');
+        handleViewChange('foodFinderForm');
     } finally {
         setIsLoading(false);
     }
@@ -165,6 +245,7 @@ const App: React.FC = () => {
         setAppRecommendations(result);
     } catch (e) {
         setError(e instanceof Error ? e.message : 'An unknown error occurred');
+        handleViewChange('appFinderForm');
     } finally {
         setIsLoading(false);
     }
@@ -180,6 +261,7 @@ const App: React.FC = () => {
         setMusicRecommendations(result);
     } catch (e) {
         setError(e instanceof Error ? e.message : 'An unknown error occurred');
+        handleViewChange('musicFinderForm');
     } finally {
         setIsLoading(false);
     }
@@ -188,8 +270,8 @@ const App: React.FC = () => {
   const renderContent = () => {
     if (isLoading) {
       switch (view) {
-        case 'itinerary':
-          return <Questionnaire onSubmit={handleGenerateItinerary} isLoading={true} error={null} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} />;
+        case 'itineraryResult':
+          return <Questionnaire onSubmit={handleGenerateItinerary} isLoading={true} error={null} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} initialData={initialQuestionnaireData} />;
         case 'packingAssistantResult':
           return <PackingAssistantForm onSubmit={handleGeneratePackingList} isLoading={true} error={null} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} />;
         case 'foodFinderResult':
@@ -205,12 +287,16 @@ const App: React.FC = () => {
 
     switch (view) {
       case 'landing':
-        return <LandingPage onPlanTrip={handlePlanTrip} onStartPacking={() => handleViewChange('packingAssistantForm')} onStartFoodFinder={() => handleViewChange('foodFinderForm')} onStartAppFinder={() => handleViewChange('appFinderForm')} onStartMusicFinder={() => handleViewChange('musicFinderForm')} />;
+        return <LandingPage onPlanUnifiedTrip={handleStartUnifiedPlanner} onPlanItinerary={handleStartItineraryPlanner} onStartPacking={() => handleViewChange('packingAssistantForm')} onStartFoodFinder={() => handleViewChange('foodFinderForm')} onStartAppFinder={() => handleViewChange('appFinderForm')} onStartMusicFinder={() => handleViewChange('musicFinderForm')} />;
+      case 'unifiedPlannerForm':
+        return <UnifiedPlannerForm onSubmit={handleGenerateUnifiedPlan} initialData={initialQuestionnaireData} onBack={handleBackToHome} error={error} />;
       case 'questionnaire':
         return <Questionnaire onSubmit={handleGenerateItinerary} isLoading={false} error={error} initialData={initialQuestionnaireData} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} />;
-      case 'itinerary':
-        if (itinerary) return <ItineraryPreview itinerary={itinerary} onRegenerate={() => { setItinerary(null); handleViewChange('questionnaire'); }} />;
+      case 'itineraryResult':
+        if (itinerary) return <ItineraryPreview itinerary={itinerary} onRegenerate={() => handleViewChange('questionnaire')} />;
         break;
+      case 'unifiedResult':
+        return <UnifiedResultPreview plan={unifiedPlan} loadingStatus={unifiedPlanLoadingStatus} error={error} onPlanNew={handleBackToHome} onRegenerate={() => { if(questionnaireDataForUnifiedPlan) handleGenerateUnifiedPlan(questionnaireDataForUnifiedPlan)}} unifiedStreamedText={unifiedStreamedText} onCancel={handleCancelGeneration} />;
       case 'packingAssistantForm':
         return <PackingAssistantForm onSubmit={handleGeneratePackingList} isLoading={false} error={error} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} />;
       case 'packingAssistantResult':
@@ -234,11 +320,9 @@ const App: React.FC = () => {
       case 'contact':
         return <ContactUs onBack={handleBackToHome} />;
     }
-    // Fallback for when data isn't ready but loading is false (e.g., after an error)
-    if (error) {
-        handleViewChange('landing');
-    }
-    return <LandingPage onPlanTrip={handlePlanTrip} onStartPacking={() => handleViewChange('packingAssistantForm')} onStartFoodFinder={() => handleViewChange('foodFinderForm')} onStartAppFinder={() => handleViewChange('appFinderForm')} onStartMusicFinder={() => handleViewChange('musicFinderForm')} />;
+    
+    // Fallback for any unhandled case or error state where data is null
+    return <LandingPage onPlanUnifiedTrip={handleStartUnifiedPlanner} onPlanItinerary={handleStartItineraryPlanner} onStartPacking={() => handleViewChange('packingAssistantForm')} onStartFoodFinder={() => handleViewChange('foodFinderForm')} onStartAppFinder={() => handleViewChange('appFinderForm')} onStartMusicFinder={() => handleViewChange('musicFinderForm')} />;
   };
 
   return (
@@ -252,7 +336,7 @@ const App: React.FC = () => {
       <QuickNavButton
         onGoHome={handleBackToHome}
         onGoToContact={() => handleViewChange('contact')}
-        onPlanTrip={handlePlanTrip}
+        onPlanTrip={handleStartUnifiedPlanner}
         onStartPacking={() => handleViewChange('packingAssistantForm')}
         onStartFoodFinder={() => handleViewChange('foodFinderForm')}
         onStartAppFinder={() => handleViewChange('appFinderForm')}

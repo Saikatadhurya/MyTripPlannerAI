@@ -11,7 +11,7 @@ export const generateFoodRecommendations = async (data: FoodFinderRequestData, o
   }
 
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const { destination, startDate, foodPreference, includeBeverages, language } = data;
+  const { destination, startDate, foodPreference, includeAlcoholicDrinks, language } = data;
 
   const prompt = `
     You are a Pragmatic Local Food Scout. Your primary mission is to return a useful, relevant, and populated list of food recommendations for a traveler visiting ${destination}.
@@ -21,7 +21,7 @@ export const generateFoodRecommendations = async (data: FoodFinderRequestData, o
     - Destination: ${destination}
     - Dietary Preference: ${foodPreference}
     - Date: ${startDate}
-    - Include Beverages: ${includeBeverages ? 'Yes' : 'No'}
+    - Include Alcoholic Drinks: ${includeAlcoholicDrinks ? 'Yes' : 'No'}
     - Language: ${language}
 
     **MANDATORY Blended Research Methodology:**
@@ -61,7 +61,7 @@ export const generateFoodRecommendations = async (data: FoodFinderRequestData, o
     **CRITICAL JSON RULES:**
     - Prioritize populating 'iconicDishes', 'snacksAndStreetFood', 'lunch', 'dinner', and 'dessertAndSweets'. These should not be empty unless absolutely impossible.
     - Descriptions must be short, enticing, and informative, with local context where required.
-    - If 'includeBeverages' is false, the 'drinksAndBeverages' array MUST be empty.
+    - The 'drinksAndBeverages' array should always contain **non-alcoholic** options appropriate for the destination. If 'Include Alcoholic Drinks' is 'Yes', you MUST also add recommendations for local alcoholic beverages (e.g., local beers, wines, spirits). If 'No', the array MUST NOT contain any alcoholic drinks.
     - The ENTIRE response, including all names and descriptions, MUST be translated into ${language}.
     - The output MUST start with "{" and end with "}". No markdown, no introductory text.
   `;

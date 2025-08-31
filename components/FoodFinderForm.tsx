@@ -45,7 +45,7 @@ const Toggle: React.FC<{ label: string; description: string; enabled: boolean; o
     <button 
         type="button"
         onClick={() => onChange(!enabled)}
-        className={`w-full flex items-center justify-between p-4 rounded-lg cursor-pointer transition-all duration-200 border-2 ${enabled ? 'bg-amber-100/70 border-amber-500' : 'bg-white/40 border-white/40 hover:bg-white/60'}`}
+        className={`w-full flex items-center justify-between p-4 rounded-xl cursor-pointer transition-all duration-200 border-2 ${enabled ? 'bg-orange-50/70 border-orange-400' : 'bg-white/40 border-white/40 hover:bg-white/60'}`}
         role="switch"
         aria-checked={enabled}
     >
@@ -53,7 +53,7 @@ const Toggle: React.FC<{ label: string; description: string; enabled: boolean; o
           <p className="font-semibold text-slate-800">{label}</p>
           <p className="text-sm text-slate-600">{description}</p>
       </div>
-      <div className={`w-12 h-6 flex items-center rounded-full transition-colors duration-300 ${enabled ? 'bg-amber-500' : 'bg-slate-300'}`}>
+      <div className={`w-12 h-6 flex items-center rounded-full transition-colors duration-300 ${enabled ? 'bg-orange-500' : 'bg-slate-300'}`}>
           <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${enabled ? 'translate-x-6' : 'translate-x-1'}`}></div>
       </div>
     </button>
@@ -64,7 +64,7 @@ const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, er
     destination: '',
     startDate: new Date().toISOString().split('T')[0],
     foodPreference: 'Non-Veg',
-    includeBeverages: true,
+    includeAlcoholicDrinks: false,
     language: 'English (en)',
   });
 
@@ -254,10 +254,10 @@ const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, er
 
         <div>
             <Toggle
-                label="Include Beverages"
-                description="Alcoholic & non-alcoholic drinks"
-                enabled={formData.includeBeverages}
-                onChange={(enabled) => handleInputChange('includeBeverages', enabled)}
+                label="Include Alcoholic Drinks"
+                description="Suggest local beers, wines, and cocktails."
+                enabled={formData.includeAlcoholicDrinks}
+                onChange={(enabled) => handleInputChange('includeAlcoholicDrinks', enabled)}
             />
         </div>
 

@@ -99,7 +99,13 @@ const CategorySection: React.FC<{
     );
 };
 
-const AppFinderResult: React.FC<{ recommendations: AppRecommendations; onRegenerate: () => void; }> = ({ recommendations, onRegenerate }) => {
+interface AppFinderResultProps {
+    recommendations: AppRecommendations;
+    onRegenerate: () => void;
+    isUnifiedView?: boolean;
+}
+
+const AppFinderResult: React.FC<AppFinderResultProps> = ({ recommendations, onRegenerate, isUnifiedView = false }) => {
     const iconClass = "h-6 w-6";
     
     const categoryDetails = {
@@ -117,6 +123,7 @@ const AppFinderResult: React.FC<{ recommendations: AppRecommendations; onRegener
 
     return (
         <div className="max-w-6xl mx-auto space-y-12 animated-card">
+            {!isUnifiedView && (
             <div className="flex justify-start items-center no-print">
                 <button
                     onClick={onRegenerate}
@@ -126,8 +133,9 @@ const AppFinderResult: React.FC<{ recommendations: AppRecommendations; onRegener
                     <span>Find Apps for Another Trip</span>
                 </button>
             </div>
+            )}
             
-            <header className="space-y-4 text-center -mt-8">
+            <header className="space-y-4 text-center">
                 <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight">
                     Essential Apps for {recommendations.destination}
                 </h1>
@@ -154,6 +162,7 @@ const AppFinderResult: React.FC<{ recommendations: AppRecommendations; onRegener
 
             <div className="pt-8 text-center no-print">
                 <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4 mt-8">
+                    {!isUnifiedView && (
                     <button
                         onClick={onRegenerate}
                         className="inline-flex items-center justify-center w-full sm:w-auto px-8 py-3 bg-teal-600 text-white font-bold rounded-full hover:bg-teal-700 transition-all duration-300 transform hover:scale-105 shadow-lg"
@@ -161,6 +170,7 @@ const AppFinderResult: React.FC<{ recommendations: AppRecommendations; onRegener
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h5M20 20v-5h-5" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 9a9 9 0 0114.13-5.22M20 15a9 9 0 01-14.13 5.22" /></svg>
                         <span>Find More Apps</span>
                     </button>
+                    )}
                     <button
                         onClick={() => window.print()}
                         className="inline-flex items-center justify-center w-full sm:w-auto px-8 py-3 bg-white/60 text-slate-800 font-bold rounded-full hover:bg-white/80 transition-all duration-300 shadow-md border border-white/50"

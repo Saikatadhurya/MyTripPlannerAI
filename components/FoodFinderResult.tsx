@@ -47,8 +47,13 @@ const CategoryCard: React.FC<{
     );
 };
 
+interface FoodFinderResultProps {
+    recommendations: FoodRecommendations;
+    onRegenerate: () => void;
+    isUnifiedView?: boolean;
+}
 
-const FoodFinderResult: React.FC<{ recommendations: FoodRecommendations; onRegenerate: () => void; }> = ({ recommendations, onRegenerate }) => {
+const FoodFinderResult: React.FC<FoodFinderResultProps> = ({ recommendations, onRegenerate, isUnifiedView = false }) => {
     const iconClass = "h-6 w-6";
     const categoryDetails = {
         iconicDishes: { title: "Iconic Dishes", icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>, color: "orange"},
@@ -71,6 +76,7 @@ const FoodFinderResult: React.FC<{ recommendations: FoodRecommendations; onRegen
 
     return (
         <div className="max-w-6xl mx-auto space-y-12 animated-card">
+            {!isUnifiedView && (
             <div className="flex justify-start items-center no-print">
                 <button
                     onClick={onRegenerate}
@@ -80,8 +86,9 @@ const FoodFinderResult: React.FC<{ recommendations: FoodRecommendations; onRegen
                     <span>Find Another Feast</span>
                 </button>
             </div>
+            )}
             
-            <header className="space-y-4 text-center -mt-8">
+            <header className="space-y-4 text-center">
                 <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight">
                     Local Food Guide for {recommendations.destination}
                 </h1>
@@ -108,6 +115,7 @@ const FoodFinderResult: React.FC<{ recommendations: FoodRecommendations; onRegen
 
             <div className="pt-8 text-center no-print">
                 <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4 mt-8">
+                    {!isUnifiedView && (
                     <button
                         onClick={onRegenerate}
                         className="inline-flex items-center justify-center w-full sm:w-auto px-8 py-3 bg-amber-600 text-white font-bold rounded-full hover:bg-amber-700 transition-all duration-300 transform hover:scale-105 shadow-lg"
@@ -115,6 +123,7 @@ const FoodFinderResult: React.FC<{ recommendations: FoodRecommendations; onRegen
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h5M20 20v-5h-5" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 9a9 9 0 0114.13-5.22M20 15a9 9 0 01-14.13 5.22" /></svg>
                         <span>Find Another Feast</span>
                     </button>
+                    )}
                     <button
                         onClick={() => window.print()}
                         className="inline-flex items-center justify-center w-full sm:w-auto px-8 py-3 bg-white/60 text-slate-800 font-bold rounded-full hover:bg-white/80 transition-all duration-300 shadow-md border border-white/50"

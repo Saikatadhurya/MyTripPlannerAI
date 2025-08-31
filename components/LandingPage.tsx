@@ -1,19 +1,17 @@
-
-
-
 import React, { useState, useEffect } from 'react';
 import { PopularDestination } from '../types';
 import TestimonialsCarousel from './TestimonialsCarousel';
 
 interface LandingPageProps {
-  onPlanTrip: (destination?: string) => void;
+  onPlanUnifiedTrip: (destination?: string) => void;
+  onPlanItinerary: () => void;
   onStartPacking: () => void;
   onStartFoodFinder: () => void;
   onStartAppFinder: () => void;
   onStartMusicFinder: () => void;
 }
 
-const LandingPage: React.FC<LandingPageProps> = ({ onPlanTrip, onStartPacking, onStartFoodFinder, onStartAppFinder, onStartMusicFinder }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ onPlanUnifiedTrip, onPlanItinerary, onStartPacking, onStartFoodFinder, onStartAppFinder, onStartMusicFinder }) => {
   const [destinations, setDestinations] = useState<PopularDestination[]>([]);
 
   useEffect(() => {
@@ -29,18 +27,47 @@ const LandingPage: React.FC<LandingPageProps> = ({ onPlanTrip, onStartPacking, o
     fetchDestinations();
   }, []);
 
+  const colorClasses = {
+    blue: {
+      iconBg: 'bg-blue-100', iconText: 'text-blue-600',
+      button: 'bg-blue-600 hover:bg-blue-700 text-white',
+    },
+    violet: {
+      iconBg: 'bg-violet-100', iconText: 'text-violet-600',
+      button: 'bg-violet-600 hover:bg-violet-700 text-white',
+    },
+    orange: {
+      iconBg: 'bg-orange-100', iconText: 'text-orange-500',
+      button: 'bg-orange-500 hover:bg-orange-600 text-white',
+    },
+    teal: {
+      iconBg: 'bg-teal-100', iconText: 'text-teal-500',
+      button: 'bg-teal-500 hover:bg-teal-600 text-white',
+    },
+    fuchsia: {
+      iconBg: 'bg-fuchsia-100', iconText: 'text-fuchsia-500',
+      button: 'bg-fuchsia-500 hover:bg-fuchsia-600 text-white',
+    },
+  };
+  
   const miniApps = [
+    {
+      id: 'itinerary',
+      title: 'Itinerary Planner',
+      description: 'Get a detailed, step-by-step plan',
+      onClick: onPlanItinerary,
+      color: 'blue' as const,
+      icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
+      buttonText: 'Plan Itinerary',
+    },
     {
       id: 'packing',
       title: 'Smart Bag Packing',
       description: 'AI-powered packing tailored for your trip',
       onClick: onStartPacking,
       color: 'violet' as const,
-      icon: (
-        <span className="text-4xl">🧳</span>
-      ),
+      icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 6h12a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2zm3-3a1 1 0 011-1h2a1 1 0 110 2H10a1 1 0 01-1-1z" /></svg>,
       buttonText: 'Pack My Bag',
-      buttonIcon: '✨',
     },
     {
       id: 'food',
@@ -48,11 +75,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onPlanTrip, onStartPacking, o
       description: 'Discover authentic local cuisine',
       onClick: onStartFoodFinder,
       color: 'orange' as const,
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2h-1a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2zM12 4H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h5" /><path d="M15 4h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-2" /></svg>
-      ),
+      icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
       buttonText: 'Find My Feast',
-      buttonIcon: '🍴',
     },
     {
       id: 'apps',
@@ -60,11 +84,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onPlanTrip, onStartPacking, o
       description: 'Find essential local apps for your trip',
       onClick: onStartAppFinder,
       color: 'teal' as const,
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="7" y="2" width="10" height="20" rx="2" ry="2"/><path d="M12 18h.01"/></svg>
-      ),
+      icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 18h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>,
       buttonText: 'Find My Apps',
-      buttonIcon: '📱',
     },
     {
       id: 'music',
@@ -72,37 +93,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onPlanTrip, onStartPacking, o
       description: 'Discover the soundtrack of your travels',
       onClick: onStartMusicFinder,
       color: 'fuchsia' as const,
-      icon: (
-         <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-      ),
+      icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 18V5l12-2v13M9 18a3 3 0 11-6 0 3 3 0 016 0zm12-2a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
       buttonText: 'Discover Local Music',
-      buttonIcon: '🎶',
     },
   ];
-
-  const colorClasses = {
-    violet: {
-        iconBg: 'bg-violet-100/80',
-        iconText: 'text-violet-600',
-        button: 'bg-violet-600 hover:bg-violet-700 text-white',
-    },
-    orange: {
-        iconBg: 'bg-yellow-100/80',
-        iconText: 'text-orange-500',
-        button: 'bg-orange-500 hover:bg-orange-600 text-white',
-    },
-    teal: {
-        iconBg: 'bg-teal-100/80',
-        iconText: 'text-teal-600',
-        button: 'bg-teal-500 hover:bg-teal-600 text-white',
-    },
-    fuchsia: {
-        iconBg: 'bg-fuchsia-100/80',
-        iconText: 'text-fuchsia-600',
-        button: 'bg-fuchsia-600 hover:bg-fuchsia-700 text-white',
-    },
-  };
-
+  
   const supportingFeatures = [
     {
       icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
@@ -127,78 +122,71 @@ const LandingPage: React.FC<LandingPageProps> = ({ onPlanTrip, onStartPacking, o
   ];
   
   return (
-    <div className="space-y-16 pb-8">
+    <div className="space-y-20 pb-8">
       {/* Hero Section */}
-      <div className="animated-card text-center" style={{ animationDelay: '100ms' }}>
-        <button
-          onClick={() => onPlanTrip()}
-          className="w-full max-w-5xl mx-auto p-6 md:p-8 rounded-3xl bg-white/40 backdrop-blur-md border border-white/50 shadow-2xl group transition-all duration-300 transform hover:scale-105 hover:shadow-2xl focus:outline-none focus:ring-4 focus:ring-violet-300"
-        >
-          <h1 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">Plan Your Next Adventure</h1>
-          <p className="mt-2 text-lg text-slate-600 max-w-xl mx-auto">
-            Tell us your travel preferences, and our AI will craft a personalized, day-by-day itinerary just for you.
-          </p>
-          <div className="mt-6">
-            <div
-              className="inline-block px-8 py-3 bg-gradient-to-br from-indigo-600 to-violet-600 text-white font-bold rounded-full text-base md:text-lg shadow-xl shadow-indigo-500/30 group-hover:shadow-2xl group-hover:shadow-indigo-500/50 transition-all duration-300"
+      <div className="animated-card text-center max-w-4xl mx-auto p-6 md:p-8 rounded-3xl bg-white/50 backdrop-blur-lg border border-white/60 shadow-lg" style={{ animationDelay: '100ms' }}>
+        <h1 className="text-4xl md:text-5xl font-bold text-slate-900 tracking-tight">Plan Your Next Adventure</h1>
+        <p className="mt-4 text-lg text-slate-600 max-w-2xl mx-auto">
+          Tell us your travel preferences, and our AI will craft a personalized, day-by-day itinerary just for you.
+        </p>
+        <div className="mt-8">
+            <button
+              onClick={() => onPlanUnifiedTrip()}
+              className="inline-block px-10 py-4 bg-violet-600 text-white font-bold rounded-full text-lg shadow-lg shadow-violet-500/30 hover:bg-violet-700 hover:shadow-xl hover:shadow-violet-500/40 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-violet-300"
             >
               ✨ Plan My Trip
-            </div>
-          </div>
-        </button>
+            </button>
+        </div>
       </div>
       
       {/* Mini Apps Section */}
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-slate-900 animated-card" style={{ animationDelay: '200ms' }}>Quick Tools for Your Journey</h2>
-        <p className="text-slate-600 mt-1 animated-card" style={{ animationDelay: '250ms' }}>Smart tools to make your trip unforgettable.</p>
-        <div className="flex justify-center mt-8">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {miniApps.map((app, index) => {
-                const colors = colorClasses[app.color];
-                return (
-                <button
-                    key={app.id}
+        <h2 className="text-3xl font-bold text-slate-900 animated-card" style={{ animationDelay: '200ms' }}>Quick Tools for Your Journey</h2>
+        <p className="text-slate-600 mt-2 animated-card" style={{ animationDelay: '250ms' }}>Smart tools to make your trip unforgettable.</p>
+        <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+          {miniApps.map((app, index) => {
+            const colors = colorClasses[app.color];
+            return (
+              <div
+                key={app.id}
+                className="animated-card h-full w-full text-center bg-white/50 backdrop-blur-lg p-6 rounded-2xl border border-white/60 shadow-lg flex flex-col justify-between group transition-all duration-300 transform hover:scale-105 hover:shadow-xl"
+                style={{ animationDelay: `${300 + index * 100}ms` }}
+              >
+                <div>
+                  <div className={`mx-auto w-20 h-20 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 ${colors.iconBg} ${colors.iconText}`}>
+                    {app.icon}
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-900 mt-5">{app.title}</h3>
+                  <p className="text-sm text-slate-600 mt-1 h-10">
+                    {app.description}
+                  </p>
+                </div>
+                <div className="mt-6">
+                  <button
                     onClick={app.onClick}
-                    className="animated-card h-full w-full text-center bg-white/40 backdrop-blur-md p-6 rounded-2xl border border-white/50 shadow-lg flex flex-col justify-between group transition-all duration-300 transform hover:scale-105 hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-violet-300"
-                    style={{ animationDelay: `${300 + index * 100}ms` }}
-                >
-                    <div>
-                        <div className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center transition-transform group-hover:scale-110 ${colors.iconBg} ${colors.iconText}`}>
-                            {app.icon}
-                        </div>
-                        <h3 className="text-xl font-bold text-slate-900 mt-4">{app.title}</h3>
-                        <p className="text-sm text-slate-600 mt-1">
-                            {app.description}
-                        </p>
-                    </div>
-                    <div className="mt-6">
-                        <div
-                            className={`w-full px-5 py-3 rounded-full text-base font-semibold flex items-center justify-center space-x-2 transition-all duration-300 transform group-hover:shadow-lg ${colors.button}`}
-                            >
-                            <span>{app.buttonIcon}</span>
-                            <span>{app.buttonText}</span>
-                        </div>
-                    </div>
-                </button>
-                );
-            })}
-            </div>
+                    className={`w-full px-5 py-3 rounded-full text-base font-semibold flex items-center justify-center space-x-2 transition-all duration-300 transform group-hover:shadow-lg ${colors.button} focus:outline-none focus:ring-4 focus:ring-offset-2 ${colors.button.replace('bg-', 'ring-')}`}
+                  >
+                    <span>{app.buttonText}</span>
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
 
       {/* Supporting Features Section */}
       <div>
-        <h2 className="text-2xl font-bold text-center text-slate-900 animated-card" style={{ animationDelay: '600ms' }}>Your AI Travel Toolkit</h2>
-        <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <h2 className="text-3xl font-bold text-center text-slate-900 animated-card" style={{ animationDelay: '600ms' }}>Your AI Travel Toolkit</h2>
+        <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {supportingFeatures.map((feature, index) => (
             <div 
               key={index} 
-              className="animated-card bg-white/40 backdrop-blur-md p-6 rounded-xl border border-white/50 shadow-lg text-center transition-all duration-300 transform hover:scale-105 hover:shadow-xl" 
+              className="animated-card bg-white/50 backdrop-blur-lg p-6 rounded-xl border border-white/60 shadow-lg text-center transition-all duration-300 transform hover:scale-105 hover:shadow-xl" 
               style={{ animationDelay: `${700 + index * 100}ms` }}
             >
-              <div className="mx-auto w-12 h-12 rounded-full flex items-center justify-center bg-violet-100 text-violet-600">
+              <div className="mx-auto w-14 h-14 rounded-full flex items-center justify-center bg-violet-100 text-violet-600">
                 {feature.icon}
               </div>
               <h3 className="text-lg font-semibold text-slate-800 mt-4">{feature.title}</h3>
@@ -210,18 +198,18 @@ const LandingPage: React.FC<LandingPageProps> = ({ onPlanTrip, onStartPacking, o
 
       {/* Popular Destinations Section */}
       <div>
-        <h2 className="text-2xl font-bold text-center text-slate-900 mb-6 animated-card" style={{ animationDelay: '1100ms' }}>Popular Destinations</h2>
-        <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+        <h2 className="text-3xl font-bold text-center text-slate-900 mb-6 animated-card" style={{ animationDelay: '1100ms' }}>Popular Destinations</h2>
+        <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
           {destinations.map((dest, index) => (
-            <button key={dest.name} onClick={() => onPlanTrip(dest.name)} className="animated-card text-left bg-white/40 backdrop-blur-md p-5 rounded-2xl border border-white/50 shadow-lg hover:shadow-xl hover:border-indigo-300/50 transition-all duration-300 transform hover:scale-105" style={{ animationDelay: `${1200 + index * 50}ms` }}>
-              <span className="text-3xl" role="img" aria-label="">{dest.icon}</span>
+            <button key={dest.name} onClick={() => onPlanUnifiedTrip(dest.name)} className="animated-card text-left bg-white/50 backdrop-blur-lg p-5 rounded-2xl border border-white/60 shadow-lg hover:shadow-xl hover:border-violet-300/50 transition-all duration-300 transform hover:scale-105" style={{ animationDelay: `${1200 + index * 50}ms` }}>
+              <span className="text-4xl" role="img" aria-label="">{dest.icon}</span>
               <h3 className="text-lg font-semibold mt-3 text-slate-800">{dest.name}</h3>
               <p className="text-slate-600 text-sm">{dest.description}</p>
             </button>
           ))}
           {destinations.length === 0 && Array(10).fill(0).map((_, i) => (
             <div key={i} className="bg-white/40 p-5 rounded-2xl border border-white/50 shadow-lg animate-pulse">
-              <div className="h-8 w-8 bg-slate-200/50 rounded-md"></div>
+              <div className="h-10 w-10 bg-slate-200/50 rounded-md"></div>
               <div className="h-4 bg-slate-200/50 rounded mt-4 w-3/4"></div>
               <div className="h-3 bg-slate-200/50 rounded mt-2 w-full"></div>
             </div>
@@ -231,7 +219,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onPlanTrip, onStartPacking, o
 
       {/* Testimonials Section */}
       <section>
-        <h2 className="text-2xl font-bold text-center text-slate-900 mb-8 animated-card" style={{ animationDelay: '1600ms' }}>
+        <h2 className="text-3xl font-bold text-center text-slate-900 mb-8 animated-card" style={{ animationDelay: '1600ms' }}>
           What Our Travelers Say
         </h2>
         <div className="animated-card" style={{ animationDelay: '1700ms' }}>
