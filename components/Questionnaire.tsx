@@ -43,11 +43,11 @@ const languages = [
 ];
 
 const itineraryStages = [
-    { key: '"budgetSummary":{', text: 'Analyzing budget and costs' },
-    { key: '"currencyConversion":{', text: 'Checking currency exchange rates' },
-    { key: '"coveredDestinations":[', text: 'Researching destinations' },
-    { key: '"planNote":"', text: 'Adding important travel notes' },
-    { key: '"plan":[', text: 'Building the day-by-day plan' },
+    { key: '"stay":', text: 'Analyzing budget and costs' },
+    { key: '"fromCurrency":', text: 'Checking currency exchange rates' },
+    { key: '"historicBackground":', text: 'Researching destinations' },
+    { key: '"planNote":', text: 'Adding important travel notes' },
+    { key: '"day":', text: 'Building the day-by-day plan' },
 ];
 
 const funFacts = [

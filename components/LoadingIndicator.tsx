@@ -84,48 +84,52 @@ const StreamingLoadingIndicator: React.FC<StreamingLoadingIndicatorProps> = ({ s
   }, [funFacts]);
 
   useEffect(() => {
-    const newCompleted = new Set<string>();
-    
+    let newStageIndex = 0; // Default to 'Connecting'
     if (hasStreamStarted) {
-      newCompleted.add(connectingStage.key);
+        newStageIndex = 1; // At least 'Connecting' is done
+        const cleanedStream = streamedText.replace(/\s/g, '');
+
+        // Find the index of the LAST stage key present in the stream to correctly handle skipped optional stages
+        let lastFoundIndex = -1;
+        for (let i = 0; i < stages.length; i++) {
+            const stage = stages[i];
+            if (cleanedStream.includes(stage.key.replace(/\s/g, ''))) {
+                lastFoundIndex = i + 1; // +1 to account for the 'Connecting' stage
+            }
+        }
+        
+        if (lastFoundIndex !== -1) {
+            newStageIndex = lastFoundIndex;
+        }
     }
     
-    // Remove all whitespace from the stream for a more robust check
-    const cleanedStream = streamedText.replace(/\s/g, '');
-
-    stages.forEach((stage) => {
-      // Check the cleaned stream against the whitespace-less key
-      if (cleanedStream.includes(stage.key)) {
-        newCompleted.add(stage.key);
-      }
-    });
-
-    let firstPendingIndex = allStages.findIndex(stage => !newCompleted.has(stage.key));
-    
-    if (newCompleted.size === stages.length + 1) {
-       firstPendingIndex = allStages.length - 1;
-    } else if (firstPendingIndex === -1) {
-       firstPendingIndex = allStages.length;
+    // Check if the stream is likely finished to move to the finalizing stage
+    const isStreamLikelyFinished = streamedText.trim().endsWith('}');
+    if (isStreamLikelyFinished) {
+        // Set to the 'finalizing' stage index
+        newStageIndex = allStages.length - 1;
     }
-    
-    setCurrentStageIndex(firstPendingIndex);
 
-  }, [streamedText, stages, allStages, connectingStage.key, hasStreamStarted]);
+    setCurrentStageIndex(newStageIndex);
+
+  }, [streamedText, hasStreamStarted, allStages, stages]);
 
   const colors = colorClasses[accentColor] || colorClasses.violet;
   
   const progress = useMemo(() => {
-    if (!hasStreamStarted) {
-      return 0;
+    if (currentStageIndex === 0 && !hasStreamStarted) {
+        return 0; // Represents the indeterminate state
     }
-
     const totalSteps = allStages.length;
     if (totalSteps <= 1) return 100;
 
+    // If finalizing, show 99%
     if (currentStageIndex >= totalSteps - 1) {
-      return 99;
+        return 99;
     }
 
+    // Calculate progress based on which stage is active.
+    // -1 because we don't count "finalizing" in the main progress percentage.
     const progressPercentage = (currentStageIndex / (totalSteps - 1)) * 100;
     
     return Math.min(99, Math.floor(progressPercentage));
@@ -162,7 +166,7 @@ const StreamingLoadingIndicator: React.FC<StreamingLoadingIndicatorProps> = ({ s
         </ul>
 
         <div className="w-full bg-slate-200/70 rounded-full h-2.5 overflow-hidden">
-            { !hasStreamStarted ? (
+            { currentStageIndex === 0 && !hasStreamStarted ? (
               <div className={`${colors.bg} h-2.5 rounded-full progress-bar-indeterminate`}></div>
             ) : (
               <div
@@ -172,7 +176,7 @@ const StreamingLoadingIndicator: React.FC<StreamingLoadingIndicatorProps> = ({ s
             )}
         </div>
         <p className={`text-sm font-semibold mt-2 ${colors.text}`}>
-          { !hasStreamStarted ? 'Connecting...' : `${progress}% Complete` }
+          { currentStageIndex === 0 && !hasStreamStarted ? 'Connecting...' : `${progress}% Complete` }
         </p>
 
         <button
