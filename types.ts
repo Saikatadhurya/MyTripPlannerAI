@@ -137,21 +137,26 @@ export interface FoodItem {
     description: string;
 }
 
+export interface FoodItemGroup {
+    location: string;
+    items: FoodItem[];
+}
+
 export interface FoodRecommendations {
     destination: string;
-    breakfast: FoodItem[];
-    lunch: FoodItem[];
-    snacksAndStreetFood: FoodItem[];
-    dinner: FoodItem[];
-    dessertAndSweets: FoodItem[];
-    drinksAndBeverages: FoodItem[];
-    iconicDishes: FoodItem[];
-    hiddenRecipes: FoodItem[];
-    trendingOrViralFoods: FoodItem[];
-    chefsSpecials: FoodItem[];
-    festivalFoods: FoodItem[];
-    seasonalSpecials: FoodItem[];
-    streetFestivalsAndFoodMelas: FoodItem[];
+    breakfast: FoodItemGroup[];
+    lunch: FoodItemGroup[];
+    snacksAndStreetFood: FoodItemGroup[];
+    dinner: FoodItemGroup[];
+    dessertAndSweets: FoodItemGroup[];
+    drinksAndBeverages: FoodItemGroup[];
+    iconicDishes: FoodItemGroup[];
+    hiddenRecipes: FoodItemGroup[];
+    trendingOrViralFoods: FoodItemGroup[];
+    chefsSpecials: FoodItemGroup[];
+    festivalFoods: FoodItemGroup[];
+    seasonalSpecials: FoodItemGroup[];
+    streetFestivalsAndFoodMelas: FoodItemGroup[];
 }
 
 export interface AppFinderRequestData {
@@ -166,6 +171,7 @@ export interface MobileApp {
     description: string;
     platform: 'iOS' | 'Android' | 'Both';
     icon: string; // Emoji
+    location?: string;
 }
 
 export interface AppRecommendations {

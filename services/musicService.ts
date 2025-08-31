@@ -3,7 +3,7 @@ import { GoogleGenAI } from "@google/genai";
 import { MusicFinderRequestData, MusicRecommendations } from '../types';
 import { extractJson, cleanCitations } from './jsonUtils';
 
-export const generateMusicRecommendations = async (data: MusicFinderRequestData, onChunk: (chunk: string) => void): Promise<MusicRecommendations> => {
+export const generateMusicRecommendations = async (data: MusicFinderRequestData, onChunk?: (chunk: string) => void): Promise<MusicRecommendations> => {
   if (!process.env.API_KEY) {
     throw new Error("API key is missing. Please set it in your environment variables.");
   }
@@ -85,19 +85,31 @@ export const generateMusicRecommendations = async (data: MusicFinderRequestData,
 
   let fullText = '';
   try {
-      const stream = await ai.models.generateContentStream({
-          model: "gemini-2.5-flash",
-          contents: prompt,
-          config: {
-              tools: [{ googleSearch: {} }],
-          }
-      });
-      
-      for await (const chunk of stream) {
-          const chunkText = chunk.text;
-          fullText += chunkText;
-          onChunk(chunkText);
+      if (onChunk) {
+        const stream = await ai.models.generateContentStream({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+                tools: [{ googleSearch: {} }],
+            }
+        });
+        
+        for await (const chunk of stream) {
+            const chunkText = chunk.text;
+            fullText += chunkText;
+            onChunk(chunkText);
+        }
+      } else {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+                tools: [{ googleSearch: {} }],
+            }
+        });
+        fullText = response.text;
       }
+
 
       if (!fullText) {
           throw new Error("The AI returned an empty response.");

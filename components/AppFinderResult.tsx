@@ -20,7 +20,12 @@ const AppCard: React.FC<{ app: MobileApp }> = ({ app }) => {
     const showCategory = app.category && app.category.toLowerCase() !== app.name.toLowerCase();
 
     return (
-        <div className="bg-white/40 backdrop-blur-lg p-4 rounded-xl shadow-md border border-white/50 space-y-3 h-full flex flex-col">
+        <div className="bg-white/40 backdrop-blur-lg p-4 rounded-xl shadow-md border border-white/50 space-y-3 h-full flex flex-col relative">
+             {app.location && (
+                <span className="absolute top-2 right-2 text-xs font-bold px-2 py-0.5 rounded-full bg-teal-100 text-teal-800 border border-teal-200">
+                    📍 {app.location}
+                </span>
+            )}
             <div className="flex items-start justify-between">
                 <div className="flex-1 min-w-0">
                     {showCategory ? (
@@ -40,7 +45,7 @@ const AppCard: React.FC<{ app: MobileApp }> = ({ app }) => {
                         </div>
                     )}
                 </div>
-                <div className="flex-shrink-0 ml-2">
+                <div className="flex-shrink-0 ml-2 mt-1">
                     <PlatformBadge platform={app.platform} />
                 </div>
             </div>

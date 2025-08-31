@@ -3,7 +3,7 @@ import { GoogleGenAI } from "@google/genai";
 import { AppFinderRequestData, AppRecommendations } from '../types';
 import { extractJson, cleanCitations } from './jsonUtils';
 
-export const generateAppRecommendations = async (data: AppFinderRequestData, onChunk: (chunk: string) => void): Promise<AppRecommendations> => {
+export const generateAppRecommendations = async (data: AppFinderRequestData, onChunk?: (chunk: string) => void): Promise<AppRecommendations> => {
   if (!process.env.API_KEY) {
     throw new Error("API key is missing. Please set it in your environment variables.");
   }
@@ -17,7 +17,10 @@ export const generateAppRecommendations = async (data: AppFinderRequestData, onC
   let multiStopInstructions = '';
   if (isMultiStop) {
     multiStopInstructions = `
-    This is a multi-stop trip covering: ${destinationsString}. Your app recommendations MUST be relevant for the entire region covered by the trip, including apps useful for travel between these locations.
+    This is a multi-stop trip covering: ${destinationsString}.
+    **CRITICAL MULTI-STOP INSTRUCTIONS:**
+    1.  Your recommendations MUST be relevant for the entire region, but you MUST prioritize finding popular **local apps for EACH destination**. For example, if the trip includes "Goa", you MUST search for apps popular specifically in Goa.
+    2.  **MANDATORY 'location' field:** For each app you recommend that is specific to one of the locations, you MUST populate the 'location' field in the JSON with that city's name (e.g., "Goa"). For generic, widely-used apps like Google Maps or Booking.com, this field should be an empty string "".
     `;
   }
 
@@ -37,14 +40,14 @@ export const generateAppRecommendations = async (data: AppFinderRequestData, onC
     JSON Structure:
     {
       "destination": "${destination}",
-      "transportAndTravel": [{ "name": "string", "category": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "icon": "emoji" }],
-      "stayAndLiving": [{ "name": "string", "category": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "icon": "emoji" }],
-      "foodAndDining": [{ "name": "string", "category": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "icon": "emoji" }],
-      "entertainmentAndLeisure": [{ "name": "string", "category": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "icon": "emoji" }],
-      "shoppingAndEssentials": [{ "name": "string", "category": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "icon": "emoji" }],
-      "explorationAndTours": [{ "name": "string", "category": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "icon": "emoji" }],
-      "utilitiesAndSafety": [{ "name": "string", "category": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "icon": "emoji" }],
-      "festivalsAndSeasonal": [{ "name": "string", "category": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "icon": "emoji" }]
+      "transportAndTravel": [{ "name": "string", "category": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "icon": "emoji", "location"?: "string" }],
+      "stayAndLiving": [{ "name": "string", "category": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "icon": "emoji", "location"?: "string" }],
+      "foodAndDining": [{ "name": "string", "category": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "icon": "emoji", "location"?: "string" }],
+      "entertainmentAndLeisure": [{ "name": "string", "category": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "icon": "emoji", "location"?: "string" }],
+      "shoppingAndEssentials": [{ "name": "string", "category": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "icon": "emoji", "location"?: "string" }],
+      "explorationAndTours": [{ "name": "string", "category": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "icon": "emoji", "location"?: "string" }],
+      "utilitiesAndSafety": [{ "name": "string", "category": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "icon": "emoji", "location"?: "string" }],
+      "festivalsAndSeasonal": [{ "name": "string", "category": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "icon": "emoji", "location"?: "string" }]
     }
 
     **CRITICAL RULES & EXAMPLE:**
@@ -59,26 +62,38 @@ export const generateAppRecommendations = async (data: AppFinderRequestData, onC
             ii. **ALTERNATIVE**: If you absolutely must use a double quote, you MUST escape it with a backslash (e.g., "The app is described as \\"essential\\"._").
         c. **FAILURE TO FOLLOW THIS RULE WILL RENDER THE ENTIRE OUTPUT USELESS.** You must double-check every string value for unescaped double quotes before finishing your response.
     6.  **Example of a good entry:**
-        \`{ "name": "AllTrails", "category": "hikes", "description": "A popular app for discovering and navigating trekking trails...", "platform": "Both", "icon": "🌲" }\`
-        \`{ "name": "Google Maps", "category": "", "description": "The world's most popular navigation app...", "platform": "Both", "icon": "🗺️" }\`
+        \`{ "name": "AllTrails", "category": "hikes", "description": "A popular app for discovering and navigating trekking trails...", "platform": "Both", "icon": "🌲", "location": "" }\`
+        \`{ "name": "Goa Miles", "category": "taxi", "description": "A taxi booking app specific to Goa...", "platform": "Both", "icon": "🚕", "location": "Goa" }\`
     7. **ABSOLUTE FINAL INSTRUCTION**: Your entire response MUST be the raw JSON object. It MUST start with the character '{' and end with the character '}'. You MUST NOT wrap it in markdown (like \`\`\`json), and you MUST NOT add any introductory text. The response must be immediately parsable as JSON.
   `;
   
   let fullText = '';
   try {
-      const stream = await ai.models.generateContentStream({
-          model: "gemini-2.5-flash",
-          contents: prompt,
-          config: {
-              tools: [{ googleSearch: {} }],
-          }
-      });
+      if (onChunk) {
+        const stream = await ai.models.generateContentStream({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+                tools: [{ googleSearch: {} }],
+            }
+        });
 
-      for await (const chunk of stream) {
-          const chunkText = chunk.text;
-          fullText += chunkText;
-          onChunk(chunkText);
+        for await (const chunk of stream) {
+            const chunkText = chunk.text;
+            fullText += chunkText;
+            onChunk(chunkText);
+        }
+      } else {
+         const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+                tools: [{ googleSearch: {} }],
+            }
+        });
+        fullText = response.text;
       }
+
 
       if (!fullText) {
           throw new Error("The AI returned an empty response.");

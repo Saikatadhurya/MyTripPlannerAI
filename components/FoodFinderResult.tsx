@@ -1,10 +1,10 @@
 import React from 'react';
-import { FoodRecommendations, FoodItem } from '../types';
+import { FoodRecommendations, FoodItem, FoodItemGroup } from '../types';
 
 const CategoryCard: React.FC<{
     title: string;
     icon: React.ReactNode;
-    items: FoodItem[];
+    items: FoodItemGroup[];
     accentColor: string;
 }> = ({ title, icon, items, accentColor }) => {
     if (!items || items.length === 0) return null;
@@ -26,6 +26,7 @@ const CategoryCard: React.FC<{
     };
     
     const [borderColor, iconBgColor] = accentClasses[accentColor]?.split(' ') || ['border-gray-500', 'bg-gray-100', 'text-gray-600'];
+    const isMultiLocation = items.length > 1;
 
     return (
         <div className={`bg-white/20 backdrop-blur-xl border border-white/30 rounded-2xl p-6 transition-transform hover:scale-105 shadow-lg border-l-4 ${borderColor}`}>
@@ -35,14 +36,27 @@ const CategoryCard: React.FC<{
                 </div>
                 <h3 className="text-xl font-bold text-slate-800">{title}</h3>
             </div>
-            <ul className="space-y-4">
-                {items.map((item, index) => (
-                    <li key={index}>
-                        <strong className="font-semibold text-slate-900 block">{item.name}</strong>
-                        <p className="text-sm text-slate-600">{item.description}</p>
-                    </li>
+            <div className="space-y-4">
+                 {items.map((group, groupIndex) => (
+                    group.items.length > 0 && (
+                        <div key={groupIndex}>
+                            {isMultiLocation && (
+                                <h4 className="font-bold text-slate-700 mt-2 mb-2 border-b border-slate-300 pb-1 text-base">
+                                    📍 {group.location}
+                                </h4>
+                            )}
+                            <ul className="space-y-4">
+                                {group.items.map((item, itemIndex) => (
+                                    <li key={itemIndex}>
+                                        <strong className="font-semibold text-slate-900 block">{item.name}</strong>
+                                        <p className="text-sm text-slate-600">{item.description}</p>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )
                 ))}
-            </ul>
+            </div>
         </div>
     );
 };
@@ -99,8 +113,8 @@ const FoodFinderResult: React.FC<FoodFinderResultProps> = ({ recommendations, on
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {displayOrder.map(key => {
-                    const details = categoryDetails[key];
-                    const items = recommendations[key];
+                    const details = categoryDetails[key as keyof typeof categoryDetails];
+                    const items = recommendations[key as keyof FoodRecommendations] as FoodItemGroup[];
                     return (
                         <CategoryCard
                             key={key}

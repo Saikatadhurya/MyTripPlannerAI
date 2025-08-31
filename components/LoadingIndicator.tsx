@@ -65,15 +65,7 @@ const StageItem: React.FC<{ text: string, status: 'completed' | 'in_progress' | 
 };
 
 const StreamingLoadingIndicator: React.FC<StreamingLoadingIndicatorProps> = ({ streamedText, stages, onCancel, title, accentColor, funFacts }) => {
-  const connectingStage: Stage = useMemo(() => ({ key: 'connecting', text: 'Connecting to AI...' }), []);
-  const finalizingStage: Stage = useMemo(() => ({ key: 'finalizing', text: 'Finalizing your results...' }), []);
-  
-  const allStages = useMemo(() => [connectingStage, ...stages, finalizingStage], [stages, connectingStage, finalizingStage]);
-
-  const [currentStageIndex, setCurrentStageIndex] = useState(0);
   const [currentFactIndex, setCurrentFactIndex] = useState(0);
-
-  const hasStreamStarted = useMemo(() => streamedText.length > 0, [streamedText]);
 
   useEffect(() => {
     if (!funFacts || funFacts.length === 0) return;
@@ -83,57 +75,8 @@ const StreamingLoadingIndicator: React.FC<StreamingLoadingIndicatorProps> = ({ s
     return () => clearInterval(interval);
   }, [funFacts]);
 
-  useEffect(() => {
-    let newStageIndex = 0; // Default to 'Connecting'
-    if (hasStreamStarted) {
-        newStageIndex = 1; // At least 'Connecting' is done
-        const cleanedStream = streamedText.replace(/\s/g, '');
-
-        // Find the index of the LAST stage key present in the stream to correctly handle skipped optional stages
-        let lastFoundIndex = -1;
-        for (let i = 0; i < stages.length; i++) {
-            const stage = stages[i];
-            if (cleanedStream.includes(stage.key.replace(/\s/g, ''))) {
-                lastFoundIndex = i + 1; // +1 to account for the 'Connecting' stage
-            }
-        }
-        
-        if (lastFoundIndex !== -1) {
-            newStageIndex = lastFoundIndex;
-        }
-    }
-    
-    // Check if the stream is likely finished to move to the finalizing stage
-    const isStreamLikelyFinished = streamedText.trim().endsWith('}');
-    if (isStreamLikelyFinished) {
-        // Set to the 'finalizing' stage index
-        newStageIndex = allStages.length - 1;
-    }
-
-    setCurrentStageIndex(newStageIndex);
-
-  }, [streamedText, hasStreamStarted, allStages, stages]);
 
   const colors = colorClasses[accentColor] || colorClasses.violet;
-  
-  const progress = useMemo(() => {
-    if (currentStageIndex === 0 && !hasStreamStarted) {
-        return 0; // Represents the indeterminate state
-    }
-    const totalSteps = allStages.length;
-    if (totalSteps <= 1) return 100;
-
-    // If finalizing, show 99%
-    if (currentStageIndex >= totalSteps - 1) {
-        return 99;
-    }
-
-    // Calculate progress based on which stage is active.
-    // -1 because we don't count "finalizing" in the main progress percentage.
-    const progressPercentage = (currentStageIndex / (totalSteps - 1)) * 100;
-    
-    return Math.min(99, Math.floor(progressPercentage));
-  }, [currentStageIndex, allStages.length, hasStreamStarted]);
 
   return (
     <div className="text-center py-12 px-4 fade-in">
@@ -151,32 +94,15 @@ const StreamingLoadingIndicator: React.FC<StreamingLoadingIndicatorProps> = ({ s
           </div>
         )}
         
-        <ul className="space-y-4 text-left my-8">
-            {allStages.map((stage, index) => (
-                <StageItem 
-                    key={stage.key}
-                    text={stage.text}
-                    status={
-                        index < currentStageIndex ? 'completed' :
-                        index === currentStageIndex ? 'in_progress' : 'pending'
-                    }
-                    accentColor={accentColor}
-                />
-            ))}
-        </ul>
+        <div className="flex justify-center items-center my-8">
+            <div className={`w-16 h-16 rounded-full border-4 border-slate-200 ${colors.border} animate-spin`}></div>
+        </div>
 
         <div className="w-full bg-slate-200/70 rounded-full h-2.5 overflow-hidden">
-            { currentStageIndex === 0 && !hasStreamStarted ? (
-              <div className={`${colors.bg} h-2.5 rounded-full progress-bar-indeterminate`}></div>
-            ) : (
-              <div
-                  className={`${colors.bg} h-2.5 rounded-full transition-all duration-500 ease-out`}
-                  style={{ width: `${progress}%` }}
-              ></div>
-            )}
+            <div className={`${colors.bg} h-2.5 rounded-full progress-bar-indeterminate`}></div>
         </div>
         <p className={`text-sm font-semibold mt-2 ${colors.text}`}>
-          { currentStageIndex === 0 && !hasStreamStarted ? 'Connecting...' : `${progress}% Complete` }
+          Hold tight, magic in progress...
         </p>
 
         <button

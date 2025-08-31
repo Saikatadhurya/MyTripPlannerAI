@@ -3,7 +3,7 @@ import { GoogleGenAI } from "@google/genai";
 import { FoodFinderRequestData, FoodRecommendations } from '../types';
 import { extractJson, cleanCitations } from './jsonUtils';
 
-export const generateFoodRecommendations = async (data: FoodFinderRequestData, onChunk: (chunk: string) => void): Promise<FoodRecommendations> => {
+export const generateFoodRecommendations = async (data: FoodFinderRequestData, onChunk?: (chunk: string) => void): Promise<FoodRecommendations> => {
   if (!process.env.API_KEY) {
     throw new Error("API key is missing. Please set it in your environment variables.");
   }
@@ -17,7 +17,37 @@ export const generateFoodRecommendations = async (data: FoodFinderRequestData, o
   let multiStopInstructions = '';
   if (isMultiStop) {
     multiStopInstructions = `
-    This is a multi-stop trip covering: ${destinationsString}. The food recommendations should be a summarized guide covering notable dishes and specialties from across the entire trip route. The "destination" field in the JSON response should be a descriptive name for the trip, like "${destination} region tour".
+    This is a multi-stop trip covering: ${destinationsString}.
+    CRITICAL STRUCTURE REQUIREMENT: For each food category (breakfast, lunch, etc.), you MUST group the food items by location.
+    The JSON for each category should be an array of objects, where each object has a "location" key (e.g., "Goa") and an "items" key which is an array of the food recommendations for that location.
+    
+    Example for 'breakfast' category:
+    "breakfast": [
+      {
+        "location": "Bangalore",
+        "items": [ { "name": "Idli-Vada", "description": "Classic South Indian breakfast..." } ]
+      },
+      {
+        "location": "Goa",
+        "items": [ { "name": "Patal Bhaji", "description": "A spicy Goan curry..." } ]
+      }
+    ]
+
+    The "destination" field in the root of the JSON response should be a descriptive name for the trip, like "${destination} region tour".
+    `;
+  } else {
+    multiStopInstructions = `
+    This is a single-destination trip to ${destination}.
+    CRITICAL STRUCTURE REQUIREMENT: For each food category (breakfast, lunch, etc.), your response MUST be an array containing a SINGLE object.
+    This object must have a "location" key set to "${destination}" and an "items" key which is an array of the food recommendations.
+    
+    Example for 'breakfast' category:
+    "breakfast": [
+      {
+        "location": "${destination}",
+        "items": [ { "name": "...", "description": "..." }, { "name": "...", "description": "..." } ]
+      }
+    ]
     `;
   }
 
@@ -27,7 +57,6 @@ export const generateFoodRecommendations = async (data: FoodFinderRequestData, o
     ${multiStopInstructions}
 
     Trip Details:
-    - Destination: ${destinationsString}
     - Dietary Preference: ${foodPreference}
     - Date: ${startDate}
     - Include Alcoholic Drinks: ${includeAlcoholicDrinks ? 'Yes' : 'No'}
@@ -47,24 +76,24 @@ export const generateFoodRecommendations = async (data: FoodFinderRequestData, o
         - **BAD CONTEXT:** "Ghugni: A chickpea curry."
 
     **MANDATORY JSON OUTPUT:**
-    The response MUST be ONLY a single, valid JSON object that strictly follows this structure. All text content must be in ${language}. For each of the 13 categories, you should strive to provide 2-4 food items, using the blended methodology above. If a category is genuinely empty after an exhaustive search, return an empty array for it.
+    The response MUST be ONLY a single, valid JSON object that strictly follows this structure. All text content must be in ${language}. For each of the 13 categories, you should strive to provide 2-4 food items per location. If a category is genuinely empty after an exhaustive search, return an empty array for it.
 
     JSON Structure:
     {
-      "destination": "${destination}",
-      "breakfast": [{ "name": "string", "description": "string" }],
-      "lunch": [{ "name": "string", "description": "string" }],
-      "snacksAndStreetFood": [{ "name": "string", "description": "string" }],
-      "dinner": [{ "name": "string", "description": "string" }],
-      "dessertAndSweets": [{ "name": "string", "description": "string" }],
-      "drinksAndBeverages": [{ "name": "string", "description": "string" }],
-      "iconicDishes": [{ "name": "string", "description": "string" }],
-      "hiddenRecipes": [{ "name": "string", "description": "string" }],
-      "trendingOrViralFoods": [{ "name": "string", "description": "string" }],
-      "chefsSpecials": [{ "name": "string", "description": "string" }],
-      "festivalFoods": [{ "name": "string", "description": "string" }],
-      "seasonalSpecials": [{ "name": "string", "description": "string" }],
-      "streetFestivalsAndFoodMelas": [{ "name": "string", "description": "string" }]
+      "destination": "string",
+      "breakfast": [{ "location": "string", "items": [{ "name": "string", "description": "string" }] }],
+      "lunch": [{ "location": "string", "items": [{ "name": "string", "description": "string" }] }],
+      "snacksAndStreetFood": [{ "location": "string", "items": [{ "name": "string", "description": "string" }] }],
+      "dinner": [{ "location": "string", "items": [{ "name": "string", "description": "string" }] }],
+      "dessertAndSweets": [{ "location": "string", "items": [{ "name": "string", "description": "string" }] }],
+      "drinksAndBeverages": [{ "location": "string", "items": [{ "name": "string", "description": "string" }] }],
+      "iconicDishes": [{ "location": "string", "items": [{ "name": "string", "description": "string" }] }],
+      "hiddenRecipes": [{ "location": "string", "items": [{ "name": "string", "description": "string" }] }],
+      "trendingOrViralFoods": [{ "location": "string", "items": [{ "name": "string", "description": "string" }] }],
+      "chefsSpecials": [{ "location": "string", "items": [{ "name": "string", "description": "string" }] }],
+      "festivalFoods": [{ "location": "string", "items": [{ "name": "string", "description": "string" }] }],
+      "seasonalSpecials": [{ "location": "string", "items": [{ "name": "string", "description": "string" }] }],
+      "streetFestivalsAndFoodMelas": [{ "location": "string", "items": [{ "name": "string", "description": "string" }] }]
     }
 
     **CRITICAL JSON RULES:**
@@ -83,18 +112,29 @@ export const generateFoodRecommendations = async (data: FoodFinderRequestData, o
   
   let fullText = '';
   try {
-      const stream = await ai.models.generateContentStream({
-          model: "gemini-2.5-flash",
-          contents: prompt,
-          config: {
-              tools: [{ googleSearch: {} }],
-          }
-      });
+      if (onChunk) {
+        const stream = await ai.models.generateContentStream({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+                tools: [{ googleSearch: {} }],
+            }
+        });
 
-      for await (const chunk of stream) {
-          const chunkText = chunk.text;
-          fullText += chunkText;
-          onChunk(chunkText);
+        for await (const chunk of stream) {
+            const chunkText = chunk.text;
+            fullText += chunkText;
+            onChunk(chunkText);
+        }
+      } else {
+         const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+                tools: [{ googleSearch: {} }],
+            }
+        });
+        fullText = response.text;
       }
       
       if (!fullText) {

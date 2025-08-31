@@ -3,7 +3,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { PackingList, PackingListRequestData } from '../types';
 import { extractJson, cleanCitations } from './jsonUtils';
 
-export const generatePackingList = async (data: PackingListRequestData, onChunk: (chunk: string) => void): Promise<PackingList> => {
+export const generatePackingList = async (data: PackingListRequestData, onChunk?: (chunk: string) => void): Promise<PackingList> => {
   if (!process.env.API_KEY) {
     throw new Error("API key is missing. Please set it in your environment variables.");
   }
@@ -63,16 +63,25 @@ export const generatePackingList = async (data: PackingListRequestData, onChunk:
 
   let fullText = '';
   try {
-      const stream = await ai.models.generateContentStream({
-        model: "gemini-2.5-flash",
-        contents: prompt,
-      });
+      if (onChunk) {
+        const stream = await ai.models.generateContentStream({
+          model: "gemini-2.5-flash",
+          contents: prompt,
+        });
 
-      for await (const chunk of stream) {
-          const chunkText = chunk.text;
-          fullText += chunkText;
-          onChunk(chunkText);
+        for await (const chunk of stream) {
+            const chunkText = chunk.text;
+            fullText += chunkText;
+            onChunk(chunkText);
+        }
+      } else {
+        const response = await ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: prompt,
+        });
+        fullText = response.text;
       }
+
 
       if (!fullText) {
         throw new Error("The AI returned an empty response.");

@@ -19,33 +19,6 @@ const tabs: { id: Tab; name: string; icon: React.ReactNode }[] = [
     { id: 'music', name: 'Music', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3V4a1 1 0 00-1-1z" /></svg> },
 ];
 
-const loadingStages = {
-    itinerary: [
-        { key: '"stay":', text: 'Analyzing budget and costs' },
-        { key: '"historicBackground":', text: 'Researching destinations' },
-        { key: '"day":', text: 'Building the day-by-day plan' },
-    ],
-    packing: [
-        { key: '"approximateTemperature":"', text: 'Checking the weather forecast' },
-        { key: '"clothingAndFootwear":[', text: 'Selecting outfits and shoes' },
-        { key: '"bagSuggestion":"', text: 'Recommending the perfect bag' },
-    ],
-    food: [
-        { key: '"breakfast":[', text: 'Discovering morning bites' },
-        { key: '"snacksAndStreetFood":[', text: 'Finding popular street food' },
-        { key: '"iconicDishes":[', text: 'Identifying iconic dishes' },
-    ],
-    apps: [
-        { key: '"transportAndTravel":[', text: 'Finding transport apps' },
-        { key: '"foodAndDining":[', text: 'Discovering food apps' },
-        { key: '"explorationAndTours":[', text: 'Locating exploration apps' },
-    ],
-    music: [
-        { key: '"musicCategories":[', text: 'Curating music categories' },
-        { key: '"genre":"TopTrendingHits"', text: 'Finding top trending hits' },
-    ],
-};
-
 const loadingFunFacts = {
     itinerary: [
         { icon: '🗺️', text: 'Plotting scenic routes...' },
@@ -81,15 +54,13 @@ interface UnifiedResultPreviewProps {
     onPlanNew: () => void;
     onRegenerate: () => void;
     onRegenerateStep: (step: Tab) => void;
-    unifiedStreamedText: string;
     onCancel: () => void;
     onCancelStep: (step: Tab) => void;
-    currentlyGeneratingStep: keyof UnifiedPlanLoadingStatus | null;
     onTabChangeScrollToTop: () => void;
 }
 
 
-const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadingStatus, stepErrors, onPlanNew, onRegenerate, onRegenerateStep, unifiedStreamedText, onCancel, onCancelStep, currentlyGeneratingStep, onTabChangeScrollToTop }) => {
+const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadingStatus, stepErrors, onPlanNew, onRegenerate, onRegenerateStep, onCancel, onCancelStep, onTabChangeScrollToTop }) => {
     const [activeTab, setActiveTab] = useState<Tab>('itinerary');
     const [isExportingPdf, setIsExportingPdf] = useState(false);
     
@@ -214,8 +185,8 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
             const activeTabDetails = tabs.find(t => t.id === activeTab);
             return (
                 <StreamingLoadingIndicator
-                    streamedText={unifiedStreamedText}
-                    stages={loadingStages[activeTab]}
+                    streamedText={''}
+                    stages={[]}
                     onCancel={() => onCancelStep(activeTab)}
                     title={`Crafting Your ${activeTabDetails?.name}...`}
                     accentColor="violet"
@@ -279,8 +250,8 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
     if (isInitialLoading) {
         return (
             <StreamingLoadingIndicator
-                streamedText={unifiedStreamedText}
-                stages={loadingStages.itinerary}
+                streamedText=""
+                stages={[]}
                 onCancel={onCancel}
                 title="Crafting Your Unified Plan..."
                 accentColor="violet"

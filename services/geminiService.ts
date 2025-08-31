@@ -154,7 +154,7 @@ export const generateItinerary = async (
   language: string,
   isRoundTrip: boolean | undefined,
   currency: string,
-  onChunk: (chunk: string) => void
+  onChunk?: (chunk: string) => void
 ): Promise<Itinerary> => {
 
   if (!process.env.API_KEY) {
@@ -323,18 +323,30 @@ export const generateItinerary = async (
   
     let fullText = '';
     try {
-        const stream = await ai.models.generateContentStream({
-            model: "gemini-2.5-flash",
-            contents: prompt,
-            config: {
-                tools: [{ googleSearch: {} }],
-            }
-        });
+        // Use streaming only if onChunk is provided, otherwise use a direct request for speed.
+        if (onChunk) {
+            const stream = await ai.models.generateContentStream({
+                model: "gemini-2.5-flash",
+                contents: prompt,
+                config: {
+                    tools: [{ googleSearch: {} }],
+                }
+            });
 
-        for await (const chunk of stream) {
-            const chunkText = chunk.text;
-            fullText += chunkText;
-            onChunk(chunkText);
+            for await (const chunk of stream) {
+                const chunkText = chunk.text;
+                fullText += chunkText;
+                onChunk(chunkText);
+            }
+        } else {
+            const response = await ai.models.generateContent({
+                model: "gemini-2.5-flash",
+                contents: prompt,
+                config: {
+                    tools: [{ googleSearch: {} }],
+                }
+            });
+            fullText = response.text;
         }
 
         if (!fullText) {
