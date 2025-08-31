@@ -262,24 +262,6 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
             
             <nav className={`sticky top-0 z-30 p-2 mb-2 no-print transition-all duration-300 ease-in-out ${isScrolled ? 'bg-white/80 backdrop-blur-lg rounded-xl shadow-md' : 'bg-transparent'}`}>
                 <div className={`flex items-center transition-all duration-300 ${isScrolled ? 'justify-start' : 'justify-center'}`}>
-                    <div className={`flex-shrink-0 flex items-center space-x-2 text-slate-800 transition-all duration-300 ease-in-out overflow-hidden ${isScrolled ? 'w-40 opacity-100' : 'w-0 opacity-0'}`}>
-                        <svg width="24" height="24" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round">
-                            <circle cx="50" cy="50" r="45" />
-                            <line x1="50" y1="5" x2="50" y2="50" />
-                            <line x1="50" y1="50" x2="95" y2="50" />
-                            <path d="M25 15 v 25" />
-                            <path d="M35 15 v 25" />
-                            <path d="M30 15 v 28" />
-                            <path d="M25 15 C 25 10, 35 10, 35 15" />
-                            <circle cx="75" cy="25" r="8" />
-                            <line x1="75" y1="33" x2="75" y2="45" />
-                            <path d="M20 60 l25 25 l-5 -10 l15 -5 l-20 -15Z" fill="currentColor" stroke="none" />
-                        </svg>
-                        <span className="text-xl font-bold tracking-widest uppercase whitespace-nowrap">
-                            PLANORA
-                        </span>
-                    </div>
-
                     <div className="flex items-center justify-center sm:justify-start space-x-1 sm:space-x-2 hide-scrollbar overflow-x-auto">
                         {tabs.map(tab => {
                             const status = loadingStatus[tab.id];
