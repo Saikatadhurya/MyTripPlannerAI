@@ -1,4 +1,5 @@
 
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { QuestionnaireData, PackingListRequestData, PackingList, FoodFinderRequestData, FoodRecommendations, AppFinderRequestData, AppRecommendations, MusicFinderRequestData, MusicRecommendations, QuestionnaireData as InitialQuestionnaireData, UnifiedPlan, UnifiedPlanLoadingStatus, Itinerary } from './types';
 import { generateItinerary } from './services/geminiService';
@@ -25,6 +26,7 @@ import UnifiedResultPreview from './components/UnifiedResultPreview';
 import UnifiedPlannerForm from './components/UnifiedPlannerForm';
 import ItineraryPreview from './components/ItineraryPreview';
 import LoadingIndicator from './components/LoadingIndicator';
+import Header from './components/Header';
 
 
 type View = 'landing' | 'questionnaire' | 'itineraryResult' | 'packingAssistantForm' | 'packingAssistantResult' | 'foodFinderForm' | 'foodFinderResult' | 'appFinderForm' | 'appFinderResult' | 'musicFinderForm' | 'musicFinderResult' | 'contact' | 'unifiedPlannerForm' | 'unifiedResult';
@@ -224,6 +226,7 @@ const App: React.FC = () => {
             (chunk) => setStreamedText(prev => prev + chunk)
         );
         setItinerary(result);
+        await new Promise(resolve => setTimeout(resolve, 1000));
     } catch (e) {
         setError(e instanceof Error ? e.message : 'An unknown error occurred');
         handleViewChange('questionnaire');
@@ -453,6 +456,7 @@ const App: React.FC = () => {
     try {
         const result = await generatePackingList(data, (chunk) => setStreamedText(prev => prev + chunk));
         setPackingList(result);
+        await new Promise(resolve => setTimeout(resolve, 1000));
     } catch (e) {
         setError(e instanceof Error ? e.message : 'An unknown error occurred');
         handleViewChange('packingAssistantForm');
@@ -470,6 +474,7 @@ const App: React.FC = () => {
     try {
         const result = await generateFoodRecommendations(data, (chunk) => setStreamedText(prev => prev + chunk));
         setFoodRecommendations(result);
+        await new Promise(resolve => setTimeout(resolve, 1000));
     } catch (e) {
         setError(e instanceof Error ? e.message : 'An unknown error occurred');
         handleViewChange('foodFinderForm');
@@ -487,6 +492,7 @@ const App: React.FC = () => {
     try {
         const result = await generateAppRecommendations(data, (chunk) => setStreamedText(prev => prev + chunk));
         setAppRecommendations(result);
+        await new Promise(resolve => setTimeout(resolve, 1000));
     } catch (e) {
         setError(e instanceof Error ? e.message : 'An unknown error occurred');
         handleViewChange('appFinderForm');
@@ -504,6 +510,7 @@ const App: React.FC = () => {
     try {
         const result = await generateMusicRecommendations(data, (chunk) => setStreamedText(prev => prev + chunk));
         setMusicRecommendations(result);
+        await new Promise(resolve => setTimeout(resolve, 1000));
     } catch (e) {
         setError(e instanceof Error ? e.message : 'An unknown error occurred');
         handleViewChange('musicFinderForm');
@@ -607,8 +614,9 @@ const App: React.FC = () => {
 
   return (
     <>
-      <div ref={mainContentRef} className="min-h-screen">
-        <main className={`container mx-auto px-4 sm:px-6 lg:px-8 pb-8 relative pt-8`}>
+      <Header />
+      <div ref={mainContentRef} className="min-h-screen pt-24">
+        <main className={`container mx-auto px-4 sm:px-6 lg:px-8 pb-8 relative`}>
             {renderContent()}
         </main>
       </div>

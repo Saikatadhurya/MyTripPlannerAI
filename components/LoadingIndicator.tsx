@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 
 interface Stage {
@@ -125,7 +126,7 @@ const StreamingLoadingIndicator: React.FC<StreamingLoadingIndicatorProps> = ({ s
             <div className={`${colors.bg} h-3 rounded-full transition-all duration-500 ease-out`} style={{width: `${progress}%`}}></div>
         </div>
         <p className={`text-md font-semibold mt-4 ${colors.text}`}>
-          {Math.min(99, progress).toFixed(0)}% Complete
+          {progress.toFixed(0)}% Complete
         </p>
 
         <button
