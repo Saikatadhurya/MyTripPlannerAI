@@ -29,6 +29,77 @@ import LoadingIndicator from './components/LoadingIndicator';
 
 type View = 'landing' | 'questionnaire' | 'itineraryResult' | 'packingAssistantForm' | 'packingAssistantResult' | 'foodFinderForm' | 'foodFinderResult' | 'appFinderForm' | 'appFinderResult' | 'musicFinderForm' | 'musicFinderResult' | 'contact' | 'unifiedPlannerForm' | 'unifiedResult';
 
+// --- Loading State Constants ---
+const itineraryStages = [
+    { key: '"budgetSummary":', text: 'Calculating Budget Overview' },
+    { key: '"coveredDestinations":', text: 'Researching About the Destinations' },
+    { key: '"plan":', text: 'Constructing the Daily Itinerary' },
+    { key: '"referenceBlogs":', text: 'Finalizing and Polishing' },
+];
+const itineraryFunFacts = [
+    { icon: '🗺️', text: 'Plotting scenic routes...' },
+    { icon: '💎', text: 'Finding hidden gems...' },
+    { icon: '🗓️', text: 'Scheduling daily activities...' },
+    { icon: '🏨', text: 'Scouting the best stays...' },
+    { icon: '🍜', text: 'Locating top-rated eats...' },
+];
+const packingStages = [
+    { key: '"approximateTemperature":"', text: 'Checking the weather forecast' },
+    { key: '"clothingAndFootwear":[', text: 'Selecting outfits and shoes' },
+    { key: '"adventureClothing":[', text: 'Packing for adventure' },
+    { key: '"electronicsAndGear":[', text: 'Gathering electronics and gear' },
+    { key: '"documentsAndMoney":[', text: 'Securing documents and money' },
+    { key: '"bagSuggestion":"', text: 'Recommending the perfect bag' },
+];
+const packingFunFacts = [
+    { icon: '🌤️', text: 'Checking the weather forecast...' },
+    { icon: '👕', text: 'Choosing the perfect outfits...' },
+    { icon: '🔌', text: 'Remembering all the chargers...' },
+    { icon: '🪥', text: 'Making sure you don\'t forget your toothbrush...' },
+    { icon: '✈️', text: 'Optimizing for carry-on...' },
+];
+const foodStages = [
+    { key: '"breakfast":[', text: 'Discovering morning bites' },
+    { key: '"lunch":[', text: 'Looking for midday meals' },
+    { key: '"snacksAndStreetFood":[', text: 'Finding popular street food' },
+    { key: '"iconicDishes":[', text: 'Identifying iconic dishes' },
+    { key: '"hiddenRecipes":[', text: 'Uncovering hidden gems' },
+    { key: '"trendingOrViralFoods":[', text: 'Checking out viral food trends' },
+];
+const foodFunFacts = [
+    { icon: '🧑‍🍳', text: 'Consulting with local chefs...' },
+    { icon: '🌶️', text: 'Searching for the spiciest dishes...' },
+    { icon: '🗺️', text: 'Mapping out a food tour...' },
+    { icon: '🤫', text: 'Discovering secret family recipes...' },
+    { icon: '✨', text: 'Finding the most authentic flavors...' },
+];
+const appStages = [
+    { key: '"transportAndTravel":[', text: 'Finding transport and travel apps' },
+    { key: '"stayAndLiving":[', text: 'Searching for stay and living apps' },
+    { key: '"foodAndDining":[', text: 'Discovering food and dining apps' },
+    { key: '"explorationAndTours":[', text: 'Locating exploration apps' },
+    { key: '"utilitiesAndSafety":[', text: 'Checking for utility and safety apps' },
+];
+const appFunFacts = [
+    { icon: '📲', text: 'Scanning the local app stores...' },
+    { icon: '🧭', text: 'Finding the best navigation tools...' },
+    { icon: '🚕', text: 'Locating top ride-sharing apps...' },
+    { icon: '💬', text: 'Searching for translation apps...' },
+    { icon: '💳', text: 'Checking for local payment apps...' },
+];
+const musicStages = [
+    { key: '"musicCategories":[', text: 'Curating music categories' },
+    { key: '"genre":"TopTrendingHits"', text: 'Finding top trending hits' },
+];
+const musicFunFacts = [
+    { icon: '🎧', text: 'Tuning into local radio...' },
+    { icon: '🎶', text: 'Discovering the local anthems...' },
+    { icon: '🎸', text: 'Finding iconic folk songs...' },
+    { icon: '🎤', text: 'Checking the top of the charts...' },
+    { icon: '💿', text: 'Building the perfect travel playlist...' },
+];
+
+
 const App: React.FC = () => {
   const [view, setView] = useState<View>('landing');
   
@@ -377,6 +448,7 @@ const App: React.FC = () => {
     setIsLoading(true);
     setError(null);
     setPackingList(null);
+    setStreamedText('');
     handleViewChange('packingAssistantResult');
     try {
         const result = await generatePackingList(data, (chunk) => setStreamedText(prev => prev + chunk));
@@ -393,6 +465,7 @@ const App: React.FC = () => {
     setIsLoading(true);
     setError(null);
     setFoodRecommendations(null);
+    setStreamedText('');
     handleViewChange('foodFinderResult');
     try {
         const result = await generateFoodRecommendations(data, (chunk) => setStreamedText(prev => prev + chunk));
@@ -409,6 +482,7 @@ const App: React.FC = () => {
     setIsLoading(true);
     setError(null);
     setAppRecommendations(null);
+    setStreamedText('');
     handleViewChange('appFinderResult');
     try {
         const result = await generateAppRecommendations(data, (chunk) => setStreamedText(prev => prev + chunk));
@@ -425,6 +499,7 @@ const App: React.FC = () => {
     setIsLoading(true);
     setError(null);
     setMusicRecommendations(null);
+    setStreamedText('');
     handleViewChange('musicFinderResult');
     try {
         const result = await generateMusicRecommendations(data, (chunk) => setStreamedText(prev => prev + chunk));
@@ -439,37 +514,32 @@ const App: React.FC = () => {
 
   const renderContent = () => {
     if (isLoading) {
+      let loadingProps;
       switch (view) {
         case 'itineraryResult':
-          return <Questionnaire onSubmit={handleGenerateItinerary} isLoading={true} error={null} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} initialData={initialQuestionnaireData} />;
+          loadingProps = { title: "Crafting Your Itinerary...", stages: itineraryStages, funFacts: itineraryFunFacts, accentColor: 'violet' as const };
+          break;
         case 'packingAssistantResult':
-          return <PackingAssistantForm onSubmit={handleGeneratePackingList} isLoading={true} error={null} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} />;
+          loadingProps = { title: "Building Your Packing List...", stages: packingStages, funFacts: packingFunFacts, accentColor: 'violet' as const };
+          break;
         case 'foodFinderResult':
-          return <FoodFinderForm onSubmit={handleGenerateFoodRecommendations} isLoading={true} error={null} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} />;
+          loadingProps = { title: "Cooking Up Recommendations...", stages: foodStages, funFacts: foodFunFacts, accentColor: 'amber' as const };
+          break;
         case 'appFinderResult':
-          return <AppFinderForm onSubmit={handleGenerateAppRecommendations} isLoading={true} error={null} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} />;
+          loadingProps = { title: "Scanning for Local Apps...", stages: appStages, funFacts: appFunFacts, accentColor: 'teal' as const };
+          break;
         case 'musicFinderResult':
-          return <MusicFinderForm onSubmit={handleGenerateMusicRecommendations} isLoading={true} error={null} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} />;
-        default:
-          return null;
+          loadingProps = { title: "Curating Your Playlist...", stages: musicStages, funFacts: musicFunFacts, accentColor: 'fuchsia' as const };
+          break;
+      }
+      
+      if (loadingProps) {
+        return <LoadingIndicator streamedText={streamedText} onCancel={handleCancelGeneration} {...loadingProps} />;
       }
     }
 
     if (view === 'unifiedResult') {
         if (unifiedPlanLoadingStatus.itinerary === 'pending' || unifiedPlanLoadingStatus.itinerary === 'loading') {
-            const funFacts = [
-                { icon: '🗺️', text: 'Plotting scenic routes...' },
-                { icon: '💎', text: 'Finding hidden gems...' },
-                { icon: '🗓️', text: 'Scheduling daily activities...' },
-                { icon: '🏨', text: 'Scouting the best stays...' },
-                { icon: '🍜', text: 'Locating top-rated eats...' },
-            ];
-            const itineraryStages = [
-                { key: '"budgetSummary":', text: 'Calculating Budget Overview' },
-                { key: '"coveredDestinations":', text: 'Researching About the Destinations' },
-                { key: '"plan":', text: 'Constructing the Daily Itinerary' },
-                { key: '"referenceBlogs":', text: 'Finalizing and Polishing' },
-            ];
             return (
                 <LoadingIndicator
                     streamedText={itineraryStreamedText}
@@ -477,7 +547,7 @@ const App: React.FC = () => {
                     onCancel={handleCancelGeneration}
                     title="Crafting Your Adventure..."
                     accentColor="violet"
-                    funFacts={funFacts}
+                    funFacts={itineraryFunFacts}
                 />
             );
         }

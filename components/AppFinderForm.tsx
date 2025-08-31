@@ -1,7 +1,7 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { AppFinderRequestData, LocationSuggestion } from '../types';
 import { getDestinationSuggestions } from '../services/geminiService';
-import StreamingLoadingIndicator from './LoadingIndicator';
 import BackToHomeButton from './BackToHomeButton';
 
 interface AppFinderFormProps {
@@ -12,22 +12,6 @@ interface AppFinderFormProps {
   onCancel: () => void;
   streamedText: string;
 }
-
-const appStages = [
-    { key: '"transportAndTravel":[', text: 'Finding transport and travel apps' },
-    { key: '"stayAndLiving":[', text: 'Searching for stay and living apps' },
-    { key: '"foodAndDining":[', text: 'Discovering food and dining apps' },
-    { key: '"explorationAndTours":[', text: 'Locating exploration apps' },
-    { key: '"utilitiesAndSafety":[', text: 'Checking for utility and safety apps' },
-];
-
-const funFacts = [
-    { icon: '📲', text: 'Scanning the local app stores...' },
-    { icon: '🧭', text: 'Finding the best navigation tools...' },
-    { icon: '🚕', text: 'Locating top ride-sharing apps...' },
-    { icon: '💬', text: 'Searching for translation apps...' },
-    { icon: '💳', text: 'Checking for local payment apps...' },
-];
 
 const languages = [
     'Afrikaans (af)', 'Akan (ak)', 'Albanian (sq)', 'Amharic (am)', 'Arabic (ar)', 'Armenian (hy)', 'Assamese (as)', 'Aymara (ay)', 'Azerbaijani (az)', 
@@ -127,19 +111,6 @@ const AppFinderForm: React.FC<AppFinderFormProps> = ({ onSubmit, isLoading, erro
     lang.toLowerCase().includes(languageQuery.toLowerCase())
   );
   
-  if (isLoading) {
-    return (
-      <StreamingLoadingIndicator
-        streamedText={streamedText}
-        stages={appStages}
-        onCancel={onCancel}
-        title="Scanning for Local Apps..."
-        accentColor="teal"
-        funFacts={funFacts}
-      />
-    );
-  }
-
   return (
     <div className="max-w-xl mx-auto">
       <BackToHomeButton onClick={onBack} />

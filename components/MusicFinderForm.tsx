@@ -1,7 +1,7 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { MusicFinderRequestData, LocationSuggestion } from '../types';
 import { getDestinationSuggestions } from '../services/geminiService';
-import StreamingLoadingIndicator from './LoadingIndicator';
 import BackToHomeButton from './BackToHomeButton';
 
 interface MusicFinderFormProps {
@@ -12,19 +12,6 @@ interface MusicFinderFormProps {
   onCancel: () => void;
   streamedText: string;
 }
-
-const musicStages = [
-    { key: '"musicCategories":[', text: 'Curating music categories' },
-    { key: '"genre":"TopTrendingHits"', text: 'Finding top trending hits' },
-];
-
-const funFacts = [
-    { icon: '🎧', text: 'Tuning into local radio...' },
-    { icon: '🎶', text: 'Discovering the local anthems...' },
-    { icon: '🎸', text: 'Finding iconic folk songs...' },
-    { icon: '🎤', text: 'Checking the top of the charts...' },
-    { icon: '💿', text: 'Building the perfect travel playlist...' },
-];
 
 const languages = [
     'Afrikaans (af)', 'Akan (ak)', 'Albanian (sq)', 'Amharic (am)', 'Arabic (ar)', 'Armenian (hy)', 'Assamese (as)', 'Aymara (ay)', 'Azerbaijani (az)', 
@@ -124,19 +111,6 @@ const MusicFinderForm: React.FC<MusicFinderFormProps> = ({ onSubmit, isLoading, 
     lang.toLowerCase().includes(languageQuery.toLowerCase())
   );
   
-  if (isLoading) {
-    return (
-      <StreamingLoadingIndicator
-        streamedText={streamedText}
-        stages={musicStages}
-        onCancel={onCancel}
-        title="Curating Your Playlist..."
-        accentColor="fuchsia"
-        funFacts={funFacts}
-      />
-    );
-  }
-
   return (
     <div className="max-w-xl mx-auto">
       <BackToHomeButton onClick={onBack} />

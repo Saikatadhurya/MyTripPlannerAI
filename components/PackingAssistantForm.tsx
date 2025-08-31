@@ -1,7 +1,7 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { PackingListRequestData, LocationSuggestion } from '../types';
 import { getDestinationSuggestions } from '../services/geminiService';
-import StreamingLoadingIndicator from './LoadingIndicator';
 import BackToHomeButton from './BackToHomeButton';
 
 interface PackingAssistantFormProps {
@@ -12,23 +12,6 @@ interface PackingAssistantFormProps {
   onCancel: () => void;
   streamedText: string;
 }
-
-const packingStages = [
-    { key: '"approximateTemperature":"', text: 'Checking the weather forecast' },
-    { key: '"clothingAndFootwear":[', text: 'Selecting outfits and shoes' },
-    { key: '"adventureClothing":[', text: 'Packing for adventure' },
-    { key: '"electronicsAndGear":[', text: 'Gathering electronics and gear' },
-    { key: '"documentsAndMoney":[', text: 'Securing documents and money' },
-    { key: '"bagSuggestion":"', text: 'Recommending the perfect bag' },
-];
-
-const funFacts = [
-    { icon: '🌤️', text: 'Checking the weather forecast...' },
-    { icon: '👕', text: 'Choosing the perfect outfits...' },
-    { icon: '🔌', text: 'Remembering all the chargers...' },
-    { icon: '🪥', text: 'Making sure you don\'t forget your toothbrush...' },
-    { icon: '✈️', text: 'Optimizing for carry-on...' },
-];
 
 const languages = [
     'Afrikaans (af)', 'Akan (ak)', 'Albanian (sq)', 'Amharic (am)', 'Arabic (ar)', 'Armenian (hy)', 'Assamese (as)', 'Aymara (ay)', 'Azerbaijani (az)', 
@@ -147,19 +130,6 @@ const PackingAssistantForm: React.FC<PackingAssistantFormProps> = ({ onSubmit, i
     lang.toLowerCase().includes(languageQuery.toLowerCase())
   );
   
-  if (isLoading) {
-    return (
-      <StreamingLoadingIndicator
-        streamedText={streamedText}
-        stages={packingStages}
-        onCancel={onCancel}
-        title="Building Your Packing List..."
-        accentColor="violet"
-        funFacts={funFacts}
-      />
-    );
-  }
-
   return (
     <div className="max-w-xl mx-auto">
       <BackToHomeButton onClick={onBack} />

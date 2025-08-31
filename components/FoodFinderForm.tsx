@@ -1,7 +1,7 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { FoodFinderRequestData, FoodPreference, LocationSuggestion } from '../types';
 import { getDestinationSuggestions } from '../services/geminiService';
-import StreamingLoadingIndicator from './LoadingIndicator';
 import BackToHomeButton from './BackToHomeButton';
 
 interface FoodFinderFormProps {
@@ -12,23 +12,6 @@ interface FoodFinderFormProps {
   onCancel: () => void;
   streamedText: string;
 }
-
-const foodStages = [
-    { key: '"breakfast":[', text: 'Discovering morning bites' },
-    { key: '"lunch":[', text: 'Looking for midday meals' },
-    { key: '"snacksAndStreetFood":[', text: 'Finding popular street food' },
-    { key: '"iconicDishes":[', text: 'Identifying iconic dishes' },
-    { key: '"hiddenRecipes":[', text: 'Uncovering hidden gems' },
-    { key: '"trendingOrViralFoods":[', text: 'Checking out viral food trends' },
-];
-
-const funFacts = [
-    { icon: '🧑‍🍳', text: 'Consulting with local chefs...' },
-    { icon: '🌶️', text: 'Searching for the spiciest dishes...' },
-    { icon: '🗺️', text: 'Mapping out a food tour...' },
-    { icon: '🤫', text: 'Discovering secret family recipes...' },
-    { icon: '✨', text: 'Finding the most authentic flavors...' },
-];
 
 const foodPreferences: {label: FoodPreference, icon: string}[] = [
     {label: 'Veg', icon: '🥗'},
@@ -154,19 +137,6 @@ const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, er
     lang.toLowerCase().includes(languageQuery.toLowerCase())
   );
   
-  if (isLoading) {
-    return (
-      <StreamingLoadingIndicator
-        streamedText={streamedText}
-        stages={foodStages}
-        onCancel={onCancel}
-        title="Cooking Up Recommendations..."
-        accentColor="amber"
-        funFacts={funFacts}
-      />
-    );
-  }
-
   return (
     <div className="max-w-xl mx-auto">
       <BackToHomeButton onClick={onBack} />
