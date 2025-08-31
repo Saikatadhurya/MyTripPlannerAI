@@ -20,7 +20,6 @@ import MusicFinderForm from './components/MusicFinderForm';
 import MusicFinderResult from './components/MusicFinderResult';
 import ScrollToTopButton from './components/ScrollToTopButton';
 import ContactUs from './components/ContactUs';
-import ContactUsButton from './components/ContactUsButton';
 import Header from './components/Header';
 import QuickNavButton from './components/QuickNavButton';
 
@@ -250,19 +249,15 @@ const App: React.FC = () => {
             {renderContent()}
         </main>
       </div>
-      {view === 'landing' ? (
-        <ContactUsButton onClick={() => handleViewChange('contact')} />
-      ) : (
-        <QuickNavButton
-          onGoHome={handleBackToHome}
-          onGoToContact={() => handleViewChange('contact')}
-          onPlanTrip={handlePlanTrip}
-          onStartPacking={() => handleViewChange('packingAssistantForm')}
-          onStartFoodFinder={() => handleViewChange('foodFinderForm')}
-          onStartAppFinder={() => handleViewChange('appFinderForm')}
-          onStartMusicFinder={() => handleViewChange('musicFinderForm')}
-        />
-      )}
+      <QuickNavButton
+        onGoHome={handleBackToHome}
+        onGoToContact={() => handleViewChange('contact')}
+        onPlanTrip={handlePlanTrip}
+        onStartPacking={() => handleViewChange('packingAssistantForm')}
+        onStartFoodFinder={() => handleViewChange('foodFinderForm')}
+        onStartAppFinder={() => handleViewChange('appFinderForm')}
+        onStartMusicFinder={() => handleViewChange('musicFinderForm')}
+      />
       <ScrollToTopButton />
     </>
   );
