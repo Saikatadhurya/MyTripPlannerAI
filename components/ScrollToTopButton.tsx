@@ -1,7 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
 
-const ScrollToTopButton: React.FC = () => {
+interface ScrollToTopButtonProps {
+    isUnifiedView?: boolean;
+}
+
+const ScrollToTopButton: React.FC<ScrollToTopButtonProps> = ({ isUnifiedView = false }) => {
   const [isVisible, setIsVisible] = useState(false);
 
   // Show button when page is scrolled down more than 200px
@@ -31,11 +35,16 @@ const ScrollToTopButton: React.FC = () => {
     });
   };
 
+  // On mobile in the unified view, the bottom nav bar is present. We need to raise the button.
+  // The nav bar spacer is h-20 (5rem), so we add that height to the bottom positioning.
+  // bottom-6 is 1.5rem. 1.5rem + 5rem = 6.5rem which is bottom-26. We'll use bottom-24 (6rem) for extra spacing.
+  const bottomPositionClass = isUnifiedView ? 'bottom-24 sm:bottom-6' : 'bottom-6';
+
   return (
     <button
       type="button"
       onClick={scrollToTop}
-      className={`fixed bottom-6 right-6 z-50 flex items-center justify-center
+      className={`fixed ${bottomPositionClass} right-6 z-50 flex items-center justify-center
                   w-10 h-10 md:w-12 md:h-12 
                   rounded-full 
                   bg-gradient-to-br from-indigo-600 to-violet-600 

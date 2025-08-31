@@ -628,7 +628,7 @@ const App: React.FC = () => {
           onStartMusicFinder={() => handleViewChange('musicFinderForm')}
         />
       )}
-      <ScrollToTopButton />
+      <ScrollToTopButton isUnifiedView={view === 'unifiedResult'} />
     </>
   );
 };
