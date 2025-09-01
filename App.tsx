@@ -394,6 +394,12 @@ const App: React.FC = () => {
   const handleEditProfile = useCallback(() => {
     handleViewChange('editProfile');
   }, [handleViewChange]);
+
+  const handleProfileUpdate = useCallback((updatedUser: User) => {
+    setUser(updatedUser);
+    // Update localStorage with new user data
+    localStorage.setItem('planora_user', JSON.stringify(updatedUser));
+  }, []);
   
   const handleCancelGeneration = useCallback(() => {
     setIsLoading(false);
@@ -841,7 +847,7 @@ const App: React.FC = () => {
       case 'contact':
         return <ContactUs onBack={handleBackToHome} />;
       case 'editProfile':
-        return <EditProfile user={user!} onBack={handleBackToHome} />;
+        return <EditProfile user={user!} onBack={handleBackToHome} onProfileUpdate={handleProfileUpdate} />;
     }
     
     // Fallback for any unhandled case or error state where data is null

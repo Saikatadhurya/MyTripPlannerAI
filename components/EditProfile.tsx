@@ -14,6 +14,7 @@ interface User {
 interface EditProfileProps {
   user: User;
   onBack: () => void;
+  onProfileUpdate: (updatedUser: User) => void;
 }
 
 interface FormData {
@@ -26,14 +27,13 @@ interface FormData {
 
 interface FormErrors {
   full_name?: string;
-  email?: string;
   current_password?: string;
   new_password?: string;
   confirm_password?: string;
   general?: string;
 }
 
-const EditProfile: React.FC<EditProfileProps> = ({ user, onBack }) => {
+const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate }) => {
 
   const [formData, setFormData] = useState<FormData>({
     full_name: user?.full_name || '',
@@ -94,12 +94,7 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack }) => {
       } else if (formData.full_name.trim().length < 2) {
         newErrors.full_name = 'Full name must be at least 2 characters';
       }
-
-      if (!formData.email.trim()) {
-        newErrors.email = 'Email is required';
-      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-        newErrors.email = 'Please enter a valid email address';
-      }
+      // Email validation removed since email field is read-only
     }
 
     // Password validation
@@ -144,6 +139,16 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack }) => {
       });
 
       if (data.success) {
+        // Create updated user object with new data
+        const updatedUser = {
+          ...user,
+          full_name: formData.full_name.trim(),
+          updated_at: new Date().toISOString()
+        };
+        
+        // Call the callback to update parent component state
+        onProfileUpdate(updatedUser);
+        
         setSuccessMessage('Profile updated successfully!');
         // Navigate back to home after successful update
         setTimeout(() => {
@@ -357,16 +362,12 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack }) => {
                       <input
                         type="email"
                         value={formData.email}
-                        onChange={(e) => handleInputChange('email', e.target.value)}
-                        className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-colors ${
-                          errors.email ? 'border-red-300' : 'border-gray-300'
-                        }`}
+                        readOnly
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-600 cursor-not-allowed"
                         placeholder="Enter your email address"
                       />
                     </div>
-                    {errors.email && (
-                      <p className="mt-1 text-sm text-red-600">{errors.email}</p>
-                    )}
+                    <p className="mt-1 text-sm text-gray-500">Email address cannot be changed</p>
                   </div>
 
                   {/* Account Info */}
