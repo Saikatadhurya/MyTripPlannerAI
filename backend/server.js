@@ -9,8 +9,6 @@ const protect = require('./middleware/authMiddleware'); // ✅ Correct import
 const cors = require('cors'); // Import cors
 require('./config/passport'); // Initialize Passport strategies
 
-
-
 const app = express();
 
 // Middleware
@@ -18,6 +16,9 @@ app.use(express.json()); // For parsing application/json
 app.use(express.urlencoded({ extended: true })); // For parsing application/x-www-form-urlencoded
 app.use(cors()); // Use cors middleware
 app.use(passport.initialize());
+
+// Serve static files from the 'dist' folder. This must be placed before your API routes.
+app.use(express.static('../dist'));
 
 // Routes
 app.use('/auth', authRoutes);
