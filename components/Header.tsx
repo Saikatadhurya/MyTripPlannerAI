@@ -8,6 +8,7 @@ interface HeaderProps {
   onLogin: (email: string, password: string) => Promise<void>;
   onSignup: (full_name: string, email: string, password: string, confirmPassword: string) => Promise<void>; // Corrected 'name' to 'full_name'
   onLogout: () => void;
+  onEditProfile: () => void;
   isLoading?: boolean;
   error?: string;
   isAuthModalOpen: boolean;
@@ -20,6 +21,7 @@ const Header: React.FC<HeaderProps> = ({
   onLogin, 
   onSignup, 
   onLogout, 
+  onEditProfile,
   isLoading = false, 
   error,
   isAuthModalOpen,
@@ -112,10 +114,7 @@ const Header: React.FC<HeaderProps> = ({
                 <UserProfile 
                   user={user} 
                   onLogout={onLogout}
-                  onEditProfile={() => {
-                    // Handle edit profile
-                    console.log('Edit profile clicked');
-                  }}
+                  onEditProfile={onEditProfile}
                 />
               ) : (
                 <div className="flex items-center space-x-3 p-2">

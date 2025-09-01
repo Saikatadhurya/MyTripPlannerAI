@@ -5,12 +5,14 @@ interface User {
   full_name: string;
   email: string;
   avatar?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 interface UserProfileProps {
   user: User;
   onLogout: () => void;
-  onEditProfile?: () => void;
+  onEditProfile: () => void;
 }
 
 const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onEditProfile }) => {
@@ -31,10 +33,9 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onEditProfile
   };
 
   const handleEditProfile = () => {
-    if (onEditProfile) {
-      onEditProfile();
-    }
     setIsDropdownOpen(false);
+    // Call the parent's onEditProfile function
+    onEditProfile();
   };
 
   const getInitials = (name: string) => {
@@ -173,6 +174,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onEditProfile
           onClick={() => setIsDropdownOpen(false)}
         />
       )}
+
     </div>
   );
 };

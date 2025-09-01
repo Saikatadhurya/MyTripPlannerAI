@@ -25,6 +25,7 @@ import UnifiedPlannerForm from './components/UnifiedPlannerForm';
 import ItineraryPreview from './components/ItineraryPreview';
 import LoadingIndicator from './components/LoadingIndicator';
 import Header from './components/Header';
+import EditProfile from './components/EditProfile';
 
 // --- Bottom Nav Bar Component ---
 interface BottomNavBarProps {
@@ -183,7 +184,7 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({
 };
 
 
-type View = 'landing' | 'questionnaire' | 'itineraryResult' | 'packingAssistantForm' | 'packingAssistantResult' | 'foodFinderForm' | 'foodFinderResult' | 'appFinderForm' | 'appFinderResult' | 'musicFinderForm' | 'musicFinderResult' | 'contact' | 'unifiedPlannerForm' | 'unifiedResult';
+type View = 'landing' | 'questionnaire' | 'itineraryResult' | 'packingAssistantForm' | 'packingAssistantResult' | 'foodFinderForm' | 'foodFinderResult' | 'appFinderForm' | 'appFinderResult' | 'musicFinderForm' | 'musicFinderResult' | 'contact' | 'unifiedPlannerForm' | 'unifiedResult' | 'editProfile';
 
 // --- Loading State Constants ---
 const itineraryStages = [
@@ -388,6 +389,10 @@ const App: React.FC = () => {
     setUnifiedPlan({ itinerary: null, packingList: null, foodRecommendations: null, appRecommendations: null, musicRecommendations: null });
     setQuestionnaireDataForUnifiedPlan(null);
     handleViewChange('landing');
+  }, [handleViewChange]);
+
+  const handleEditProfile = useCallback(() => {
+    handleViewChange('editProfile');
   }, [handleViewChange]);
   
   const handleCancelGeneration = useCallback(() => {
@@ -835,6 +840,8 @@ const App: React.FC = () => {
         break;
       case 'contact':
         return <ContactUs onBack={handleBackToHome} />;
+      case 'editProfile':
+        return <EditProfile user={user!} onBack={handleBackToHome} />;
     }
     
     // Fallback for any unhandled case or error state where data is null
@@ -851,6 +858,7 @@ const App: React.FC = () => {
           onLogin={handleLogin}
           onSignup={handleSignup}
           onLogout={handleLogout}
+          onEditProfile={handleEditProfile}
           isLoading={isAuthLoading}
           error={authError}
           isAuthModalOpen={isAuthModalOpen}
