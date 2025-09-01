@@ -119,6 +119,30 @@
         h1, h2, h3, h4 {
             break-after: avoid;
         }
+        
+        /* Disable all animations during printing to prevent faded/blank pages */
+        .animated-card,
+        .fade-in,
+        .slide-down-animation,
+        .auth-modal-enter,
+        .auth-modal-content-enter,
+        .user-profile-dropdown-enter {
+            animation: none !important;
+            opacity: 1 !important;
+            transform: none !important;
+        }
+        
+        /* Ensure all content is visible immediately during print */
+        * {
+            animation: none !important;
+            transition: none !important;
+        }
+        
+        /* Force all animated elements to be fully visible */
+        .animated-card {
+            opacity: 1 !important;
+            transform: none !important;
+        }
       }
       @keyframes fadeIn {
         from { opacity: 0; transform: translateY(10px); }
