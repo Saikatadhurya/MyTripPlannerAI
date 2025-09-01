@@ -1,17 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { PopularDestination } from '../types';
+import { User } from '../services/authService';
 import TestimonialsCarousel from './TestimonialsCarousel';
 
 interface LandingPageProps {
+  user: User | null;
   onPlanUnifiedTrip: (destination?: string) => void;
   onPlanItinerary: () => void;
   onStartPacking: () => void;
   onStartFoodFinder: () => void;
   onStartAppFinder: () => void;
   onStartMusicFinder: () => void;
+  onOpenAuthModal: () => void;
 }
 
-const LandingPage: React.FC<LandingPageProps> = ({ onPlanUnifiedTrip, onPlanItinerary, onStartPacking, onStartFoodFinder, onStartAppFinder, onStartMusicFinder }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPlanItinerary, onStartPacking, onStartFoodFinder, onStartAppFinder, onStartMusicFinder, onOpenAuthModal }) => {
   const [destinations, setDestinations] = useState<PopularDestination[]>([]);
 
   useEffect(() => {
@@ -55,46 +58,51 @@ const LandingPage: React.FC<LandingPageProps> = ({ onPlanUnifiedTrip, onPlanItin
       id: 'itinerary',
       title: 'Itinerary Planner',
       description: 'Get a detailed, step-by-step plan',
-      onClick: onPlanItinerary,
+      onClick: user ? onPlanItinerary : onOpenAuthModal,
       color: 'blue' as const,
       icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
       buttonText: 'Plan Itinerary',
+      locked: !user,
     },
     {
       id: 'packing',
       title: 'Smart Bag Packing',
       description: 'AI-powered packing tailored for your trip',
-      onClick: onStartPacking,
+      onClick: user ? onStartPacking : onOpenAuthModal,
       color: 'violet' as const,
       icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 6h12a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2zm3-3a1 1 0 011-1h2a1 1 0 110 2H10a1 1 0 01-1-1z" /></svg>,
       buttonText: 'Pack My Bag',
+      locked: !user,
     },
     {
       id: 'food',
       title: 'Local Food Finder',
       description: 'Discover authentic local cuisine',
-      onClick: onStartFoodFinder,
+      onClick: user ? onStartFoodFinder : onOpenAuthModal,
       color: 'orange' as const,
       icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
       buttonText: 'Find My Feast',
+      locked: !user,
     },
     {
       id: 'apps',
       title: 'Mobile App Finder',
       description: 'Find essential local apps for your trip',
-      onClick: onStartAppFinder,
+      onClick: user ? onStartAppFinder : onOpenAuthModal,
       color: 'teal' as const,
       icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 18h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>,
       buttonText: 'Find My Apps',
+      locked: !user,
     },
     {
       id: 'music',
       title: 'Local Music Finder',
       description: 'Discover the soundtrack of your travels',
-      onClick: onStartMusicFinder,
+      onClick: user ? onStartMusicFinder : onOpenAuthModal,
       color: 'fuchsia' as const,
       icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 18V5l12-2v13M9 18a3 3 0 11-6 0 3 3 0 016 0zm12-2a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
-      buttonText: 'Discover Local Music',
+      buttonText: 'Get Music List',
+      locked: !user,
     },
   ];
   
@@ -125,21 +133,50 @@ const LandingPage: React.FC<LandingPageProps> = ({ onPlanUnifiedTrip, onPlanItin
     <div className="space-y-20 pb-8">
       {/* Hero Section */}
       <div className="animated-card text-center max-w-4xl mx-auto p-6 md:p-8 rounded-3xl bg-white/50 backdrop-blur-lg border border-white/60 shadow-lg" style={{ animationDelay: '100ms' }}>
+        {user && user.full_name && (
+          <div className="mb-4">
+            <h2 className="text-2xl md:text-3xl font-semibold text-violet-600 tracking-wide">
+              Welcome, {user.full_name}! 👋
+            </h2>
+          </div>
+        )}
         <h1 className="text-4xl md:text-5xl font-bold text-slate-900 tracking-tight">Plan Your Next Adventure</h1>
         <p className="mt-4 text-md text-slate-600 max-w-2xl mx-auto">
           Tell us your travel preferences, and our AI will craft a complete adventure plan, including a detailed itinerary, smart packing list, local food guide, essential apps, and a curated music playlist.
         </p>
-        <div className="mt-8">
-            <button
-              onClick={() => onPlanUnifiedTrip()}
-              className="inline-block px-10 py-4 bg-violet-600 text-white font-bold rounded-full text-lg shadow-lg shadow-violet-500/30 hover:bg-violet-700 hover:shadow-xl hover:shadow-violet-500/40 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-violet-300"
-            >
-              ✨ Build Your Itinerary
-            </button>
-            <p className="mt-4 text-sm text-violet-700/80 font-medium tracking-wide">
-              Includes: Itinerary, Packing, Food, Apps & Music
-            </p>
-        </div>
+                 <div className="mt-8">
+             {user ? (
+               <>
+                 <button
+                   onClick={() => onPlanUnifiedTrip()}
+                   className="inline-block px-10 py-4 bg-violet-600 text-white font-bold rounded-full text-lg shadow-lg shadow-violet-500/30 hover:bg-violet-700 hover:shadow-xl hover:shadow-violet-500/40 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-violet-300"
+                 >
+                   ✨ Build Your Ultimate Itinerary
+                 </button>
+                 <p className="mt-4 text-sm text-violet-700/80 font-medium tracking-wide">
+                   Includes: Itinerary, Packing, Food, Apps & Music
+                 </p>
+               </>
+             ) : (
+               <>
+                 <button
+                   disabled
+                   className="inline-block px-10 py-4 bg-gray-400 text-gray-600 font-bold rounded-full text-lg shadow-lg cursor-not-allowed opacity-60"
+                 >
+                   🔒 Build Your Ultimate Itinerary
+                 </button>
+                 <p className="mt-4 text-sm text-gray-600 font-medium tracking-wide">
+                   Sign in to unlock the full itinerary planner
+                 </p>
+                                   <button
+                    onClick={onOpenAuthModal}
+                    className="mt-3 inline-block px-6 py-2 bg-violet-600 text-white font-semibold rounded-full text-sm shadow-lg shadow-violet-500/30 hover:bg-violet-700 hover:shadow-xl hover:shadow-violet-500/40 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-violet-300"
+                  >
+                    Sign In to Continue
+                  </button>
+               </>
+             )}
+         </div>
       </div>
       
       {/* Mini Apps Section */}
@@ -149,6 +186,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onPlanUnifiedTrip, onPlanItin
         <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
           {miniApps.map((app, index) => {
             const colors = colorClasses[app.color];
+            const isLocked = app.locked || false;
             return (
               <div
                 key={app.id}
@@ -174,8 +212,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onPlanUnifiedTrip, onPlanItin
                     </p>
                 </div>
                 <div className="mt-6 flex-shrink-0">
-                    <span className={`inline-block px-6 py-2.5 font-semibold rounded-full text-sm shadow-md transition-all duration-300 group-hover:shadow-lg ${colors.button}`}>
-                        {app.buttonText}
+                    <span className={`inline-block px-6 py-2.5 font-semibold rounded-full text-sm shadow-md transition-all duration-300 group-hover:shadow-lg ${
+                      isLocked 
+                        ? 'bg-gray-400 text-gray-600 cursor-not-allowed' 
+                        : colors.button
+                    }`}>
+                        {isLocked ? `🔒 ${app.buttonText}` : app.buttonText}
                     </span>
                 </div>
               </div>
@@ -209,13 +251,28 @@ const LandingPage: React.FC<LandingPageProps> = ({ onPlanUnifiedTrip, onPlanItin
       <div>
         <h2 className="text-3xl font-bold text-center text-slate-900 mb-6 animated-card" style={{ animationDelay: '1100ms' }}>Popular Destinations</h2>
         <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
-          {destinations.map((dest, index) => (
-            <button key={dest.name} onClick={() => onPlanUnifiedTrip(dest.name)} className="animated-card text-left bg-white/50 backdrop-blur-lg p-5 rounded-2xl border border-white/60 shadow-lg hover:shadow-xl hover:border-violet-300/50 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-violet-400/50" style={{ animationDelay: `${1200 + index * 50}ms` }}>
-              <span className="text-4xl" role="img" aria-label="">{dest.icon}</span>
-              <h3 className="text-lg font-semibold mt-3 text-slate-800">{dest.name}</h3>
-              <p className="text-slate-600 text-sm">{dest.description}</p>
-            </button>
-          ))}
+                     {destinations.map((dest, index) => (
+             <button 
+               key={dest.name} 
+               onClick={user ? () => onPlanUnifiedTrip(dest.name) : onOpenAuthModal} 
+               className={`animated-card text-left p-5 rounded-2xl border shadow-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-violet-400/50 ${
+                 user 
+                   ? 'bg-white/50 backdrop-blur-lg border-white/60 hover:shadow-xl hover:border-violet-300/50' 
+                   : 'bg-gray-100/50 backdrop-blur-lg border-gray-200/60 hover:shadow-xl hover:border-gray-300/50 cursor-pointer'
+               }`} 
+               style={{ animationDelay: `${1200 + index * 50}ms` }}
+             >
+               <span className="text-4xl" role="img" aria-label="">{dest.icon}</span>
+               <h3 className="text-lg font-semibold mt-3 text-slate-800">{dest.name}</h3>
+               <p className="text-slate-600 text-sm">{dest.description}</p>
+               {!user && (
+                 <div className="mt-2 flex items-center text-xs text-gray-500">
+                   <span className="mr-1">🔒</span>
+                   <span>Sign in to plan</span>
+                 </div>
+               )}
+             </button>
+           ))}
           {destinations.length === 0 && Array(10).fill(0).map((_, i) => (
             <div key={i} className="bg-white/40 p-5 rounded-2xl border border-white/50 shadow-lg animate-pulse">
               <div className="h-10 w-10 bg-slate-200/50 rounded-md"></div>

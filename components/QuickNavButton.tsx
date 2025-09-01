@@ -1,7 +1,9 @@
 
 import React, { useState, useEffect, useRef } from 'react';
+import { User } from '../services/authService';
 
 interface QuickNavButtonProps {
+  user: User | null;
   onPlanTrip: () => void;
   onPlanItinerary: () => void;
   onStartPacking: () => void;
@@ -10,9 +12,11 @@ interface QuickNavButtonProps {
   onStartMusicFinder: () => void;
   onGoHome: () => void;
   onGoToContact: () => void;
+  onOpenAuthModal: () => void;
 }
 
 const QuickNavButton: React.FC<QuickNavButtonProps> = ({
+  user,
   onPlanTrip,
   onPlanItinerary,
   onStartPacking,
@@ -21,6 +25,7 @@ const QuickNavButton: React.FC<QuickNavButtonProps> = ({
   onStartMusicFinder,
   onGoHome,
   onGoToContact,
+  onOpenAuthModal,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const navRef = useRef<HTMLDivElement>(null);
@@ -46,24 +51,60 @@ const QuickNavButton: React.FC<QuickNavButtonProps> = ({
     {
         title: 'Start a New Plan',
         items: [
-            { label: 'Complete Adventure Plan', action: onPlanTrip, icon: '✨' },
+            { 
+                label: 'Complete Adventure Plan', 
+                action: user ? onPlanTrip : onOpenAuthModal, 
+                icon: user ? '✨' : '🔒',
+                locked: !user,
+                tooltip: user ? undefined : 'Sign in to unlock'
+            },
         ]
     },
     {
         title: 'Quick Tools',
         items: [
-            { label: 'Day-by-Day Itinerary', action: onPlanItinerary, icon: '🗓️' },
-            { label: 'Smart Bag Packing', action: onStartPacking, icon: '🧳' },
-            { label: 'Local Food Finder', action: onStartFoodFinder, icon: '🍲' },
-            { label: 'Mobile App Finder', action: onStartAppFinder, icon: '📱' },
-            { label: 'Local Music Finder', action: onStartMusicFinder, icon: '🎶' },
+            { 
+                label: 'Day-by-Day Itinerary', 
+                action: user ? onPlanItinerary : onOpenAuthModal, 
+                icon: user ? '🗓️' : '🔒',
+                locked: !user,
+                tooltip: user ? undefined : 'Sign in to unlock'
+            },
+            { 
+                label: 'Smart Bag Packing', 
+                action: user ? onStartPacking : onOpenAuthModal, 
+                icon: user ? '🧳' : '🔒',
+                locked: !user,
+                tooltip: user ? undefined : 'Sign in to unlock'
+            },
+            { 
+                label: 'Local Food Finder', 
+                action: user ? onStartFoodFinder : onOpenAuthModal, 
+                icon: user ? '🍲' : '🔒',
+                locked: !user,
+                tooltip: user ? undefined : 'Sign in to unlock'
+            },
+            { 
+                label: 'Mobile App Finder', 
+                action: user ? onStartAppFinder : onOpenAuthModal, 
+                icon: user ? '📱' : '🔒',
+                locked: !user,
+                tooltip: user ? undefined : 'Sign in to unlock'
+            },
+            { 
+                label: 'Local Music Finder', 
+                action: user ? onStartMusicFinder : onOpenAuthModal, 
+                icon: user ? '🎶' : '🔒',
+                locked: !user,
+                tooltip: user ? undefined : 'Sign in to unlock'
+            },
         ]
     },
     {
         title: 'General',
         items: [
-            { label: 'Go Home', action: onGoHome, icon: '🏠' },
-            { label: 'Contact Us', action: onGoToContact, icon: '✉️' },
+            { label: 'Go Home', action: onGoHome, icon: '🏠', locked: false },
+            { label: 'Contact Us', action: onGoToContact, icon: '✉️', locked: false },
         ]
     }
   ];
@@ -90,14 +131,19 @@ const QuickNavButton: React.FC<QuickNavButtonProps> = ({
                 {section.title && <p className="px-3 pt-2 pb-1 text-xs font-bold text-slate-500 uppercase tracking-wider">{section.title}</p>}
                 {section.items.map((item) => {
                   const currentItemIndex = itemIndex++;
+                  const isLocked = item.locked || false;
                   return (
                     <button
                       key={item.label}
                       onClick={() => handleAction(item.action)}
-                      title={item.label}
+                      title={item.tooltip || item.label}
                       aria-label={item.label}
                       tabIndex={isOpen ? 0 : -1}
-                      className="w-full flex items-center text-left px-3 py-2.5 rounded-lg text-slate-800 font-semibold transition-colors duration-200 hover:bg-violet-100/80 focus:outline-none focus:ring-2 focus:ring-violet-400"
+                      className={`w-full flex items-center text-left px-3 py-2.5 rounded-lg font-semibold transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-violet-400 ${
+                        isLocked 
+                          ? 'text-gray-500 hover:bg-gray-100/80 cursor-pointer' 
+                          : 'text-slate-800 hover:bg-violet-100/80'
+                      }`}
                       style={{
                           transitionDelay: isOpen ? `${currentItemIndex * 30}ms` : '0ms',
                           opacity: isOpen ? 1 : 0,
@@ -109,6 +155,11 @@ const QuickNavButton: React.FC<QuickNavButtonProps> = ({
                     >
                       <span className="text-xl w-8 text-center">{item.icon}</span>
                       <span>{item.label}</span>
+                      {isLocked && (
+                        <span className="ml-auto text-xs text-gray-400">
+                          Sign in
+                        </span>
+                      )}
                     </button>
                   );
                 })}

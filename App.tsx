@@ -1,7 +1,3 @@
-
-
-
-
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { QuestionnaireData, PackingListRequestData, PackingList, FoodFinderRequestData, FoodRecommendations, AppFinderRequestData, AppRecommendations, MusicFinderRequestData, MusicRecommendations, QuestionnaireData as InitialQuestionnaireData, UnifiedPlan, UnifiedPlanLoadingStatus, Itinerary } from './types';
 import { generateItinerary } from './services/geminiService';
@@ -9,7 +5,7 @@ import { generatePackingList } from './services/packingService';
 import { generateFoodRecommendations } from './services/foodService';
 import { generateAppRecommendations } from './services/appFinderService';
 import { generateMusicRecommendations } from './services/musicService';
-
+import { authService, User } from './services/authService';
 
 import LandingPage from './components/LandingPage';
 import Questionnaire from './components/Questionnaire';
@@ -251,9 +247,63 @@ const App: React.FC = () => {
   
   const mainContentRef = useRef<HTMLDivElement>(null);
 
+  // Authentication state
+  const [user, setUser] = useState<User | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false); // New state for modal visibility
+
   // --- Unified Planner Pipeline State ---
   const cancellationFlags = useRef<Partial<Record<keyof UnifiedPlanLoadingStatus, boolean>>>({});
 
+  // Initialize authentication state
+  useEffect(() => {
+    console.log('App: useEffect for user initialization called');
+    const currentUser = authService.getCurrentUser();
+    console.log('App: Retrieved currentUser from authService:', currentUser);
+    setUser(currentUser);
+    console.log('App: User state set to:', currentUser);
+  }, []);
+
+  // Authentication handlers
+  const handleLogin = async (email: string, password: string) => {
+    setIsAuthLoading(true);
+    setAuthError(null);
+    try {
+      const response = await authService.login({ email, password });
+      setUser(response.user);
+      setIsAuthModalOpen(false); // Close modal on successful login
+      handleViewChange('landing'); // Redirect to landing page
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : 'Login failed');
+      setIsAuthModalOpen(true); // Keep modal open to display error
+    } finally {
+      setIsAuthLoading(false);
+    }
+  };
+
+  const handleSignup = async (full_name: string, email: string, password: string, confirmPassword: string) => {
+    setIsAuthLoading(true);
+    setAuthError(null);
+    try {
+      const response = await authService.signup({ full_name, email, password, confirmPassword });
+      setUser(response.user);
+      setIsAuthModalOpen(false); // Close modal on successful signup
+      handleViewChange('landing'); // Redirect to landing page
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : 'Signup failed');
+      setIsAuthModalOpen(true); // Keep modal open to display error
+    } finally {
+      setIsAuthLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    authService.logout();
+    setUser(null);
+    setAuthError(null);
+    handleViewChange('landing'); // Redirect to landing page on logout
+  };
 
   const scrollToTop = useCallback(() => {
     mainContentRef.current?.scrollTo(0, 0);
@@ -727,7 +777,7 @@ const App: React.FC = () => {
     switch (view) {
       case 'landing':
         return (
-            <LandingPage onPlanUnifiedTrip={handleStartUnifiedPlanner} onPlanItinerary={handleStartItineraryPlanner} onStartPacking={() => handleViewChange('packingAssistantForm')} onStartFoodFinder={() => handleViewChange('foodFinderForm')} onStartAppFinder={() => handleViewChange('appFinderForm')} onStartMusicFinder={() => handleViewChange('musicFinderForm')} />
+            <LandingPage user={user} onPlanUnifiedTrip={handleStartUnifiedPlanner} onPlanItinerary={handleStartItineraryPlanner} onStartPacking={() => handleViewChange('packingAssistantForm')} onStartFoodFinder={() => handleViewChange('foodFinderForm')} onStartAppFinder={() => handleViewChange('appFinderForm')} onStartMusicFinder={() => handleViewChange('musicFinderForm')} onOpenAuthModal={() => setIsAuthModalOpen(true)} />
         );
       case 'unifiedPlannerForm':
         return <UnifiedPlannerForm onSubmit={handleGenerateUnifiedPlan} initialData={initialQuestionnaireData} onBack={handleBackToHome} error={error} />;
@@ -762,13 +812,25 @@ const App: React.FC = () => {
     
     // Fallback for any unhandled case or error state where data is null
     return (
-        <LandingPage onPlanUnifiedTrip={handleStartUnifiedPlanner} onPlanItinerary={handleStartItineraryPlanner} onStartPacking={() => handleViewChange('packingAssistantForm')} onStartFoodFinder={() => handleViewChange('foodFinderForm')} onStartAppFinder={() => handleViewChange('appFinderForm')} onStartMusicFinder={() => handleViewChange('musicFinderForm')} />
+        <LandingPage user={user} onPlanUnifiedTrip={handleStartUnifiedPlanner} onPlanItinerary={handleStartItineraryPlanner} onStartPacking={() => handleViewChange('packingAssistantForm')} onStartFoodFinder={() => handleViewChange('foodFinderForm')} onStartAppFinder={() => handleViewChange('appFinderForm')} onStartMusicFinder={() => handleViewChange('musicFinderForm')} onOpenAuthModal={() => setIsAuthModalOpen(true)} />
     );
   };
 
   return (
     <>
-      {view === 'landing' && <Header />}
+      {view === 'landing' && (
+        <Header 
+          user={user}
+          onLogin={handleLogin}
+          onSignup={handleSignup}
+          onLogout={handleLogout}
+          isLoading={isAuthLoading}
+          error={authError}
+          isAuthModalOpen={isAuthModalOpen}
+          onOpenAuthModal={() => setIsAuthModalOpen(true)}
+          onCloseAuthModal={() => setIsAuthModalOpen(false)}
+        />
+      )}
       <div ref={mainContentRef} className="min-h-screen">
         <main className={`container mx-auto px-4 sm:px-6 lg:px-8 pb-24 sm:pb-8 relative ${view === 'landing' ? 'pt-32' : 'pt-8'}`}>
             {renderContent()}
@@ -777,6 +839,7 @@ const App: React.FC = () => {
       {view !== 'unifiedResult' && (
         <>
             <QuickNavButton
+              user={user}
               onGoHome={handleBackToHome}
               onGoToContact={() => handleViewChange('contact')}
               onPlanTrip={handleStartUnifiedPlanner}
@@ -785,6 +848,7 @@ const App: React.FC = () => {
               onStartFoodFinder={() => handleViewChange('foodFinderForm')}
               onStartAppFinder={() => handleViewChange('appFinderForm')}
               onStartMusicFinder={() => handleViewChange('musicFinderForm')}
+              onOpenAuthModal={() => setIsAuthModalOpen(true)}
             />
             <BottomNavBar
               onGoHome={handleBackToHome}
