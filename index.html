@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>PLANORA - AI Travel Planning</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -118,6 +118,30 @@
         }
         h1, h2, h3, h4 {
             break-after: avoid;
+        }
+        
+        /* Disable all animations during printing to prevent faded/blank pages */
+        .animated-card,
+        .fade-in,
+        .slide-down-animation,
+        .auth-modal-enter,
+        .auth-modal-content-enter,
+        .user-profile-dropdown-enter {
+            animation: none !important;
+            opacity: 1 !important;
+            transform: none !important;
+        }
+        
+        /* Ensure all content is visible immediately during print */
+        * {
+            animation: none !important;
+            transition: none !important;
+        }
+        
+        /* Force all animated elements to be fully visible */
+        .animated-card {
+            opacity: 1 !important;
+            transform: none !important;
         }
       }
       @keyframes fadeIn {
@@ -263,10 +287,68 @@
         }
       }
 
-      .animate-spin {
-        animation: spin 1s linear infinite;
-      }
-    </style>
+             .animate-spin {
+         animation: spin 1s linear infinite;
+       }
+       
+       /* Smart iOS fixes for date inputs only - doesn't break layout */
+       @supports (-webkit-touch-callout: none) {
+         /* iOS Safari specific styles - only for date inputs */
+         input[type="date"] {
+           /* Prevent iOS from zooming in on focus */
+           font-size: 16px !important;
+           /* Ensure proper touch target size */
+           min-height: 44px !important;
+           /* Prevent iOS from applying default styles */
+           -webkit-appearance: none;
+           appearance: none;
+           /* Ensure consistent rendering */
+           border-radius: 8px;
+           padding: 12px 16px;
+           /* Prevent viewport shifting */
+           -webkit-transform: translateZ(0);
+           transform: translateZ(0);
+         }
+         
+         /* Fix for iOS Safari date picker overlay */
+         input[type="date"]::-webkit-calendar-picker-indicator {
+           /* Ensure the date picker icon is properly sized */
+           width: 20px;
+           height: 20px;
+           /* Prevent iOS from applying default styles */
+           -webkit-appearance: none;
+           appearance: none;
+         }
+         
+         /* Only fix viewport issues for date inputs, not entire body */
+         input[type="date"]:focus {
+           /* Prevent iOS Safari from adjusting the viewport */
+           -webkit-transform: translateZ(0);
+           transform: translateZ(0);
+           /* Ensure the input stays in view without breaking layout */
+           position: relative;
+           z-index: 10;
+         }
+       }
+       
+       /* Mobile-specific fixes that don't break layout */
+       @media screen and (max-width: 768px) {
+         /* Ensure form inputs don't overflow on mobile */
+         input[type="date"],
+         input[type="text"],
+         select,
+         textarea {
+           max-width: 100%;
+           box-sizing: border-box;
+         }
+         
+         /* Fix for mobile date picker viewport issues */
+         .date-input-container {
+           position: relative;
+           z-index: 1;
+         }
+       }
+     </style>
   <script type="importmap">
 {
   "imports": {
@@ -281,6 +363,128 @@
 </head>
   <body class="text-gray-800">
     <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
-  </body>
+         <script type="module" src="/index.tsx"></script>
+     
+     <!-- Smart iOS date picker fix - minimal impact on layout -->
+     <script>
+       // Only run on iOS devices
+       if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+         document.addEventListener('DOMContentLoaded', function() {
+           // Track date picker state
+           let isDatePickerOpen = false;
+           let activeDateInput = null;
+           
+           // Find all date inputs
+           const dateInputs = document.querySelectorAll('input[type="date"]');
+           
+           dateInputs.forEach(input => {
+             // Handle focus - when date picker opens
+             input.addEventListener('focus', function() {
+               isDatePickerOpen = true;
+               activeDateInput = this;
+               
+               // Smart scroll to keep input visible without breaking layout
+               setTimeout(() => {
+                 // Only scroll if the input is not fully visible
+                 const rect = this.getBoundingClientRect();
+                 const isVisible = (
+                   rect.top >= 0 &&
+                   rect.left >= 0 &&
+                   rect.bottom <= window.innerHeight &&
+                   rect.right <= window.innerWidth
+                 );
+                 
+                 if (!isVisible) {
+                   // Smooth scroll to input without affecting other elements
+                   this.scrollIntoView({ 
+                     behavior: 'smooth', 
+                     block: 'center',
+                     inline: 'nearest'
+                   });
+                 }
+               }, 100);
+             });
+             
+             // Handle blur - when date picker closes
+             input.addEventListener('blur', function() {
+               isDatePickerOpen = false;
+               activeDateInput = null;
+               
+               // Small delay to ensure date picker is fully closed
+               setTimeout(() => {
+                 // Restore scroll position if needed
+                 if (window.scrollY > 0) {
+                   // Only adjust if we're not at the top
+                   const currentScroll = window.scrollY;
+                   const targetScroll = Math.max(0, currentScroll - 50);
+                   if (targetScroll !== currentScroll) {
+                     window.scrollTo({
+                       top: targetScroll,
+                       behavior: 'smooth'
+                     });
+                   }
+                 }
+               }, 200);
+             });
+           });
+           
+           // Handle iOS Safari viewport changes more intelligently
+           let initialViewportHeight = window.innerHeight;
+           
+           // Monitor viewport changes only when date picker is open
+           window.addEventListener('resize', function() {
+             if (isDatePickerOpen && activeDateInput) {
+               const currentHeight = window.innerHeight;
+               
+               // Only adjust if viewport height changed significantly
+               if (Math.abs(currentHeight - initialViewportHeight) > 50) {
+                 setTimeout(() => {
+                   // Smoothly scroll to keep the active date input visible
+                   activeDateInput.scrollIntoView({ 
+                     behavior: 'smooth', 
+                     block: 'center',
+                     inline: 'nearest'
+                   });
+                 }, 100);
+               }
+             }
+           });
+           
+           // Handle orientation changes gracefully
+           window.addEventListener('orientationchange', function() {
+             if (isDatePickerOpen && activeDateInput) {
+               // Wait for orientation change to complete
+               setTimeout(() => {
+                 // Smoothly scroll to keep the active date input visible
+                 activeDateInput.scrollIntoView({ 
+                   behavior: 'smooth', 
+                   block: 'center',
+                   inline: 'nearest'
+                 });
+               }, 500);
+             }
+           });
+           
+           // Handle virtual keyboard appearance (iOS Safari)
+           if ('visualViewport' in window) {
+             window.visualViewport.addEventListener('resize', function() {
+               if (isDatePickerOpen && activeDateInput) {
+                 setTimeout(() => {
+                   // Only adjust if the input is not visible
+                   const rect = activeDateInput.getBoundingClientRect();
+                   if (rect.bottom > window.visualViewport.height) {
+                     activeDateInput.scrollIntoView({ 
+                       behavior: 'smooth', 
+                       block: 'center',
+                       inline: 'nearest'
+                     });
+                   }
+                 }, 100);
+               }
+             });
+           }
+         });
+       }
+     </script>
+   </body>
 </html>
