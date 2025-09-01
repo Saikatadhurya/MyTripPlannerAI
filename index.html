@@ -203,6 +203,22 @@
       .slide-down-animation {
         animation: slideDown 0.3s ease-out;
       }
+      
+      /* Minimal iOS datepicker fix - only affects date inputs */
+      @supports (-webkit-touch-callout: none) {
+        input[type="date"] {
+          /* Prevent iOS zoom on focus */
+          font-size: 16px !important;
+          /* Ensure proper touch target */
+          min-height: 44px !important;
+          /* Prevent iOS from applying default styles */
+          -webkit-appearance: none;
+          appearance: none;
+          /* Ensure consistent rendering */
+          border-radius: 8px;
+          padding: 12px 16px;
+        }
+      }
     </style>
   <script type="importmap">
 {
@@ -219,5 +235,33 @@
   <body class="text-gray-800">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
+    
+    <!-- Minimal iOS datepicker fix - no layout breaking -->
+    <script>
+      // Only run on iOS devices
+      if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+        document.addEventListener('DOMContentLoaded', function() {
+          // Find all date inputs
+          const dateInputs = document.querySelectorAll('input[type="date"]');
+          
+          dateInputs.forEach(input => {
+            // Handle focus - when date picker opens
+            input.addEventListener('focus', function() {
+              // Simple fix: ensure input is visible without breaking layout
+              setTimeout(() => {
+                const rect = this.getBoundingClientRect();
+                if (rect.bottom > window.innerHeight) {
+                  // Only scroll if input is below viewport
+                  this.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'center'
+                  });
+                }
+              }, 100);
+            });
+          });
+        });
+      }
+    </script>
   </body>
 </html>
