@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Plan Your Dream Trip with AI</title>
+         <meta charset="UTF-8" />
+     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>PLANORA - AI Travel Planning</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
@@ -203,7 +203,150 @@
       .slide-down-animation {
         animation: slideDown 0.3s ease-out;
       }
-    </style>
+      /* Custom animations for auth modal */
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes slideUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      .auth-modal-enter {
+        animation: fadeIn 0.3s ease-out;
+      }
+
+      .auth-modal-content-enter {
+        animation: slideDown 0.3s ease-out;
+      }
+
+      .user-profile-dropdown-enter {
+        animation: slideUp 0.2s ease-out;
+      }
+
+      /* Slide down animation for header */
+      @keyframes slideDownAnimation {
+        from {
+          transform: translateY(-100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      .slide-down-animation {
+        animation: slideDownAnimation 0.3s ease-out;
+      }
+
+      /* Animated cards */
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .animated-card {
+        animation: fadeInUp 0.6s ease-out forwards;
+        opacity: 0;
+      }
+
+      /* Loading spinner */
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+             .animate-spin {
+         animation: spin 1s linear infinite;
+       }
+       
+       /* iOS-specific fixes for date inputs and viewport issues */
+       @supports (-webkit-touch-callout: none) {
+         /* iOS Safari specific styles */
+         input[type="date"] {
+           /* Prevent iOS from zooming in on focus */
+           font-size: 16px !important;
+         }
+         
+         /* Fix for iOS viewport shifting when date picker opens */
+         body {
+           /* Prevent iOS Safari from adjusting viewport */
+           -webkit-text-size-adjust: 100%;
+           -ms-text-size-adjust: 100%;
+           text-size-adjust: 100%;
+         }
+         
+         /* Ensure forms stay in view on iOS */
+         form {
+           /* Prevent iOS from shifting the form */
+           transform: translateZ(0);
+           -webkit-transform: translateZ(0);
+         }
+         
+         /* Fix for iOS input focus issues */
+         input:focus,
+         select:focus,
+         textarea:focus {
+           /* Prevent iOS from zooming and shifting */
+           transform: translateZ(0);
+           -webkit-transform: translateZ(0);
+         }
+       }
+       
+       /* Additional mobile viewport fixes */
+       @media screen and (max-width: 768px) {
+         /* Prevent horizontal scrolling on mobile */
+         body {
+           overflow-x: hidden;
+         }
+         
+         /* Ensure form inputs don't overflow on mobile */
+         input[type="date"],
+         input[type="text"],
+         select,
+         textarea {
+           max-width: 100%;
+           box-sizing: border-box;
+         }
+         
+         /* Fix for mobile date picker viewport issues */
+         .date-input-container {
+           position: relative;
+           z-index: 1;
+         }
+       }
+     </style>
   <script type="importmap">
 {
   "imports": {
@@ -218,6 +361,40 @@
 </head>
   <body class="text-gray-800">
     <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
-  </body>
+         <script type="module" src="/index.tsx"></script>
+     
+     <!-- iOS-specific viewport fixes -->
+     <script>
+       // Fix for iOS Safari viewport issues with date inputs
+       if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+         // Prevent iOS from adjusting viewport when date picker opens
+         document.addEventListener('DOMContentLoaded', function() {
+           // Fix viewport on date input focus
+           const dateInputs = document.querySelectorAll('input[type="date"]');
+           dateInputs.forEach(input => {
+             input.addEventListener('focus', function() {
+               // Prevent iOS from zooming and shifting viewport
+               setTimeout(() => {
+                 window.scrollTo(0, 0);
+               }, 100);
+             });
+             
+             input.addEventListener('blur', function() {
+               // Restore viewport after date picker closes
+               setTimeout(() => {
+                 window.scrollTo(0, 0);
+               }, 100);
+             });
+           });
+           
+           // Prevent iOS Safari from adjusting viewport on orientation change
+           window.addEventListener('orientationchange', function() {
+             setTimeout(() => {
+               window.scrollTo(0, 0);
+             }, 100);
+           });
+         });
+       }
+     </script>
+   </body>
 </html>
