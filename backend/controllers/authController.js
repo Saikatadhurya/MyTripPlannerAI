@@ -54,7 +54,7 @@ exports.signin = async (req, res) => {
 exports.socialAuthCallback = async (req, res) => {
     // Passport will attach user to req.user (minimal info)
     if (!req.user || !req.user.id) {
-        return res.status(401).json({ message: 'Social authentication failed: user not found in request' });
+        return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5000'}?error=${encodeURIComponent('Social authentication failed: user not found in request')}`);
     }
 
     try {
@@ -62,14 +62,19 @@ exports.socialAuthCallback = async (req, res) => {
         const user = await userModel.findUserById(req.user.id);
 
         if (!user) {
-            return res.status(404).json({ message: 'Social authentication failed: user not found in database' });
+            return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5000'}?error=${encodeURIComponent('Social authentication failed: user not found in database')}`);
         }
 
         const token = jwt.generateToken({ id: user.id, email: user.email });
-        res.status(200).json({ message: 'Social login successful', user, token });
+        
+        // Redirect to frontend with token and user data
+        const userData = encodeURIComponent(JSON.stringify(user));
+        const redirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:5000'}?token=${token}&user=${userData}`;
+        
+        res.redirect(redirectUrl);
     } catch (error) {
         console.error('Social auth callback error:', error);
-        res.status(500).json({ message: 'Server error during social authentication' });
+        res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5000'}?error=${encodeURIComponent('Server error during social authentication')}`);
     }
 };
 

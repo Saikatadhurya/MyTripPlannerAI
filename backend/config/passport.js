@@ -21,7 +21,7 @@ passport.deserializeUser(async (id, done) => {
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: '/auth/google/callback'
+    callbackURL: `${process.env.BACKEND_URL || 'http://localhost:5000'}/auth/google/callback`
 }, async (accessToken, refreshToken, profile, done) => {
     try {
         let socialAccount = await userModel.findSocialAccount('google', profile.id);
@@ -55,7 +55,7 @@ passport.use(new GoogleStrategy({
 passport.use(new TwitterStrategy({
     consumerKey: process.env.TWITTER_CONSUMER_KEY,
     consumerSecret: process.env.TWITTER_CONSUMER_SECRET,
-    callbackURL: '/auth/twitter/callback',
+    callbackURL: `${process.env.BACKEND_URL || 'http://localhost:5000'}/auth/twitter/callback`,
     includeEmail: true // Request email from Twitter
 }, async (token, tokenSecret, profile, done) => {
     try {

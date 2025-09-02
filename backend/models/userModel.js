@@ -52,7 +52,7 @@ class UserModel {
     const client = await pool.connect();
     try {
       const res = await client.query(
-        `INSERT INTO social_accounts(user_id, provider, provider_id) VALUES($1, $2, $3) RETURNING *`,
+        `INSERT INTO planora.social_accounts(user_id, provider, provider_id) VALUES($1, $2, $3) RETURNING *`,
         [user_id, provider, provider_id]
       );
       return res.rows[0];
@@ -66,7 +66,7 @@ class UserModel {
     try {
       const res = await client.query(
         `SELECT sa.id as social_id, sa.user_id, sa.provider, sa.provider_id, u.id as user_id, u.full_name, u.email
-         FROM social_accounts sa
+         FROM planora.social_accounts sa
          JOIN planora.users u ON sa.user_id = u.id
          WHERE sa.provider = $1 AND sa.provider_id = $2`,
         [provider, provider_id]
@@ -186,7 +186,7 @@ class UserModel {
     try {
       // Check if social account already exists for this user and provider
       const existingAccount = await client.query(
-        'SELECT id FROM social_accounts WHERE user_id = $1 AND provider = $2',
+        'SELECT id FROM planora.social_accounts WHERE user_id = $1 AND provider = $2',
         [userId, provider]
       );
 
@@ -196,7 +196,7 @@ class UserModel {
 
       // Check if provider_id is already used by another user
       const providerCheck = await client.query(
-        'SELECT user_id FROM social_accounts WHERE provider = $1 AND provider_id = $2',
+        'SELECT user_id FROM planora.social_accounts WHERE provider = $1 AND provider_id = $2',
         [provider, providerId]
       );
 
@@ -206,7 +206,7 @@ class UserModel {
 
       // Insert new social account
       const result = await client.query(
-        'INSERT INTO social_accounts (user_id, provider, provider_id) VALUES ($1, $2, $3) RETURNING id, user_id, provider, provider_id, created_at',
+        'INSERT INTO planora.social_accounts (user_id, provider, provider_id) VALUES ($1, $2, $3) RETURNING id, user_id, provider, provider_id, created_at',
         [userId, provider, providerId]
       );
 
@@ -220,7 +220,7 @@ class UserModel {
     const client = await pool.connect();
     try {
       const result = await client.query(
-        'DELETE FROM social_accounts WHERE user_id = $1 AND provider = $2 RETURNING id',
+        'DELETE FROM planora.social_accounts WHERE user_id = $1 AND provider = $2 RETURNING id',
         [userId, provider]
       );
 
@@ -238,7 +238,7 @@ class UserModel {
     const client = await pool.connect();
     try {
       const result = await client.query(
-        'SELECT id, provider, provider_id, created_at FROM social_accounts WHERE user_id = $1 ORDER BY created_at',
+        'SELECT id, provider, provider_id, created_at FROM planora.social_accounts WHERE user_id = $1 ORDER BY created_at',
         [userId]
       );
 
@@ -255,7 +255,7 @@ class UserModel {
 
       // Delete social accounts first (due to foreign key constraint)
       await client.query(
-        'DELETE FROM social_accounts WHERE user_id = $1',
+        'DELETE FROM planora.social_accounts WHERE user_id = $1',
         [userId]
       );
 

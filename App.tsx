@@ -345,6 +345,40 @@ const App: React.FC = () => {
     scrollToTop();
   }, [scrollToTop]);
 
+  // Handle Google OAuth callback
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    const user = urlParams.get('user');
+    const error = urlParams.get('error');
+
+    if (token && user) {
+      try {
+        const userData = JSON.parse(decodeURIComponent(user));
+        // Store the token and user data
+        localStorage.setItem('planora_token', token);
+        localStorage.setItem('planora_user', JSON.stringify(userData));
+        
+        // Update the app state
+        setUser(userData);
+        setAuthError(null);
+        
+        // Clear URL parameters
+        window.history.replaceState({}, document.title, window.location.pathname);
+        
+        // Redirect to landing page
+        handleViewChange('landing');
+      } catch (error) {
+        console.error('Error parsing user data from Google OAuth:', error);
+        setAuthError('Failed to process Google authentication');
+      }
+    } else if (error) {
+      setAuthError(decodeURIComponent(error));
+      // Clear URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [handleViewChange]);
+
   const createInitialData = (destination?: string) => {
     const data: QuestionnaireData = {
         destination: '',
