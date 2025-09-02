@@ -15,7 +15,12 @@ const app = express();
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors());
+app.use(cors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:5000',
+    credentials: true
+}));
+
+// Session configuration
 app.use(session({
     secret: process.env.SESSION_SECRET || 'your-session-secret-key',
     resave: false,
@@ -26,10 +31,12 @@ app.use(session({
         maxAge: 24 * 60 * 60 * 1000 // 24 hours
     }
 }));
+
+// Passport middleware
 app.use(passport.initialize());
 app.use(passport.session());
 
-// ✅ Serve static files from dist (absolute path)
+// Serve static files from dist (absolute path)
 app.use(express.static(path.join(__dirname, '../dist')));
 
 // Routes
@@ -40,17 +47,15 @@ app.get('/protected', protect, (req, res) => {
     res.json({ message: `Welcome ${req.user.email}, you have access to protected data!` });
 });
 
-// ✅ Catch-all route for frontend (React/Angular/Vue SPA)
-// Catch-all for frontend routes
+// Catch-all route for frontend (React/Angular/Vue SPA)
 app.use((req, res) => {
     res.sendFile(path.join(__dirname, '../dist/index.html'));
-  });
-  
-
-
+});
 
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
+    console.log(`Frontend available at: http://localhost:${PORT}`);
+    console.log(`API available at: http://localhost:${PORT}/api`);
 });

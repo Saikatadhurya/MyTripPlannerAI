@@ -38,12 +38,6 @@ const validateUpdateProfile = [
 
 // Validation rules for changing password
 const validateChangePassword = [
-  body('currentPassword')
-    .notEmpty()
-    .withMessage('Current password is required')
-    .isLength({ min: 8 })
-    .withMessage('Current password must be at least 8 characters'),
-  
   body('newPassword')
     .notEmpty()
     .withMessage('New password is required')
@@ -58,8 +52,8 @@ const validateConnectSocialAccount = [
   body('provider')
     .notEmpty()
     .withMessage('Provider is required')
-    .isIn(['google', 'twitter'])
-    .withMessage('Provider must be either google or twitter'),
+    .isIn(['google'])
+    .withMessage('Provider must be google'),
   
   body('providerId')
     .notEmpty()
@@ -75,8 +69,8 @@ const validateDisconnectSocialAccount = [
   param('provider')
     .notEmpty()
     .withMessage('Provider is required')
-    .isIn(['google', 'twitter'])
-    .withMessage('Provider must be either google or twitter'),
+    .isIn(['google'])
+    .withMessage('Provider must be google'),
   
   handleValidationErrors
 ];

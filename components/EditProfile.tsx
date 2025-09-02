@@ -52,6 +52,12 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate
   });
   const [successMessage, setSuccessMessage] = useState('');
   const [activeTab, setActiveTab] = useState<'profile' | 'password' | 'security'>('profile');
+  
+  // Google account linking state
+  const [isGoogleLinked, setIsGoogleLinked] = useState(false);
+  const [isCheckingGoogleStatus, setIsCheckingGoogleStatus] = useState(true);
+  // Whether user already has a password set (for social logins)
+  const [hasPassword, setHasPassword] = useState<boolean>(true);
 
   useEffect(() => {
     if (user) {
@@ -84,6 +90,67 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate
     }
   }, []);
 
+  // Load profile meta (has_password) for conditional password UI
+  useEffect(() => {
+    const loadProfileMeta = async () => {
+      try {
+        const resp = await profileService.getProfile();
+        const hp = (resp as any)?.data?.user?.has_password;
+        if (typeof hp === 'boolean') setHasPassword(hp);
+      } catch (e) {
+        console.warn('EditProfile: Failed to load profile meta');
+      }
+    };
+    loadProfileMeta();
+  }, []);
+
+  // Check Google account linking status
+  useEffect(() => {
+    const checkGoogleStatus = async () => {
+      try {
+        setIsCheckingGoogleStatus(true);
+        const hasGoogle = await profileService.hasGoogleAccount();
+        setIsGoogleLinked(hasGoogle);
+      } catch (error) {
+        console.error('Error checking Google account status:', error);
+        setIsGoogleLinked(false);
+      } finally {
+        setIsCheckingGoogleStatus(false);
+      }
+    };
+
+    checkGoogleStatus();
+  }, []);
+
+  // Handle URL parameters for Google OAuth callbacks
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const message = urlParams.get('message');
+    const error = urlParams.get('error');
+
+    if (message) {
+      setSuccessMessage(decodeURIComponent(message));
+      // Clear the URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+      // Refresh Google account status
+      const checkGoogleStatus = async () => {
+        try {
+          const hasGoogle = await profileService.hasGoogleAccount();
+          setIsGoogleLinked(hasGoogle);
+        } catch (error) {
+          console.error('Error refreshing Google account status:', error);
+        }
+      };
+      checkGoogleStatus();
+    }
+
+    if (error) {
+      setErrors({ general: decodeURIComponent(error) });
+      // Clear the URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
+
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
@@ -99,7 +166,7 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate
 
     // Password validation
     if (activeTab === 'password') {
-      if (!formData.current_password) {
+      if (hasPassword && !formData.current_password) {
         newErrors.current_password = 'Current password is required';
       }
 
@@ -394,46 +461,50 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate
               {/* Password Tab */}
               {activeTab === 'password' && (
                 <div className="space-y-6">
-                                     <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                     <div className="flex items-start space-x-3">
-                       <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
-                       <div>
-                         <h4 className="font-medium text-blue-900">Password Requirements</h4>
-                         <p className="text-blue-800 text-sm mt-1">
-                           Your password must be at least 8 characters long.
-                         </p>
-                       </div>
-                     </div>
-                   </div>
-
-                  {/* Current Password */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Current Password
-                    </label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                      <input
-                        type={showPasswords.current ? 'text' : 'password'}
-                        value={formData.current_password}
-                        onChange={(e) => handleInputChange('current_password', e.target.value)}
-                        className={`w-full pl-10 pr-12 py-3 border rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-colors ${
-                          errors.current_password ? 'border-red-300' : 'border-gray-300'
-                        }`}
-                        placeholder="Enter your current password"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPasswords(prev => ({ ...prev, current: !prev.current }))}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      >
-                        {showPasswords.current ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                      </button>
+                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                    <div className="flex items-start space-x-3">
+                      <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
+                      <div>
+                        <h4 className="font-medium text-blue-900">{hasPassword ? 'Password Requirements' : 'Set a password'}</h4>
+                        <p className="text-blue-800 text-sm mt-1">
+                          {hasPassword
+                            ? 'Your password must be at least 8 characters long.'
+                            : 'You signed in with a social account. Set a password to enable email + password login.'}
+                        </p>
+                      </div>
                     </div>
-                    {errors.current_password && (
-                      <p className="mt-1 text-sm text-red-600">{errors.current_password}</p>
-                    )}
                   </div>
+
+                  {/* Current Password (only if user already has a password) */}
+                  {hasPassword && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Current Password
+                      </label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <input
+                          type={showPasswords.current ? 'text' : 'password'}
+                          value={formData.current_password}
+                          onChange={(e) => handleInputChange('current_password', e.target.value)}
+                          className={`w-full pl-10 pr-12 py-3 border rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-colors ${
+                            errors.current_password ? 'border-red-300' : 'border-gray-300'
+                          }`}
+                          placeholder="Enter your current password"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPasswords(prev => ({ ...prev, current: !prev.current }))}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                          {showPasswords.current ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        </button>
+                      </div>
+                      {errors.current_password && (
+                        <p className="mt-1 text-sm text-red-600">{errors.current_password}</p>
+                      )}
+                    </div>
+                  )}
 
                   {/* New Password */}
                   <div>
@@ -504,9 +575,70 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate
                       <div>
                         <h4 className="font-medium text-amber-900">Security Features</h4>
                         <p className="text-amber-800 text-sm mt-1">
-                          Additional security features will be available soon, including two-factor authentication and login history.
+                          Manage your account security and linked social accounts.
                         </p>
                       </div>
+                    </div>
+                  </div>
+
+                  {/* Google Account Linking */}
+                  <div className="bg-white border border-gray-200 rounded-xl p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-yellow-500 rounded-full flex items-center justify-center">
+                          <svg className="w-5 h-5 text-white" viewBox="0 0 24 24">
+                            <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                            <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                            <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                            <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                          </svg>
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-gray-900">Google Account</h4>
+                          <p className="text-sm text-gray-600">
+                            {isCheckingGoogleStatus ? 'Checking status...' : 
+                             isGoogleLinked ? 'Linked to your account' : 'Not linked to your account'}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {!isCheckingGoogleStatus && (
+                        <button
+                          onClick={() => {
+                            if (isGoogleLinked) {
+                              // Handle unlinking
+                              if (window.confirm('Are you sure you want to unlink your Google account? You will no longer be able to sign in with Google.')) {
+                                profileService.disconnectSocialAccount('google')
+                                  .then(() => {
+                                    setIsGoogleLinked(false);
+                                    setSuccessMessage('Google account unlinked successfully!');
+                                  })
+                                  .catch((error) => {
+                                    setErrors({ general: error.message });
+                                  });
+                              }
+                            } else {
+                              // Handle linking
+                              profileService.initiateGoogleLinking();
+                            }
+                          }}
+                          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                            isGoogleLinked
+                              ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                              : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                          }`}
+                        >
+                          {isGoogleLinked ? 'Unlink Account' : 'Link Account'}
+                        </button>
+                      )}
+                    </div>
+                    
+                    <div className="text-sm text-gray-600">
+                      {isGoogleLinked ? (
+                        <p>Your Google account is linked. You can sign in using either your email/password or Google.</p>
+                      ) : (
+                        <p>Link your Google account to enable quick sign-in and enhanced security.</p>
+                      )}
                     </div>
                   </div>
 
@@ -541,7 +673,7 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate
                   ) : (
                     <span>
                       {activeTab === 'profile' ? 'Save Changes' : 
-                       activeTab === 'password' ? 'Change Password' : 'Save'}
+                       activeTab === 'password' ? (hasPassword ? 'Change Password' : 'Set Password') : 'Save'}
                     </span>
                   )}
                 </button>

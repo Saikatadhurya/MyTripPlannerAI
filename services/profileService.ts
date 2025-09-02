@@ -1,4 +1,4 @@
-import { User } from '../types';
+import { User } from './authService';
 
 export interface ProfileUpdateData {
   full_name?: string;
@@ -128,6 +128,43 @@ class ProfileService {
     });
 
     return this.handleResponse(response);
+  }
+
+  // Check if user has Google account linked
+  async hasGoogleAccount(): Promise<boolean> {
+    try {
+      const socialAccounts = await this.getSocialAccounts();
+      return socialAccounts.data?.some((account: any) => account.provider === 'google') || false;
+    } catch (error) {
+      console.error('Error checking Google account:', error);
+      return false;
+    }
+  }
+
+  // Initiate Google OAuth linking
+  initiateGoogleLinking(): void {
+    // Get current user ID from localStorage
+    const userStr = localStorage.getItem('planora_user');
+    let userId = null;
+    
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        userId = user.id;
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+      }
+    }
+    
+    if (!userId) {
+      throw new Error('User not found. Please sign in to link your Google account.');
+    }
+    
+    // Redirect to Google OAuth with returnUrl and state parameters
+    const currentUrl = window.location.href;
+    const state = encodeURIComponent(JSON.stringify({ userId }));
+    const linkingUrl = `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/auth/google/link?returnUrl=${encodeURIComponent(currentUrl)}&state=${state}`;
+    window.location.href = linkingUrl;
   }
 
   // Connect social account

@@ -176,10 +176,6 @@ class AuthService {
     window.location.href = `${API_URL}/google`;
   }
 
-  loginWithTwitter(): void {
-    window.location.href = `${API_URL}/twitter`;
-  }
-
   // Removed updateProfile, changePassword, and resetPassword for now as they are not part of current backend scope
 
 }

@@ -10,6 +10,9 @@ router.post('/signin', authController.signin);
 // DB Test Route
 router.get('/db-test', authController.testDbConnection);
 
+// Social Accounts Test Route
+router.get('/test-social-accounts', authController.testSocialAccounts);
+
 // Google Auth
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 router.get('/google/callback', 
@@ -17,11 +20,11 @@ router.get('/google/callback',
     authController.socialAuthCallback
 );
 
-// Twitter Auth
-router.get('/twitter', passport.authenticate('twitter'));
-router.get('/twitter/callback', 
-    passport.authenticate('twitter', { failureRedirect: '/login' }),
-    authController.socialAuthCallback
+// Google OAuth linking for existing users
+router.get('/google/link', passport.authenticate('google-link', { scope: ['profile', 'email'] }));
+router.get('/google/link/callback', 
+    passport.authenticate('google-link', { failureRedirect: '/login' }),
+    authController.googleLinkingCallback
 );
 
 module.exports = router;

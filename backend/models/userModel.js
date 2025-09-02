@@ -77,6 +77,19 @@ class UserModel {
     }
   }
 
+  async deleteSocialAccount(provider, provider_id) {
+    const client = await pool.connect();
+    try {
+      const res = await client.query(
+        `DELETE FROM planora.social_accounts WHERE provider = $1 AND provider_id = $2 RETURNING *`,
+        [provider, provider_id]
+      );
+      return res.rows[0];
+    } finally {
+      client.release();
+    }
+  }
+
   async hashPassword(password) {
     const saltRounds = 10;
     return bcrypt.hash(password, saltRounds);
@@ -155,10 +168,15 @@ class UserModel {
 
       const user = userResult.rows[0];
 
-      // Verify current password
-      const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password_hash);
-      if (!isCurrentPasswordValid) {
-        throw new Error('Current password is incorrect');
+      // If user already has a password, verify current password
+      if (user.password_hash) {
+        if (!currentPassword) {
+          throw new Error('Current password is required');
+        }
+        const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password_hash);
+        if (!isCurrentPasswordValid) {
+          throw new Error('Current password is incorrect');
+        }
       }
 
       // Hash new password
@@ -283,7 +301,7 @@ class UserModel {
     const client = await pool.connect();
     try {
       const result = await client.query(
-        'SELECT id, full_name, email, created_at, updated_at FROM planora.users WHERE id = $1',
+        'SELECT id, full_name, email, created_at, updated_at, (password_hash IS NOT NULL) AS has_password FROM planora.users WHERE id = $1',
         [userId]
       );
 

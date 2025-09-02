@@ -24,7 +24,8 @@ class ProfileController {
             email: user.email,
             created_at: user.created_at,
             updated_at: user.updated_at,
-            social_accounts: user.social_accounts
+            social_accounts: user.social_accounts,
+            has_password: user.has_password
           }
         }
       });
@@ -114,11 +115,15 @@ class ProfileController {
       const userId = req.user.id;
       const { currentPassword, newPassword } = req.body;
 
+      // Determine if user already has a password
+      const user = await userModel.getUserById(userId);
+      const hasPassword = !!user?.has_password;
+
       // Validate input
-      if (!currentPassword || !newPassword) {
+      if (!newPassword) {
         return res.status(400).json({
           success: false,
-          message: 'Current password and new password are required'
+          message: 'New password is required'
         });
       }
 
@@ -129,7 +134,14 @@ class ProfileController {
         });
       }
 
-      if (currentPassword === newPassword) {
+      if (hasPassword && !currentPassword) {
+        return res.status(400).json({
+          success: false,
+          message: 'Current password is required'
+        });
+      }
+
+      if (hasPassword && currentPassword === newPassword) {
         return res.status(400).json({
           success: false,
           message: 'New password must be different from current password'
@@ -149,6 +161,13 @@ class ProfileController {
         return res.status(401).json({
           success: false,
           message: 'Current password is incorrect'
+        });
+      }
+
+      if (error.message === 'Current password is required') {
+        return res.status(400).json({
+          success: false,
+          message: 'Current password is required'
         });
       }
 
@@ -180,10 +199,10 @@ class ProfileController {
         });
       }
 
-      if (!['google', 'twitter'].includes(provider.toLowerCase())) {
+      if (!['google'].includes(provider.toLowerCase())) {
         return res.status(400).json({
           success: false,
-          message: 'Invalid provider. Supported providers: google, twitter'
+          message: 'Invalid provider. Supported providers: google'
         });
       }
 
@@ -232,10 +251,10 @@ class ProfileController {
         });
       }
 
-      if (!['google', 'twitter'].includes(provider.toLowerCase())) {
+      if (!['google'].includes(provider.toLowerCase())) {
         return res.status(400).json({
           success: false,
-          message: 'Invalid provider. Supported providers: google, twitter'
+          message: 'Invalid provider. Supported providers: google'
         });
       }
 

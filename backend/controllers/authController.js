@@ -88,3 +88,125 @@ exports.testDbConnection = async (req, res) => {
         res.status(500).json({ message: 'Database connection failed', error: error.message });
     }
 };
+
+// Google OAuth linking callback for existing users
+exports.googleLinkingCallback = async (req, res) => {
+    try {
+        // Get profile info from authInfo (third parameter from Passport)
+        const profileInfo = req.authInfo?.profile;
+        if (!profileInfo || !profileInfo.id) {
+            return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5000'}?error=${encodeURIComponent('Google linking failed: profile not found in request')}`);
+        }
+
+        // Get the return URL and state from query parameters
+        const returnUrl = req.query.returnUrl || `${process.env.FRONTEND_URL || 'http://localhost:5000'}`;
+        const stateParam = req.query.state;
+        let currentUserId = null;
+        
+        if (stateParam) {
+            try {
+                const decodedState = JSON.parse(decodeURIComponent(stateParam));
+                if (decodedState.userId) {
+                    currentUserId = decodedState.userId;
+                }
+            } catch (parseError) {
+                console.error('Error parsing state parameter:', parseError);
+            }
+        }
+        
+        if (!currentUserId) {
+            return res.redirect(`${returnUrl}?error=${encodeURIComponent('Please sign in to link your Google account')}`);
+        }
+        
+        // Check if this Google account is already linked to another user
+        const existingSocialAccount = await userModel.findSocialAccount('google', profileInfo.id);
+        if (existingSocialAccount && existingSocialAccount.user_id !== currentUserId) {
+            return res.redirect(`${returnUrl}?error=${encodeURIComponent('This Google account is already linked to another user')}`);
+        }
+        
+        // Check if current user already has a Google account linked
+        const userSocialAccounts = await userModel.getSocialAccounts(currentUserId);
+        const hasGoogleLinked = userSocialAccounts.data?.some(account => account.provider === 'google') || false;
+        if (hasGoogleLinked) {
+            return res.redirect(`${returnUrl}?error=${encodeURIComponent('You already have a Google account linked')}`);
+        }
+
+        // Create the social account link
+        try {
+            console.log('Creating social account link:', {
+                user_id: currentUserId,
+                provider: 'google',
+                provider_id: profileInfo.id
+            });
+            
+            const result = await userModel.createSocialAccount({
+                user_id: currentUserId,
+                provider: 'google',
+                provider_id: profileInfo.id
+            });
+            
+            console.log('Social account created successfully:', result);
+            
+            const successUrl = `${returnUrl}?message=${encodeURIComponent('Google account linked successfully!')}`;
+            res.redirect(successUrl);
+        } catch (linkError) {
+            console.error('Error linking Google account:', linkError);
+            const errorUrl = `${returnUrl}?error=${encodeURIComponent('Failed to link Google account. Please try again.')}`;
+            res.redirect(errorUrl);
+        }
+    } catch (error) {
+        console.error('Google linking callback error:', error);
+        const returnUrl = req.query.returnUrl || `${process.env.FRONTEND_URL || 'http://localhost:5000'}`;
+        res.redirect(`${returnUrl}?error=${encodeURIComponent('Server error during Google account linking')}`);
+    }
+};
+
+// Test database connection and social accounts table
+exports.testSocialAccounts = async (req, res) => {
+    try {
+        console.log('Testing social accounts functionality...');
+        
+        // Test database connection
+        const testUser = await userModel.findUserByEmail('test@example.com');
+        console.log('Database connection test:', testUser ? 'Connected' : 'Connected (no test user found)');
+        
+        // Test social accounts table structure
+        try {
+            const result = await userModel.createSocialAccount({
+                user_id: '00000000-0000-0000-0000-000000000000', // Test UUID
+                provider: 'test',
+                provider_id: 'test123'
+            });
+            console.log('Social accounts table test - INSERT:', result);
+            
+            // Clean up test data
+            await userModel.deleteSocialAccount('test', 'test123');
+            console.log('Social accounts table test - DELETE: Success');
+            
+            res.json({ 
+                success: true, 
+                message: 'Database and social accounts table working correctly',
+                details: {
+                    database: 'Connected',
+                    social_accounts_table: 'Working',
+                    insert_test: 'Passed',
+                    delete_test: 'Passed'
+                }
+            });
+        } catch (tableError) {
+            console.error('Social accounts table test failed:', tableError);
+            res.status(500).json({ 
+                success: false, 
+                message: 'Social accounts table test failed',
+                error: tableError.message
+            });
+        }
+    } catch (error) {
+        console.error('Database test error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Database test failed',
+            error: error.message
+        });
+    }
+};
