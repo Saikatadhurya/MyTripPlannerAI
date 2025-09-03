@@ -1,4 +1,6 @@
 
+
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { QuestionnaireData, PackingListRequestData, PackingList, FoodFinderRequestData, FoodRecommendations, AppFinderRequestData, AppRecommendations, MusicFinderRequestData, MusicRecommendations, LingoFinderRequestData, LingoRecommendations, QuestionnaireData as InitialQuestionnaireData, UnifiedPlan, UnifiedPlanLoadingStatus, Itinerary } from './types';
 import { generateItinerary } from './services/geminiService';
@@ -34,6 +36,7 @@ import Header from './components/Header';
 interface BottomNavBarProps {
   onGoHome: () => void;
   onPlanTrip: () => void;
+  onStartItineraryPlanner: () => void;
   onStartPacking: () => void;
   onStartFoodFinder: () => void;
   onStartAppFinder: () => void;
@@ -59,12 +62,13 @@ const NavItem: React.FC<{
 );
 
 const MoreMenu: React.FC<{
+    onStartItineraryPlanner: () => void;
     onStartAppFinder: () => void;
     onStartMusicFinder: () => void;
     onStartLingoFinder: () => void;
     onGoToContact: () => void;
     onClose: () => void;
-}> = ({ onStartAppFinder, onStartMusicFinder, onStartLingoFinder, onGoToContact, onClose }) => {
+}> = ({ onStartItineraryPlanner, onStartAppFinder, onStartMusicFinder, onStartLingoFinder, onGoToContact, onClose }) => {
     const handleAction = (action: () => void) => {
         action();
         onClose();
@@ -72,6 +76,11 @@ const MoreMenu: React.FC<{
 
     return (
         <div className="absolute bottom-full right-0 mb-2 w-56 bg-white/95 backdrop-blur-xl border border-slate-200/70 rounded-xl shadow-lg p-2 flex flex-col z-40">
+            <button onClick={() => handleAction(onStartItineraryPlanner)} className="w-full flex items-center text-left px-3 py-2.5 rounded-lg text-slate-800 font-semibold transition-colors duration-200 hover:bg-violet-100/80">
+                <span className="text-xl w-8 text-center">🗓️</span>
+                <span>Itinerary Planner</span>
+            </button>
+             <hr className="border-slate-200/80 mx-2 my-1" />
             <button onClick={() => handleAction(onStartAppFinder)} className="w-full flex items-center text-left px-3 py-2.5 rounded-lg text-slate-800 font-semibold transition-colors duration-200 hover:bg-violet-100/80">
                 <span className="text-xl w-8 text-center">📱</span>
                 <span>App Finder</span>
@@ -96,6 +105,7 @@ const MoreMenu: React.FC<{
 const BottomNavBar: React.FC<BottomNavBarProps> = ({
   onGoHome,
   onPlanTrip,
+  onStartItineraryPlanner,
   onStartPacking,
   onStartFoodFinder,
   onStartAppFinder,
@@ -111,7 +121,7 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({
 
   const navItems = [
     { ids: ['landing'], label: 'Home', icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" /></svg>, action: onGoHome },
-    { ids: ['unifiedPlannerForm', 'questionnaire'], label: 'Plan Trip', icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM18 13.5l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 18l-1.035.259a3.375 3.375 0 00-2.456 2.456L18 21.75l-.259-1.035a3.375 3.375 0 00-2.456-2.456L14.25 18l1.035-.259a3.375 3.375 0 002.456-2.456L18 13.5z" /></svg>, action: onPlanTrip },
+    { ids: ['unifiedPlannerForm'], label: 'Plan Trip', icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM18 13.5l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 18l-1.035.259a3.375 3.375 0 00-2.456 2.456L18 21.75l-.259-1.035a3.375 3.375 0 00-2.456-2.456L14.25 18l1.035-.259a3.375 3.375 0 002.456-2.456L18 13.5z" /></svg>, action: onPlanTrip },
     { ids: ['packingAssistantForm'], label: 'Packing', icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 2a3 3 0 00-3 3v1H5a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V8a2 2 0 00-2-2h-2V5a3 3 0 00-3-3zm-1 4a1 1 0 10-2 0v1h2V6z" clipRule="evenodd" /></svg>, action: onStartPacking },
     { ids: ['foodFinderForm'], label: 'Food', icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path d="M11 3a1 1 0 10-2 0v1.088A7 7 0 004.53 10.756.5.5 0 005 11h10a.5.5 0 00.47-.244A7 7 0 0011 4.088V3z" /><path fillRule="evenodd" d="M15 13a.5.5 0 01.5.5v2a.5.5 0 01-.5.5H5a.5.5 0 01-.5-.5v-2a.5.5 0 01.5-.5h10z" clipRule="evenodd" /></svg>, action: onStartFoodFinder },
   ];
@@ -126,7 +136,7 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const isMoreSectionActive = ['contact', 'appFinderForm', 'musicFinderForm', 'lingoFinderForm'].includes(activeView);
+  const isMoreSectionActive = ['contact', 'appFinderForm', 'musicFinderForm', 'lingoFinderForm', 'questionnaire'].includes(activeView);
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 sm:hidden no-print">
@@ -144,6 +154,7 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({
           <div ref={moreMenuRef} className="relative flex-1">
             {isMoreMenuOpen && (
                 <MoreMenu
+                    onStartItineraryPlanner={onStartItineraryPlanner}
                     onStartAppFinder={onStartAppFinder}
                     onStartMusicFinder={onStartMusicFinder}
                     onStartLingoFinder={onStartLingoFinder}
@@ -310,10 +321,12 @@ const App: React.FC = () => {
     return data;
   }
 
-  const handleStartUnifiedPlanner = useCallback((destination?: string) => {
-    setInitialQuestionnaireData(createInitialData(destination));
-    handleViewChange('unifiedPlannerForm');
-  }, [handleViewChange]);
+  const handleStartUnifiedPlanner = useCallback((destination?: string | React.MouseEvent) => {
+      // Check if the argument is a string. If it's a mouse event or undefined, treat it as no destination.
+      const dest = typeof destination === 'string' ? destination : undefined;
+      setInitialQuestionnaireData(createInitialData(dest));
+      handleViewChange('unifiedPlannerForm');
+    }, [handleViewChange]);
   
   const handleStartItineraryPlanner = useCallback(() => {
     setInitialQuestionnaireData(createInitialData());
@@ -842,7 +855,8 @@ const App: React.FC = () => {
             <BottomNavBar
               onGoHome={handleBackToHome}
               onGoToContact={() => handleViewChange('contact')}
-              onPlanTrip={handleStartUnifiedPlanner}
+              onPlanTrip={() => handleStartUnifiedPlanner()}
+              onStartItineraryPlanner={handleStartItineraryPlanner}
               onStartPacking={() => handleViewChange('packingAssistantForm')}
               onStartFoodFinder={() => handleViewChange('foodFinderForm')}
               onStartAppFinder={() => handleViewChange('appFinderForm')}

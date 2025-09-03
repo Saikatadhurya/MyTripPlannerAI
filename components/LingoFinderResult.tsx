@@ -28,9 +28,8 @@ const AccordionItem: React.FC<{ category: PhraseCategory, isOpen: boolean, onTog
                 </svg>
             </button>
             <div
-                className={`transition-all duration-500 ease-in-out printable-accordion-content ${isOpen ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'}`}
+                className={`grid transition-[grid-template-rows,opacity] duration-500 ease-in-out printable-accordion-content ${isOpen ? 'opacity-100' : 'opacity-0'}`}
                 style={{
-                    display: 'grid',
                     gridTemplateRows: isOpen ? '1fr' : '0fr',
                 }}
             >
