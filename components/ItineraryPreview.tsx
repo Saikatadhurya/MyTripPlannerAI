@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect } from 'react';
 import { Itinerary } from '../types';
 import ExportOptions from './ExportOptions';
@@ -117,7 +116,7 @@ const DestinationInfoTabs: React.FC<{ destinationDetails: Itinerary['coveredDest
     return (
         <div className="bg-white/40 backdrop-blur-lg rounded-2xl shadow-lg border border-white/50 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
             <nav className="no-print border-b border-violet-200/50 p-2 sm:p-3">
-                <div className="flex space-x-1 sm:space-x-2 overflow-x-auto hide-scrollbar">
+                <div className="flex space-x-1 sm:space-x-2 overflow-x-auto hide-scrollbar [mask-image:linear-gradient(to_right,rgba(0,0,0,1)_85%,rgba(0,0,0,0))] lg:[mask-image:none]">
                     {availableSections.map(section => (
                         <button
                             key={section.title}

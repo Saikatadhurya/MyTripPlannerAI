@@ -95,7 +95,7 @@ export const getReferenceBlogs = async (destination: string, language: string): 
   try {
     // --- Find blogs using Google Search ---
     const searchPrompt = `Find up to 5 helpful and popular travel blog posts for planning a trip to ${destination}. Prioritize blogs written in ${language}.`;
-    const searchResponse = await ai.models.generateContent({
+    const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: searchPrompt,
       config: {
@@ -104,7 +104,7 @@ export const getReferenceBlogs = async (destination: string, language: string): 
       },
     });
 
-    const groundingChunks = searchResponse.candidates?.[0]?.groundingMetadata?.groundingChunks;
+    const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
 
     if (!Array.isArray(groundingChunks) || groundingChunks.length === 0) {
       return [];
@@ -249,10 +249,14 @@ export const generateItinerary = async (
   CRITICAL COST BREAKDOWN INSTRUCTIONS (MANDATORY):
   1.  **budgetSummary.total**: This MUST be the sum of all other per-person costs in the budgetSummary (stay, food, and any fuel or miscellaneous costs).
   2.  **budgetSummary.miscellaneous**:
-      - **For 'Car' and 'Bike' trips**: You MUST estimate a per-person budget for **tolls, parking, and minor unforeseen expenses**. This should be roughly 10-15% of the combined stay, food, and fuel costs.
-      - **For 'Standard' trips**: You MUST estimate a per-person budget for **local transport, activity entry fees, tips, and minor unforeseen expenses**. This should be roughly 10-15% of the combined stay and food costs.
-  3.  **plan.approxCost**: This field now represents the per-person daily cost for activities and food ONLY. It MUST EXCLUDE any inter-city travel fuel costs or miscellaneous budget items.
-
+      - **For 'Car' and 'Bike' trips**: You MUST estimate a per-person budget for **tolls, parking, and minor unforeseen expenses**.
+      - **For 'Standard' trips**: You MUST estimate a per-person budget for **local transport, tips, and other minor unforeseen expenses**. Entry fees for major attractions MUST NOT be included here; they belong in the daily cost.
+  3.  **plan.approxCost (CRITICAL - DYNAMIC CALCULATION REQUIRED)**: This field MUST represent the realistic per-person daily cost for **that day's specific activities and food ONLY**.
+      - **YOU ARE STRICTLY FORBIDDEN FROM SIMPLY AVERAGING THE TOTAL BUDGET.** Averaging is a critical failure.
+      - **HOW TO CALCULATE (MANDATORY):** For each day, you MUST use your search capabilities to estimate the real entry fees for all ticketed attractions listed in that day's 'activities'. You will then sum these entry fees with a reasonable estimate for that day's food recommendations. The final sum is the value for 'approxCost'.
+      - **Example:** A day visiting the **Louvre Museum** in Paris will have a significantly higher 'approxCost' than a day spent on a **free walking tour**.
+      - This value must EXCLUDE inter-city travel fuel and miscellaneous budget items.
+  
   ${(tripType === 'Car' || tripType === 'Bike') ? `
   CRITICAL VEHICLE-SPECIFIC INSTRUCTIONS:
   1.  **Vehicle Assumption**: Assume the user has a personal or rented vehicle. All 'transport' suggestions MUST be vehicle-centric (driving routes, times).
