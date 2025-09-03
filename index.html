@@ -237,26 +237,34 @@
     <script type="module" src="/index.tsx"></script>
     
     <!--
-      Robust iOS Keyboard Fix
-      Addresses a common bug in iOS Safari where fixed-position elements (like the bottom nav bar)
+      Advanced iOS Keyboard Fix
+      This script addresses a persistent bug in iOS Safari where fixed-position elements (like the bottom nav)
       get stuck in the middle of the screen after the on-screen keyboard is dismissed.
-      This script listens for when any text input loses focus, waits for the keyboard to hide,
-      and then forces the browser to repaint the layout, snapping all elements back into place.
+      This version directly targets the footer element and forces a repaint by briefly toggling its display property.
+      This is often more reliable than global `window.scrollTo` tricks, especially on complex, scrolled pages.
     -->
     <script>
       (function() {
         if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) {
+          const fixFooterPosition = () => {
+            // The footer is identified by its unique combination of classes, including 'sm:hidden' for mobile view.
+            const footer = document.querySelector('.sm\\:hidden.fixed.bottom-0');
+            if (footer) {
+              // Briefly hide and then show the element. This forces the browser to
+              // re-evaluate its CSS rules, including `bottom: 0`, snapping it back into place.
+              footer.style.display = 'none';
+              // Reading a property like offsetHeight is a trick to ensure the browser processes the style change.
+              footer.offsetHeight; 
+              footer.style.display = ''; // Reset to its original display style
+            }
+          };
+
           document.body.addEventListener('focusout', (event) => {
             const target = event.target;
-            // This selector targets all text-entry inputs and textareas.
-            if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
-              // A timeout is crucial to wait for the keyboard's hide animation to finish.
-              // 250ms is a generally safe value.
-              setTimeout(() => {
-                // Forcing a scroll to the current position is a well-known trick
-                // to make Safari recalculate the viewport and layout correctly.
-                window.scrollTo(window.scrollX, window.scrollY);
-              }, 250);
+            // The check includes common elements that trigger the keyboard.
+            if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+              // A short timeout is necessary to wait for the keyboard's hide animation to begin.
+              setTimeout(fixFooterPosition, 100);
             }
           });
         }
