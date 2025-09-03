@@ -52,7 +52,8 @@ const ScrollToTopButton: React.FC<ScrollToTopButtonProps> = ({ isUnifiedView = f
                   transition-all duration-300 ease-in-out
                   transform hover:scale-110 
                   focus:outline-none focus:ring-4 focus:ring-violet-300
-                  ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5 pointer-events-none'}`}
+                  ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5 pointer-events-none'}
+                  no-print`}
       aria-label="Scroll to top"
     >
       <svg

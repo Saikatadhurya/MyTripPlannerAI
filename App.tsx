@@ -1,6 +1,5 @@
 
 
-
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { QuestionnaireData, PackingListRequestData, PackingList, FoodFinderRequestData, FoodRecommendations, AppFinderRequestData, AppRecommendations, MusicFinderRequestData, MusicRecommendations, LingoFinderRequestData, LingoRecommendations, QuestionnaireData as InitialQuestionnaireData, UnifiedPlan, UnifiedPlanLoadingStatus, Itinerary } from './types';
 import { generateItinerary } from './services/geminiService';
@@ -284,6 +283,7 @@ const App: React.FC = () => {
 
   // --- Unified Planner Pipeline State ---
   const cancellationFlags = useRef<Partial<Record<keyof UnifiedPlanLoadingStatus, boolean>>>({});
+  const simplePlanCancellationFlag = useRef(false);
 
 
   const scrollToTop = useCallback(() => {
@@ -360,6 +360,10 @@ const App: React.FC = () => {
         return;
     }
 
+    if (view === 'itineraryResult') {
+        simplePlanCancellationFlag.current = true;
+    }
+
     const formViews: Partial<Record<View, View>> = {
       'itineraryResult': 'questionnaire',
       'packingAssistantResult': 'packingAssistantForm',
@@ -378,21 +382,51 @@ const App: React.FC = () => {
     setIsLoading(true);
     setError(null);
     setItinerary(null);
-    setStreamedText('');
     handleViewChange('itineraryResult');
-    try {
-        const result = await generateItinerary(
-            data.destination, data.startPoint, data.tripType, data.days, data.budget, data.vibe, data.persons, data.foodPreference, data.startDate, data.includeMedical, data.language, data.isRoundTrip, data.currency,
-            (chunk) => setStreamedText(prev => prev + chunk)
-        );
-        setItinerary(result);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-    } catch (e) {
-        setError(e instanceof Error ? e.message : 'An unknown error occurred');
-        handleViewChange('questionnaire');
-    } finally {
-        setIsLoading(false);
+    
+    simplePlanCancellationFlag.current = false;
+    const maxRetries = 3;
+    let lastError: Error | null = null;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        setItineraryAttemptCount(attempt);
+        setStreamedText(''); // Reset for each attempt
+
+        if (simplePlanCancellationFlag.current) break;
+
+        try {
+            const result = await generateItinerary(
+                data.destination, data.startPoint, data.tripType, data.days, data.budget, data.vibe, data.persons, data.foodPreference, data.startDate, data.includeMedical, data.language, data.isRoundTrip, data.currency,
+                (chunk) => {
+                    if (simplePlanCancellationFlag.current) throw new Error("Cancelled");
+                    setStreamedText(prev => prev + chunk);
+                }
+            );
+            
+            if (simplePlanCancellationFlag.current) break;
+
+            setItinerary(result);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            setItineraryAttemptCount(0);
+            setIsLoading(false);
+            return; 
+
+        } catch (e) {
+            lastError = e instanceof Error ? e : new Error('An unknown error occurred');
+            console.error(`Attempt ${attempt} for itinerary failed:`, lastError);
+            
+            if (lastError.message === "Cancelled") break;
+            if (attempt < maxRetries) await new Promise(resolve => setTimeout(resolve, 1500));
+        }
     }
+    
+    if (!simplePlanCancellationFlag.current && lastError) {
+        setError(lastError.message);
+        handleViewChange('questionnaire');
+    }
+    
+    setIsLoading(false);
+    setItineraryAttemptCount(0);
   }, [handleViewChange]);
   
     // Helper to run each non-streaming generation step with retry/cancellation
@@ -726,7 +760,14 @@ const App: React.FC = () => {
       let loadingProps;
       switch (view) {
         case 'itineraryResult':
-          loadingProps = { title: "Crafting Your Itinerary...", stages: itineraryStages, funFacts: itineraryFunFacts, accentColor: 'violet' as const };
+          loadingProps = { 
+            title: "Crafting Your Itinerary...", 
+            stages: itineraryStages, 
+            funFacts: itineraryFunFacts, 
+            accentColor: 'violet' as const,
+            attemptCount: itineraryAttemptCount,
+            maxAttempts: 3,
+          };
           break;
         case 'packingAssistantResult':
           loadingProps = { title: "Building Your Packing List...", stages: packingStages, funFacts: packingFunFacts, accentColor: 'violet' as const };
