@@ -264,31 +264,17 @@
       }
     </script>
     
-    <!-- Fix for viewport issue after keyboard closes on iOS -->
+    <!-- A more robust fix for the iOS viewport issue where fixed elements get stuck after the keyboard closes. -->
     <script>
-      // Only run on iOS devices.
       if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) {
-        document.addEventListener('DOMContentLoaded', function() {
-          const handleFocusIn = function(event) {
-            const target = event.target;
-            // Check if the focused element is an input or textarea that would bring up the keyboard.
-            if (target.matches('input:not([type=button]):not([type=submit]):not([type=reset]):not([type=radio]):not([type=checkbox]), textarea')) {
-              // When the input is focused, add a one-time listener for the blur event.
-              target.addEventListener('blur', handleBlur, { once: true });
-            }
-          };
-
-          const handleBlur = function() {
-            // When the keyboard is dismissed, the visual viewport might not resize correctly.
-            // This can leave fixed elements (like a footer) in the wrong position.
-            // Scrolling the window, even to its current position, forces a repaint which fixes the layout.
+        document.body.addEventListener('focusout', (event) => {
+          const target = event.target;
+          if (target.matches('input:not([type=button]):not([type=submit]):not([type=reset]):not([type=radio]):not([type=checkbox]), textarea')) {
             setTimeout(() => {
+              // This forces Safari to recalculate the layout and correctly reposition any 'stuck' fixed elements.
               window.scrollTo(window.scrollX, window.scrollY);
-            }, 100); // A small delay is necessary to allow the keyboard to finish its closing animation.
-          };
-
-          // Use event delegation ('focusin' bubbles) to handle dynamically added inputs from React.
-          document.body.addEventListener('focusin', handleFocusIn);
+            }, 100);
+          }
         });
       }
     </script>
