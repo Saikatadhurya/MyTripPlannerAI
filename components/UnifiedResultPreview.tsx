@@ -189,51 +189,50 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
                     </div>
                 </header>
                 
-                {/* Responsive Navigation */}
-                <nav className="no-print fixed bottom-0 left-0 right-0 z-30 sm:sticky sm:top-4 sm:mb-2">
-                    <div className="w-full bg-white/80 backdrop-blur-xl border-t border-white/50 shadow-[0_-5px_15px_-5px_rgba(0,0,0,0.1)] sm:max-w-max sm:mx-auto sm:rounded-full sm:p-1 sm:border sm:shadow-lg">
-                        <div className="flex justify-around sm:justify-center sm:space-x-1">
-                            {tabs.map(tab => {
-                                const status = loadingStatus[tab.id];
-                                const dataExists = !!getPlanDataForTab(tab.id);
-
-                                return (
-                                    <button
-                                        key={tab.id}
-                                        onClick={() => setActiveTab(tab.id)}
-                                        className={`relative flex flex-col items-center justify-center flex-1 pt-2 pb-1 transition-colors duration-200 sm:flex-row sm:flex-none sm:px-4 sm:py-2 sm:space-x-2 sm:rounded-full
-                                            ${activeTab === tab.id
-                                                ? 'text-violet-600 sm:bg-violet-600 sm:text-white sm:shadow'
-                                                : 'text-slate-600 hover:bg-violet-100/70'
-                                            }`}
-                                        aria-current={activeTab === tab.id ? 'page' : undefined}
-                                    >
-                                        <div className="relative">
-                                            {tab.icon}
-                                            {/* Status Indicator Dot */}
-                                            {status !== 'pending' && (
-                                                <span className={`absolute -top-0.5 -right-0.5 block h-2.5 w-2.5 rounded-full border-2 border-white
-                                                    ${status === 'loading' && 'animate-pulse bg-blue-500'}
-                                                    ${status === 'done' && dataExists && 'bg-green-500'}
-                                                    ${(status === 'error' || status === 'cancelled') && 'bg-red-500'}
-                                                `}></span>
-                                            )}
-                                        </div>
-                                        <span className="text-xs font-semibold sm:text-sm">{tab.name}</span>
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
-                </nav>
-
-
                 <main className="mt-6">
                     {renderTabContent()}
                 </main>
                 {/* Spacer for bottom nav on mobile */}
                 <div className="h-20 sm:h-0" />
             </div>
+
+            {/* Responsive Navigation */}
+            <nav className="no-print fixed bottom-0 left-0 right-0 z-30 sm:sticky sm:top-4 sm:mb-2">
+                <div className="w-full bg-white/80 backdrop-blur-xl border-t border-white/50 shadow-[0_-5px_15px_-5px_rgba(0,0,0,0.1)] sm:max-w-max sm:mx-auto sm:rounded-full sm:p-1 sm:border sm:shadow-lg">
+                    <div className="flex justify-around sm:justify-center sm:space-x-1">
+                        {tabs.map(tab => {
+                            const status = loadingStatus[tab.id];
+                            const dataExists = !!getPlanDataForTab(tab.id);
+
+                            return (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id)}
+                                    className={`relative flex flex-col items-center justify-center flex-1 pt-2 pb-1 transition-colors duration-200 sm:flex-row sm:flex-none sm:px-4 sm:py-2 sm:space-x-2 sm:rounded-full
+                                        ${activeTab === tab.id
+                                            ? 'text-violet-600 sm:bg-violet-600 sm:text-white sm:shadow'
+                                            : 'text-slate-600 hover:bg-violet-100/70'
+                                        }`}
+                                    aria-current={activeTab === tab.id ? 'page' : undefined}
+                                >
+                                    <div className="relative">
+                                        {tab.icon}
+                                        {/* Status Indicator Dot */}
+                                        {status !== 'pending' && (
+                                            <span className={`absolute -top-0.5 -right-0.5 block h-2.5 w-2.5 rounded-full border-2 border-white
+                                                ${status === 'loading' && 'animate-pulse bg-blue-500'}
+                                                ${status === 'done' && dataExists && 'bg-green-500'}
+                                                ${(status === 'error' || status === 'cancelled') && 'bg-red-500'}
+                                            `}></span>
+                                        )}
+                                    </div>
+                                    <span className="text-xs font-semibold sm:text-sm">{tab.name}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+            </nav>
         </>
     );
 };

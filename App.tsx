@@ -768,12 +768,15 @@ const App: React.FC = () => {
 
   return (
     <>
-      {view === 'landing' && <Header />}
-      <div ref={mainContentRef} className="min-h-screen">
-        <main className={`container mx-auto px-4 sm:px-6 lg:px-8 pb-24 sm:pb-8 relative ${view === 'landing' ? 'pt-32' : 'pt-8'}`}>
-            {renderContent()}
-        </main>
+      <div className="page-content-wrapper">
+        {view === 'landing' && <Header />}
+        <div ref={mainContentRef} className="min-h-screen">
+          <main className={`container mx-auto px-4 sm:px-6 lg:px-8 pb-24 sm:pb-8 relative ${view === 'landing' ? 'pt-32' : 'pt-8'}`}>
+              {renderContent()}
+          </main>
+        </div>
       </div>
+      
       {view !== 'unifiedResult' && (
         <>
             <QuickNavButton
