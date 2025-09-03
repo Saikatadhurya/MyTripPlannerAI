@@ -321,7 +321,14 @@ export const generateItinerary = async (
   4.  **ACTIVITY TIMINGS (CRITICAL):** For each string in the 'activities' array, you MUST prefix the activity with a specific time or time range. The timings should be realistic, accounting for travel between activities, duration of the activity, and meals. Format it as **HH:MM AM/PM - HH:MM AM/PM:** or **HH:MM AM/PM:**. For example: "**09:00 AM - 11:00 AM:** Visit the Louvre Museum." or "**01:00 PM:** Lunch at a local cafe.". Be specific and logical.
   5.  **COST FORMATTING (MANDATORY)**: All cost fields ('stay', 'food', 'fuel', 'miscellaneous', 'total' in 'budgetSummary'; 'approxCost' in 'plan'; 'cost' in 'transport') MUST be a string containing ONLY numbers (e.g., "1500", "250.50"). Do NOT include currency symbols, currency codes, or any text. All costs must be per person (unless specified otherwise in instructions) and calculated in the user's chosen currency: "${currency}".
   6.  **MANDATORY BOLDING**: You MUST use bold markdown (**text**) to highlight key information. This includes, but is not limited to: names of specific attractions, restaurants, hotels, important timings, unique cultural items, and critical travel advice. This is crucial for readability.
-  7.  **USER-FACING TEXT INTEGRITY (CRITICAL):** All text content that will be displayed to the user (such as in the 'planNote', activity descriptions, or any other descriptive field) must be written in a friendly, natural, and professional tone. You are strictly forbidden from mentioning internal JSON field names like 'budgetSummary.total' or 'approxCost'. Instead, refer to these concepts contextually. For example, instead of saying "...not included in the 'budgetSummary.total'...", you MUST say "...not included in the total budget summary...". This is a critical rule for maintaining a professional user experience.
+  7.  **ABSOLUTE RULE - NO TECHNICAL JARGON IN USER TEXT:** This is a critical rule for maintaining a professional user experience.
+      -   All text that will be shown to the user (e.g., in 'planNote', 'activities', descriptions, etc.) MUST be written in friendly, natural language.
+      -   You are **STRICTLY FORBIDDEN** from ever mentioning any internal JSON field names from the schema provided. This includes, but is not limited to: 'budgetSummary.total', 'approxCost', 'placesToStay', 'historicBackground', etc.
+      -   **Correct Example:** "The total estimated cost for your trip, excluding flights..."
+      -   **INCORRECT EXAMPLE (FAILURE):** "The cost is not included in the 'budgetSummary.total'..."
+      -   **Correct Example:** "...and the approximate cost for each day's activities and food."
+      -   **INCORRECT EXAMPLE (FAILURE):** "...and the 'approxCost' for each day."
+      -   Mentioning any technical variable name in user-facing text is a critical failure. You MUST rephrase to explain the concept naturally.
   8.  If 'includeMedical' is true, the 'medicalFacilities' array for each day must list at least one nearby hospital or pharmacy.
   9.  The 'referenceBlogs' field should be an empty array. It will be populated later.
   10. For 'Standard' trip types, 'transport' suggestions should be tailored to the selected budget. For 'Car' or 'Bike' trips, you MUST follow the critical vehicle instructions provided above.
@@ -336,7 +343,7 @@ export const generateItinerary = async (
       a. **NO UNESCAPED QUOTES**: Inside any JSON string value, you MUST NEVER use a double quote character ("). It will break the JSON parsing.
       b. **HOW TO HANDLE QUOTES**: To include a quote inside a string, you MUST use single quotes (e.g., "Visit the 'Eiffel Tower' at night.") or escape the double quote with a backslash (e.g., "The guide said, \\"Welcome to Paris!\\"").
       c. **FAILURE IS NOT AN OPTION**: You MUST double-check every string for unescaped quotes. Failure to follow this rule will make the entire response useless.
-  15. **ABSOLUTE FINAL INSTRUCTION**: Your entire response MUST be the raw JSON object. It MUST start with the character '{' and end with the character '}'. You MUST NOT wrap it in markdown (like \`\`\`json), and you MUST NOT add any introductory text like "Here is your itinerary:". The response should be immediately parsable as JSON.
+  15. **ABSOLUTE FINAL INSTRUCTION**: Your entire response MUST be the raw JSON object. It MUST start with the character '{' and end with the character '}'. You MUST NOT wrap it in markdown (like \`\`\`json), and you MUST NOT add any introductory text. The response should be immediately parsable as JSON.
   `;
   
     let fullText = '';
