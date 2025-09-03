@@ -19,7 +19,7 @@ interface StreamingLoadingIndicatorProps {
   stages: Stage[];
   onCancel: () => void;
   title: string;
-  accentColor: 'violet' | 'amber' | 'teal' | 'fuchsia';
+  accentColor: 'violet' | 'amber' | 'teal' | 'fuchsia' | 'sky';
   funFacts: FunFact[];
   attemptCount?: number;
   maxAttempts?: number;
@@ -30,6 +30,7 @@ const colorClasses = {
   amber: { text: 'text-amber-600', bg: 'bg-amber-600', ring: 'ring-amber-300', border: 'border-amber-600' },
   teal: { text: 'text-teal-600', bg: 'bg-teal-600', ring: 'ring-teal-300', border: 'border-teal-600' },
   fuchsia: { text: 'text-fuchsia-600', bg: 'bg-fuchsia-600', ring: 'ring-fuchsia-300', border: 'border-fuchsia-600' },
+  sky: { text: 'text-sky-600', bg: 'bg-sky-600', ring: 'ring-sky-300', border: 'border-sky-600' },
 };
 
 const CheckmarkIcon: React.FC = () => (

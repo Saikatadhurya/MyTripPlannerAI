@@ -9,9 +9,10 @@ interface LandingPageProps {
   onStartFoodFinder: () => void;
   onStartAppFinder: () => void;
   onStartMusicFinder: () => void;
+  onStartLingoFinder: () => void;
 }
 
-const LandingPage: React.FC<LandingPageProps> = ({ onPlanUnifiedTrip, onPlanItinerary, onStartPacking, onStartFoodFinder, onStartAppFinder, onStartMusicFinder }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ onPlanUnifiedTrip, onPlanItinerary, onStartPacking, onStartFoodFinder, onStartAppFinder, onStartMusicFinder, onStartLingoFinder }) => {
   const [destinations, setDestinations] = useState<PopularDestination[]>([]);
 
   useEffect(() => {
@@ -47,6 +48,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onPlanUnifiedTrip, onPlanItin
     fuchsia: {
       iconBg: 'bg-fuchsia-100', iconText: 'text-fuchsia-500',
       button: 'bg-fuchsia-500 hover:bg-fuchsia-600 text-white',
+    },
+    sky: {
+      iconBg: 'bg-sky-100', iconText: 'text-sky-600',
+      button: 'bg-sky-500 hover:bg-sky-600 text-white',
     },
   };
   
@@ -94,7 +99,16 @@ const LandingPage: React.FC<LandingPageProps> = ({ onPlanUnifiedTrip, onPlanItin
       onClick: onStartMusicFinder,
       color: 'fuchsia' as const,
       icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 sm:h-8 sm:w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 18V5l12-2v13M9 18a3 3 0 11-6 0 3 3 0 016 0zm12-2a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
-      buttonText: 'Discover Local Music',
+      buttonText: 'Discover Music',
+    },
+    {
+      id: 'lingo',
+      title: 'Local Lingo Guide',
+      description: 'Learn essential phrases for your trip',
+      onClick: onStartLingoFinder,
+      color: 'sky' as const,
+      icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 sm:h-8 sm:w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>,
+      buttonText: 'Get Phrases',
     },
   ];
   
@@ -146,7 +160,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onPlanUnifiedTrip, onPlanItin
       <div className="text-center">
         <h2 className="text-3xl font-bold text-slate-900 animated-card" style={{ animationDelay: '200ms' }}>Quick Tools for Your Journey</h2>
         <p className="text-slate-600 mt-2 animated-card" style={{ animationDelay: '250ms' }}>Smart tools to make your trip unforgettable.</p>
-        <div className="mt-10 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
+        <div className="mt-10 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6">
           {miniApps.map((app, index) => {
             const colors = colorClasses[app.color];
             return (

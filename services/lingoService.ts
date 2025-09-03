@@ -1,0 +1,94 @@
+import { GoogleGenAI } from "@google/genai";
+import { LingoFinderRequestData, LingoRecommendations } from '../types';
+import { extractJson, cleanCitations } from './jsonUtils';
+
+export const generateLingoGuide = async (data: LingoFinderRequestData, onChunk?: (chunk: string) => void): Promise<LingoRecommendations> => {
+  if (!process.env.API_KEY) {
+    throw new Error("API key is missing. Please set it in your environment variables.");
+  }
+
+  const { destination, language } = data;
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+  const prompt = `
+    You are an expert Linguist and Local Guide AI. Your mission is to create a practical, helpful, and culturally aware phrasebook for a traveler visiting "${destination}".
+    The output language for the entire JSON response must be in ${language}.
+
+    **CRITICAL INSTRUCTIONS & PROTOCOL:**
+
+    1.  **Identify Local Language:** First, you MUST determine the primary local language spoken in "${destination}". This will be used for the translations.
+    2.  **Curate Essential Categories:** Create a list of essential phrase categories. You MUST include at least the following five categories: "Greetings & Basics", "Dining & Ordering Food", "Shopping & Bargaining", "Directions & Transportation", and "Emergencies". You may add 1-2 other relevant categories if applicable to the destination (e.g., "Beach Phrases" for a coastal city).
+    3.  **Generate Phrases:** For each category, provide 5-8 useful phrases. Each phrase object MUST contain three fields:
+        - \`english\`: The phrase in English.
+        - \`local\`: The direct translation of the phrase in the identified local language.
+        - \`pronunciation\`: A simple, easy-to-read phonetic spelling of the local phrase to help with pronunciation.
+
+    **JSON OUTPUT SPECIFICATION:**
+    The response MUST be ONLY a single, valid JSON object that strictly follows this structure. All text content must be in ${language}.
+
+    {
+      "destination": "${destination}",
+      "localLanguage": "The name of the local language you identified (e.g., 'Japanese', 'Hindi', 'Spanish')",
+      "categories": [
+        {
+          "categoryName": "Greetings & Basics",
+          "phrases": [
+            { "english": "Hello", "local": "こんにちは", "pronunciation": "Konnichiwa" }
+          ]
+        }
+      ]
+    }
+
+    **FINAL CRITICAL RULES:**
+    1.  **Language:** The entire JSON response MUST be in ${language}.
+    2.  **CRITICAL JSON VALIDATION RULE**: The output MUST be a perfectly valid JSON object. This is the single most important instruction.
+        a. **NO UNESCAPED QUOTES**: Inside any JSON string value, you MUST NEVER use a double quote character ("). It will break the JSON and cause an error.
+        b. **HOW TO HANDLE QUOTES**: Use single quotes or escape double quotes with a backslash (e.g., "The guide said, \\"Welcome!\\"").
+        c. **FAILURE TO FOLLOW THIS RULE WILL RENDER THE ENTIRE OUTPUT USELESS.** You must double-check every string value for unescaped double quotes.
+    3. **ABSOLUTE FINAL INSTRUCTION**: Your entire response MUST be the raw JSON object. It MUST start with the character '{' and end with the character '}'. You MUST NOT wrap it in markdown (like \`\`\`json), and you MUST NOT add any introductory text.
+  `;
+
+  let fullText = '';
+  try {
+      if (onChunk) {
+        const stream = await ai.models.generateContentStream({ model: "gemini-2.5-flash", contents: prompt });
+        for await (const chunk of stream) {
+            const chunkText = chunk.text;
+            fullText += chunkText;
+            onChunk(chunkText);
+        }
+      } else {
+        const response = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
+        fullText = response.text;
+      }
+
+      if (!fullText) throw new Error("The AI returned an empty response.");
+      
+      const jsonString = extractJson(fullText);
+      const parsedJson = JSON.parse(jsonString);
+
+      if (parsedJson.error && parsedJson.error.code) {
+          const { code, message } = parsedJson.error;
+          throw new Error(`[${code}] ${message}`);
+      }
+
+      const cleanedJson = cleanCitations(parsedJson);
+
+      return cleanedJson;
+  } catch (error) {
+      console.error("Failed to generate and parse lingo guide stream:", error);
+      console.error("Original AI response text accumulated:", fullText);
+      
+      if (error instanceof Error) {
+        if (error.message.startsWith('[')) throw error;
+
+        const combinedErrorText = (error.message + fullText).toLowerCase();
+        if (combinedErrorText.includes("quota")) throw new Error("[429] You have exceeded the request limit.");
+        if (combinedErrorText.includes("overloaded")) throw new Error("[503] The AI model is currently busy. Please try again.");
+        if (error instanceof SyntaxError) throw new Error("The AI's response for the lingo guide was malformed. Please try again.");
+        if (error.message.includes("Could not find a valid JSON object")) throw new Error("The AI did not provide a structured lingo guide. Please adjust your query.");
+    }
+      
+    throw new Error("The AI returned an invalid response format for the lingo guide. Please try again.");
+  }
+};

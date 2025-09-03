@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 
 interface QuickNavButtonProps {
@@ -8,6 +7,7 @@ interface QuickNavButtonProps {
   onStartFoodFinder: () => void;
   onStartAppFinder: () => void;
   onStartMusicFinder: () => void;
+  onStartLingoFinder: () => void;
   onGoHome: () => void;
   onGoToContact: () => void;
 }
@@ -19,6 +19,7 @@ const QuickNavButton: React.FC<QuickNavButtonProps> = ({
   onStartFoodFinder,
   onStartAppFinder,
   onStartMusicFinder,
+  onStartLingoFinder,
   onGoHome,
   onGoToContact,
 }) => {
@@ -57,6 +58,7 @@ const QuickNavButton: React.FC<QuickNavButtonProps> = ({
             { label: 'Local Food Finder', action: onStartFoodFinder, icon: '🍲' },
             { label: 'Mobile App Finder', action: onStartAppFinder, icon: '📱' },
             { label: 'Local Music Finder', action: onStartMusicFinder, icon: '🎶' },
+            { label: 'Local Lingo Guide', action: onStartLingoFinder, icon: '🗣️' },
         ]
     },
     {

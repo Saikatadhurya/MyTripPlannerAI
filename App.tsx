@@ -1,14 +1,12 @@
 
-
-
-
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { QuestionnaireData, PackingListRequestData, PackingList, FoodFinderRequestData, FoodRecommendations, AppFinderRequestData, AppRecommendations, MusicFinderRequestData, MusicRecommendations, QuestionnaireData as InitialQuestionnaireData, UnifiedPlan, UnifiedPlanLoadingStatus, Itinerary } from './types';
+import { QuestionnaireData, PackingListRequestData, PackingList, FoodFinderRequestData, FoodRecommendations, AppFinderRequestData, AppRecommendations, MusicFinderRequestData, MusicRecommendations, LingoFinderRequestData, LingoRecommendations, QuestionnaireData as InitialQuestionnaireData, UnifiedPlan, UnifiedPlanLoadingStatus, Itinerary } from './types';
 import { generateItinerary } from './services/geminiService';
 import { generatePackingList } from './services/packingService';
 import { generateFoodRecommendations } from './services/foodService';
 import { generateAppRecommendations } from './services/appFinderService';
 import { generateMusicRecommendations } from './services/musicService';
+import { generateLingoGuide } from './services/lingoService';
 
 
 import LandingPage from './components/LandingPage';
@@ -21,6 +19,8 @@ import AppFinderForm from './components/AppFinderForm';
 import AppFinderResult from './components/AppFinderResult';
 import MusicFinderForm from './components/MusicFinderForm';
 import MusicFinderResult from './components/MusicFinderResult';
+import LingoFinderForm from './components/LingoFinderForm';
+import LingoFinderResult from './components/LingoFinderResult';
 import ScrollToTopButton from './components/ScrollToTopButton';
 import ContactUs from './components/ContactUs';
 import QuickNavButton from './components/QuickNavButton';
@@ -38,6 +38,7 @@ interface BottomNavBarProps {
   onStartFoodFinder: () => void;
   onStartAppFinder: () => void;
   onStartMusicFinder: () => void;
+  onStartLingoFinder: () => void;
   onGoToContact: () => void;
   activeView: string;
 }
@@ -60,9 +61,10 @@ const NavItem: React.FC<{
 const MoreMenu: React.FC<{
     onStartAppFinder: () => void;
     onStartMusicFinder: () => void;
+    onStartLingoFinder: () => void;
     onGoToContact: () => void;
     onClose: () => void;
-}> = ({ onStartAppFinder, onStartMusicFinder, onGoToContact, onClose }) => {
+}> = ({ onStartAppFinder, onStartMusicFinder, onStartLingoFinder, onGoToContact, onClose }) => {
     const handleAction = (action: () => void) => {
         action();
         onClose();
@@ -77,6 +79,10 @@ const MoreMenu: React.FC<{
             <button onClick={() => handleAction(onStartMusicFinder)} className="w-full flex items-center text-left px-3 py-2.5 rounded-lg text-slate-800 font-semibold transition-colors duration-200 hover:bg-violet-100/80">
                 <span className="text-xl w-8 text-center">🎶</span>
                 <span>Music Finder</span>
+            </button>
+            <button onClick={() => handleAction(onStartLingoFinder)} className="w-full flex items-center text-left px-3 py-2.5 rounded-lg text-slate-800 font-semibold transition-colors duration-200 hover:bg-violet-100/80">
+                <span className="text-xl w-8 text-center">🗣️</span>
+                <span>Lingo Guide</span>
             </button>
             <hr className="border-slate-200/80 mx-2 my-1" />
             <button onClick={() => handleAction(onGoToContact)} className="w-full flex items-center text-left px-3 py-2.5 rounded-lg text-slate-800 font-semibold transition-colors duration-200 hover:bg-violet-100/80">
@@ -94,6 +100,7 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({
   onStartFoodFinder,
   onStartAppFinder,
   onStartMusicFinder,
+  onStartLingoFinder,
   onGoToContact,
   activeView,
 }) => {
@@ -119,7 +126,7 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const isMoreSectionActive = ['contact', 'appFinderForm', 'musicFinderForm'].includes(activeView);
+  const isMoreSectionActive = ['contact', 'appFinderForm', 'musicFinderForm', 'lingoFinderForm'].includes(activeView);
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-40 sm:hidden no-print">
@@ -139,6 +146,7 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({
                 <MoreMenu
                     onStartAppFinder={onStartAppFinder}
                     onStartMusicFinder={onStartMusicFinder}
+                    onStartLingoFinder={onStartLingoFinder}
                     onGoToContact={onGoToContact}
                     onClose={() => setIsMoreMenuOpen(false)}
                 />
@@ -160,7 +168,7 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({
 };
 
 
-type View = 'landing' | 'questionnaire' | 'itineraryResult' | 'packingAssistantForm' | 'packingAssistantResult' | 'foodFinderForm' | 'foodFinderResult' | 'appFinderForm' | 'appFinderResult' | 'musicFinderForm' | 'musicFinderResult' | 'contact' | 'unifiedPlannerForm' | 'unifiedResult';
+type View = 'landing' | 'questionnaire' | 'itineraryResult' | 'packingAssistantForm' | 'packingAssistantResult' | 'foodFinderForm' | 'foodFinderResult' | 'appFinderForm' | 'appFinderResult' | 'musicFinderForm' | 'musicFinderResult' | 'lingoFinderForm' | 'lingoFinderResult' | 'contact' | 'unifiedPlannerForm' | 'unifiedResult';
 
 // --- Loading State Constants ---
 const itineraryStages = [
@@ -224,6 +232,17 @@ const musicFunFacts = [
     { icon: '🎤', text: 'Checking the top of the charts...' },
     { icon: '💿', text: 'Building the perfect travel playlist...' },
 ];
+const lingoStages = [
+    { key: '"localLanguage":', text: 'Identifying the local language' },
+    { key: '"categoryName":"Dining', text: 'Translating dining phrases' },
+    { key: '"categoryName":"Emergencies"', text: 'Preparing emergency phrases' },
+];
+const lingoFunFacts = [
+    { icon: '🌍', text: 'Learning local greetings...' },
+    { icon: '💬', text: 'Translating essential phrases...' },
+    { icon: '🗣️', text: 'Perfecting pronunciations...' },
+    { icon: '✍️', text: 'Building your custom phrasebook...' },
+];
 
 
 const App: React.FC = () => {
@@ -235,6 +254,7 @@ const App: React.FC = () => {
   const [foodRecommendations, setFoodRecommendations] = useState<FoodRecommendations | null>(null);
   const [appRecommendations, setAppRecommendations] = useState<AppRecommendations | null>(null);
   const [musicRecommendations, setMusicRecommendations] = useState<MusicRecommendations | null>(null);
+  const [lingoRecommendations, setLingoRecommendations] = useState<LingoRecommendations | null>(null);
   
   // State for the new unified plan
   const [unifiedPlan, setUnifiedPlan] = useState<UnifiedPlan>({ itinerary: null, packingList: null, foodRecommendations: null, appRecommendations: null, musicRecommendations: null });
@@ -307,6 +327,7 @@ const App: React.FC = () => {
     setFoodRecommendations(null);
     setAppRecommendations(null);
     setMusicRecommendations(null);
+    setLingoRecommendations(null);
     setInitialQuestionnaireData(null);
     setUnifiedPlan({ itinerary: null, packingList: null, foodRecommendations: null, appRecommendations: null, musicRecommendations: null });
     setQuestionnaireDataForUnifiedPlan(null);
@@ -332,6 +353,7 @@ const App: React.FC = () => {
       'foodFinderResult': 'foodFinderForm',
       'appFinderResult': 'appFinderForm',
       'musicFinderResult': 'musicFinderForm',
+      'lingoFinderResult': 'lingoFinderForm',
     };
     
     const targetView = formViews[view] || 'landing';
@@ -666,6 +688,25 @@ const App: React.FC = () => {
         setIsLoading(false);
     }
   }, [handleViewChange]);
+  
+  const handleGenerateLingoGuide = useCallback(async (data: LingoFinderRequestData) => {
+    setIsLoading(true);
+    setError(null);
+    setLingoRecommendations(null);
+    setStreamedText('');
+    handleViewChange('lingoFinderResult');
+    try {
+        const result = await generateLingoGuide(data, (chunk) => setStreamedText(prev => prev + chunk));
+        setLingoRecommendations(result);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+    } catch (e) {
+        setError(e instanceof Error ? e.message : 'An unknown error occurred');
+        handleViewChange('lingoFinderForm');
+    } finally {
+        setIsLoading(false);
+    }
+  }, [handleViewChange]);
+
 
   const renderContent = () => {
     if (isLoading) {
@@ -685,6 +726,9 @@ const App: React.FC = () => {
           break;
         case 'musicFinderResult':
           loadingProps = { title: "Curating Your Playlist...", stages: musicStages, funFacts: musicFunFacts, accentColor: 'fuchsia' as const };
+          break;
+        case 'lingoFinderResult':
+          loadingProps = { title: "Translating Local Phrases...", stages: lingoStages, funFacts: lingoFunFacts, accentColor: 'sky' as const };
           break;
       }
       
@@ -727,7 +771,7 @@ const App: React.FC = () => {
     switch (view) {
       case 'landing':
         return (
-            <LandingPage onPlanUnifiedTrip={handleStartUnifiedPlanner} onPlanItinerary={handleStartItineraryPlanner} onStartPacking={() => handleViewChange('packingAssistantForm')} onStartFoodFinder={() => handleViewChange('foodFinderForm')} onStartAppFinder={() => handleViewChange('appFinderForm')} onStartMusicFinder={() => handleViewChange('musicFinderForm')} />
+            <LandingPage onPlanUnifiedTrip={handleStartUnifiedPlanner} onPlanItinerary={handleStartItineraryPlanner} onStartPacking={() => handleViewChange('packingAssistantForm')} onStartFoodFinder={() => handleViewChange('foodFinderForm')} onStartAppFinder={() => handleViewChange('appFinderForm')} onStartMusicFinder={() => handleViewChange('musicFinderForm')} onStartLingoFinder={() => handleViewChange('lingoFinderForm')} />
         );
       case 'unifiedPlannerForm':
         return <UnifiedPlannerForm onSubmit={handleGenerateUnifiedPlan} initialData={initialQuestionnaireData} onBack={handleBackToHome} error={error} />;
@@ -756,13 +800,18 @@ const App: React.FC = () => {
       case 'musicFinderResult':
         if (musicRecommendations) return <MusicFinderResult recommendations={musicRecommendations} onRegenerate={() => handleViewChange('musicFinderForm')} />;
         break;
+      case 'lingoFinderForm':
+        return <LingoFinderForm onSubmit={handleGenerateLingoGuide} isLoading={false} error={error} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} />;
+      case 'lingoFinderResult':
+        if (lingoRecommendations) return <LingoFinderResult recommendations={lingoRecommendations} onRegenerate={() => handleViewChange('lingoFinderForm')} />;
+        break;
       case 'contact':
         return <ContactUs onBack={handleBackToHome} />;
     }
     
     // Fallback for any unhandled case or error state where data is null
     return (
-        <LandingPage onPlanUnifiedTrip={handleStartUnifiedPlanner} onPlanItinerary={handleStartItineraryPlanner} onStartPacking={() => handleViewChange('packingAssistantForm')} onStartFoodFinder={() => handleViewChange('foodFinderForm')} onStartAppFinder={() => handleViewChange('appFinderForm')} onStartMusicFinder={() => handleViewChange('musicFinderForm')} />
+        <LandingPage onPlanUnifiedTrip={handleStartUnifiedPlanner} onPlanItinerary={handleStartItineraryPlanner} onStartPacking={() => handleViewChange('packingAssistantForm')} onStartFoodFinder={() => handleViewChange('foodFinderForm')} onStartAppFinder={() => handleViewChange('appFinderForm')} onStartMusicFinder={() => handleViewChange('musicFinderForm')} onStartLingoFinder={() => handleViewChange('lingoFinderForm')} />
     );
   };
 
@@ -788,6 +837,7 @@ const App: React.FC = () => {
               onStartFoodFinder={() => handleViewChange('foodFinderForm')}
               onStartAppFinder={() => handleViewChange('appFinderForm')}
               onStartMusicFinder={() => handleViewChange('musicFinderForm')}
+              onStartLingoFinder={() => handleViewChange('lingoFinderForm')}
             />
             <BottomNavBar
               onGoHome={handleBackToHome}
@@ -797,6 +847,7 @@ const App: React.FC = () => {
               onStartFoodFinder={() => handleViewChange('foodFinderForm')}
               onStartAppFinder={() => handleViewChange('appFinderForm')}
               onStartMusicFinder={() => handleViewChange('musicFinderForm')}
+              onStartLingoFinder={() => handleViewChange('lingoFinderForm')}
               activeView={view}
             />
         </>

@@ -212,6 +212,30 @@ export interface MusicRecommendations {
     musicCategories: MusicGenreCategory[];
 }
 
+// Types for Local Lingo Guide
+export interface LingoFinderRequestData {
+    destination: string;
+    language: string;
+}
+
+export interface Phrase {
+    english: string;
+    local: string;
+    pronunciation: string;
+}
+
+export interface PhraseCategory {
+    categoryName: string;
+    phrases: Phrase[];
+}
+
+export interface LingoRecommendations {
+    destination: string;
+    localLanguage: string;
+    categories: PhraseCategory[];
+}
+
+
 export interface UnifiedPlan {
   itinerary: Itinerary | null;
   packingList: PackingList | null;

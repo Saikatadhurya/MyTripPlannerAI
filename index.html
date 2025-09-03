@@ -143,6 +143,18 @@
             opacity: 1 !important;
             transform: none !important;
         }
+
+        /* Lingo Guide Accordion Print Fix */
+        .printable-accordion-content {
+            max-height: none !important;
+            opacity: 1 !important;
+            overflow: visible !important;
+            display: block !important;
+            grid-template-rows: 1fr !important;
+        }
+        .printable-accordion-toggle-icon {
+            display: none !important;
+        }
       }
       @keyframes fadeIn {
         from { opacity: 0; transform: translateY(10px); }
