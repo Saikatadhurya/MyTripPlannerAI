@@ -1,4 +1,5 @@
 
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { Budget, Itinerary, Vibe, FoodPreference, BlogReference, TripType, LocationSuggestion } from '../types';
 import { extractJson, cleanCitations } from './jsonUtils';
@@ -313,23 +314,24 @@ export const generateItinerary = async (
   1.  All string values in the JSON must be in ${language}.
   2.  The 'plan' array must have exactly ${days} elements.
   3.  The 'coveredDestinations' array is mandatory and must be populated if the trip covers multiple locations (e.g., a round trip or a regional tour). For a trip to a single city, it should contain details for just that destination.
-  4.  **COST FORMATTING (MANDATORY)**: All cost fields ('stay', 'food', 'fuel', 'miscellaneous', 'total' in 'budgetSummary'; 'approxCost' in 'plan'; 'cost' in 'transport') MUST be a string containing ONLY numbers (e.g., "1500", "250.50"). Do NOT include currency symbols, currency codes, or any text. All costs must be per person (unless specified otherwise in instructions) and calculated in the user's chosen currency: "${currency}".
-  5.  **MANDATORY BOLDING**: You MUST use bold markdown (**text**) to highlight key information. This includes, but is not limited to: names of specific attractions, restaurants, hotels, important timings, unique cultural items, and critical travel advice. This is crucial for readability.
-  6.  If 'includeMedical' is true, the 'medicalFacilities' array for each day must list at least one nearby hospital or pharmacy.
-  7.  The 'referenceBlogs' field should be an empty array. It will be populated later.
-  8.  For 'Standard' trip types, 'transport' suggestions should be tailored to the selected budget. For 'Car' or 'Bike' trips, you MUST follow the critical vehicle instructions provided above.
-  9.  For 'historicBackground', 'famousCulture', 'naturalPlaces', 'museums', and 'specialOrnaments', provide a list of 3-5 key bullet points. Each point must be a descriptive string. Do not provide a single paragraph.
-  10. For 'specialEvents', find specific events, festivals, or notable occurrences happening ONLY during the travel dates (starting ${startDate} for ${days} days). If no specific major events are found, you MUST return a helpful message like 'No major special events were found for your travel dates, but you can enjoy ongoing local experiences.'
-  11. **Currency Conversion (CRITICAL)**:
+  4.  **ACTIVITY TIMINGS (CRITICAL):** For each string in the 'activities' array, you MUST prefix the activity with a specific time or time range. The timings should be realistic, accounting for travel between activities, duration of the activity, and meals. Format it as **HH:MM AM/PM - HH:MM AM/PM:** or **HH:MM AM/PM:**. For example: "**09:00 AM - 11:00 AM:** Visit the Louvre Museum." or "**01:00 PM:** Lunch at a local cafe.". Be specific and logical.
+  5.  **COST FORMATTING (MANDATORY)**: All cost fields ('stay', 'food', 'fuel', 'miscellaneous', 'total' in 'budgetSummary'; 'approxCost' in 'plan'; 'cost' in 'transport') MUST be a string containing ONLY numbers (e.g., "1500", "250.50"). Do NOT include currency symbols, currency codes, or any text. All costs must be per person (unless specified otherwise in instructions) and calculated in the user's chosen currency: "${currency}".
+  6.  **MANDATORY BOLDING**: You MUST use bold markdown (**text**) to highlight key information. This includes, but is not limited to: names of specific attractions, restaurants, hotels, important timings, unique cultural items, and critical travel advice. This is crucial for readability.
+  7.  If 'includeMedical' is true, the 'medicalFacilities' array for each day must list at least one nearby hospital or pharmacy.
+  8.  The 'referenceBlogs' field should be an empty array. It will be populated later.
+  9.  For 'Standard' trip types, 'transport' suggestions should be tailored to the selected budget. For 'Car' or 'Bike' trips, you MUST follow the critical vehicle instructions provided above.
+  10. For 'historicBackground', 'famousCulture', 'naturalPlaces', 'museums', and 'specialOrnaments', provide a list of 3-5 key bullet points. Each point must be a descriptive string. Do not provide a single paragraph.
+  11. For 'specialEvents', find specific events, festivals, or notable occurrences happening ONLY during the travel dates (starting ${startDate} for ${days} days). If no specific major events are found, you MUST return a helpful message like 'No major special events were found for your travel dates, but you can enjoy ongoing local experiences.'
+  12. **Currency Conversion (CRITICAL)**:
       a. First, determine the primary local currency of the destination "${destination}".
       b. Compare the local currency with the user's chosen currency: "${currency}".
       c. If they are different, you MUST populate the 'currencyConversion' object in the JSON response. Provide a simple, clear text representation of the approximate exchange rate in the 'rateText' field, showing the value of 1 unit of the destination's local currency in terms of the user's chosen currency (e.g., '1 INR ≈ 0.012 USD'). The 'fromCurrency' MUST be the user's chosen currency code (e.g., 'USD'), and 'toCurrency' MUST be the destination's local currency code (e.g., 'INR').
       d. If the user's chosen currency is the same as the local currency, the 'currencyConversion' field MUST be omitted from the JSON response.
-  12. **CRITICAL JSON VALIDATION RULE**: Your entire response depends on this. The output MUST be a single, perfectly valid JSON object.
+  13. **CRITICAL JSON VALIDATION RULE**: Your entire response depends on this.
       a. **NO UNESCAPED QUOTES**: Inside any JSON string value, you MUST NEVER use a double quote character ("). It will break the JSON parsing.
       b. **HOW TO HANDLE QUOTES**: To include a quote inside a string, you MUST use single quotes (e.g., "Visit the 'Eiffel Tower' at night.") or escape the double quote with a backslash (e.g., "The guide said, \\"Welcome to Paris!\\"").
       c. **FAILURE IS NOT AN OPTION**: You MUST double-check every string for unescaped quotes. Failure to follow this rule will make the entire response useless.
-  13. **ABSOLUTE FINAL INSTRUCTION**: Your entire response MUST be the raw JSON object. It MUST start with the character '{' and end with the character '}'. You MUST NOT wrap it in markdown (like \`\`\`json), and you MUST NOT add any introductory text like "Here is your itinerary:". The response should be immediately parsable as JSON.
+  14. **ABSOLUTE FINAL INSTRUCTION**: Your entire response MUST be the raw JSON object. It MUST start with the character '{' and end with the character '}'. You MUST NOT wrap it in markdown (like \`\`\`json), and you MUST NOT add any introductory text like "Here is your itinerary:". The response should be immediately parsable as JSON.
   `;
   
     let fullText = '';
