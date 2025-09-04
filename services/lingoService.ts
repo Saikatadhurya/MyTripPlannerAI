@@ -80,13 +80,26 @@ export const generateLingoGuide = async (data: LingoFinderRequestData, onChunk?:
       console.error("Original AI response text accumulated:", fullText);
       
       if (error instanceof Error) {
-        if (error.message.startsWith('[')) throw error;
+        if (error.message.startsWith('[')) {
+            // It's already a custom-formatted error, re-throw it.
+            throw error;
+        }
 
         const combinedErrorText = (error.message + fullText).toLowerCase();
-        if (combinedErrorText.includes("quota")) throw new Error("[429] You have exceeded the request limit.");
-        if (combinedErrorText.includes("overloaded")) throw new Error("[503] The AI model is currently busy. Please try again.");
-        if (error instanceof SyntaxError) throw new Error("The AI's response for the lingo guide was malformed. Please try again.");
-        if (error.message.includes("Could not find a valid JSON object")) throw new Error("The AI did not provide a structured lingo guide. Please adjust your query.");
+
+        if (combinedErrorText.includes("quota") || combinedErrorText.includes("rate limit") || combinedErrorText.includes("429")) {
+            throw new Error("[429] You have exceeded the request limit. Please check your plan and billing details and try again later.");
+        }
+        if (combinedErrorText.includes("overloaded") || combinedErrorText.includes("server error") || combinedErrorText.includes("503")) {
+             throw new Error("[503] The AI model is currently busy. Please wait a moment and try again.");
+        }
+        
+        if (error instanceof SyntaxError) {
+             throw new Error(`The AI's response for the lingo guide was malformed and could not be read. Please try again.`);
+        }
+        if (error.message.includes("Could not find a valid JSON object")) {
+             throw new Error("The AI did not provide a structured lingo guide. It may have refused the request. Please adjust your query and try again.");
+        }
     }
       
     throw new Error("The AI returned an invalid response format for the lingo guide. Please try again.");

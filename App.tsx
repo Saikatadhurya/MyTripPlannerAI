@@ -277,6 +277,7 @@ const App: React.FC = () => {
   const [streamedText, setStreamedText] = useState('');
   const [itineraryStreamedText, setItineraryStreamedText] = useState('');
   const [itineraryAttemptCount, setItineraryAttemptCount] = useState(0);
+  const [miniAppAttemptCount, setMiniAppAttemptCount] = useState(0);
   const [initialQuestionnaireData, setInitialQuestionnaireData] = useState<InitialQuestionnaireData | null>(null);
   
   const mainContentRef = useRef<HTMLDivElement>(null);
@@ -360,7 +361,7 @@ const App: React.FC = () => {
         return;
     }
 
-    if (view === 'itineraryResult') {
+    if (view === 'itineraryResult' || view === 'packingAssistantResult' || view === 'foodFinderResult' || view === 'appFinderResult' || view === 'musicFinderResult' || view === 'lingoFinderResult') {
         simplePlanCancellationFlag.current = true;
     }
 
@@ -668,91 +669,241 @@ const App: React.FC = () => {
     setIsLoading(true);
     setError(null);
     setPackingList(null);
-    setStreamedText('');
     handleViewChange('packingAssistantResult');
-    try {
-        const result = await generatePackingList(data, (chunk) => setStreamedText(prev => prev + chunk));
-        setPackingList(result);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-    } catch (e) {
-        setError(e instanceof Error ? e.message : 'An unknown error occurred');
-        handleViewChange('packingAssistantForm');
-    } finally {
-        setIsLoading(false);
+
+    simplePlanCancellationFlag.current = false;
+    const maxRetries = 3;
+    let lastError: Error | null = null;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        setMiniAppAttemptCount(attempt);
+        setStreamedText('');
+
+        if (simplePlanCancellationFlag.current) break;
+
+        try {
+            const result = await generatePackingList(data, (chunk) => {
+                if (simplePlanCancellationFlag.current) throw new Error("Cancelled");
+                setStreamedText(prev => prev + chunk);
+            });
+            
+            if (simplePlanCancellationFlag.current) break;
+
+            setPackingList(result);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            setMiniAppAttemptCount(0);
+            setIsLoading(false);
+            return;
+
+        } catch (e) {
+            lastError = e instanceof Error ? e : new Error('An unknown error occurred');
+            console.error(`Attempt ${attempt} for packing list failed:`, lastError);
+            
+            if (lastError.message === "Cancelled") break;
+            if (attempt < maxRetries) await new Promise(resolve => setTimeout(resolve, 1500));
+        }
     }
-  }, [handleViewChange]);
+    
+    if (!simplePlanCancellationFlag.current && lastError) {
+        setError(lastError.message);
+        handleViewChange('packingAssistantForm');
+    }
+    
+    setIsLoading(false);
+    setMiniAppAttemptCount(0);
+}, [handleViewChange]);
 
   const handleGenerateFoodRecommendations = useCallback(async (data: FoodFinderRequestData) => {
     setIsLoading(true);
     setError(null);
     setFoodRecommendations(null);
-    setStreamedText('');
     handleViewChange('foodFinderResult');
-    try {
-        const result = await generateFoodRecommendations(data, (chunk) => setStreamedText(prev => prev + chunk));
-        setFoodRecommendations(result);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-    } catch (e) {
-        setError(e instanceof Error ? e.message : 'An unknown error occurred');
-        handleViewChange('foodFinderForm');
-    } finally {
-        setIsLoading(false);
+    
+    simplePlanCancellationFlag.current = false;
+    const maxRetries = 3;
+    let lastError: Error | null = null;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        setMiniAppAttemptCount(attempt);
+        setStreamedText('');
+
+        if (simplePlanCancellationFlag.current) break;
+
+        try {
+            const result = await generateFoodRecommendations(data, (chunk) => {
+                if (simplePlanCancellationFlag.current) throw new Error("Cancelled");
+                setStreamedText(prev => prev + chunk)
+            });
+            
+            if (simplePlanCancellationFlag.current) break;
+
+            setFoodRecommendations(result);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            setMiniAppAttemptCount(0);
+            setIsLoading(false);
+            return;
+
+        } catch (e) {
+            lastError = e instanceof Error ? e : new Error('An unknown error occurred');
+            console.error(`Attempt ${attempt} for food recommendations failed:`, lastError);
+            
+            if (lastError.message === "Cancelled") break;
+            if (attempt < maxRetries) await new Promise(resolve => setTimeout(resolve, 1500));
+        }
     }
-  }, [handleViewChange]);
+    
+    if (!simplePlanCancellationFlag.current && lastError) {
+        setError(lastError.message);
+        handleViewChange('foodFinderForm');
+    }
+    
+    setIsLoading(false);
+    setMiniAppAttemptCount(0);
+}, [handleViewChange]);
   
   const handleGenerateAppRecommendations = useCallback(async (data: AppFinderRequestData) => {
     setIsLoading(true);
     setError(null);
     setAppRecommendations(null);
-    setStreamedText('');
     handleViewChange('appFinderResult');
-    try {
-        const result = await generateAppRecommendations(data, (chunk) => setStreamedText(prev => prev + chunk));
-        setAppRecommendations(result);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-    } catch (e) {
-        setError(e instanceof Error ? e.message : 'An unknown error occurred');
-        handleViewChange('appFinderForm');
-    } finally {
-        setIsLoading(false);
+    
+    simplePlanCancellationFlag.current = false;
+    const maxRetries = 3;
+    let lastError: Error | null = null;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        setMiniAppAttemptCount(attempt);
+        setStreamedText('');
+
+        if (simplePlanCancellationFlag.current) break;
+
+        try {
+            const result = await generateAppRecommendations(data, (chunk) => {
+                if (simplePlanCancellationFlag.current) throw new Error("Cancelled");
+                setStreamedText(prev => prev + chunk)
+            });
+            
+            if (simplePlanCancellationFlag.current) break;
+
+            setAppRecommendations(result);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            setMiniAppAttemptCount(0);
+            setIsLoading(false);
+            return;
+
+        } catch (e) {
+            lastError = e instanceof Error ? e : new Error('An unknown error occurred');
+            console.error(`Attempt ${attempt} for app recommendations failed:`, lastError);
+            
+            if (lastError.message === "Cancelled") break;
+            if (attempt < maxRetries) await new Promise(resolve => setTimeout(resolve, 1500));
+        }
     }
-  }, [handleViewChange]);
+    
+    if (!simplePlanCancellationFlag.current && lastError) {
+        setError(lastError.message);
+        handleViewChange('appFinderForm');
+    }
+    
+    setIsLoading(false);
+    setMiniAppAttemptCount(0);
+}, [handleViewChange]);
   
   const handleGenerateMusicRecommendations = useCallback(async (data: MusicFinderRequestData) => {
     setIsLoading(true);
     setError(null);
     setMusicRecommendations(null);
-    setStreamedText('');
     handleViewChange('musicFinderResult');
-    try {
-        const result = await generateMusicRecommendations(data, (chunk) => setStreamedText(prev => prev + chunk));
-        setMusicRecommendations(result);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-    } catch (e) {
-        setError(e instanceof Error ? e.message : 'An unknown error occurred');
-        handleViewChange('musicFinderForm');
-    } finally {
-        setIsLoading(false);
+    
+    simplePlanCancellationFlag.current = false;
+    const maxRetries = 3;
+    let lastError: Error | null = null;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        setMiniAppAttemptCount(attempt);
+        setStreamedText('');
+
+        if (simplePlanCancellationFlag.current) break;
+
+        try {
+            const result = await generateMusicRecommendations(data, (chunk) => {
+                if (simplePlanCancellationFlag.current) throw new Error("Cancelled");
+                setStreamedText(prev => prev + chunk)
+            });
+            
+            if (simplePlanCancellationFlag.current) break;
+
+            setMusicRecommendations(result);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            setMiniAppAttemptCount(0);
+            setIsLoading(false);
+            return;
+
+        } catch (e) {
+            lastError = e instanceof Error ? e : new Error('An unknown error occurred');
+            console.error(`Attempt ${attempt} for music recommendations failed:`, lastError);
+            
+            if (lastError.message === "Cancelled") break;
+            if (attempt < maxRetries) await new Promise(resolve => setTimeout(resolve, 1500));
+        }
     }
-  }, [handleViewChange]);
+    
+    if (!simplePlanCancellationFlag.current && lastError) {
+        setError(lastError.message);
+        handleViewChange('musicFinderForm');
+    }
+    
+    setIsLoading(false);
+    setMiniAppAttemptCount(0);
+}, [handleViewChange]);
   
   const handleGenerateLingoGuide = useCallback(async (data: LingoFinderRequestData) => {
     setIsLoading(true);
     setError(null);
     setLingoRecommendations(null);
-    setStreamedText('');
     handleViewChange('lingoFinderResult');
-    try {
-        const result = await generateLingoGuide(data, (chunk) => setStreamedText(prev => prev + chunk));
-        setLingoRecommendations(result);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-    } catch (e) {
-        setError(e instanceof Error ? e.message : 'An unknown error occurred');
-        handleViewChange('lingoFinderForm');
-    } finally {
-        setIsLoading(false);
+    
+    simplePlanCancellationFlag.current = false;
+    const maxRetries = 3;
+    let lastError: Error | null = null;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        setMiniAppAttemptCount(attempt);
+        setStreamedText('');
+
+        if (simplePlanCancellationFlag.current) break;
+
+        try {
+            const result = await generateLingoGuide(data, (chunk) => {
+                if (simplePlanCancellationFlag.current) throw new Error("Cancelled");
+                setStreamedText(prev => prev + chunk)
+            });
+            
+            if (simplePlanCancellationFlag.current) break;
+
+            setLingoRecommendations(result);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            setMiniAppAttemptCount(0);
+            setIsLoading(false);
+            return;
+
+        } catch (e) {
+            lastError = e instanceof Error ? e : new Error('An unknown error occurred');
+            console.error(`Attempt ${attempt} for lingo guide failed:`, lastError);
+            
+            if (lastError.message === "Cancelled") break;
+            if (attempt < maxRetries) await new Promise(resolve => setTimeout(resolve, 1500));
+        }
     }
-  }, [handleViewChange]);
+    
+    if (!simplePlanCancellationFlag.current && lastError) {
+        setError(lastError.message);
+        handleViewChange('lingoFinderForm');
+    }
+    
+    setIsLoading(false);
+    setMiniAppAttemptCount(0);
+}, [handleViewChange]);
 
 
   const renderContent = () => {
@@ -770,19 +921,19 @@ const App: React.FC = () => {
           };
           break;
         case 'packingAssistantResult':
-          loadingProps = { title: "Building Your Packing List...", stages: packingStages, funFacts: packingFunFacts, accentColor: 'violet' as const };
+          loadingProps = { title: "Building Your Packing List...", stages: packingStages, funFacts: packingFunFacts, accentColor: 'violet' as const, attemptCount: miniAppAttemptCount, maxAttempts: 3 };
           break;
         case 'foodFinderResult':
-          loadingProps = { title: "Cooking Up Recommendations...", stages: foodStages, funFacts: foodFunFacts, accentColor: 'amber' as const };
+          loadingProps = { title: "Cooking Up Recommendations...", stages: foodStages, funFacts: foodFunFacts, accentColor: 'amber' as const, attemptCount: miniAppAttemptCount, maxAttempts: 3 };
           break;
         case 'appFinderResult':
-          loadingProps = { title: "Scanning for Local Apps...", stages: appStages, funFacts: appFunFacts, accentColor: 'teal' as const };
+          loadingProps = { title: "Scanning for Local Apps...", stages: appStages, funFacts: appFunFacts, accentColor: 'teal' as const, attemptCount: miniAppAttemptCount, maxAttempts: 3 };
           break;
         case 'musicFinderResult':
-          loadingProps = { title: "Curating Your Playlist...", stages: musicStages, funFacts: musicFunFacts, accentColor: 'fuchsia' as const };
+          loadingProps = { title: "Curating Your Playlist...", stages: musicStages, funFacts: musicFunFacts, accentColor: 'fuchsia' as const, attemptCount: miniAppAttemptCount, maxAttempts: 3 };
           break;
         case 'lingoFinderResult':
-          loadingProps = { title: "Translating Local Phrases...", stages: lingoStages, funFacts: lingoFunFacts, accentColor: 'sky' as const };
+          loadingProps = { title: "Translating Local Phrases...", stages: lingoStages, funFacts: lingoFunFacts, accentColor: 'sky' as const, attemptCount: miniAppAttemptCount, maxAttempts: 3 };
           break;
       }
       
