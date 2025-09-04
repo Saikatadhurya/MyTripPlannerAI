@@ -35,7 +35,6 @@ interface UnifiedResultPreviewProps {
 const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadingStatus, stepErrors, onPlanNew, onRegenerate, onRegenerateStep, onCancel, onCancelStep, onTabChangeScrollToTop, itineraryStreamedText }) => {
     const [activeTab, setActiveTab] = useState<Tab>('itinerary');
     const [isExportingPdf, setIsExportingPdf] = useState(false);
-    const [isPrinting, setIsPrinting] = useState(false);
     
     const isPlanComplete = Object.values(loadingStatus).every(status => status === 'done');
 
@@ -43,27 +42,29 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
         onTabChangeScrollToTop();
     }, [activeTab, onTabChangeScrollToTop]);
 
-    const handleAfterPrint = () => {
-        setIsPrinting(false);
-        setIsExportingPdf(false);
-        window.removeEventListener('afterprint', handleAfterPrint);
-    };
-
     useEffect(() => {
-        if (isPrinting) {
-            window.addEventListener('afterprint', handleAfterPrint);
-            window.print();
-        }
-
-        return () => {
+        const handleAfterPrint = () => {
+            setIsExportingPdf(false);
             window.removeEventListener('afterprint', handleAfterPrint);
         };
-    }, [isPrinting]);
 
+        if (isExportingPdf) {
+            window.addEventListener('afterprint', handleAfterPrint);
+            // Short timeout allows the loader to render before the blocking print dialog appears.
+            const printTimeout = setTimeout(() => {
+                window.print();
+            }, 100);
+
+            return () => {
+                clearTimeout(printTimeout);
+                window.removeEventListener('afterprint', handleAfterPrint);
+            };
+        }
+    }, [isExportingPdf]);
+    
     const handleExportPdf = () => {
         if (isExportingPdf || !isPlanComplete) return;
         setIsExportingPdf(true);
-        setIsPrinting(true);
     };
     
     const getPlanDataForTab = (tab: Tab) => {
@@ -143,12 +144,27 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
     
     return (
         <>
-            {isPrinting && (
-                <div className="printable-container">
-                    <Guidebook plan={plan} />
+            {isExportingPdf && (
+                <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex flex-col items-center justify-center z-[100] no-print fade-in">
+                    <div className="bg-white p-8 rounded-2xl shadow-xl text-center">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-600 mx-auto"></div>
+                        <h3 className="mt-6 text-2xl font-bold text-slate-800">Preparing Guidebook...</h3>
+                        <p className="mt-2 text-slate-600">Please wait while we generate your personalized PDF.</p>
+                        <button
+                            onClick={() => setIsExportingPdf(false)}
+                            className="mt-6 px-6 py-2 bg-slate-200 text-slate-700 font-semibold rounded-full hover:bg-slate-300 transition-colors"
+                        >
+                            Cancel
+                        </button>
+                    </div>
                 </div>
             )}
-            <div className={`max-w-7xl mx-auto space-y-8 animated-card ${isPrinting ? 'no-print' : ''}`}>
+            
+            <div className="printable-container">
+                <Guidebook plan={plan} />
+            </div>
+
+            <div className="max-w-7xl mx-auto space-y-8 animated-card">
                 <header className="flex flex-col sm:flex-row justify-between items-center gap-4 py-4 no-print">
                      <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight text-center sm:text-left">
                         Your Unified Trip Plan to <span className="text-violet-700">{plan.itinerary?.destination || '...'}</span>
