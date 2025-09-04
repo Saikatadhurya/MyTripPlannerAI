@@ -66,6 +66,23 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
         if (isExportingPdf || !isPlanComplete) return;
         setIsExportingPdf(true);
     };
+
+    const handlePrintSection = (tabId: Tab) => {
+        const body = document.body;
+        const printClasses = ['printing-single-tab', `printing-${tabId}`];
+
+        // Add classes to the body to scope the print styles
+        body.classList.add(...printClasses);
+
+        const cleanup = () => {
+            // Remove the classes after printing is done or cancelled
+            body.classList.remove(...printClasses);
+            window.removeEventListener('afterprint', cleanup);
+        };
+
+        window.addEventListener('afterprint', cleanup);
+        window.print();
+    };
     
     const getPlanDataForTab = (tab: Tab) => {
         switch (tab) {
@@ -128,15 +145,15 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
 
         switch (activeTab) {
             case 'itinerary':
-                return <ItineraryPreview itinerary={plan.itinerary!} onRegenerate={onRegenerate} isUnifiedView />;
+                return <ItineraryPreview itinerary={plan.itinerary!} onRegenerate={onRegenerate} isUnifiedView onPrint={() => handlePrintSection('itinerary')} />;
             case 'packing':
-                return <PackingListPreview packingList={plan.packingList!} onRegenerate={onRegenerate} isUnifiedView />;
+                return <PackingListPreview packingList={plan.packingList!} onRegenerate={onRegenerate} isUnifiedView onPrint={() => handlePrintSection('packing')} />;
             case 'food':
-                return <FoodFinderResult recommendations={plan.foodRecommendations!} onRegenerate={onRegenerate} isUnifiedView />;
+                return <FoodFinderResult recommendations={plan.foodRecommendations!} onRegenerate={onRegenerate} isUnifiedView onPrint={() => handlePrintSection('food')} />;
             case 'apps':
-                return <AppFinderResult recommendations={plan.appRecommendations!} onRegenerate={onRegenerate} isUnifiedView />;
+                return <AppFinderResult recommendations={plan.appRecommendations!} onRegenerate={onRegenerate} isUnifiedView onPrint={() => handlePrintSection('apps')} />;
             case 'music':
-                return <MusicFinderResult recommendations={plan.musicRecommendations!} onRegenerate={onRegenerate} isUnifiedView />;
+                return <MusicFinderResult recommendations={plan.musicRecommendations!} onRegenerate={onRegenerate} isUnifiedView onPrint={() => handlePrintSection('music')} />;
             default:
                 return null;
         }
