@@ -410,14 +410,14 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
                     <h3 className="text-lg font-bold text-sky-800">Currency Conversion</h3>
                     <div className="mt-2 space-y-1">
                         <p className="text-sm text-slate-700">
-                            Destination's Local Currency: <strong className="font-semibold text-slate-800">{itinerary.currencyConversion.toCurrency}</strong>
+                            Destination's Local Currency: <strong className="font-semibold text-slate-800">{itinerary.currencyConversion.fromCurrency}</strong>
                         </p>
                         <p className="text-md text-slate-700">
                             Conversion Rate: <strong className="font-semibold text-slate-900">{itinerary.currencyConversion.rateText}</strong>
                         </p>
                     </div>
                     <p className="text-xs text-slate-500 mt-3">
-                        Note: All costs in this itinerary are shown in your chosen currency ({itinerary.currencyConversion.fromCurrency}). This rate helps you understand local prices.
+                        Note: All costs in this itinerary are shown in your chosen currency ({itinerary.currencyConversion.toCurrency}). This rate helps you understand local prices.
                     </p>
                 </div>
             </div>
