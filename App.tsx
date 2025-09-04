@@ -633,14 +633,13 @@ const App: React.FC = () => {
 
     // If itinerary is regenerated, all dependent steps must be regenerated too.
     if (step === 'itinerary') {
-        setUnifiedPlan(prev => ({
-            ...prev,
+        setUnifiedPlan({
             itinerary: null,
             packingList: null,
             foodRecommendations: null,
             appRecommendations: null,
             musicRecommendations: null,
-        }));
+        });
         setUnifiedPlanLoadingStatus({
             itinerary: 'pending',
             packing: 'pending',
@@ -964,7 +963,7 @@ const App: React.FC = () => {
             loadingStatus={unifiedPlanLoadingStatus} 
             stepErrors={unifiedStepErrors} 
             onPlanNew={handleBackToHome} 
-            onRegenerate={() => { if(questionnaireDataForUnifiedPlan) handleGenerateUnifiedPlan(questionnaireDataForUnifiedPlan)}} 
+            onRegenerate={() => handleRegenerateUnifiedPlanStep('itinerary')} 
             onRegenerateStep={handleRegenerateUnifiedPlanStep} 
             onCancel={handleCancelGeneration} 
             onCancelStep={handleCancelUnifiedPlanStep} 
