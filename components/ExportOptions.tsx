@@ -1,12 +1,13 @@
-
 import React from 'react';
 import { Itinerary } from '../types';
 
 interface ExportOptionsProps {
   itinerary: Itinerary;
+  onPrint?: () => void;
+  isUnifiedView?: boolean;
 }
 
-const ExportOptions: React.FC<ExportOptionsProps> = ({ itinerary }) => {
+const ExportOptions: React.FC<ExportOptionsProps> = ({ itinerary, onPrint, isUnifiedView = false }) => {
   
   const generatePlainText = () => {
     let text = `Your Trip to ${itinerary.destination}\n`;
@@ -84,9 +85,9 @@ const ExportOptions: React.FC<ExportOptionsProps> = ({ itinerary }) => {
     }
   };
 
-  const handlePrint = () => {
+  const handlePrint = onPrint || (() => {
     window.print();
-  };
+  });
 
   return (
     <div className="flex justify-center items-center space-x-4">
@@ -94,7 +95,7 @@ const ExportOptions: React.FC<ExportOptionsProps> = ({ itinerary }) => {
         onClick={handlePrint}
         className="px-6 py-2 bg-violet-600 text-white font-semibold rounded-full hover:bg-violet-700 transition-colors"
       >
-        Print Itinerary
+        {isUnifiedView ? 'Print Section' : 'Print Itinerary'}
       </button>
       <button
         onClick={handleCopyToClipboard}

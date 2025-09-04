@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Itinerary } from '../types';
 import ExportOptions from './ExportOptions';
@@ -89,6 +88,7 @@ interface ItineraryPreviewProps {
   itinerary: Itinerary;
   onRegenerate: () => void;
   isUnifiedView?: boolean;
+  onPrint?: () => void;
 }
 
 const getAboutSectionsForDestination = (destinationDetails: Itinerary['coveredDestinations'][0]) => {
@@ -169,7 +169,7 @@ const DestinationInfoTabs: React.FC<{ destinationDetails: Itinerary['coveredDest
 };
 
 
-const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegenerate, isUnifiedView = false }) => {
+const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegenerate, isUnifiedView = false, onPrint }) => {
   const [blogs, setBlogs] = useState<Itinerary['referenceBlogs']>([]);
   const [isLoadingBlogs, setIsLoadingBlogs] = useState(true);
   
@@ -601,7 +601,7 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
       )}
 
       <div className="pt-8 text-center no-print">
-        <ExportOptions itinerary={itinerary} />
+        <ExportOptions itinerary={itinerary} onPrint={onPrint} isUnifiedView={isUnifiedView} />
         {!isUnifiedView && (
         <button
             onClick={onRegenerate}

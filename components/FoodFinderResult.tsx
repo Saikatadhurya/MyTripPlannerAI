@@ -68,9 +68,10 @@ interface FoodFinderResultProps {
     recommendations: FoodRecommendations;
     onRegenerate: () => void;
     isUnifiedView?: boolean;
+    onPrint?: () => void;
 }
 
-const FoodFinderResult: React.FC<FoodFinderResultProps> = ({ recommendations, onRegenerate, isUnifiedView = false }) => {
+const FoodFinderResult: React.FC<FoodFinderResultProps> = ({ recommendations, onRegenerate, isUnifiedView = false, onPrint }) => {
     const iconClass = "h-6 w-6";
     const categoryDetails = {
         iconicDishes: { title: "Iconic Dishes", icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>, color: "orange"},
@@ -90,9 +91,10 @@ const FoodFinderResult: React.FC<FoodFinderResultProps> = ({ recommendations, on
 
     // The order in which categories will be displayed
     const displayOrder = Object.keys(categoryDetails) as Array<keyof typeof categoryDetails>;
+    const handlePrint = onPrint || (() => window.print());
 
     return (
-        <div className="max-w-6xl mx-auto space-y-12 animated-card">
+        <div className="max-w-6xl mx-auto space-y-12 animated-card" id="food-finder-result-content">
             {!isUnifiedView && (
             <div className="flex justify-start items-center no-print">
                 <button
@@ -142,13 +144,13 @@ const FoodFinderResult: React.FC<FoodFinderResultProps> = ({ recommendations, on
                     </button>
                     )}
                     <button
-                        onClick={() => window.print()}
+                        onClick={handlePrint}
                         className="inline-flex items-center justify-center w-full sm:w-auto px-8 py-3 bg-white/60 text-slate-800 font-bold rounded-full hover:bg-white/80 transition-all duration-300 shadow-md border border-white/50"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
                             <path fillRule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v-1a1 1 0 011-1h10a1 1 0 011 1v1h1a2 2 0 002-2v-3a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clipRule="evenodd" />
                         </svg>
-                        <span>Print Guide</span>
+                        <span>{isUnifiedView ? 'Print This Section' : 'Print Guide'}</span>
                     </button>
                 </div>
             </div>

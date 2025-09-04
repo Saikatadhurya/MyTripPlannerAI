@@ -158,6 +158,27 @@
         .printable-accordion-toggle-icon {
             display: none !important;
         }
+
+        /* --- SINGLE TAB PRINTING OVERRIDES --- */
+        /* When printing a single tab, hide the full guidebook container */
+        body.printing-single-tab .printable-container {
+          display: none !important;
+        }
+        
+        /* Hide all direct children of main when printing a single tab */
+        body.printing-single-tab main > * {
+          display: none !important;
+        }
+        
+        /* Then, selectively un-hide the specific content we want to print and give it some padding */
+        body.printing-itinerary main #itinerary-preview-content,
+        body.printing-packing main #packing-list-preview-content,
+        body.printing-food main #food-finder-result-content,
+        body.printing-apps main #app-finder-result-content,
+        body.printing-music main #music-finder-result-content {
+          display: block !important;
+          padding-top: 2rem;
+        }
       }
       @keyframes fadeIn {
         from { opacity: 0; transform: translateY(10px); }
