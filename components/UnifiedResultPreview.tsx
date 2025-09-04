@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect } from 'react';
 import { UnifiedPlan, UnifiedPlanLoadingStatus } from '../types';
 import ItineraryPreview from './ItineraryPreview';
@@ -14,7 +13,7 @@ type Tab = 'itinerary' | 'packing' | 'food' | 'apps' | 'music';
 const tabs: { id: Tab; name: string; icon: React.ReactNode }[] = [
     { id: 'itinerary', name: 'Itinerary', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" /><path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h.01a1 1 0 100-2H10zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h.01a1 1 0 100-2H10z" clipRule="evenodd" /></svg> },
     { id: 'packing', name: 'Packing', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 2a3 3 0 00-3 3v1H5a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V8a2 2 0 00-2-2h-2V5a3 3 0 00-3-3zm-1 4a1 1 0 10-2 0v1h2V6z" clipRule="evenodd" /></svg> },
-    { id: 'food', name: 'Food Guide', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a1 1 0 011 1v1a1 1 0 01-2 0V3a1 1 0 011-1zM4 9a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zm3 3a1 1 0 00-1 1v4a1 1 0 102 0v-4a1 1 0 00-1-1zm5 0a1 1 0 00-1 1v4a1 1 0 102 0v-4a1 1 0 00-1-1z" /></svg> },
+    { id: 'food', name: 'Food Guide', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M11 3a1 1 0 10-2 0v1.088A7 7 0 004.53 10.756.5.5 0 005 11h10a.5.5 0 00.47-.244A7 7 0 0011 4.088V3z" /><path fillRule="evenodd" d="M15 13a.5.5 0 01.5.5v2a.5.5 0 01-.5.5H5a.5.5 0 01-.5-.5v-2a.5.5 0 01.5-.5h10z" clipRule="evenodd" /></svg> },
     { id: 'apps', name: 'Local Apps', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M7 2a2 2 0 00-2 2v12a2 2 0 002 2h6a2 2 0 002-2V4a2 2 0 00-2-2H7zm3 14a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" /></svg> },
     { id: 'music', name: 'Music', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3V4a1 1 0 00-1-1z" /></svg> },
 ];
@@ -222,50 +221,50 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
                     </div>
                 </header>
                 
-                <main className="mt-6">
+                {/* Responsive Navigation */}
+                <nav className="no-print fixed bottom-0 left-0 right-0 z-30 sm:relative sm:bottom-auto sm:top-auto sm:left-auto sm:right-auto sm:mb-6">
+                    <div className="w-full bg-white/80 backdrop-blur-xl border-t border-white/50 shadow-[0_-5px_15px_-5px_rgba(0,0,0,0.1)] sm:max-w-max sm:mx-auto sm:rounded-full sm:p-1 sm:border sm:shadow-lg">
+                        <div className="flex justify-around sm:justify-center sm:space-x-1">
+                            {tabs.map(tab => {
+                                const status = loadingStatus[tab.id];
+                                const dataExists = !!getPlanDataForTab(tab.id);
+
+                                return (
+                                    <button
+                                        key={tab.id}
+                                        onClick={() => setActiveTab(tab.id)}
+                                        className={`relative flex flex-col items-center justify-center flex-1 pt-2 pb-1 transition-colors duration-200 sm:flex-row sm:flex-none sm:px-4 sm:py-2 sm:space-x-2 sm:rounded-full
+                                            ${activeTab === tab.id
+                                                ? 'text-violet-600 sm:bg-violet-600 sm:text-white sm:shadow'
+                                                : 'text-slate-600 hover:bg-violet-100/70'
+                                            }`}
+                                        aria-current={activeTab === tab.id ? 'page' : undefined}
+                                    >
+                                        <div className="relative flex-shrink-0">
+                                            {tab.icon}
+                                            {/* Status Indicator Dot */}
+                                            {status !== 'pending' && (
+                                                <span className={`absolute -top-0.5 -right-0.5 block h-2.5 w-2.5 rounded-full border-2 border-white
+                                                    ${status === 'loading' && 'animate-pulse bg-blue-500'}
+                                                    ${status === 'done' && dataExists && 'bg-green-500'}
+                                                    ${(status === 'error' || status === 'cancelled') && 'bg-red-500'}
+                                                `}></span>
+                                            )}
+                                        </div>
+                                        <span className="text-xs font-semibold sm:text-sm">{tab.name}</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </nav>
+
+                <main>
                     {renderTabContent()}
                 </main>
                 {/* Spacer for bottom nav on mobile */}
                 <div className="h-20 sm:h-0" />
             </div>
-
-            {/* Responsive Navigation */}
-            <nav className="no-print fixed bottom-0 left-0 right-0 z-30 sm:sticky sm:top-4 sm:mb-2">
-                <div className="w-full bg-white/80 backdrop-blur-xl border-t border-white/50 shadow-[0_-5px_15px_-5px_rgba(0,0,0,0.1)] sm:max-w-max sm:mx-auto sm:rounded-full sm:p-1 sm:border sm:shadow-lg">
-                    <div className="flex justify-around sm:justify-center sm:space-x-1">
-                        {tabs.map(tab => {
-                            const status = loadingStatus[tab.id];
-                            const dataExists = !!getPlanDataForTab(tab.id);
-
-                            return (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => setActiveTab(tab.id)}
-                                    className={`relative flex flex-col items-center justify-center flex-1 pt-2 pb-1 transition-colors duration-200 sm:flex-row sm:flex-none sm:px-4 sm:py-2 sm:space-x-2 sm:rounded-full
-                                        ${activeTab === tab.id
-                                            ? 'text-violet-600 sm:bg-violet-600 sm:text-white sm:shadow'
-                                            : 'text-slate-600 hover:bg-violet-100/70'
-                                        }`}
-                                    aria-current={activeTab === tab.id ? 'page' : undefined}
-                                >
-                                    <div className="relative">
-                                        {tab.icon}
-                                        {/* Status Indicator Dot */}
-                                        {status !== 'pending' && (
-                                            <span className={`absolute -top-0.5 -right-0.5 block h-2.5 w-2.5 rounded-full border-2 border-white
-                                                ${status === 'loading' && 'animate-pulse bg-blue-500'}
-                                                ${status === 'done' && dataExists && 'bg-green-500'}
-                                                ${(status === 'error' || status === 'cancelled') && 'bg-red-500'}
-                                            `}></span>
-                                        )}
-                                    </div>
-                                    <span className="text-xs font-semibold sm:text-sm">{tab.name}</span>
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-            </nav>
         </>
     );
 };
