@@ -181,7 +181,7 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
             </div>
 
             <div className="max-w-7xl mx-auto space-y-8 animated-card">
-                <header className="flex flex-col sm:flex-row justify-between items-center gap-4 py-4 no-print">
+                <header className="flex flex-col sm:flex-row justify-between items-center gap-4 py-4 no-print unified-header">
                      <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight text-center sm:text-left">
                         Your Unified Trip Plan to <span className="text-violet-700">{plan.itinerary?.destination || '...'}</span>
                     </h1>
@@ -222,7 +222,7 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
                 </header>
                 
                 {/* Responsive Navigation */}
-                <nav className="no-print fixed bottom-0 left-0 right-0 z-30 sm:sticky sm:top-4 sm:z-40 sm:mb-6">
+                <nav className="no-print fixed bottom-0 left-0 right-0 z-30 sm:sticky sm:top-4 sm:z-40 sm:mb-6 unified-nav">
                     <div className="w-full bg-white/80 backdrop-blur-xl border-t border-white/50 shadow-[0_-5px_15px_-5px_rgba(0,0,0,0.1)] sm:max-w-max sm:mx-auto sm:rounded-full sm:p-1 sm:border sm:shadow-lg">
                         <div className="flex justify-around sm:justify-center sm:space-x-1">
                             {tabs.map(tab => {
