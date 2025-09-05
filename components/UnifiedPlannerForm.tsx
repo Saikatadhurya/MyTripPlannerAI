@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Budget, Vibe, FoodPreference, TripType, QuestionnaireData, LocationSuggestion } from '../types';
 import { getDestinationSuggestions } from '../services/geminiService';
@@ -323,20 +322,12 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, initi
   const [searchQuery, setSearchQuery] = useState('');
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   
-  const [langQuery, setLangQuery] = useState(formData.language);
+  const [langSearchTerm, setLangSearchTerm] = useState('');
   const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
-  const [currencyQuery, setCurrencyQuery] = useState(formData.currency);
+  const [currencySearchTerm, setCurrencySearchTerm] = useState('');
   const [isCurrencyDropdownOpen, setIsCurrencyDropdownOpen] = useState(false);
   const langDropdownRef = useRef<HTMLDivElement>(null);
   const currencyDropdownRef = useRef<HTMLDivElement>(null);
-  
-  useEffect(() => {
-    setLangQuery(formData.language);
-  }, [formData.language]);
-
-  useEffect(() => {
-    setCurrencyQuery(formData.currency);
-  }, [formData.currency]);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -503,16 +494,14 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, initi
         }
         if (langDropdownRef.current && !langDropdownRef.current.contains(event.target as Node)) {
             setIsLangDropdownOpen(false);
-            setLangQuery(formData.language);
         }
         if (currencyDropdownRef.current && !currencyDropdownRef.current.contains(event.target as Node)) {
             setIsCurrencyDropdownOpen(false);
-            setCurrencyQuery(formData.currency);
         }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [formData.language, formData.currency]);
+  }, []);
 
   const handleOpenSelection = (field: keyof QuestionnaireData, title: string) => {
     if (!isMobile) return;
@@ -656,13 +645,14 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, initi
 
   const showStartPoint = formData.tripType !== 'Standard' || !!formData.isRoundTrip;
 
+// FIX: Add missing return statement with JSX for the component.
   return (
     <div className="max-w-2xl mx-auto">
       <BackToHomeButton onClick={onBack} />
 
       <div className="text-center mb-10">
-        <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Plan Your Next Adventure</h1>
-        <p className="mt-2 text-lg text-slate-600">Fill in the details for a complete, AI-powered travel plan.</p>
+        <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Unified Adventure Planner</h1>
+        <p className="mt-2 text-lg text-slate-600">Fill in your trip details for a complete, AI-generated plan.</p>
       </div>
 
       {error && (
@@ -688,9 +678,17 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, initi
                     <div ref={langDropdownRef} className="relative">
                         <input 
                             type="text"
-                            value={langQuery}
-                            onChange={e => setLangQuery(e.target.value)}
-                            onFocus={() => setIsLangDropdownOpen(true)}
+                            value={isLangDropdownOpen ? langSearchTerm : formData.language}
+                            onChange={e => {
+                                setLangSearchTerm(e.target.value);
+                                if (!isLangDropdownOpen) {
+                                    setIsLangDropdownOpen(true);
+                                }
+                            }}
+                            onFocus={() => {
+                                setLangSearchTerm('');
+                                setIsLangDropdownOpen(true);
+                            }}
                             className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
                             placeholder="Search language..."
                             autoComplete="off"
@@ -698,7 +696,7 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, initi
                         {isLangDropdownOpen && (
                             <ul className="absolute z-20 w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg max-h-60 overflow-y-auto">
                                 {languages
-                                    .filter(l => l.toLowerCase().includes(langQuery.toLowerCase()))
+                                    .filter(l => l.toLowerCase().includes(langSearchTerm.toLowerCase()))
                                     .map(lang => (
                                         <li 
                                             key={lang} 
@@ -798,165 +796,174 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, initi
                                         {s.parentHierarchy && <span className="text-sm text-slate-600">, {s.parentHierarchy}</span>}
                                     </div>
                                     <span className="text-xs bg-slate-200 text-slate-700 font-medium px-2 py-0.5 rounded-full">{s.type}</span>
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                    {destinationError && (
-                      <div style={{ animation: 'validation-fade-in 0.3s ease' }} className="mt-2 text-sm text-rose-700 bg-rose-100/60 p-2 rounded-md flex items-center space-x-2">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
-                          <span>{destinationError}</span>
-                      </div>
-                    )}
-                </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="min-w-0">
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Trip Dates</label>
-                    <button
-                        type="button"
-                        onClick={() => setIsDatePickerOpen(true)}
-                        className="w-full flex justify-between items-center text-left p-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
-                    >
-                        <div className="flex items-center space-x-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" /></svg>
-                            <span className="font-semibold text-slate-800">
-                                {new Date(formData.startDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {formData.endDate ? new Date(formData.endDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '...'}
-                            </span>
-                        </div>
-                        <span className="bg-violet-100 text-violet-700 font-bold px-2 py-0.5 rounded-full text-sm">{formData.days} {formData.days === 1 ? 'day' : 'days'}</span>
-                    </button>
-                </div>
-              <div>
-                <label htmlFor="persons" className="block text-sm font-medium text-slate-700 mb-1">Travelers</label>
-                <div className="flex items-center w-full bg-white border border-slate-300 rounded-lg focus-within:ring-2 focus-within:ring-violet-500 focus-within:border-violet-500 transition">
-                  <button type="button" onClick={() => handleInputChange('persons', Math.max(1, formData.persons - 1))} disabled={formData.persons <= 1} className="p-3 text-violet-600 rounded-l-lg hover:bg-violet-50 transition disabled:text-slate-300 disabled:cursor-not-allowed" aria-label="Decrease number of travelers"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clipRule="evenodd" /></svg></button>
-                  <input id="persons" type="text" inputMode="numeric" pattern="[0-9]*" value={formData.persons === 0 ? '' : formData.persons} onChange={handleTravelersChange} onBlur={handleTravelersBlur} className="font-semibold text-lg text-center flex-grow tabular-nums w-full bg-transparent border-none text-gray-800 focus:ring-0 focus:outline-none" aria-label="Number of travelers" />
-                  <button type="button" onClick={() => handleInputChange('persons', Math.min(20, formData.persons + 1))} disabled={formData.persons >= 20} className="p-3 text-violet-600 rounded-r-lg hover:bg-violet-50 transition disabled:text-slate-300 disabled:cursor-not-allowed" aria-label="Increase number of travelers"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" /></svg></button>
-                </div>
-              </div>
-            </div>
-        </div>
-
-        <div className="space-y-4 bg-white/60 backdrop-blur-md p-6 rounded-2xl border border-slate-200/70 shadow-xl relative z-10">
-            <h2 className="flex items-center space-x-3 text-2xl font-bold text-slate-800 border-b pb-3">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-violet-600" viewBox="0 0 20 20" fill="currentColor"><path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.5 2.5 0 00-1.168-.217c-1.36.0-2.5 1.119-2.5 2.5s1.14 2.5 2.5 2.5c.346 0 .682-.07.98-.2a2.5 2.5 0 001.52-2.3z" /><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.5 4.5 0 00-1.879.938.5.5 0 00-.22.643l.612 1.224a.5.5 0 00.643.22A3.49 3.49 0 0110 7.5v1.698a2.5 2.5 0 00-1.168-.217c-1.36.0-2.5 1.119-2.5 2.5s1.14 2.5 2.5 2.5c.346 0 .682-.07.98-.2a2.5 2.5 0 001.52-2.3V9.5a1 1 0 10-2 0v1a.5.5 0 01-1 0V9.5a.5.5 0 01.5-.5h1V8a1 1 0 10-2 0v.092a4.5 4.5 0 00-1.879.938.5.5 0 00-.22.643l.612 1.224a.5.5 0 00.643.22A3.49 3.49 0 0110 7.5v1.698a2.5 2.5 0 00-1.168-.217c-1.36.0-2.5 1.119-2.5 2.5s1.14 2.5 2.5 2.5c.346 0 .682-.07.98-.2a2.5 2.5 0 001.52-2.3V9.5a1 1 0 10-2 0v1a.5.5 0 01-1 0V9.5a.5.5 0 01.5-.5h1V8a1 1 0 00-2 0z" clipRule="evenodd" /></svg>
-              <span>Budget</span>
-            </h2>
-            <div className="grid grid-cols-3 gap-3">
-                {budgets.map(b => (<button key={b} type="button" onClick={() => handleInputChange('budget', b)} className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 border-2 ${formData.budget === b ? 'bg-violet-600 text-white border-violet-600' : 'bg-white/50 border-white/50 hover:border-violet-400'}`}>{b}</button>))}
-            </div>
-            <div className="pt-4 border-t border-violet-200/50">
-                <label className="block text-sm font-medium text-slate-700 mb-1">Currency for Plan</label>
-                 {isMobile ? (
-                    <div onClick={() => handleOpenSelection('currency', 'Select Currency')} className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition flex justify-between items-center text-left cursor-pointer">
-                        <span className="truncate">{formData.currency}</span>
-                        <svg className={`h-5 w-5 text-slate-400`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
-                    </div>
-                 ) : (
-                    <div ref={currencyDropdownRef} className="relative">
-                        <input 
-                            type="text"
-                            value={currencyQuery}
-                            onChange={e => setCurrencyQuery(e.target.value)}
-                            onFocus={() => setIsCurrencyDropdownOpen(true)}
-                            className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
-                            placeholder="Search currency..."
-                            autoComplete="off"
-                        />
-                        {isCurrencyDropdownOpen && (
-                            <ul className="absolute z-20 w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg max-h-60 overflow-y-auto">
-                                {currencies
-                                    .filter(c => c.toLowerCase().includes(currencyQuery.toLowerCase()))
-                                    .map(currency => (
-                                        <li 
-                                            key={currency} 
-                                            onClick={() => {
-                                                handleInputChange('currency', currency);
-                                                setIsCurrencyDropdownOpen(false);
-                                            }}
-                                            className="px-4 py-3 cursor-pointer hover:bg-violet-100/60"
-                                        >
-                                            {currency}
-                                        </li>
+                                    </li>
                                 ))}
                             </ul>
                         )}
+                        {destinationError && (
+                          <div style={{ animation: 'validation-fade-in 0.3s ease' }} className="mt-2 text-sm text-rose-700 bg-rose-100/60 p-2 rounded-md flex items-center space-x-2">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
+                              <span>{destinationError}</span>
+                          </div>
+                        )}
                     </div>
-                 )}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="min-w-0">
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Trip Dates</label>
+                        <button
+                            type="button"
+                            onClick={() => setIsDatePickerOpen(true)}
+                            className="w-full flex justify-between items-center text-left p-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
+                        >
+                            <div className="flex items-center space-x-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" /></svg>
+                                <span className="font-semibold text-slate-800">
+                                    {new Date(formData.startDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {formData.endDate ? new Date(formData.endDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '...'}
+                                </span>
+                            </div>
+                            <span className="bg-violet-100 text-violet-700 font-bold px-2 py-0.5 rounded-full text-sm">{formData.days} {formData.days === 1 ? 'day' : 'days'}</span>
+                        </button>
+                    </div>
+                  <div>
+                    <label htmlFor="persons" className="block text-sm font-medium text-slate-700 mb-1">Travelers</label>
+                    <div className="flex items-center w-full bg-white border border-slate-300 rounded-lg focus-within:ring-2 focus-within:ring-violet-500 focus-within:border-violet-500 transition">
+                      <button type="button" onClick={() => handleInputChange('persons', Math.max(1, formData.persons - 1))} disabled={formData.persons <= 1} className="p-3 text-violet-600 rounded-l-lg hover:bg-violet-50 transition disabled:text-slate-300 disabled:cursor-not-allowed" aria-label="Decrease number of travelers"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clipRule="evenodd" /></svg></button>
+                      <input id="persons" type="text" inputMode="numeric" pattern="[0-9]*" value={formData.persons === 0 ? '' : formData.persons} onChange={handleTravelersChange} onBlur={handleTravelersBlur} className="font-semibold text-lg text-center flex-grow tabular-nums w-full bg-transparent border-none text-gray-800 focus:ring-0 focus:outline-none" aria-label="Number of travelers" />
+                      <button type="button" onClick={() => handleInputChange('persons', Math.min(20, formData.persons + 1))} disabled={formData.persons >= 20} className="p-3 text-violet-600 rounded-r-lg hover:bg-violet-50 transition disabled:text-slate-300 disabled:cursor-not-allowed" aria-label="Increase number of travelers"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" /></svg></button>
+                    </div>
+                  </div>
+                </div>
             </div>
-        </div>
 
-        <div className="space-y-4 bg-white/60 backdrop-blur-md p-6 rounded-2xl border border-slate-200/70 shadow-xl">
-          <h2 className="flex items-center space-x-3 text-2xl font-bold text-slate-800 border-b pb-3">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-violet-600" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" /></svg>
-            <span>What's your vibe?</span>
-          </h2>
-          <p className="text-sm text-slate-600">Select one or more vibes that best describe your ideal trip.</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {vibes.map(v => (<button key={v.label} type="button" onClick={() => handleVibeToggle(v.label)} className={`p-4 rounded-lg text-left transition-all duration-200 border-2 flex items-start space-x-3 ${formData.vibe.includes(v.label) ? 'bg-violet-100/70 border-violet-500' : 'bg-white/40 border-white/40 hover:bg-white/60'}`}><span className="text-2xl mt-1">{v.icon}</span><div><p className="font-semibold text-slate-800">{v.label}</p><p className="text-xs text-slate-500">{v.description}</p></div></button>))}
-          </div>
-        </div>
-        
-        <div className="space-y-4 bg-white/60 backdrop-blur-md p-6 rounded-2xl border border-slate-200/70 shadow-xl">
-           <h2 className="flex items-center space-x-3 text-2xl font-bold text-slate-800 border-b pb-3">
-             <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-violet-600" viewBox="0 0 20 20" fill="currentColor"><path d="M11 3a1 1 0 10-2 0v1.088A7 7 0 004.53 10.756.5.5 0 005 11h10a.5.5 0 00.47-.244A7 7 0 0011 4.088V3z" /><path fillRule="evenodd" d="M15 13a.5.5 0 01.5.5v2a.5.5 0 01-.5.5H5a.5.5 0 01-.5-.5v-2a.5.5 0 01.5-.5h10z" clipRule="evenodd" /></svg>
-             <span>Food & Drink</span>
-           </h2>
-            <div className="grid grid-cols-3 gap-3">
-                {foodPreferences.map(({ label, icon }) => (
-                    <button key={label} type="button" onClick={() => handleInputChange('foodPreference', label)} className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 border-2 flex items-center justify-center space-x-2 ${formData.foodPreference === label ? 'bg-violet-600 text-white border-violet-600' : 'bg-white/50 border-white/50 hover:border-violet-400'}`}>
-                        <span className="text-xl">{icon}</span>
-                        <span>{label}</span>
-                    </button>
-                ))}
+            <div className="space-y-4 bg-white/60 backdrop-blur-md p-6 rounded-2xl border border-slate-200/70 shadow-xl relative z-10">
+                <h2 className="flex items-center space-x-3 text-2xl font-bold text-slate-800 border-b pb-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-violet-600" viewBox="0 0 20 20" fill="currentColor"><path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.5 2.5 0 00-1.168-.217c-1.36.0-2.5 1.119-2.5 2.5s1.14 2.5 2.5 2.5c.346 0 .682-.07.98-.2a2.5 2.5 0 001.52-2.3z" /><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.5 4.5 0 00-1.879.938.5.5 0 00-.22.643l.612 1.224a.5.5 0 00.643.22A3.49 3.49 0 0110 7.5v1.698a2.5 2.5 0 00-1.168-.217c-1.36.0-2.5 1.119-2.5 2.5s1.14 2.5 2.5 2.5c.346 0 .682-.07.98-.2a2.5 2.5 0 001.52-2.3V9.5a1 1 0 10-2 0v1a.5.5 0 01-1 0V9.5a.5.5 0 01.5-.5h1V8a1 1 0 10-2 0v.092a4.5 4.5 0 00-1.879.938.5.5 0 00-.22.643l.612 1.224a.5.5 0 00.643.22A3.49 3.49 0 0110 7.5v1.698a2.5 2.5 0 00-1.168-.217c-1.36.0-2.5 1.119-2.5 2.5s1.14 2.5 2.5 2.5c.346 0 .682-.07.98-.2a2.5 2.5 0 001.52-2.3V9.5a1 1 0 10-2 0v1a.5.5 0 01-1 0V9.5a.5.5 0 01.5-.5h1V8a1 1 0 00-2 0z" clipRule="evenodd" /></svg>
+                  <span>Budget</span>
+                </h2>
+                <div className="grid grid-cols-3 gap-3">
+                    {budgets.map(b => (<button key={b} type="button" onClick={() => handleInputChange('budget', b)} className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 border-2 ${formData.budget === b ? 'bg-violet-600 text-white border-violet-600' : 'bg-white/50 border-white/50 hover:border-violet-400'}`}>{b}</button>))}
+                </div>
+                <div className="pt-4 border-t border-violet-200/50">
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Currency for Plan</label>
+                     {isMobile ? (
+                        <div onClick={() => handleOpenSelection('currency', 'Select Currency')} className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition flex justify-between items-center text-left cursor-pointer">
+                            <span className="truncate">{formData.currency}</span>
+                            <svg className={`h-5 w-5 text-slate-400`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+                        </div>
+                     ) : (
+                        <div ref={currencyDropdownRef} className="relative">
+                            <input 
+                                type="text"
+                                value={isCurrencyDropdownOpen ? currencySearchTerm : formData.currency}
+                                onChange={e => {
+                                    setCurrencySearchTerm(e.target.value);
+                                    if (!isCurrencyDropdownOpen) {
+                                        setIsCurrencyDropdownOpen(true);
+                                    }
+                                }}
+                                onFocus={() => {
+                                    setCurrencySearchTerm('');
+                                    setIsCurrencyDropdownOpen(true);
+                                }}
+                                className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
+                                placeholder="Search currency..."
+                                autoComplete="off"
+                            />
+                            {isCurrencyDropdownOpen && (
+                                <ul className="absolute z-20 w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg max-h-60 overflow-y-auto">
+                                    {currencies
+                                        .filter(c => c.toLowerCase().includes(currencySearchTerm.toLowerCase()))
+                                        .map(currency => (
+                                            <li 
+                                                key={currency} 
+                                                onClick={() => {
+                                                    handleInputChange('currency', currency);
+                                                    setIsCurrencyDropdownOpen(false);
+                                                }}
+                                                className="px-4 py-3 cursor-pointer hover:bg-violet-100/60"
+                                            >
+                                                {currency}
+                                            </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
+                     )}
+                </div>
             </div>
-            <div className="pt-4 border-t border-violet-200/50">
-               <Toggle
-                label="Include Alcoholic Drinks"
-                description="Get recommendations for local beers, wines, etc."
-                enabled={formData.includeAlcoholicDrinks}
-                onChange={(enabled) => handleInputChange('includeAlcoholicDrinks', enabled)}
-              />
-            </div>
-        </div>
 
-        <div className="space-y-4 bg-white/60 backdrop-blur-md p-6 rounded-2xl border border-slate-200/70 shadow-xl">
-            <h2 className="flex items-center space-x-3 text-2xl font-bold text-slate-800 border-b pb-3">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-violet-600" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" /></svg>
-              <span>Trip Add-ons</span>
-            </h2>
-            <p className="text-sm text-slate-600">Add extra details to your plan for a more comprehensive experience.</p>
-            <div className="space-y-4">
-              <Toggle
-                label="Medical Facilities"
-                description="Include nearby hospitals & pharmacies in your itinerary."
-                enabled={formData.includeMedical}
-                onChange={(enabled) => handleInputChange('includeMedical', enabled)}
-              />
+            <div className="space-y-4 bg-white/60 backdrop-blur-md p-6 rounded-2xl border border-slate-200/70 shadow-xl">
+              <h2 className="flex items-center space-x-3 text-2xl font-bold text-slate-800 border-b pb-3">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-violet-600" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" /></svg>
+                <span>What's your vibe?</span>
+              </h2>
+              <p className="text-sm text-slate-600">Select one or more vibes that best describe your ideal trip.</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {vibes.map(v => (<button key={v.label} type="button" onClick={() => handleVibeToggle(v.label)} className={`p-4 rounded-lg text-left transition-all duration-200 border-2 flex items-start space-x-3 ${formData.vibe.includes(v.label) ? 'bg-violet-100/70 border-violet-500' : 'bg-white/40 border-white/40 hover:bg-white/60'}`}><span className="text-2xl mt-1">{v.icon}</span><div><p className="font-semibold text-slate-800">{v.label}</p><p className="text-xs text-slate-500">{v.description}</p></div></button>))}
+              </div>
             </div>
-        </div>
+            
+            <div className="space-y-4 bg-white/60 backdrop-blur-md p-6 rounded-2xl border border-slate-200/70 shadow-xl">
+               <h2 className="flex items-center space-x-3 text-2xl font-bold text-slate-800 border-b pb-3">
+                 <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-violet-600" viewBox="0 0 20 20" fill="currentColor"><path d="M11 3a1 1 0 10-2 0v1.088A7 7 0 004.53 10.756.5.5 0 005 11h10a.5.5 0 00.47-.244A7 7 0 0011 4.088V3z" /><path fillRule="evenodd" d="M15 13a.5.5 0 01.5.5v2a.5.5 0 01-.5.5H5a.5.5 0 01-.5-.5v-2a.5.5 0 01.5-.5h10z" clipRule="evenodd" /></svg>
+                 <span>Food & Drink</span>
+               </h2>
+                <div className="grid grid-cols-3 gap-3">
+                    {foodPreferences.map(({ label, icon }) => (
+                        <button key={label} type="button" onClick={() => handleInputChange('foodPreference', label)} className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 border-2 flex items-center justify-center space-x-2 ${formData.foodPreference === label ? 'bg-violet-600 text-white border-violet-600' : 'bg-white/50 border-white/50 hover:border-violet-400'}`}>
+                            <span className="text-xl">{icon}</span>
+                            <span>{label}</span>
+                        </button>
+                    ))}
+                </div>
+                <div className="pt-4 border-t border-violet-200/50">
+                   <Toggle
+                    label="Include Alcoholic Drinks"
+                    description="Get recommendations for local beers, wines, etc."
+                    enabled={formData.includeAlcoholicDrinks}
+                    onChange={(enabled) => handleInputChange('includeAlcoholicDrinks', enabled)}
+                  />
+                </div>
+            </div>
 
-        <div className="text-center pt-4">
-          <button
-            type="submit"
-            className="w-full sm:w-auto px-10 py-4 bg-violet-600 text-white font-bold rounded-full hover:bg-violet-700 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-violet-500/30 disabled:bg-violet-400/80 disabled:cursor-not-allowed disabled:shadow-md disabled:scale-100"
-            disabled={!isDestinationSelected || !!destinationError || (showStartPoint && (!isStartPointSelected || !!startPointError)) || formData.vibe.length === 0}
-          >
-            ✨ Plan My Adventure
-          </button>
+            <div className="space-y-4 bg-white/60 backdrop-blur-md p-6 rounded-2xl border border-slate-200/70 shadow-xl">
+                <h2 className="flex items-center space-x-3 text-2xl font-bold text-slate-800 border-b pb-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-violet-600" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" /></svg>
+                  <span>Trip Add-ons</span>
+                </h2>
+                <p className="text-sm text-slate-600">Add extra details to your plan for a more comprehensive experience.</p>
+                <div className="space-y-4">
+                  <Toggle
+                    label="Medical Facilities"
+                    description="Include nearby hospitals & pharmacies in your itinerary."
+                    enabled={formData.includeMedical}
+                    onChange={(enabled) => handleInputChange('includeMedical', enabled)}
+                  />
+                </div>
+            </div>
+
+            <div className="text-center pt-4">
+              <button
+                type="submit"
+                className="w-full sm:w-auto px-10 py-4 bg-violet-600 text-white font-bold rounded-full hover:bg-violet-700 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-violet-500/30 disabled:bg-violet-400/80 disabled:cursor-not-allowed disabled:shadow-md disabled:scale-100"
+                disabled={!isDestinationSelected || !!destinationError || (showStartPoint && (!isStartPointSelected || !!startPointError)) || formData.vibe.length === 0}
+              >
+                ✨ Plan My Adventure
+              </button>
+            </div>
+          </form>
+          <DateRangePicker
+            isOpen={isDatePickerOpen}
+            onClose={() => setIsDatePickerOpen(false)}
+            onSelect={handleDateSelect}
+            initialStartDate={formData.startDate}
+            initialEndDate={formData.endDate}
+          />
+          {renderSelectionPage()}
         </div>
-      </form>
-      <DateRangePicker
-        isOpen={isDatePickerOpen}
-        onClose={() => setIsDatePickerOpen(false)}
-        onSelect={handleDateSelect}
-        initialStartDate={formData.startDate}
-        initialEndDate={formData.endDate}
-      />
-      {renderSelectionPage()}
-    </div>
-  );
+      );
 };
 
+// FIX: Add missing default export.
 export default UnifiedPlannerForm;

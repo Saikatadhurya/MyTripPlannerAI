@@ -262,13 +262,9 @@ const PackingAssistantForm: React.FC<PackingAssistantFormProps> = ({ onSubmit, i
   const [searchQuery, setSearchQuery] = useState('');
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   
-  const [langQuery, setLangQuery] = useState(formData.language);
+  const [langSearchTerm, setLangSearchTerm] = useState('');
   const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
   const langDropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setLangQuery(formData.language);
-  }, [formData.language]);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -344,12 +340,11 @@ const PackingAssistantForm: React.FC<PackingAssistantFormProps> = ({ onSubmit, i
         }
         if (langDropdownRef.current && !langDropdownRef.current.contains(event.target as Node)) {
             setIsLangDropdownOpen(false);
-            setLangQuery(formData.language);
         }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [formData.language]);
+  }, []);
 
   const handleOpenSelection = (field: keyof typeof formData, title: string) => {
     if (!isMobile) return;
@@ -514,9 +509,17 @@ const PackingAssistantForm: React.FC<PackingAssistantFormProps> = ({ onSubmit, i
                 <div ref={langDropdownRef} className="relative">
                     <input 
                         type="text"
-                        value={langQuery}
-                        onChange={e => setLangQuery(e.target.value)}
-                        onFocus={(e) => { setIsLangDropdownOpen(true); e.target.select(); }}
+                        value={isLangDropdownOpen ? langSearchTerm : formData.language}
+                        onChange={e => {
+                            setLangSearchTerm(e.target.value);
+                            if (!isLangDropdownOpen) {
+                                setIsLangDropdownOpen(true);
+                            }
+                        }}
+                        onFocus={() => {
+                            setLangSearchTerm('');
+                            setIsLangDropdownOpen(true);
+                        }}
                         className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
                         placeholder="Search language..."
                         autoComplete="off"
@@ -524,7 +527,7 @@ const PackingAssistantForm: React.FC<PackingAssistantFormProps> = ({ onSubmit, i
                     {isLangDropdownOpen && (
                         <ul className="absolute z-20 w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg max-h-60 overflow-y-auto">
                             {languages
-                                .filter(l => l.toLowerCase().includes(langQuery.toLowerCase()))
+                                .filter(l => l.toLowerCase().includes(langSearchTerm.toLowerCase()))
                                 .map(lang => (
                                     <li 
                                         key={lang} 

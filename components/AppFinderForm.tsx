@@ -119,13 +119,9 @@ const AppFinderForm: React.FC<AppFinderFormProps> = ({ onSubmit, isLoading, erro
   const [selectionView, setSelectionView] = useState<{ field: keyof AppFinderRequestData, title: string } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   
-  const [langQuery, setLangQuery] = useState(formData.language);
+  const [langSearchTerm, setLangSearchTerm] = useState('');
   const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
   const langDropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setLangQuery(formData.language);
-  }, [formData.language]);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -192,12 +188,11 @@ const AppFinderForm: React.FC<AppFinderFormProps> = ({ onSubmit, isLoading, erro
         }
         if (langDropdownRef.current && !langDropdownRef.current.contains(event.target as Node)) {
             setIsLangDropdownOpen(false);
-            setLangQuery(formData.language);
         }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [formData.language]);
+  }, []);
 
   const handleOpenSelection = (field: keyof AppFinderRequestData, title: string) => {
     if (!isMobile) return;
@@ -353,12 +348,20 @@ const AppFinderForm: React.FC<AppFinderFormProps> = ({ onSubmit, isLoading, erro
                     <svg className={`h-5 w-5 text-slate-400`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
                 </div>
             ) : (
-                 <div ref={langDropdownRef} className="relative">
+                <div ref={langDropdownRef} className="relative">
                     <input 
                         type="text"
-                        value={langQuery}
-                        onChange={e => setLangQuery(e.target.value)}
-                        onFocus={(e) => { setIsLangDropdownOpen(true); e.target.select(); }}
+                        value={isLangDropdownOpen ? langSearchTerm : formData.language}
+                        onChange={e => {
+                            setLangSearchTerm(e.target.value);
+                            if (!isLangDropdownOpen) {
+                                setIsLangDropdownOpen(true);
+                            }
+                        }}
+                        onFocus={() => {
+                            setLangSearchTerm('');
+                            setIsLangDropdownOpen(true);
+                        }}
                         className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition"
                         placeholder="Search language..."
                         autoComplete="off"
@@ -366,7 +369,7 @@ const AppFinderForm: React.FC<AppFinderFormProps> = ({ onSubmit, isLoading, erro
                     {isLangDropdownOpen && (
                         <ul className="absolute z-20 w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg max-h-60 overflow-y-auto">
                             {languages
-                                .filter(l => l.toLowerCase().includes(langQuery.toLowerCase()))
+                                .filter(l => l.toLowerCase().includes(langSearchTerm.toLowerCase()))
                                 .map(lang => (
                                     <li 
                                         key={lang} 

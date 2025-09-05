@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 
 interface QuickNavButtonProps {
   onPlanTrip: () => void;
-  onPlanItinerary: () => void;
+  // FIX: Renamed prop to be consistent with BottomNavBarProps
+  onStartItineraryPlanner: () => void;
   onStartPacking: () => void;
   onStartFoodFinder: () => void;
   onStartAppFinder: () => void;
@@ -14,7 +15,8 @@ interface QuickNavButtonProps {
 
 const QuickNavButton: React.FC<QuickNavButtonProps> = ({
   onPlanTrip,
-  onPlanItinerary,
+  // FIX: Renamed prop to be consistent with BottomNavBarProps
+  onStartItineraryPlanner,
   onStartPacking,
   onStartFoodFinder,
   onStartAppFinder,
@@ -53,7 +55,8 @@ const QuickNavButton: React.FC<QuickNavButtonProps> = ({
     {
         title: 'Quick Tools',
         items: [
-            { label: 'Day-by-Day Itinerary', action: onPlanItinerary, icon: '🗓️' },
+            // FIX: Renamed prop to be consistent with BottomNavBarProps
+            { label: 'Day-by-Day Itinerary', action: onStartItineraryPlanner, icon: '🗓️' },
             { label: 'Smart Bag Packing', action: onStartPacking, icon: '🧳' },
             { label: 'Local Food Finder', action: onStartFoodFinder, icon: '🍲' },
             { label: 'Mobile App Finder', action: onStartAppFinder, icon: '📱' },
@@ -73,7 +76,7 @@ const QuickNavButton: React.FC<QuickNavButtonProps> = ({
   let itemIndex = 0;
 
   return (
-    <div ref={navRef} className="fixed bottom-6 left-6 z-50 no-print hidden md:block" aria-live="polite">
+    <div ref={navRef} className="fixed bottom-6 left-6 z-50 no-print" aria-live="polite">
       {/* Wrapper to handle positioning and animation context */}
       <div className="relative flex flex-col items-start">
 

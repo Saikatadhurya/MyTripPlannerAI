@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { QuestionnaireData, PackingListRequestData, PackingList, FoodFinderRequestData, FoodRecommendations, AppFinderRequestData, AppRecommendations, MusicFinderRequestData, MusicRecommendations, LingoFinderRequestData, LingoRecommendations, QuestionnaireData as InitialQuestionnaireData, UnifiedPlan, UnifiedPlanLoadingStatus, Itinerary } from './types';
 import { generateItinerary } from './services/geminiService';
@@ -24,159 +25,12 @@ import LingoFinderForm from './components/LingoFinderForm';
 import LingoFinderResult from './components/LingoFinderResult';
 import ScrollToTopButton from './components/ScrollToTopButton';
 import ContactUs from './components/ContactUs';
-import QuickNavButton from './components/QuickNavButton';
+import Navigation from './components/Navigation';
 import UnifiedResultPreview from './components/UnifiedResultPreview';
 import UnifiedPlannerForm from './components/UnifiedPlannerForm';
 import ItineraryPreview from './components/ItineraryPreview';
 import LoadingIndicator from './components/LoadingIndicator';
 import Header from './components/Header';
-
-// --- Bottom Nav Bar Component ---
-interface BottomNavBarProps {
-  onGoHome: () => void;
-  onPlanTrip: () => void;
-  onStartItineraryPlanner: () => void;
-  onStartPacking: () => void;
-  onStartFoodFinder: () => void;
-  onStartAppFinder: () => void;
-  onStartMusicFinder: () => void;
-  onStartLingoFinder: () => void;
-  onGoToContact: () => void;
-  activeView: string;
-}
-
-const NavItem: React.FC<{
-  icon: React.ReactNode;
-  label: string;
-  onClick: () => void;
-  isActive?: boolean;
-}> = ({ icon, label, onClick, isActive }) => (
-  <button
-    onClick={onClick}
-    className={`flex flex-1 flex-col items-center justify-center pt-2 pb-1 transition-colors duration-200 ${isActive ? 'text-violet-600' : 'text-slate-500 hover:text-violet-600'}`}
-  >
-    {icon}
-    <span className="text-xs font-semibold mt-1 text-center">{label}</span>
-  </button>
-);
-
-const MoreMenu: React.FC<{
-    onStartItineraryPlanner: () => void;
-    onStartAppFinder: () => void;
-    onStartMusicFinder: () => void;
-    onStartLingoFinder: () => void;
-    onGoToContact: () => void;
-    onClose: () => void;
-}> = ({ onStartItineraryPlanner, onStartAppFinder, onStartMusicFinder, onStartLingoFinder, onGoToContact, onClose }) => {
-    const handleAction = (action: () => void) => {
-        action();
-        onClose();
-    };
-
-    return (
-        <div className="absolute bottom-full right-0 mb-2 w-56 bg-white/95 backdrop-blur-xl border border-slate-200/70 rounded-xl shadow-lg p-2 flex flex-col z-40">
-            <button onClick={() => handleAction(onStartItineraryPlanner)} className="w-full flex items-center text-left px-3 py-2.5 rounded-lg text-slate-800 font-semibold transition-colors duration-200 hover:bg-violet-100/80">
-                <span className="text-xl w-8 text-center">🗓️</span>
-                <span>Itinerary Planner</span>
-            </button>
-             <hr className="border-slate-200/80 mx-2 my-1" />
-            <button onClick={() => handleAction(onStartAppFinder)} className="w-full flex items-center text-left px-3 py-2.5 rounded-lg text-slate-800 font-semibold transition-colors duration-200 hover:bg-violet-100/80">
-                <span className="text-xl w-8 text-center">📱</span>
-                <span>App Finder</span>
-            </button>
-            <button onClick={() => handleAction(onStartMusicFinder)} className="w-full flex items-center text-left px-3 py-2.5 rounded-lg text-slate-800 font-semibold transition-colors duration-200 hover:bg-violet-100/80">
-                <span className="text-xl w-8 text-center">🎶</span>
-                <span>Music Finder</span>
-            </button>
-            <button onClick={() => handleAction(onStartLingoFinder)} className="w-full flex items-center text-left px-3 py-2.5 rounded-lg text-slate-800 font-semibold transition-colors duration-200 hover:bg-violet-100/80">
-                <span className="text-xl w-8 text-center">🗣️</span>
-                <span>Lingo Guide</span>
-            </button>
-            <hr className="border-slate-200/80 mx-2 my-1" />
-            <button onClick={() => handleAction(onGoToContact)} className="w-full flex items-center text-left px-3 py-2.5 rounded-lg text-slate-800 font-semibold transition-colors duration-200 hover:bg-violet-100/80">
-                <span className="text-xl w-8 text-center">✉️</span>
-                <span>Contact Us</span>
-            </button>
-        </div>
-    );
-};
-
-const BottomNavBar: React.FC<BottomNavBarProps> = ({
-  onGoHome,
-  onPlanTrip,
-  onStartItineraryPlanner,
-  onStartPacking,
-  onStartFoodFinder,
-  onStartAppFinder,
-  onStartMusicFinder,
-  onStartLingoFinder,
-  onGoToContact,
-  activeView,
-}) => {
-  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
-  const moreMenuRef = useRef<HTMLDivElement>(null);
-  
-  const iconClass = "h-6 w-6";
-
-  const navItems = [
-    { ids: ['landing'], label: 'Home', icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" /></svg>, action: onGoHome },
-    { ids: ['unifiedPlannerForm'], label: 'Plan Trip', icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM18 13.5l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 18l-1.035.259a3.375 3.375 0 00-2.456 2.456L18 21.75l-.259-1.035a3.375 3.375 0 00-2.456-2.456L14.25 18l1.035-.259a3.375 3.375 0 002.456-2.456L18 13.5z" /></svg>, action: onPlanTrip },
-    { ids: ['packingAssistantForm'], label: 'Packing', icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 2a3 3 0 00-3 3v1H5a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V8a2 2 0 00-2-2h-2V5a3 3 0 00-3-3zm-1 4a1 1 0 10-2 0v1h2V6z" clipRule="evenodd" /></svg>, action: onStartPacking },
-    { ids: ['foodFinderForm'], label: 'Food', icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path d="M11 3a1 1 0 10-2 0v1.088A7 7 0 004.53 10.756.5.5 0 005 11h10a.5.5 0 00.47-.244A7 7 0 0011 4.088V3z" /><path fillRule="evenodd" d="M15 13a.5.5 0 01.5.5v2a.5.5 0 01-.5.5H5a.5.5 0 01-.5-.5v-2a.5.5 0 01.5-.5h10z" clipRule="evenodd" /></svg>, action: onStartFoodFinder },
-  ];
-  
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-        if (moreMenuRef.current && !moreMenuRef.current.contains(event.target as Node)) {
-            setIsMoreMenuOpen(false);
-        }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const isMoreSectionActive = ['contact', 'appFinderForm', 'musicFinderForm', 'lingoFinderForm', 'questionnaire'].includes(activeView);
-
-  return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden no-print">
-      <div className="w-full bg-white/80 backdrop-blur-xl border-t border-white/50 shadow-[0_-5px_15px_-5px_rgba(0,0,0,0.1)]">
-        <div className="flex items-stretch h-16">
-          {navItems.map(item => (
-            <NavItem
-              key={item.label}
-              icon={item.icon}
-              label={item.label}
-              onClick={item.action}
-              isActive={item.ids.includes(activeView)}
-            />
-          ))}
-          <div ref={moreMenuRef} className="relative flex-1">
-            {isMoreMenuOpen && (
-                <MoreMenu
-                    onStartItineraryPlanner={onStartItineraryPlanner}
-                    onStartAppFinder={onStartAppFinder}
-                    onStartMusicFinder={onStartMusicFinder}
-                    onStartLingoFinder={onStartLingoFinder}
-                    onGoToContact={onGoToContact}
-                    onClose={() => setIsMoreMenuOpen(false)}
-                />
-            )}
-            <button
-                onClick={() => setIsMoreMenuOpen(prev => !prev)}
-                className={`flex flex-col items-center justify-center w-full h-full pt-2 pb-1 transition-colors duration-200 ${isMoreMenuOpen || isMoreSectionActive ? 'text-violet-600' : 'text-slate-500 hover:text-violet-600'}`}
-            >
-                <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
-                </svg>
-                <span className="text-xs font-semibold mt-1">More</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 
 type View = 'landing' | 'questionnaire' | 'itineraryResult' | 'packingAssistantForm' | 'packingAssistantResult' | 'foodFinderForm' | 'foodFinderResult' | 'appFinderForm' | 'appFinderResult' | 'musicFinderForm' | 'musicFinderResult' | 'lingoFinderForm' | 'lingoFinderResult' | 'contact' | 'unifiedPlannerForm' | 'unifiedResult';
 
@@ -1031,31 +885,18 @@ const App: React.FC = () => {
       </div>
       
       {view !== 'unifiedResult' && (
-        <>
-            <QuickNavButton
-              onGoHome={handleBackToHome}
-              onGoToContact={() => handleViewChange('contact')}
-              onPlanTrip={handleStartUnifiedPlanner}
-              onPlanItinerary={handleStartItineraryPlanner}
-              onStartPacking={() => handleViewChange('packingAssistantForm')}
-              onStartFoodFinder={() => handleViewChange('foodFinderForm')}
-              onStartAppFinder={() => handleViewChange('appFinderForm')}
-              onStartMusicFinder={() => handleViewChange('musicFinderForm')}
-              onStartLingoFinder={() => handleViewChange('lingoFinderForm')}
-            />
-            <BottomNavBar
-              onGoHome={handleBackToHome}
-              onGoToContact={() => handleViewChange('contact')}
-              onPlanTrip={() => handleStartUnifiedPlanner()}
-              onStartItineraryPlanner={handleStartItineraryPlanner}
-              onStartPacking={() => handleViewChange('packingAssistantForm')}
-              onStartFoodFinder={() => handleViewChange('foodFinderForm')}
-              onStartAppFinder={() => handleViewChange('appFinderForm')}
-              onStartMusicFinder={() => handleViewChange('musicFinderForm')}
-              onStartLingoFinder={() => handleViewChange('lingoFinderForm')}
-              activeView={view}
-            />
-        </>
+        <Navigation
+            onGoHome={handleBackToHome}
+            onGoToContact={() => handleViewChange('contact')}
+            onPlanTrip={() => handleStartUnifiedPlanner()}
+            onStartItineraryPlanner={handleStartItineraryPlanner}
+            onStartPacking={() => handleViewChange('packingAssistantForm')}
+            onStartFoodFinder={() => handleViewChange('foodFinderForm')}
+            onStartAppFinder={() => handleViewChange('appFinderForm')}
+            onStartMusicFinder={() => handleViewChange('musicFinderForm')}
+            onStartLingoFinder={() => handleViewChange('lingoFinderForm')}
+            activeView={view}
+        />
       )}
       <ScrollToTopButton isUnifiedView={view === 'unifiedResult'} />
     </>
