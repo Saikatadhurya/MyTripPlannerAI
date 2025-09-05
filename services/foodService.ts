@@ -1,4 +1,3 @@
-
 import { GoogleGenAI } from "@google/genai";
 import { FoodFinderRequestData, FoodRecommendations } from '../types';
 import { extractJson, cleanCitations } from './jsonUtils';
@@ -52,7 +51,7 @@ export const generateFoodRecommendations = async (data: FoodFinderRequestData, o
   }
 
   const prompt = `
-    You are a Pragmatic Local Food Scout. Your primary mission is to return a useful, relevant, and populated list of food recommendations for a traveler visiting ${destinationsString}.
+    You are a Pragmatic Local Food Scout. Your primary mission is to return a useful, relevant, and populated list of food recommendations for a traveler visiting ${destinationsString}, written in ${language}.
     **CRITICAL FAILURE CONDITION:** Returning an empty or mostly empty list is a complete failure of your task. You must ALWAYS find something relevant.
     ${multiStopInstructions}
 
