@@ -1,44 +1,66 @@
 /**
- * Extracts a JSON object from a string that may contain surrounding text, markdown, and common formatting errors.
+ * Extracts a JSON object or array from a string that may contain surrounding text, markdown, and common formatting errors.
  * This function is designed to be highly resilient to common LLM output inconsistencies.
  *
  * @param text The raw string from the AI response.
  * @returns A cleaned JSON string ready for parsing.
- * @throws An error if a valid JSON object cannot be located or is incomplete.
+ * @throws An error if a valid JSON structure cannot be located or is incomplete.
  */
 export const extractJson = (text: string): string => {
     // 1. Attempt to find JSON within markdown code blocks first for higher accuracy.
     const markdownMatch = text.match(/```(json)?([\s\S]*?)```/);
     let content = markdownMatch && markdownMatch[2] ? markdownMatch[2].trim() : text;
 
-    // 2. Find the start of the JSON object.
+    // 2. Find the start of the JSON (either an object or an array).
     const firstBrace = content.indexOf('{');
-    if (firstBrace === -1) {
-        throw new Error("Could not find a valid JSON object in the AI response (no opening brace).");
+    const firstBracket = content.indexOf('[');
+
+    let startIndex = -1;
+    
+    if (firstBrace !== -1 && (firstBracket === -1 || firstBrace < firstBracket)) {
+        startIndex = firstBrace;
+    } else if (firstBracket !== -1) {
+        startIndex = firstBracket;
     }
 
-    // 3. Use a brace-counting method to find the correct end of the JSON object.
-    // This is more robust than `lastIndexOf('}')` as it handles nested objects and trailing text.
-    let braceCount = 0;
-    let lastBrace = -1;
-    for (let i = firstBrace; i < content.length; i++) {
-        if (content[i] === '{') {
-            braceCount++;
-        } else if (content[i] === '}') {
-            braceCount--;
+    // FIX: Declare jsonString here and restructure logic to avoid using it before declaration and prevent runtime errors.
+    let jsonString: string;
+
+    if (startIndex === -1) {
+        // If no JSON object or array is found, check if the content itself is a valid JSON array string
+        if (content.trim().startsWith('[') && content.trim().endsWith(']')) {
+             jsonString = content.trim();
+        } else {
+            throw new Error("Could not find a valid JSON object or array in the AI response.");
         }
-        if (braceCount === 0) {
-            lastBrace = i;
-            break;
+    } else {
+        const startChar = content[startIndex];
+        const endChar = startChar === '{' ? '}' : ']';
+    
+        // 3. Use a counter to find the correct end of the JSON structure.
+        // This is more robust than `lastIndexOf` as it handles nested structures.
+        let count = 0;
+        let endIndex = -1;
+        for (let i = startIndex; i < content.length; i++) {
+            if (content[i] === startChar) {
+                count++;
+            } else if (content[i] === endChar) {
+                count--;
+            }
+            if (count === 0) {
+                endIndex = i;
+                break;
+            }
         }
+    
+        if (endIndex === -1) {
+            throw new Error("Could not find a complete JSON object or array in the AI response (unmatched brackets/braces).");
+        }
+    
+        // 4. Extract the substring that is likely our JSON.
+        jsonString = content.substring(startIndex, endIndex + 1);
     }
 
-    if (lastBrace === -1) {
-        throw new Error("Could not find a complete JSON object in the AI response (unmatched braces).");
-    }
-
-    // 4. Extract the substring that is likely our JSON.
-    let jsonString = content.substring(firstBrace, lastBrace + 1);
 
     // 5. Pre-parse cleanup for common LLM errors.
     // Remove trailing commas, which are invalid in strict JSON.
