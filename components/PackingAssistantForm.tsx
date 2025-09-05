@@ -1,8 +1,144 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { PackingListRequestData, LocationSuggestion } from '../types';
 import { getDestinationSuggestions } from '../services/geminiService';
 import BackToHomeButton from './BackToHomeButton';
 
+// --- Reusable Date Range Picker Component ---
+interface DateRangePickerProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onSelect: (startDate: string, endDate: string) => void;
+    initialStartDate?: string;
+    initialEndDate?: string;
+}
+
+const DateRangePicker: React.FC<DateRangePickerProps> = ({ isOpen, onClose, onSelect, initialStartDate, initialEndDate }) => {
+    const today = useMemo(() => {
+        const d = new Date();
+        d.setHours(0, 0, 0, 0);
+        return d;
+    }, []);
+
+    const [startDate, setStartDate] = useState<Date | null>(initialStartDate ? new Date(initialStartDate + 'T00:00:00') : null);
+    const [endDate, setEndDate] = useState<Date | null>(initialEndDate ? new Date(initialEndDate + 'T00:00:00') : null);
+    const initialViewDate = useMemo(() => initialStartDate ? new Date(initialStartDate + 'T00:00:00') : new Date(), [initialStartDate]);
+    const [viewDate, setViewDate] = useState(new Date(initialViewDate.getFullYear(), initialViewDate.getMonth(), 1));
+
+    useEffect(() => {
+        const bottomNav = document.querySelector('.md\\:hidden.fixed.bottom-0');
+        if (isOpen) {
+          document.body.style.overflow = 'hidden';
+          if (bottomNav) (bottomNav as HTMLElement).style.display = 'none';
+        } else {
+          document.body.style.overflow = 'auto';
+           if (bottomNav) (bottomNav as HTMLElement).style.display = 'flex';
+        }
+        return () => {
+            document.body.style.overflow = 'auto';
+            if (bottomNav) (bottomNav as HTMLElement).style.display = 'flex';
+        };
+    }, [isOpen]);
+
+    const handleDateClick = (day: number, month: number, year: number) => {
+        const clickedDate = new Date(year, month, day);
+        if (clickedDate < today) return;
+
+        if (!startDate || (startDate && endDate)) {
+            setStartDate(clickedDate);
+            setEndDate(null);
+        } else if (startDate && !endDate) {
+            if (clickedDate < startDate) {
+                setStartDate(clickedDate);
+            } else {
+                setEndDate(clickedDate);
+            }
+        }
+    };
+
+    const handleDone = () => {
+        if (startDate && endDate) {
+            onSelect(startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0]);
+        } else if (startDate && !endDate) {
+            onSelect(startDate.toISOString().split('T')[0], startDate.toISOString().split('T')[0]);
+        }
+        onClose();
+    };
+
+    const renderMonth = (date: Date) => {
+        const year = date.getFullYear();
+        const month = date.getMonth();
+        const monthName = date.toLocaleString('default', { month: 'long', year: 'numeric' });
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const firstDay = new Date(year, month, 1).getDay();
+
+        const areDatesEqual = (d1: Date, d2: Date) => d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate();
+
+        const days = Array.from({ length: firstDay }, (_, i) => <div key={`empty-${i}`} className="w-10 h-10"></div>);
+
+        for (let i = 1; i <= daysInMonth; i++) {
+            const currentDate = new Date(year, month, i);
+            const isPast = currentDate < today;
+            const isToday = areDatesEqual(currentDate, today);
+            const isStartDate = startDate && areDatesEqual(currentDate, startDate);
+            const isEndDate = endDate && areDatesEqual(currentDate, endDate);
+            const isInRange = startDate && endDate && currentDate > startDate && currentDate < endDate;
+
+            let classNames = 'w-10 h-10 flex items-center justify-center rounded-full transition-colors duration-200';
+            if (isPast) classNames += ' text-slate-300 cursor-not-allowed';
+            else {
+                classNames += ' cursor-pointer';
+                if (isStartDate || isEndDate) classNames += ' bg-violet-600 text-white font-bold';
+                else if (isInRange) classNames += ' bg-violet-100 text-violet-800';
+                else classNames += ' text-slate-700 hover:bg-slate-200';
+                if (isToday && !isStartDate && !isEndDate) classNames += ' border-2 border-violet-500';
+            }
+
+            days.push(<button key={i} onClick={() => handleDateClick(i, month, year)} disabled={isPast} className={classNames}>{i}</button>);
+        }
+        return (
+            <div key={`${year}-${month}`} className="p-4">
+                <h3 className="text-lg font-semibold text-center text-slate-800 mb-4">{monthName}</h3>
+                <div className="grid grid-cols-7 gap-1 text-center text-sm text-slate-500 font-medium mb-2">
+                    {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => <div key={d}>{d}</div>)}
+                </div>
+                <div className="grid grid-cols-7 gap-1 place-items-center">{days}</div>
+            </div>
+        );
+    };
+
+    const monthsToRender = useMemo(() => Array.from({ length: 12 }, (_, i) => {
+        const d = new Date(viewDate);
+        d.setMonth(d.getMonth() + i);
+        return d;
+    }), [viewDate]);
+    
+    let nightCount = 0;
+    if (startDate && endDate) {
+        nightCount = Math.ceil(Math.abs(endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    }
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-slate-50 z-[60] flex flex-col slide-down-animation">
+            <header className="flex-shrink-0 flex items-center p-2 border-b border-slate-200 bg-white shadow-sm">
+                <button onClick={onClose} className="p-2 mr-2 text-slate-600 hover:text-slate-900 rounded-full hover:bg-slate-100"><svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg></button>
+                <h2 className="text-lg font-bold text-slate-800">Select Dates</h2>
+            </header>
+            <main className="flex-grow overflow-y-auto">{monthsToRender.map(renderMonth)}</main>
+            <footer className="flex-shrink-0 bg-white p-4 border-t border-slate-200 shadow-[0_-5px_15px_-5px_rgba(0,0,0,0.05)]">
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex-1"><p className="text-sm font-medium text-slate-500">START DATE</p><p className="text-lg font-bold text-slate-800">{startDate ? startDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Select a date'}</p></div>
+                    {nightCount > 0 && <div className="flex-shrink-0 px-3 py-1 bg-slate-100 rounded-full text-sm font-semibold text-slate-700">{nightCount} {nightCount === 1 ? 'Night' : 'Nights'}</div>}
+                    <div className="flex-1 text-right"><p className="text-sm font-medium text-slate-500">END DATE</p><p className="text-lg font-bold text-slate-800">{endDate ? endDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Select a date'}</p></div>
+                </div>
+                <button onClick={handleDone} disabled={!startDate} className="w-full px-6 py-3 bg-violet-600 text-white font-bold rounded-lg transition-colors duration-200 hover:bg-violet-700 disabled:bg-violet-300 disabled:cursor-not-allowed">Done</button>
+            </footer>
+        </div>
+    );
+};
+
+// --- Reusable Typeahead Selection Page ---
 interface SelectionPageProps<T> {
   isOpen: boolean;
   title: string;
@@ -30,7 +166,7 @@ const SelectionPage = <T extends any>({
 }: SelectionPageProps<T>) => {
 
   useEffect(() => {
-    const bottomNav = document.querySelector('.sm\\:hidden.fixed.bottom-0');
+    const bottomNav = document.querySelector('.md\\:hidden.fixed.bottom-0');
     if (isOpen) {
       document.body.style.overflow = 'hidden';
       if (bottomNav) (bottomNav as HTMLElement).style.display = 'none';
@@ -102,13 +238,16 @@ const languages = [
 ];
 
 const PackingAssistantForm: React.FC<PackingAssistantFormProps> = ({ onSubmit, isLoading, error, onBack, onCancel, streamedText }) => {
-  const [formData, setFormData] = useState<PackingListRequestData>({
+  const defaultEndDate = new Date();
+  defaultEndDate.setDate(defaultEndDate.getDate() + 2);
+  const [formData, setFormData] = useState({
     destination: '',
     startDate: new Date().toISOString().split('T')[0],
-    days: 3,
+    endDate: defaultEndDate.toISOString().split('T')[0],
     language: 'English (en)',
   });
-
+  const [days, setDays] = useState(3);
+  
   const [suggestions, setSuggestions] = useState<LocationSuggestion[]>([]);
   const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false);
   const [isDestinationSelected, setIsDestinationSelected] = useState(false);
@@ -119,38 +258,39 @@ const PackingAssistantForm: React.FC<PackingAssistantFormProps> = ({ onSubmit, i
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [isMobile, setIsMobile] = useState(false);
-  const [selectionView, setSelectionView] = useState<{ field: keyof PackingListRequestData, title: string } | null>(null);
+  const [selectionView, setSelectionView] = useState<{ field: keyof typeof formData, title: string } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   
+  const [langQuery, setLangQuery] = useState(formData.language);
+  const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
+  const langDropdownRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    setLangQuery(formData.language);
+  }, [formData.language]);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  const handleInputChange = (field: keyof PackingListRequestData, value: any) => {
+  const handleInputChange = (field: keyof typeof formData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
   
-  const handleDaysChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    if (value === '') {
-        handleInputChange('days', 0);
-    } else {
-        const num = parseInt(value, 10);
-        if (!isNaN(num)) {
-            handleInputChange('days', Math.min(30, Math.max(0, num)));
-        }
-    }
-  };
+  const handleDateSelect = (start: string, end: string) => {
+      const startDate = new Date(start + 'T00:00:00');
+      const endDate = new Date(end + 'T00:00:00');
+      const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
 
-  const handleDaysBlur = () => {
-    if (formData.days < 1) {
-        handleInputChange('days', 1);
-    }
+      setFormData(prev => ({ ...prev, startDate: start, endDate: end }));
+      setDays(diffDays);
   };
-
+  
   const handleDestinationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     handleInputChange('destination', value);
@@ -202,12 +342,16 @@ const PackingAssistantForm: React.FC<PackingAssistantFormProps> = ({ onSubmit, i
         ) {
             setSuggestions([]);
         }
+        if (langDropdownRef.current && !langDropdownRef.current.contains(event.target as Node)) {
+            setIsLangDropdownOpen(false);
+            setLangQuery(formData.language);
+        }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [formData.language]);
 
-  const handleOpenSelection = (field: keyof PackingListRequestData, title: string) => {
+  const handleOpenSelection = (field: keyof typeof formData, title: string) => {
     if (!isMobile) return;
     if (field === 'destination') setSearchQuery(formData.destination);
     else setSearchQuery('');
@@ -261,7 +405,13 @@ const PackingAssistantForm: React.FC<PackingAssistantFormProps> = ({ onSubmit, i
         setDestinationError("Please pick a location from the list to lock it in! 🗺️");
         return;
     }
-    onSubmit(formData);
+    
+    onSubmit({
+      destination: formData.destination,
+      startDate: formData.startDate,
+      days: days,
+      language: formData.language
+    });
   };
 
   const renderSelectionPage = () => {
@@ -355,22 +505,61 @@ const PackingAssistantForm: React.FC<PackingAssistantFormProps> = ({ onSubmit, i
         
         <div className="relative">
             <label className="block text-sm font-medium text-slate-700 mb-1">Output Language</label>
-            <div onClick={() => handleOpenSelection('language', 'Select Language')} className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition flex justify-between items-center text-left cursor-pointer">
-                <span className="truncate">{formData.language}</span>
-                <svg className={`h-5 w-5 text-slate-400`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
-            </div>
+            {isMobile ? (
+                <div onClick={() => handleOpenSelection('language', 'Select Language')} className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition flex justify-between items-center text-left cursor-pointer">
+                    <span className="truncate">{formData.language}</span>
+                    <svg className={`h-5 w-5 text-slate-400`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+                </div>
+            ) : (
+                <div ref={langDropdownRef} className="relative">
+                    <input 
+                        type="text"
+                        value={langQuery}
+                        onChange={e => setLangQuery(e.target.value)}
+                        onFocus={(e) => { setIsLangDropdownOpen(true); e.target.select(); }}
+                        className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
+                        placeholder="Search language..."
+                        autoComplete="off"
+                    />
+                    {isLangDropdownOpen && (
+                        <ul className="absolute z-20 w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg max-h-60 overflow-y-auto">
+                            {languages
+                                .filter(l => l.toLowerCase().includes(langQuery.toLowerCase()))
+                                .map(lang => (
+                                    <li 
+                                        key={lang} 
+                                        onClick={() => {
+                                            handleInputChange('language', lang);
+                                            setIsLangDropdownOpen(false);
+                                        }}
+                                        className="px-4 py-3 cursor-pointer hover:bg-violet-100/60"
+                                    >
+                                        {lang}
+                                    </li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
+            )}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="min-w-0">
-            <label htmlFor="startDate" className="block text-sm font-medium text-slate-700 mb-1">Start Date</label>
-            <input id="startDate" type="date" value={formData.startDate} min={new Date().toISOString().split('T')[0]} onChange={e => handleInputChange('startDate', e.target.value)} className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition" required />
-          </div>
-          <div>
-            <label htmlFor="days" className="block text-sm font-medium text-slate-700 mb-1">Duration (days)</label>
-            <input id="days" type="number" value={formData.days === 0 ? '' : formData.days} onBlur={handleDaysBlur} onChange={handleDaysChange} min="1" max="30" className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition" required />
-          </div>
+        <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Trip Dates</label>
+            <button
+                type="button"
+                onClick={() => setIsDatePickerOpen(true)}
+                className="w-full flex justify-between items-center text-left p-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
+            >
+                <div className="flex items-center space-x-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" /></svg>
+                    <span className="font-semibold text-slate-800">
+                        {new Date(formData.startDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {formData.endDate ? new Date(formData.endDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '...'}
+                    </span>
+                </div>
+                <span className="bg-violet-100 text-violet-700 font-bold px-2 py-0.5 rounded-full text-sm">{days} {days === 1 ? 'day' : 'days'}</span>
+            </button>
         </div>
+
         <div className="text-center pt-4">
           <button
             type="submit"
@@ -382,6 +571,13 @@ const PackingAssistantForm: React.FC<PackingAssistantFormProps> = ({ onSubmit, i
         </div>
       </form>
       {renderSelectionPage()}
+      <DateRangePicker
+        isOpen={isDatePickerOpen}
+        onClose={() => setIsDatePickerOpen(false)}
+        onSelect={handleDateSelect}
+        initialStartDate={formData.startDate}
+        initialEndDate={formData.endDate}
+      />
     </div>
   );
 };

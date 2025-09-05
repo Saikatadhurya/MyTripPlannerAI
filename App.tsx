@@ -138,7 +138,7 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({
   const isMoreSectionActive = ['contact', 'appFinderForm', 'musicFinderForm', 'lingoFinderForm', 'questionnaire'].includes(activeView);
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 sm:hidden no-print">
+    <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden no-print">
       <div className="w-full bg-white/80 backdrop-blur-xl border-t border-white/50 shadow-[0_-5px_15px_-5px_rgba(0,0,0,0.1)]">
         <div className="flex items-stretch h-16">
           {navItems.map(item => (

@@ -15,6 +15,7 @@ export interface QuestionnaireData {
     persons: number;
     foodPreference: FoodPreference;
     startDate: string;
+    endDate?: string;
     includeMedical: boolean;
     language: string;
     currency: string;

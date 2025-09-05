@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { UnifiedPlan, UnifiedPlanLoadingStatus } from '../types';
 import ItineraryPreview from './ItineraryPreview';
@@ -233,9 +234,9 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
                 </header>
                 
                 {/* Responsive Navigation */}
-                <nav className="no-print fixed bottom-0 left-0 right-0 z-30 sm:sticky sm:top-4 sm:z-40 sm:mb-6 unified-nav">
-                    <div className="w-full bg-white/80 backdrop-blur-xl border-t border-white/50 shadow-[0_-10px_25px_-5px_rgba(0,0,0,0.1),_0_-8px_10px_-6px_rgba(0,0,0,0.1)] sm:max-w-max sm:mx-auto sm:rounded-full sm:p-1 sm:border sm:shadow-lg">
-                        <div className="flex h-20 sm:h-auto justify-around sm:justify-center sm:space-x-1">
+                <nav className="no-print fixed bottom-0 left-0 right-0 z-30 md:sticky md:top-4 md:z-40 md:mb-6 unified-nav">
+                    <div className="w-full bg-white/80 backdrop-blur-xl border-t border-white/50 shadow-[0_-10px_25px_-5px_rgba(0,0,0,0.1),_0_-8px_10px_-6px_rgba(0,0,0,0.1)] md:max-w-max md:mx-auto md:rounded-full md:p-1 md:border md:shadow-lg">
+                        <div className="flex h-20 md:h-auto justify-around md:justify-center md:space-x-1">
                             {tabs.map(tab => {
                                 const status = loadingStatus[tab.id];
                                 const dataExists = !!getPlanDataForTab(tab.id);
@@ -244,9 +245,9 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
                                     <button
                                         key={tab.id}
                                         onClick={() => setActiveTab(tab.id)}
-                                        className={`relative flex flex-col items-center justify-center flex-1 space-y-1 transition-colors duration-200 sm:flex-row sm:flex-none sm:px-4 sm:py-2 sm:space-x-2 sm:rounded-full
+                                        className={`relative flex flex-col items-center justify-center flex-1 space-y-1 transition-colors duration-200 md:flex-row md:flex-none md:px-4 md:py-2 md:space-x-2 md:rounded-full
                                             ${activeTab === tab.id
-                                                ? 'text-violet-600 sm:bg-violet-600 sm:text-white sm:shadow'
+                                                ? 'text-violet-600 md:bg-violet-600 md:text-white md:shadow'
                                                 : 'text-slate-600 hover:bg-violet-100/70'
                                             }`}
                                         aria-current={activeTab === tab.id ? 'page' : undefined}
@@ -262,7 +263,7 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
                                                 `}></span>
                                             )}
                                         </div>
-                                        <span className="text-xs font-semibold sm:text-sm">{tab.name}</span>
+                                        <span className="text-xs font-semibold md:text-sm">{tab.name}</span>
                                     </button>
                                 );
                             })}
@@ -274,7 +275,7 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
                     {renderTabContent()}
                 </main>
                 {/* Spacer for bottom nav on mobile */}
-                <div className="h-20 sm:h-0" />
+                <div className="h-20 md:h-0" />
             </div>
         </>
     );

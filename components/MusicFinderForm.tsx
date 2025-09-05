@@ -30,7 +30,7 @@ const SelectionPage = <T extends any>({
 }: SelectionPageProps<T>) => {
 
   useEffect(() => {
-    const bottomNav = document.querySelector('.sm\\:hidden.fixed.bottom-0');
+    const bottomNav = document.querySelector('.md\\:hidden.fixed.bottom-0');
     if (isOpen) {
       document.body.style.overflow = 'hidden';
       if (bottomNav) (bottomNav as HTMLElement).style.display = 'none';
@@ -118,9 +118,17 @@ const MusicFinderForm: React.FC<MusicFinderFormProps> = ({ onSubmit, isLoading, 
   const [isMobile, setIsMobile] = useState(false);
   const [selectionView, setSelectionView] = useState<{ field: keyof MusicFinderRequestData, title: string } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  const [langQuery, setLangQuery] = useState(formData.language);
+  const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
+  const langDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    setLangQuery(formData.language);
+  }, [formData.language]);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
@@ -182,10 +190,14 @@ const MusicFinderForm: React.FC<MusicFinderFormProps> = ({ onSubmit, isLoading, 
         ) {
             setSuggestions([]);
         }
+        if (langDropdownRef.current && !langDropdownRef.current.contains(event.target as Node)) {
+            setIsLangDropdownOpen(false);
+            setLangQuery(formData.language);
+        }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [formData.language]);
 
   const handleOpenSelection = (field: keyof MusicFinderRequestData, title: string) => {
     if (!isMobile) return;
@@ -335,10 +347,42 @@ const MusicFinderForm: React.FC<MusicFinderFormProps> = ({ onSubmit, isLoading, 
         
         <div className="relative">
             <label className="block text-sm font-medium text-slate-700 mb-1">Language</label>
-            <div onClick={() => handleOpenSelection('language', 'Select Language')} className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-fuchsia-500 focus:border-fuchsia-500 transition flex justify-between items-center text-left cursor-pointer">
-                <span className="truncate">{formData.language}</span>
-                <svg className={`h-5 w-5 text-slate-400`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
-            </div>
+            {isMobile ? (
+                 <div onClick={() => handleOpenSelection('language', 'Select Language')} className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-fuchsia-500 focus:border-fuchsia-500 transition flex justify-between items-center text-left cursor-pointer">
+                    <span className="truncate">{formData.language}</span>
+                    <svg className={`h-5 w-5 text-slate-400`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+                </div>
+            ) : (
+                <div ref={langDropdownRef} className="relative">
+                    <input 
+                        type="text"
+                        value={langQuery}
+                        onChange={e => setLangQuery(e.target.value)}
+                        onFocus={(e) => { setIsLangDropdownOpen(true); e.target.select(); }}
+                        className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-fuchsia-500 focus:border-fuchsia-500 transition"
+                        placeholder="Search language..."
+                        autoComplete="off"
+                    />
+                    {isLangDropdownOpen && (
+                        <ul className="absolute z-20 w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg max-h-60 overflow-y-auto">
+                            {languages
+                                .filter(l => l.toLowerCase().includes(langQuery.toLowerCase()))
+                                .map(lang => (
+                                    <li 
+                                        key={lang} 
+                                        onClick={() => {
+                                            handleInputChange('language', lang);
+                                            setIsLangDropdownOpen(false);
+                                        }}
+                                        className="px-4 py-3 cursor-pointer hover:bg-fuchsia-100/60"
+                                    >
+                                        {lang}
+                                    </li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
+            )}
         </div>
 
         <div className="text-center pt-4">
