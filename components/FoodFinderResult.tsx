@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { FoodRecommendations, FoodItem, FoodItemGroup } from '../types';
 
 const CategoryCard: React.FC<{
@@ -7,7 +7,7 @@ const CategoryCard: React.FC<{
     items: FoodItemGroup[];
     accentColor: string;
 }> = ({ title, icon, items, accentColor }) => {
-    if (!items || !items.some(group => group.items.length > 0)) return null;
+    if (!items || !items.some(group => group.items && group.items.length > 0)) return null;
 
     const accentClasses: { [key: string]: string } = {
         purple: 'border-purple-500 bg-purple-100 text-purple-600',
@@ -27,12 +27,33 @@ const CategoryCard: React.FC<{
     
     const [borderColor, iconBgColor] = accentClasses[accentColor]?.split(' ') || ['border-gray-500', 'bg-gray-100', 'text-gray-600'];
     
-    // Create a flat list of items, each with its location
-    const flatItems = items.flatMap(group => 
-        group.items.map(item => ({ ...item, location: group.location }))
-    );
+    const aggregatedItems = useMemo(() => {
+        const foodMap = new Map<string, { name: string; description: string; locations: Set<string> }>();
 
-    const uniqueLocations = new Set(items.map(group => group.location));
+        items.forEach(group => {
+            if (!group.items) return;
+            group.items.forEach(item => {
+                const normalizedName = item.name.trim().toLowerCase();
+                if (foodMap.has(normalizedName)) {
+                    const existing = foodMap.get(normalizedName)!;
+                    existing.locations.add(group.location);
+                } else {
+                    foodMap.set(normalizedName, {
+                        name: item.name,
+                        description: item.description,
+                        locations: new Set([group.location]),
+                    });
+                }
+            });
+        });
+
+        return Array.from(foodMap.values()).map(item => ({
+            ...item,
+            locations: Array.from(item.locations),
+        }));
+    }, [items]);
+    
+    const uniqueLocations = useMemo(() => new Set(items.flatMap(group => group.location)), [items]);
     const isMultiLocation = uniqueLocations.size > 1;
 
     return (
@@ -45,17 +66,19 @@ const CategoryCard: React.FC<{
             </div>
             <div className="space-y-4">
                  <ul className="space-y-4">
-                    {flatItems.map((item, itemIndex) => (
+                    {aggregatedItems.map((item, itemIndex) => (
                         <li key={itemIndex}>
-                            <strong className="font-semibold text-slate-900 block">
-                                {item.name}
+                            <div className="font-semibold text-slate-900 flex flex-wrap items-center gap-x-2 gap-y-1">
+                                <span className="text-base">{item.name}</span>
                                 {isMultiLocation && (
-                                    <span className="ml-2 text-xs font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 align-middle">
-                                        📍 {item.location}
-                                    </span>
+                                    item.locations.map((location, locIndex) => (
+                                        <span key={locIndex} className="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 whitespace-nowrap">
+                                            📍 {location}
+                                        </span>
+                                    ))
                                 )}
-                            </strong>
-                            <p className="text-sm text-slate-600">{item.description}</p>
+                            </div>
+                            <p className="text-sm text-slate-600 mt-1">{item.description}</p>
                         </li>
                     ))}
                 </ul>
