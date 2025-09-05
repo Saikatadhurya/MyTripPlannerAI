@@ -160,7 +160,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onPlanUnifiedTrip, onPlanItin
       <div className="text-center">
         <h2 className="text-3xl font-bold text-slate-900 animated-card" style={{ animationDelay: '200ms' }}>Quick Tools for Your Journey</h2>
         <p className="text-slate-600 mt-2 animated-card" style={{ animationDelay: '250ms' }}>Smart tools to make your trip unforgettable.</p>
-        <div className="mt-10 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6">
+        <div className="mt-10 grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6">
           {miniApps.map((app, index) => {
             const colors = colorClasses[app.color];
             return (
