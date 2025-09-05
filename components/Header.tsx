@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 
 const Header: React.FC = () => {
@@ -26,7 +25,7 @@ const Header: React.FC = () => {
   const containerInitialClasses = "justify-center";
   
   // Classes for the scrolled, glassmorphic state
-  const headerScrolledClasses = "py-4 bg-white/70 backdrop-blur-xl shadow-md slide-down-animation";
+  const headerScrolledClasses = "py-4 bg-white/90 backdrop-blur-xl shadow-lg slide-down-animation";
   const containerScrolledClasses = "justify-start px-4 sm:px-6 lg:px-8";
   
   // Logo scaling effect

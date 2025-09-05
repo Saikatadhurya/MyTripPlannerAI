@@ -7,7 +7,7 @@ interface ContactUsProps {
 }
 
 const InfoCard: React.FC<{ title: string; children: React.ReactNode; icon: React.ReactNode }> = ({ title, children, icon }) => (
-    <div className="animated-card bg-white/40 backdrop-blur-md p-6 rounded-2xl border border-white/50 shadow-lg">
+    <div className="animated-card bg-white/60 backdrop-blur-md p-6 rounded-2xl border border-slate-200/70 shadow-xl">
         <div className="flex items-center space-x-3 text-2xl font-bold text-slate-800 border-b border-violet-200/50 pb-3 mb-4">
             <div className="flex-shrink-0 bg-violet-100 text-violet-600 rounded-lg p-2">
                 {icon}

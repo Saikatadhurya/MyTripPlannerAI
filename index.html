@@ -10,12 +10,7 @@
       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
       body {
         font-family: 'Inter', sans-serif;
-        background-color: #f8f9fa; /* A very light off-white */
-        background-image:
-          radial-gradient(at 0% 0%, hsla(210, 80%, 90%, 0.4) 0px, transparent 50%),
-          radial-gradient(at 100% 100%, hsla(300, 80%, 95%, 0.4) 0px, transparent 50%),
-          radial-gradient(at 100% 0%, hsla(340, 80%, 90%, 0.3) 0px, transparent 50%);
-        background-attachment: fixed;
+        background-color: #ffffff; /* Set a pure white background */
       }
       .pdf-export-render {
         position: fixed !important;
@@ -159,6 +154,16 @@
             display: none !important;
         }
 
+        /* --- GUIDEBOOK PRINTING OVERRIDES --- */
+        /* When printing the full guidebook, hide the interactive UI */
+        body.printing-guidebook .unified-interactive-view {
+            display: none !important;
+        }
+        /* And ensure the printable container is visible */
+        body.printing-guidebook .printable-container {
+            display: block !important;
+        }
+
         /* --- SINGLE TAB PRINTING OVERRIDES --- */
         /* Hide the full guidebook content when printing a single tab */
         body.printing-single-tab .printable-container {
@@ -265,6 +270,49 @@
           padding: 12px 16px;
         }
       }
+
+      /* Floating Icons Background */
+      .floating-icon-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: -1;
+        overflow: hidden;
+        pointer-events: none;
+      }
+      .floating-icon {
+        position: absolute;
+        color: #e2e8f0; /* Light gray */
+        animation: float 20s ease-in-out infinite;
+        opacity: 0.6;
+        user-select: none;
+      }
+
+      @keyframes float {
+        0% { transform: translateY(0px) rotate(0deg); }
+        25% { transform: translateY(-25px) translateX(10px) rotate(5deg); }
+        50% { transform: translateY(0px) rotate(0deg); }
+        75% { transform: translateY(25px) translateX(-10px) rotate(-5deg); }
+        100% { transform: translateY(0px) rotate(0deg); }
+      }
+
+      /* CTA Pulse Animation */
+      @keyframes pulse-shadow {
+        0% {
+          box-shadow: 0 0 0 0 rgba(109, 40, 217, 0.7);
+        }
+        70% {
+          box-shadow: 0 0 0 15px rgba(109, 40, 217, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(109, 40, 217, 0);
+        }
+      }
+      .cta-pulse {
+        animation: pulse-shadow 2.5s infinite;
+      }
     </style>
   <script type="importmap">
 {
@@ -279,6 +327,16 @@
 </script>
 </head>
   <body class="text-gray-800">
+    <div class="floating-icon-container" aria-hidden="true">
+      <div class="floating-icon" style="font-size: 5rem; top: 10%; left: 5%; animation-duration: 25s;">✈️</div>
+      <div class="floating-icon" style="font-size: 3rem; top: 20%; left: 80%; animation-duration: 18s; animation-delay: 2s;">🌍</div>
+      <div class="floating-icon" style="font-size: 6rem; top: 70%; left: 10%; animation-duration: 22s; animation-delay: 4s;">🗺️</div>
+      <div class="floating-icon" style="font-size: 4rem; top: 85%; left: 90%; animation-duration: 28s; animation-delay: 1s;">📸</div>
+      <div class="floating-icon" style="font-size: 2.5rem; top: 50%; left: 50%; animation-duration: 15s; animation-delay: 5s;">🏨</div>
+      <div class="floating-icon" style="font-size: 5rem; top: 5%; left: 40%; animation-duration: 20s; animation-delay: 3s;">🎟️</div>
+      <div class="floating-icon" style="font-size: 3.5rem; top: 40%; left: 15%; animation-duration: 23s; animation-delay: 6s;">🧭</div>
+      <div class="floating-icon" style="font-size: 4.5rem; top: 60%; left: 70%; animation-duration: 19s;">☀️</div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
     

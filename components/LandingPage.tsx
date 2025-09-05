@@ -138,17 +138,19 @@ const LandingPage: React.FC<LandingPageProps> = ({ onPlanUnifiedTrip, onPlanItin
   return (
     <div className="space-y-20 pb-8">
       {/* Hero Section */}
-      <div className="animated-card text-center max-w-4xl mx-auto p-6 md:p-8 rounded-3xl bg-white/50 backdrop-blur-lg border border-white/60 shadow-lg" style={{ animationDelay: '100ms' }}>
-        <h1 className="text-4xl md:text-5xl font-bold text-slate-900 tracking-tight">Plan Your Next Adventure</h1>
-        <p className="mt-4 text-md text-slate-600 max-w-2xl mx-auto">
-          Tell us your travel preferences, and our AI will craft a complete adventure plan, including a detailed itinerary, smart packing list, local food guide, essential apps, and a curated music playlist.
+      <div className="animated-card text-center max-w-4xl mx-auto p-6 md:p-8 rounded-3xl bg-white/60 backdrop-blur-lg border border-slate-200/70 shadow-xl" style={{ animationDelay: '100ms' }}>
+        <h1 className="text-4xl md:text-6xl font-extrabold text-slate-900 tracking-tight leading-tight">
+          AI-Powered Trip Planning, <span className="text-violet-600">Perfected.</span>
+        </h1>
+        <p className="mt-4 text-lg text-slate-600 max-w-2xl mx-auto">
+          From custom itineraries and smart packing lists to local food and music discovery, our AI crafts your complete travel experience. Just tell us where you want to go.
         </p>
         <div className="mt-8">
             <button
               onClick={() => onPlanUnifiedTrip()}
-              className="inline-block px-10 py-4 bg-violet-600 text-white font-bold rounded-full text-lg shadow-lg shadow-violet-500/30 hover:bg-violet-700 hover:shadow-xl hover:shadow-violet-500/40 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-violet-300"
+              className="cta-pulse inline-block px-10 py-4 bg-violet-600 text-white font-bold rounded-full text-lg shadow-lg shadow-violet-500/30 hover:bg-violet-700 hover:shadow-xl hover:shadow-violet-500/40 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-violet-300"
             >
-              ✨ Build Your Itinerary
+              ✨ Plan My Adventure
             </button>
             <p className="mt-4 text-sm text-violet-700/80 font-medium tracking-wide">
               Includes: Itinerary, Packing, Food, Apps & Music
@@ -175,22 +177,24 @@ const LandingPage: React.FC<LandingPageProps> = ({ onPlanUnifiedTrip, onPlanItin
                 }}
                 role="button"
                 tabIndex={0}
-                className={`animated-card h-full w-full flex flex-col text-center bg-white/50 backdrop-blur-lg p-4 sm:p-6 rounded-2xl border border-white/60 shadow-lg group transition-all duration-300 transform hover:scale-105 hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-${app.color}-400/50 cursor-pointer`}
+                className="animated-card h-full w-full bg-white/60 backdrop-blur-lg rounded-2xl border border-slate-200/70 shadow-xl group transition-transform duration-500 [transform-style:preserve-3d] hover:[transform:perspective(1000px)_rotateY(4deg)_rotateX(8deg)_scale(1.05)] focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-violet-400/50 cursor-pointer"
                 style={{ animationDelay: `${300 + index * 100}ms` }}
               >
-                <div className="flex-grow">
-                    <div className={`mx-auto w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 ${colors.iconBg} ${colors.iconText}`}>
-                        {app.icon}
+                <div className="p-4 sm:p-6 flex flex-col text-center h-full [transform:translateZ(40px)]">
+                    <div className="flex-grow">
+                        <div className={`mx-auto w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 ${colors.iconBg} ${colors.iconText}`}>
+                            {app.icon}
+                        </div>
+                        <h3 className="text-lg sm:text-xl font-bold text-slate-900 mt-4 sm:mt-5">{app.title}</h3>
+                        <p className="text-sm text-slate-600 mt-1">
+                            {app.description}
+                        </p>
                     </div>
-                    <h3 className="text-lg sm:text-xl font-bold text-slate-900 mt-4 sm:mt-5">{app.title}</h3>
-                    <p className="text-sm text-slate-600 mt-1">
-                        {app.description}
-                    </p>
-                </div>
-                <div className="mt-4 sm:mt-6 flex-shrink-0">
-                    <span className={`inline-block px-4 py-2 sm:px-6 sm:py-2.5 font-semibold rounded-full text-sm shadow-md transition-all duration-300 group-hover:shadow-lg ${colors.button}`}>
-                        {app.buttonText}
-                    </span>
+                    <div className="mt-4 sm:mt-6 flex-shrink-0">
+                        <span className={`inline-block px-4 py-2 sm:px-6 sm:py-2.5 font-semibold rounded-full text-sm shadow-md transition-all duration-300 group-hover:shadow-lg ${colors.button}`}>
+                            {app.buttonText}
+                        </span>
+                    </div>
                 </div>
               </div>
             );
@@ -206,7 +210,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onPlanUnifiedTrip, onPlanItin
           {supportingFeatures.map((feature, index) => (
             <div 
               key={index} 
-              className="animated-card bg-slate-50/50 backdrop-blur-sm p-6 rounded-2xl border border-white/60 text-center" 
+              className="animated-card bg-slate-50/50 backdrop-blur-sm p-6 rounded-2xl border border-slate-200/70 text-center shadow-lg hover:shadow-xl transition-shadow" 
               style={{ animationDelay: `${700 + index * 100}ms` }}
             >
               <div className="mx-auto w-16 h-16 flex items-center justify-center text-violet-500">
@@ -224,14 +228,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ onPlanUnifiedTrip, onPlanItin
         <h2 className="text-3xl font-bold text-center text-slate-900 mb-6 animated-card" style={{ animationDelay: '1100ms' }}>Popular Destinations</h2>
         <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
           {destinations.map((dest, index) => (
-            <button key={dest.name} onClick={() => onPlanUnifiedTrip(dest.name)} className="animated-card text-left bg-white/50 backdrop-blur-lg p-5 rounded-2xl border border-white/60 shadow-lg hover:shadow-xl hover:border-violet-300/50 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-violet-400/50" style={{ animationDelay: `${1200 + index * 50}ms` }}>
+            <button key={dest.name} onClick={() => onPlanUnifiedTrip(dest.name)} className="animated-card text-left bg-white/60 backdrop-blur-lg p-5 rounded-2xl border border-slate-200/70 shadow-xl hover:shadow-2xl hover:border-violet-300/50 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-violet-400/50" style={{ animationDelay: `${1200 + index * 50}ms` }}>
               <span className="text-4xl" role="img" aria-label="">{dest.icon}</span>
               <h3 className="text-lg font-semibold mt-3 text-slate-800">{dest.name}</h3>
               <p className="text-slate-600 text-sm">{dest.description}</p>
             </button>
           ))}
           {destinations.length === 0 && Array(10).fill(0).map((_, i) => (
-            <div key={i} className="bg-white/40 p-5 rounded-2xl border border-white/50 shadow-lg animate-pulse">
+            <div key={i} className="bg-white/40 p-5 rounded-2xl border border-slate-200/70 shadow-lg animate-pulse">
               <div className="h-10 w-10 bg-slate-200/50 rounded-md"></div>
               <div className="h-4 bg-slate-200/50 rounded mt-4 w-3/4"></div>
               <div className="h-3 bg-slate-200/50 rounded mt-2 w-full"></div>

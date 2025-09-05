@@ -42,21 +42,32 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
     }, [activeTab, onTabChangeScrollToTop]);
 
     useEffect(() => {
-        const handleAfterPrint = () => {
-            setIsExportingPdf(false);
-            window.removeEventListener('afterprint', handleAfterPrint);
-        };
-
         if (isExportingPdf) {
-            window.addEventListener('afterprint', handleAfterPrint);
-            // Short timeout allows the loader to render before the blocking print dialog appears.
+            const mediaQueryList = window.matchMedia('print');
+    
+            const handlePrintChange = (mql: MediaQueryListEvent) => {
+                // If the media query no longer matches, the print dialog has been closed.
+                if (!mql.matches) {
+                    document.body.classList.remove('printing-guidebook');
+                    setIsExportingPdf(false);
+                    // Clean up the listener once it has done its job.
+                    mediaQueryList.removeEventListener('change', handlePrintChange);
+                }
+            };
+    
+            mediaQueryList.addEventListener('change', handlePrintChange);
+    
+            document.body.classList.add('printing-guidebook');
+            // A short timeout allows the loader modal to render before the blocking print dialog appears.
             const printTimeout = setTimeout(() => {
                 window.print();
             }, 100);
-
+    
+            // Cleanup function for when the component unmounts or isExportingPdf becomes false.
             return () => {
                 clearTimeout(printTimeout);
-                window.removeEventListener('afterprint', handleAfterPrint);
+                document.body.classList.remove('printing-guidebook');
+                mediaQueryList.removeEventListener('change', handlePrintChange);
             };
         }
     }, [isExportingPdf]);
@@ -180,7 +191,7 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
                 <Guidebook plan={plan} />
             </div>
 
-            <div className="max-w-7xl mx-auto space-y-8 animated-card">
+            <div className="max-w-7xl mx-auto space-y-8 animated-card unified-interactive-view">
                 <header className="flex flex-col sm:flex-row justify-between items-center gap-4 py-4 no-print unified-header">
                      <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight text-center sm:text-left">
                         Your Unified Trip Plan to <span className="text-violet-700">{plan.itinerary?.destination || '...'}</span>
