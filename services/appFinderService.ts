@@ -13,39 +13,58 @@ export const generateAppRecommendations = async (data: AppFinderRequestData, onC
   const isMultiStop = coveredDestinations && coveredDestinations.length > 1;
   const destinationsString = isMultiStop ? coveredDestinations.map(d => d.name).join(', ') : destination;
 
-  const prompt = `**Role:** Tech-Savvy Local Guide and Global Travel Assistant
+  let multiStopInstructions = '';
+  if (isMultiStop) {
+    multiStopInstructions = `
+    This is a multi-stop trip covering: ${destinationsString}.
+    **CRITICAL MULTI-STOP INSTRUCTIONS:**
+    1.  Your recommendations MUST be relevant for the entire region, but you MUST prioritize finding popular **local apps for EACH destination**. For example, if the trip includes "Goa", you MUST search for apps popular specifically in Goa.
+    2.  **MANDATORY 'location' field:** For each app you recommend that is specific to one of the locations, you MUST populate the 'location' field in the JSON with that city's name (e.g., "Goa"). For generic, widely-used apps like Google Maps or Booking.com, this field should be an empty string "".
+    `;
+  }
 
-**Objective:** Generate a curated list of useful mobile apps for the user's trip, including popular local alternatives, formatted as a single, valid JSON object.
+  const prompt = `
+    You are a tech-savvy local guide and an expert global travel assistant. Your mission is to provide a traveler with a curated list of the most useful, relevant, and currently available mobile apps for their trip to ${destinationsString}, written in ${language}. Your recommendations MUST include popular local alternatives to global apps.
+    ${multiStopInstructions}
 
-**Context:**
-- **Trip Details:**
-    - Destination(s): ${destinationsString}
-    - Language for Output: ${language}
-- **Core Requirement:** You MUST find both internationally known apps (e.g., Uber) AND their popular local competitors (e.g., Ola in India). This local expertise is crucial.
-- **Trip Type:** ${isMultiStop ? 'Multi-Stop Trip' : 'Single Destination Trip'}
+    **CRITICAL INSTRUCTIONS & PROTOCOL:**
+    1.  **Use Google Search:** You MUST use your search capabilities to find currently available applications for ${destinationsString}.
+    2.  **Local Expertise is Key:** For each category, you must find both internationally known apps (e.g., Uber) AND their popular local competitors. This is crucial. For example, for Delhi, India, in 'Transport', you MUST include Uber, but also critical local competitors like Ola and Rapido.
+    3.  **DO NOT PROVIDE URLs:** You are strictly forbidden from providing any App Store or Play Store URLs. Your only task is to identify the app's name and platform.
+    4.  **DO NOT FETCH RATINGS:** You MUST NOT spend time searching for app ratings. The goal is a fast response.
+    5.  **Categorize Accurately:** Place each app in ONE of the specified categories. If a category has no relevant apps after an exhaustive search, return an empty array for it.
 
-**Instructions:**
-Your entire response MUST be a single, valid JSON object. Do not include any text, markdown, or explanations before or after the JSON.
+    The response MUST be ONLY a single, valid JSON object that strictly follows this structure. All text content must be in ${language}.
 
-**1. Research & Curation:**
-   - Use Google Search to find currently available and popular apps for the destination(s).
-   - Accurately categorize each app into one of the provided JSON categories. If a category is empty, return an empty array \`[]\`.
-   - **Restrictions:** DO NOT provide app store URLs or search for app ratings.
+    JSON Structure:
+    {
+      "destination": "${destination}",
+      "transportAndTravel": [{ "name": "string", "category": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "icon": "emoji", "location"?: "string" }],
+      "stayAndLiving": [{ "name": "string", "category": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "icon": "emoji", "location"?: "string" }],
+      "foodAndDining": [{ "name": "string", "category": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "icon": "emoji", "location"?: "string" }],
+      "entertainmentAndLeisure": [{ "name": "string", "category": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "icon": "emoji", "location"?: "string" }],
+      "shoppingAndEssentials": [{ "name": "string", "category": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "icon": "emoji", "location"?: "string" }],
+      "explorationAndTours": [{ "name": "string", "category": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "icon": "emoji", "location"?: "string" }],
+      "utilitiesAndSafety": [{ "name": "string", "category": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "icon": "emoji", "location"?: "string" }],
+      "festivalsAndSeasonal": [{ "name": "string", "category": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "icon": "emoji", "location"?: "string" }]
+    }
 
-**2. JSON Structure Rules (MANDATORY):**
-   - The root object must contain a "destination" key and keys for each app category (e.g., "transportAndTravel").
-   - Each app object MUST contain:
-     - "name": The app's official name (e.g., "Google Maps").
-     - "category": A short, lowercase, one-word function (e.g., "navigation", "hikes"). Use "" for globally famous apps where the category is obvious.
-     - "description": A concise summary.
-     - "platform": "iOS", "Android", or "Both".
-     - "icon": A single, relevant emoji.
-     - "location" (For Multi-Stop Trips ONLY): If an app is specific to one location (e.g., "Goa Miles"), put the location name here. For generic apps, use an empty string "".
-
-**3. Final Formatting & Validation:**
-   - **Language:** All text in the JSON MUST be in ${language}.
-   - **JSON Validity (CRITICAL):** Ensure the output is a perfectly valid JSON object. Do not use unescaped double quotes inside strings. Use single quotes or escape them (\\").
-`;
+    **CRITICAL RULES & EXAMPLE:**
+    1.  **App Naming Convention (CRITICAL):** The 'name' field MUST be the proper, official name of the app (e.g., "Google Maps", "AllTrails", "Uber Eats"). It MUST NOT be a generic category. For example, for the app 'AllTrails', the name MUST be "AllTrails", NOT "hikes".
+    2.  **Category (CRITICAL):** The 'category' field MUST be a short, one-word, lowercase description of the app's primary function (e.g., "hikes", "navigation", "food delivery"). For apps that are very famous and instantly recognizable by their icon (like Google Maps), you can make this category an empty string "". For others, it is mandatory.
+    3.  **Icon:** The 'icon' field MUST be a single, relevant emoji.
+    4.  **Language:** The entire JSON response, including all names and descriptions, MUST be in ${language}.
+    5.  **CRITICAL JSON VALIDATION RULE**: The output MUST be a perfectly valid JSON object. This is the single most important instruction.
+        a. **NO UNESCAPED QUOTES**: Inside any JSON string value, you MUST NEVER use a double quote character ("). It will break the JSON and cause an error.
+        b. **HOW TO HANDLE QUOTES**: If you need to include a quote inside a description or title, you have two options:
+            i. **PREFERRED**: Use single quotes instead (e.g., "The 'all-in-one' travel app.").
+            ii. **ALTERNATIVE**: If you absolutely must use a double quote, you MUST escape it with a backslash (e.g., "The app is described as \\"essential\\"._").
+        c. **FAILURE TO FOLLOW THIS RULE WILL RENDER THE ENTIRE OUTPUT USELESS.** You must double-check every string value for unescaped double quotes before finishing your response.
+    6.  **Example of a good entry:**
+        \`{ "name": "AllTrails", "category": "hikes", "description": "A popular app for discovering and navigating trekking trails...", "platform": "Both", "icon": "🌲", "location": "" }\`
+        \`{ "name": "Goa Miles", "category": "taxi", "description": "A taxi booking app specific to Goa...", "platform": "Both", "icon": "🚕", "location": "Goa" }\`
+    7. **ABSOLUTE FINAL INSTRUCTION**: Your entire response MUST be the raw JSON object. It MUST start with the character '{' and end with the character '}'. You MUST NOT wrap it in markdown (like \`\`\`json), and you MUST NOT add any introductory text. The response must be immediately parsable as JSON.
+  `;
   
   let fullText = '';
   try {

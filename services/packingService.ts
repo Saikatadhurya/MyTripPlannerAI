@@ -1,5 +1,4 @@
 
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { PackingList, PackingListRequestData } from '../types';
 import { extractJson, cleanCitations } from './jsonUtils';
@@ -16,40 +15,51 @@ export const generatePackingList = async (data: PackingListRequestData, onChunk?
   const isMultiStop = coveredDestinations && coveredDestinations.length > 1;
   const destinationsString = isMultiStop ? coveredDestinations.map(d => d.name).join(', ') : destination;
 
-  const prompt = `**Role:** Expert Travel Assistant and Smart Packing Specialist
+  let multiStopInstructions = '';
+  if (isMultiStop) {
+    multiStopInstructions = `
+    This is a multi-stop trip covering: ${destinationsString}.
+    CRITICAL INSTRUCTIONS:
+    1.  The packing list must be a consolidated summary suitable for ALL listed destinations.
+    2.  The 'approximateTemperature' field is MANDATORY and MUST provide a separate, clearly-labeled temperature forecast for each major destination. For example: "Paris: 15-20°C, Nice: 22-27°C, Lyon: 18-23°C".
+    `;
+  }
 
-**Objective:** Generate a smart, weather-aware packing list for the user's trip, formatted as a single, valid JSON object.
+  const prompt = `
+    Based on a ${days}-day trip to ${destinationsString} starting around ${startDate}, generate a smart, weather-aware packing list in ${language}.
+    Consider the typical climate and weather for that location and time of year.
+    Provide practical advice. For clothing, suggest layers if the weather is variable.
+    ${multiStopInstructions}
+    The response MUST be a single, valid JSON object that strictly follows this structure and types, with all text content in ${language}:
+    {
+      "clothingAndFootwear": string[],
+      "toiletriesAndPersonalCare": string[],
+      "medicinesAndHealth": string[],
+      "electronicsAndGear": string[],
+      "documentsAndMoney": string[],
+      "optionalComfortItems": string[],
+      "adventureClothing": string[],
+      "bagSuggestion": string,
+      "locallyAvailableItems": string[],
+      "approximateTemperature": string
+    }
 
-**Context:**
-- **Trip Details:**
-    - Destination(s): ${destinationsString}
-    - Start Date: ${startDate}
-    - Duration: ${days} days
-    - Language for Output: ${language}
-- **Trip Type:** ${isMultiStop ? 'Multi-Stop Trip' : 'Single Destination Trip'}
-
-**Instructions:**
-Your entire response MUST be a single, valid JSON object. Do not include any text, markdown, or explanations before or after the JSON.
-
-**1. Weather & Temperature Analysis:**
-   - Use search to determine the typical climate and weather for the destination(s) around the specified start date.
-   - **approximateTemperature (MANDATORY):**
-     - For a single destination, provide the estimated temperature range in Celsius (e.g., "25-30°C").
-     - For a multi-stop trip, you MUST provide a separate, clearly-labeled forecast for each major destination (e.g., "Paris: 15-20°C, Nice: 22-27°C").
-
-**2. Content Generation Rules:**
-   - **clothingAndFootwear:** Suggest practical items and layers suitable for the predicted weather.
-   - **adventureClothing:** Recommend gear for common activities in the area (e.g., hiking, swimming). If none are obvious, suggest general activewear.
-   - **bagSuggestion:** Recommend a specific type and size of bag (e.g., "A 40L backpack").
-   - **locallyAvailableItems:** List items the user can easily buy at the destination to save packing space.
-   - **Bolding:** Use bold markdown (**text**) to highlight key items or advice.
-
-**3. JSON Structure & Validation:**
-   - Your response MUST be a single JSON object with the following keys: "clothingAndFootwear", "toiletriesAndPersonalCare", "medicinesAndHealth", "electronicsAndGear", "documentsAndMoney", "optionalComfortItems", "adventureClothing", "bagSuggestion", "locallyAvailableItems", "approximateTemperature".
-   - All keys must map to an array of strings, except for "bagSuggestion" and "approximateTemperature" which are single strings.
-   - **Language:** All text in the JSON MUST be in ${language}.
-   - **JSON Validity (CRITICAL):** Ensure the output is a perfectly valid JSON object. Do not use unescaped double quotes inside strings. Use single quotes or escape them (\\").
-`;
+    Important Rules:
+    1. The 'approximateTemperature' must be a string representing the estimated temperature range in Celsius (e.g., "25-30°C"). If it's a multi-stop trip, you MUST follow the multi-stop instructions for this field.
+    2. The 'adventureClothing' list must contain recommendations for gear and clothing suitable for common adventure activities in ${destination} (like hiking, swimming, skiing, etc.). If no specific adventure activities are obvious, provide general outdoor/activewear suggestions.
+    3. The items in each list should be concise and practical.
+    4. The 'bagSuggestion' should recommend a type and size of bag (e.g., "A 40L backpack" or "A medium-sized suitcase").
+    5. The 'locallyAvailableItems' list should include things the user might not need to pack because they are easy and cheap to buy at the destination.
+    6. You MUST use bold markdown (**text**) to highlight key items or advice within the string arrays.
+    7. **CRITICAL JSON VALIDATION RULE**: The output MUST be a perfectly valid JSON object. This is the single most important instruction.
+        a. **NO UNESCAPED QUOTES**: Inside any JSON string value, you MUST NEVER use a double quote character ("). It will break the JSON and cause an error.
+        b. **HOW TO HANDLE QUOTES**: If you need to include a quote inside a description, you have two options:
+            i. **PREFERRED**: Use single quotes instead (e.g., "Don't forget your 'just-in-case' sweater.").
+            ii. **ALTERNATIVE**: If you absolutely must use a double quote, you MUST escape it with a backslash (e.g., "A bag that is described as \\"water-resistant\\" is ideal.").
+        c. **FAILURE TO FOLLOW THIS RULE WILL RENDER THE ENTIRE OUTPUT USELESS.** You must double-check every string value for unescaped double quotes before finishing your response.
+    8. The entire JSON response, including all string values, MUST be in ${language}.
+    9. **ABSOLUTE FINAL INSTRUCTION**: Your entire response MUST be the raw JSON object. It MUST start with the character '{' and end with the character '}'. You MUST NOT wrap it in markdown (like \`\`\`json), and you MUST NOT add any introductory text. The response must be immediately parsable as JSON.
+  `;
 
   let fullText = '';
   try {

@@ -10,60 +10,55 @@ export const generateLingoGuide = async (data: LingoFinderRequestData, onChunk?:
   const { destination, language } = data;
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-  const prompt = `**Role:** Expert Linguist and Local Guide AI
+  const prompt = `
+    You are an expert Linguist and Local Guide AI. Your mission is to create a practical, helpful, and culturally aware phrasebook for a traveler visiting "${destination}".
+    The output language for the entire JSON response must be in ${language}.
 
-**Objective:** Create a practical, helpful, and culturally aware phrasebook for the user's trip, formatted as a single, valid JSON object.
+    **CRITICAL INSTRUCTIONS & PROTOCOL:**
 
-**Context:**
-- **Trip Details:**
-    - Destination: ${destination}
-    - Language for Output: ${language} (This is for the JSON itself, not the translations).
-- **Core Goal:** Provide essential phrases to help a traveler communicate and navigate.
+    1.  **Identify Local Language:** First, you MUST determine the primary local language spoken in "${destination}". This will be used for the translations.
+    2.  **Curate Essential Categories:** Create a list of essential phrase categories. You MUST include at least the following five categories: "Greetings & Basics", "Dining & Ordering Food", "Shopping & Bargaining", "Directions & Transportation", and "Emergencies". You may add 1-2 other relevant categories if applicable to the destination (e.g., "Beach Phrases" for a coastal city).
+    3.  **Generate Phrases:** For each category, provide 5-8 useful phrases. Each phrase object MUST contain three fields:
+        - \`english\`: The phrase in English.
+        - \`local\`: The direct translation of the phrase in the identified local language.
+        - \`pronunciation\`: A simple, easy-to-read phonetic spelling of the local phrase to help with pronunciation.
 
-**Instructions:**
-Your entire response MUST be a single, valid JSON object. Do not include any text, markdown, or explanations before or after the JSON.
+    **JSON OUTPUT SPECIFICATION:**
+    The response MUST be ONLY a single, valid JSON object that strictly follows this structure. All text content must be in ${language}.
 
-**1. Language Identification:**
-   - First, you MUST use search to determine the primary local language spoken in "${destination}". This will be the value for the "localLanguage" key.
+    {
+      "destination": "${destination}",
+      "localLanguage": "The name of the local language you identified (e.g., 'Japanese', 'Hindi', 'Spanish')",
+      "categories": [
+        {
+          "categoryName": "Greetings & Basics",
+          "phrases": [
+            { "english": "Hello", "local": "こんにちは", "pronunciation": "Konnichiwa" }
+          ]
+        }
+      ]
+    }
 
-**2. Content Generation Rules:**
-   - **Categories (MANDATORY):** You MUST include at least these five categories: "Greetings & Basics", "Dining & Ordering Food", "Shopping & Bargaining", "Directions & Transportation", and "Emergencies".
-   - **Phrases:** For each category, provide 5-8 useful phrases.
-   - **Phrase Object:** Each phrase object MUST contain three string fields:
-     - "english": The phrase in English.
-     - "local": The direct translation in the identified local language.
-     - "pronunciation": A simple, phonetic spelling of the local phrase.
-
-**3. JSON Structure & Validation:**
-   - The root object must have "destination", "localLanguage", and "categories" keys.
-   - **Category Object (CRITICAL):** Each object inside the "categories" array MUST have two keys: "categoryName" (a string, e.g., "Greetings & Basics") and "phrases" (an array of Phrase Objects).
-   - **Language:** The entire JSON response's text values MUST be in ${language}.
-   - **JSON Validity (CRITICAL):** Ensure the output is a perfectly valid JSON object. Do not use unescaped double quotes inside strings. Use single quotes or escape them (\\").
-`;
+    **FINAL CRITICAL RULES:**
+    1.  **Language:** The entire JSON response MUST be in ${language}.
+    2.  **CRITICAL JSON VALIDATION RULE**: The output MUST be a perfectly valid JSON object. This is the single most important instruction.
+        a. **NO UNESCAPED QUOTES**: Inside any JSON string value, you MUST NEVER use a double quote character ("). It will break the JSON and cause an error.
+        b. **HOW TO HANDLE QUOTES**: Use single quotes or escape double quotes with a backslash (e.g., "The guide said, \\"Welcome!\\"").
+        c. **FAILURE TO FOLLOW THIS RULE WILL RENDER THE ENTIRE OUTPUT USELESS.** You must double-check every string value for unescaped double quotes.
+    3. **ABSOLUTE FINAL INSTRUCTION**: Your entire response MUST be the raw JSON object. It MUST start with the character '{' and end with the character '}'. You MUST NOT wrap it in markdown (like \`\`\`json), and you MUST NOT add any introductory text.
+  `;
 
   let fullText = '';
   try {
       if (onChunk) {
-        const stream = await ai.models.generateContentStream({ 
-            model: "gemini-2.5-flash", 
-            contents: prompt,
-            config: {
-                tools: [{ googleSearch: {} }],
-            }
-        });
+        const stream = await ai.models.generateContentStream({ model: "gemini-2.5-flash", contents: prompt });
         for await (const chunk of stream) {
             const chunkText = chunk.text;
             fullText += chunkText;
             onChunk(chunkText);
         }
       } else {
-        const response = await ai.models.generateContent({ 
-            model: "gemini-2.5-flash", 
-            contents: prompt,
-            config: {
-                tools: [{ googleSearch: {} }],
-            }
-        });
+        const response = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
         fullText = response.text;
       }
 
