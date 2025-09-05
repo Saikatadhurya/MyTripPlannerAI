@@ -3,6 +3,89 @@ import { FoodFinderRequestData, FoodPreference, LocationSuggestion } from '../ty
 import { getDestinationSuggestions } from '../services/geminiService';
 import BackToHomeButton from './BackToHomeButton';
 
+interface SelectionPageProps<T> {
+  isOpen: boolean;
+  title: string;
+  items: T[];
+  onClose: () => void;
+  onSelect: (item: T) => void;
+  renderItem: (item: T, index: number) => React.ReactNode;
+  searchValue: string;
+  onSearchChange: (value: string) => void;
+  searchPlaceholder?: string;
+  isLoading?: boolean;
+}
+
+const SelectionPage = <T extends any>({
+  isOpen,
+  title,
+  items,
+  onClose,
+  onSelect,
+  renderItem,
+  searchValue,
+  onSearchChange,
+  searchPlaceholder = "Search...",
+  isLoading = false,
+}: SelectionPageProps<T>) => {
+
+  useEffect(() => {
+    const bottomNav = document.querySelector('.sm\\:hidden.fixed.bottom-0');
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      if (bottomNav) (bottomNav as HTMLElement).style.display = 'none';
+    } else {
+      document.body.style.overflow = 'auto';
+       if (bottomNav) (bottomNav as HTMLElement).style.display = 'flex';
+    }
+    return () => {
+        document.body.style.overflow = 'auto';
+        if (bottomNav) (bottomNav as HTMLElement).style.display = 'flex';
+    };
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-slate-50 z-[60] flex flex-col slide-down-animation">
+      <header className="flex-shrink-0 flex items-center p-2 border-b border-slate-200 bg-white">
+        <button onClick={onClose} className="p-2 mr-2 text-slate-600 hover:text-slate-900 rounded-full hover:bg-slate-100">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
+        </button>
+        <h2 className="text-lg font-bold text-slate-800">{title}</h2>
+      </header>
+
+      <div className="flex-shrink-0 p-4 border-b border-slate-200 bg-white">
+        <div className="relative">
+          <svg className="absolute inset-y-0 left-0 pl-3 h-full w-5 text-gray-400 pointer-events-none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" /></svg>
+          <input
+            type="text"
+            value={searchValue}
+            onChange={(e) => onSearchChange(e.target.value)}
+            placeholder={searchPlaceholder}
+            className="w-full pl-10 pr-4 py-2 bg-slate-100 text-gray-800 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition"
+            autoFocus
+          />
+        </div>
+      </div>
+
+      <main className="flex-grow overflow-y-auto">
+        {isLoading ? (
+          <div className="text-center p-8 text-slate-600 font-semibold">Loading suggestions...</div>
+        ) : (
+          <ul className="divide-y divide-slate-200">
+            {items.map((item, index) => (
+              <li key={index} onClick={() => onSelect(item)}>
+                {renderItem(item, index)}
+              </li>
+            ))}
+          </ul>
+        )}
+      </main>
+    </div>
+  );
+};
+
 interface FoodFinderFormProps {
   onSubmit: (data: FoodFinderRequestData) => void;
   isLoading: boolean;
@@ -59,9 +142,16 @@ const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, er
   const suggestionsRef = useRef<HTMLUListElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const [languageQuery, setLanguageQuery] = useState('');
-  const [languageDropdownOpen, setLanguageDropdownOpen] = useState(false);
-  const languageRef = useRef<HTMLDivElement>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [selectionView, setSelectionView] = useState<{ field: keyof FoodFinderRequestData, title: string } | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
   
   const handleInputChange = (field: keyof FoodFinderRequestData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -118,23 +208,109 @@ const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, er
         ) {
             setSuggestions([]);
         }
-        if (languageRef.current && !languageRef.current.contains(event.target as Node)) {
-            setLanguageDropdownOpen(false);
-        }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const handleOpenSelection = (field: keyof FoodFinderRequestData, title: string) => {
+    if (!isMobile) return;
+    if (field === 'destination') setSearchQuery(formData.destination);
+    else setSearchQuery('');
+    setSelectionView({ field, title });
+  };
+
+  const handleSelect = (item: any) => {
+    if (!selectionView) return;
+    const { field } = selectionView;
+
+    if (field === 'destination') {
+      const fullName = item.parentHierarchy ? `${item.name}, ${item.parentHierarchy}` : item.name;
+      handleInputChange(field, fullName);
+      setIsDestinationSelected(true);
+      setDestinationError(null);
+    } else {
+      handleInputChange(field, item);
+    }
+    setSelectionView(null);
+  };
+
+  const handleSelectionSearchChange = (value: string) => {
+    setSearchQuery(value);
+    if (selectionView?.field === 'destination') {
+      handleInputChange('destination', value);
+      setIsDestinationSelected(false);
+      setDestinationError(null);
+      if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
+      if (value.trim().length > 1) {
+        setIsSuggestionsLoading(true);
+        debounceTimeout.current = setTimeout(() => {
+          getDestinationSuggestions(value).then(results => {
+            setSuggestions(results);
+            setIsSuggestionsLoading(false);
+          });
+        }, 500);
+      } else {
+        setSuggestions([]);
+        setIsSuggestionsLoading(false);
+      }
+    }
+  };
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isDestinationSelected) return;
+    if (formData.destination.trim() === '') {
+        setDestinationError("Please enter a destination.");
+        return;
+    }
+    if (!isDestinationSelected) {
+        setDestinationError("Please pick a location from the list to lock it in! 🗺️");
+        return;
+    }
     onSubmit(formData);
   };
 
-  const filteredLanguages = languages.filter(lang =>
-    lang.toLowerCase().includes(languageQuery.toLowerCase())
-  );
+  const renderSelectionPage = () => {
+    if (!isMobile || !selectionView) return null;
+
+    const { field, title } = selectionView;
+    let items: any[] = [];
+    let renderItem: (item: any, index: number) => React.ReactNode;
+    let isLoading = false;
+    
+    if (field === 'destination') {
+        items = suggestions;
+        isLoading = isSuggestionsLoading;
+        renderItem = (s) => (
+            <div className="px-4 py-3 cursor-pointer hover:bg-slate-100 flex justify-between items-center transition-colors">
+              <div>
+                <span className="font-semibold text-slate-800">{s.name}</span>
+                {s.parentHierarchy && <span className="text-sm text-slate-600">, {s.parentHierarchy}</span>}
+              </div>
+              <span className="text-xs bg-slate-200 text-slate-700 font-medium px-2 py-0.5 rounded-full">{s.type}</span>
+            </div>
+        );
+    } else if (field === 'language') {
+        items = languages.filter(lang => lang.toLowerCase().includes(searchQuery.toLowerCase()));
+        renderItem = (lang) => <div className="px-4 py-3 cursor-pointer hover:bg-slate-100 text-slate-800">{lang}</div>;
+    } else {
+        return null;
+    }
+
+    return (
+        <SelectionPage
+            isOpen={!!selectionView}
+            title={title}
+            items={items}
+            onClose={() => setSelectionView(null)}
+            onSelect={handleSelect}
+            renderItem={renderItem}
+            searchValue={searchQuery}
+            onSearchChange={handleSelectionSearchChange}
+            isLoading={isLoading}
+        />
+    );
+  };
   
   return (
     <div className="max-w-xl mx-auto">
@@ -155,14 +331,14 @@ const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, er
       <form onSubmit={handleSubmit} className="space-y-8 bg-white/60 backdrop-blur-md p-8 rounded-2xl border border-slate-200/70 shadow-xl">
         <div className="relative">
           <label htmlFor="destination" className="block text-sm font-medium text-slate-700 mb-1">Destination</label>
-          <div className="relative">
+          <div className="relative" onClick={() => handleOpenSelection('destination', 'Select Destination')}>
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 20l-4.95-5.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
             </div>
-            <input id="destination" ref={inputRef} type="text" value={formData.destination} onChange={handleDestinationChange} onBlur={handleDestinationBlur} placeholder="e.g., Kyoto, Japan" className="w-full pl-10 pr-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition" required autoComplete="off" />
+            <input id="destination" ref={inputRef} type="text" value={formData.destination} onChange={isMobile ? undefined : handleDestinationChange} onBlur={isMobile ? undefined : handleDestinationBlur} placeholder="e.g., Kyoto, Japan" className="w-full pl-10 pr-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition" required autoComplete="off" readOnly={isMobile} />
           </div>
-          {isSuggestionsLoading && <div className="absolute right-3 top-9"><svg className="animate-spin h-5 w-5 text-amber-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>}
-          {suggestions.length > 0 && (
+          {isSuggestionsLoading && !isMobile && <div className="absolute right-3 top-9"><svg className="animate-spin h-5 w-5 text-amber-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>}
+          {!isMobile && suggestions.length > 0 && (
              <ul ref={suggestionsRef} className="absolute z-10 w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg max-h-60 overflow-y-auto">
                 {suggestions.map((s, i) => (
                     <li key={i} onClick={() => handleSuggestionClick(s)} className="px-4 py-3 cursor-pointer hover:bg-amber-100/60 flex justify-between items-center transition-colors">
@@ -188,24 +364,12 @@ const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, er
             <label htmlFor="startDate" className="block text-sm font-medium text-slate-700 mb-1">Date</label>
             <input id="startDate" type="date" value={formData.startDate} min={new Date().toISOString().split('T')[0]} onChange={e => handleInputChange('startDate', e.target.value)} className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition" required />
           </div>
-           <div ref={languageRef} className="relative">
+           <div className="relative">
                 <label className="block text-sm font-medium text-slate-700 mb-1">Language</label>
-                <button type="button" onClick={() => setLanguageDropdownOpen(!languageDropdownOpen)} className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition flex justify-between items-center text-left" aria-haspopup="listbox" aria-expanded={languageDropdownOpen}>
+                <div onClick={() => handleOpenSelection('language', 'Select Language')} className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition flex justify-between items-center text-left cursor-pointer">
                     <span className="truncate">{formData.language}</span>
-                    <svg className={`h-5 w-5 text-slate-400 transition-transform ${languageDropdownOpen ? 'rotate-180' : ''}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
-                </button>
-                {languageDropdownOpen && (
-                    <div className="absolute z-20 w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg">
-                        <div className="p-2"><input type="text" value={languageQuery} onChange={(e) => setLanguageQuery(e.target.value)} placeholder="Search languages..." className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-md focus:ring-1 focus:ring-amber-500 focus:border-amber-500" /></div>
-                        <ul className="max-h-60 overflow-y-auto p-1">
-                            {filteredLanguages.length > 0 ? filteredLanguages.map(lang => (
-                                <li key={lang} onClick={() => { handleInputChange('language', lang); setLanguageDropdownOpen(false); setLanguageQuery(''); }} className="px-3 py-2 text-sm rounded-md cursor-pointer hover:bg-amber-100 text-slate-800">
-                                    {lang}
-                                </li>
-                            )) : <li className="px-3 py-2 text-sm text-slate-500">No languages found.</li>}
-                        </ul>
-                    </div>
-                )}
+                    <svg className={`h-5 w-5 text-slate-400`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+                </div>
             </div>
         </div>
         
@@ -240,6 +404,7 @@ const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, er
           </button>
         </div>
       </form>
+      {renderSelectionPage()}
     </div>
   );
 };
