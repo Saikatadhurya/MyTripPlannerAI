@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Budget, Vibe, FoodPreference, TripType, QuestionnaireData, LocationSuggestion } from '../types';
+import { Budget, Vibe, FoodPreference, TripType, QuestionnaireData, LocationSuggestion, PopularDestination } from '../types';
 import { getDestinationSuggestions } from '../services/geminiService';
 import { currencies } from '../data/currencies';
 import BackToHomeButton from './BackToHomeButton';
@@ -151,6 +151,8 @@ interface SelectionPageProps<T> {
   onSearchChange: (value: string) => void;
   searchPlaceholder?: string;
   isLoading?: boolean;
+  popularItems?: T[];
+  renderPopularItem?: (item: T, index: number) => React.ReactNode;
 }
 
 const SelectionPage = <T extends any>({
@@ -164,6 +166,8 @@ const SelectionPage = <T extends any>({
   onSearchChange,
   searchPlaceholder = "Search...",
   isLoading = false,
+  popularItems,
+  renderPopularItem,
 }: SelectionPageProps<T>) => {
 
   useEffect(() => {
@@ -209,6 +213,17 @@ const SelectionPage = <T extends any>({
       <main className="flex-grow overflow-y-auto">
         {isLoading ? (
           <div className="text-center p-8 text-slate-600 font-semibold">Loading suggestions...</div>
+        ) : searchValue.trim() === '' && popularItems && popularItems.length > 0 && renderPopularItem ? (
+            <div>
+              <h3 className="p-4 text-sm font-bold text-slate-500 uppercase tracking-wider bg-slate-100 border-b border-slate-200">Popular Searches</h3>
+              <ul className="divide-y divide-slate-200">
+                  {popularItems.map((item, index) => (
+                      <li key={index} onClick={() => onSelect(item)}>
+                          {renderPopularItem(item, index)}
+                      </li>
+                  ))}
+              </ul>
+            </div>
         ) : (
           <ul className="divide-y divide-slate-200">
             {items.map((item, index) => (
@@ -306,6 +321,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
   const [isDestinationSuggestionsLoading, setIsDestinationSuggestionsLoading] = useState(false);
   const [isDestinationSelected, setIsDestinationSelected] = useState(!!initialData?.destination);
   const [destinationError, setDestinationError] = useState<string | null>(null);
+  const [popularDestinations, setPopularDestinations] = useState<PopularDestination[]>([]);
 
   const [startPointSuggestions, setStartPointSuggestions] = useState<LocationSuggestion[]>([]);
   const [isStartPointSuggestionsLoading, setIsStartPointSuggestionsLoading] = useState(false);
@@ -331,6 +347,13 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
   const [isCurrencyDropdownOpen, setIsCurrencyDropdownOpen] = useState(false);
   const langDropdownRef = useRef<HTMLDivElement>(null);
   const currencyDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    fetch('/data/destinations.json')
+      .then(res => res.json())
+      .then(data => setPopularDestinations(data))
+      .catch(err => console.error("Failed to load popular destinations", err));
+  }, []);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -519,8 +542,10 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
     const { field } = selectionView;
 
     if (field === 'destination' || field === 'startPoint') {
-        const suggestion = item as LocationSuggestion;
-        const fullName = suggestion.parentHierarchy ? `${suggestion.name}, ${suggestion.parentHierarchy}` : suggestion.name;
+        const suggestion = item as LocationSuggestion | PopularDestination;
+        const fullName = (suggestion as LocationSuggestion).parentHierarchy
+            ? `${suggestion.name}, ${(suggestion as LocationSuggestion).parentHierarchy}`
+            : suggestion.name;
         handleInputChange(field, fullName);
         if (field === 'destination') setIsDestinationSelected(true);
         if (field === 'startPoint') setIsStartPointSelected(true);
@@ -590,24 +615,24 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
     let items: any[] = [];
     let renderItem: (item: any, index: number) => React.ReactNode;
     let isLoading = false;
+    let popularItems: any[] | undefined = undefined;
+    let renderPopularItem: ((item: any, index: number) => React.ReactNode) | undefined = undefined;
 
     switch (field) {
         case 'destination':
-            items = destinationSuggestions;
-            isLoading = isDestinationSuggestionsLoading;
-            renderItem = (s) => (
-                <div className="px-4 py-3 cursor-pointer hover:bg-slate-100 flex justify-between items-center transition-colors">
-                  <div>
-                    <span className="font-semibold text-slate-800">{s.name}</span>
-                    {s.parentHierarchy && <span className="text-sm text-slate-600">, {s.parentHierarchy}</span>}
-                  </div>
-                  <span className="text-xs bg-slate-200 text-slate-700 font-medium px-2 py-0.5 rounded-full">{s.type}</span>
+        case 'startPoint':
+            items = field === 'destination' ? destinationSuggestions : startPointSuggestions;
+            isLoading = field === 'destination' ? isDestinationSuggestionsLoading : isStartPointSuggestionsLoading;
+            popularItems = popularDestinations;
+            renderPopularItem = (dest: PopularDestination) => (
+                <div className="px-4 py-3 cursor-pointer hover:bg-slate-100 flex items-center space-x-4">
+                    <span className="text-2xl">{dest.icon}</span>
+                    <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-slate-800 truncate">{dest.name}</p>
+                        <p className="text-sm text-slate-600 truncate">{dest.description}</p>
+                    </div>
                 </div>
             );
-            break;
-        case 'startPoint':
-            items = startPointSuggestions;
-            isLoading = isStartPointSuggestionsLoading;
             renderItem = (s) => (
                 <div className="px-4 py-3 cursor-pointer hover:bg-slate-100 flex justify-between items-center transition-colors">
                   <div>
@@ -641,6 +666,8 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
             searchValue={searchQuery}
             onSearchChange={handleSelectionSearchChange}
             isLoading={isLoading}
+            popularItems={popularItems}
+            renderPopularItem={renderPopularItem}
         />
     );
   };
@@ -951,7 +978,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                 className="w-full sm:w-auto px-10 py-4 bg-violet-600 text-white font-bold rounded-full hover:bg-violet-700 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-violet-500/30 disabled:bg-violet-400/80 disabled:cursor-not-allowed disabled:shadow-md disabled:scale-100"
                 disabled={!isDestinationSelected || !!destinationError || (showStartPoint && (!isStartPointSelected || !!startPointError)) || formData.vibe.length === 0}
               >
-                ✨ Create My Itinerary
+                ✨ Plan My Adventure
               </button>
             </div>
           </form>
@@ -965,6 +992,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
           {renderSelectionPage()}
         </div>
       );
-    };
+};
 
-    export default Questionnaire;
+// FIX: Changed export from UnifiedPlannerForm to Questionnaire
+export default Questionnaire;

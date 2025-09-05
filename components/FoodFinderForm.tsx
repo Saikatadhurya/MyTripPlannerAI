@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FoodFinderRequestData, FoodPreference, LocationSuggestion } from '../types';
+import { FoodFinderRequestData, FoodPreference, LocationSuggestion, PopularDestination } from '../types';
 import { getDestinationSuggestions } from '../services/geminiService';
 import BackToHomeButton from './BackToHomeButton';
 
@@ -14,6 +14,8 @@ interface SelectionPageProps<T> {
   onSearchChange: (value: string) => void;
   searchPlaceholder?: string;
   isLoading?: boolean;
+  popularItems?: T[];
+  renderPopularItem?: (item: T, index: number) => React.ReactNode;
 }
 
 const SelectionPage = <T extends any>({
@@ -27,6 +29,8 @@ const SelectionPage = <T extends any>({
   onSearchChange,
   searchPlaceholder = "Search...",
   isLoading = false,
+  popularItems,
+  renderPopularItem,
 }: SelectionPageProps<T>) => {
 
   useEffect(() => {
@@ -72,6 +76,17 @@ const SelectionPage = <T extends any>({
       <main className="flex-grow overflow-y-auto">
         {isLoading ? (
           <div className="text-center p-8 text-slate-600 font-semibold">Loading suggestions...</div>
+        ) : searchValue.trim() === '' && popularItems && popularItems.length > 0 && renderPopularItem ? (
+            <div>
+              <h3 className="p-4 text-sm font-bold text-slate-500 uppercase tracking-wider bg-slate-100 border-b border-slate-200">Popular Searches</h3>
+              <ul className="divide-y divide-slate-200">
+                  {popularItems.map((item, index) => (
+                      <li key={index} onClick={() => onSelect(item)}>
+                          {renderPopularItem(item, index)}
+                      </li>
+                  ))}
+              </ul>
+            </div>
         ) : (
           <ul className="divide-y divide-slate-200">
             {items.map((item, index) => (
@@ -137,6 +152,7 @@ const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, er
   const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false);
   const [isDestinationSelected, setIsDestinationSelected] = useState(false);
   const [destinationError, setDestinationError] = useState<string | null>(null);
+  const [popularDestinations, setPopularDestinations] = useState<PopularDestination[]>([]);
   const debounceTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isSelectingSuggestion = useRef(false);
   const suggestionsRef = useRef<HTMLUListElement>(null);
@@ -150,6 +166,13 @@ const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, er
   const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
   const langDropdownRef = useRef<HTMLDivElement>(null);
   
+  useEffect(() => {
+    fetch('/data/destinations.json')
+      .then(res => res.json())
+      .then(data => setPopularDestinations(data))
+      .catch(err => console.error("Failed to load popular destinations", err));
+  }, []);
+
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
@@ -232,7 +255,10 @@ const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, er
     const { field } = selectionView;
 
     if (field === 'destination') {
-      const fullName = item.parentHierarchy ? `${item.name}, ${item.parentHierarchy}` : item.name;
+      const suggestion = item as LocationSuggestion | PopularDestination;
+      const fullName = (suggestion as LocationSuggestion).parentHierarchy
+            ? `${suggestion.name}, ${(suggestion as LocationSuggestion).parentHierarchy}`
+            : suggestion.name;
       handleInputChange(field, fullName);
       setIsDestinationSelected(true);
       setDestinationError(null);
@@ -284,10 +310,22 @@ const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, er
     let items: any[] = [];
     let renderItem: (item: any, index: number) => React.ReactNode;
     let isLoading = false;
+    let popularItems: any[] | undefined = undefined;
+    let renderPopularItem: ((item: any, index: number) => React.ReactNode) | undefined = undefined;
     
     if (field === 'destination') {
         items = suggestions;
         isLoading = isSuggestionsLoading;
+        popularItems = popularDestinations;
+        renderPopularItem = (dest: PopularDestination) => (
+            <div className="px-4 py-3 cursor-pointer hover:bg-slate-100 flex items-center space-x-4">
+                <span className="text-2xl">{dest.icon}</span>
+                <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-slate-800 truncate">{dest.name}</p>
+                    <p className="text-sm text-slate-600 truncate">{dest.description}</p>
+                </div>
+            </div>
+        );
         renderItem = (s) => (
             <div className="px-4 py-3 cursor-pointer hover:bg-slate-100 flex justify-between items-center transition-colors">
               <div>
@@ -315,6 +353,8 @@ const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, er
             searchValue={searchQuery}
             onSearchChange={handleSelectionSearchChange}
             isLoading={isLoading}
+            popularItems={popularItems}
+            renderPopularItem={renderPopularItem}
         />
     );
   };
