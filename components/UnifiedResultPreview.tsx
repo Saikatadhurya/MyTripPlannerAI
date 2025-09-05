@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { UnifiedPlan, UnifiedPlanLoadingStatus } from '../types';
 import ItineraryPreview from './ItineraryPreview';
@@ -234,7 +232,7 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
                 </header>
                 
                 {/* Responsive Navigation */}
-                <nav className="no-print fixed bottom-0 left-0 right-0 z-30 md:sticky md:top-4 md:z-40 md:mb-6 unified-nav">
+                <nav className="no-print fixed bottom-0 left-0 right-0 z-50 md:sticky md:top-4 md:z-40 md:mb-6 unified-nav">
                     <div className="w-full bg-white/80 backdrop-blur-xl border-t border-white/50 shadow-[0_-10px_25px_-5px_rgba(0,0,0,0.1),_0_-8px_10px_-6px_rgba(0,0,0,0.1)] md:max-w-max md:mx-auto md:rounded-full md:p-1 md:border md:shadow-lg">
                         <div className="flex h-20 md:h-auto justify-around md:justify-center md:space-x-1">
                             {tabs.map(tab => {

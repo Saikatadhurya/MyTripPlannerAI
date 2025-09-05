@@ -26,7 +26,7 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({ isOpen, onClose, onSe
     const [viewDate, setViewDate] = useState(new Date(initialViewDate.getFullYear(), initialViewDate.getMonth(), 1));
 
     useEffect(() => {
-        const bottomNav = document.querySelector('.md\\:hidden.fixed.bottom-0');
+        const bottomNav = document.querySelector('#bottom-nav-bar');
         if (isOpen) {
           document.body.style.overflow = 'hidden';
           if (bottomNav) (bottomNav as HTMLElement).style.display = 'none';
@@ -167,7 +167,7 @@ const SelectionPage = <T extends any>({
 }: SelectionPageProps<T>) => {
 
   useEffect(() => {
-    const bottomNav = document.querySelector('.md\\:hidden.fixed.bottom-0');
+    const bottomNav = document.querySelector('#bottom-nav-bar');
     if (isOpen) {
       document.body.style.overflow = 'hidden';
       if (bottomNav) (bottomNav as HTMLElement).style.display = 'none';

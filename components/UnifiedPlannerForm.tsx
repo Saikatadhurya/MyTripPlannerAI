@@ -26,7 +26,7 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({ isOpen, onClose, onSe
     const [viewDate, setViewDate] = useState(new Date(initialViewDate.getFullYear(), initialViewDate.getMonth(), 1));
 
     useEffect(() => {
-        const bottomNav = document.querySelector('.md\\:hidden.fixed.bottom-0');
+        const bottomNav = document.querySelector('#bottom-nav-bar');
         if (isOpen) {
           document.body.style.overflow = 'hidden';
           if (bottomNav) (bottomNav as HTMLElement).style.display = 'none';
@@ -167,7 +167,7 @@ const SelectionPage = <T extends any>({
 }: SelectionPageProps<T>) => {
 
   useEffect(() => {
-    const bottomNav = document.querySelector('.md\\:hidden.fixed.bottom-0');
+    const bottomNav = document.querySelector('#bottom-nav-bar');
     if (isOpen) {
       document.body.style.overflow = 'hidden';
       if (bottomNav) (bottomNav as HTMLElement).style.display = 'none';
@@ -645,7 +645,7 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, initi
 
   const showStartPoint = formData.tripType !== 'Standard' || !!formData.isRoundTrip;
 
-// FIX: Add missing return statement with JSX for the component.
+{/* FIX: Add missing return statement with JSX for the component. */}
   return (
     <div className="max-w-2xl mx-auto">
       <BackToHomeButton onClick={onBack} />
@@ -965,5 +965,5 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, initi
       );
 };
 
-// FIX: Add missing default export.
+{/* FIX: Add missing default export. */}
 export default UnifiedPlannerForm;

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 
 interface ScrollToTopButtonProps {
@@ -43,7 +42,7 @@ const ScrollToTopButton: React.FC<ScrollToTopButtonProps> = ({ isUnifiedView = f
     <button
       type="button"
       onClick={scrollToTop}
-      className={`fixed ${bottomPositionClass} right-6 z-50 flex items-center justify-center
+      className={`fixed ${bottomPositionClass} right-6 z-40 flex items-center justify-center
                   w-10 h-10 md:w-12 md:h-12 
                   rounded-full 
                   bg-gradient-to-br from-indigo-600 to-violet-600 

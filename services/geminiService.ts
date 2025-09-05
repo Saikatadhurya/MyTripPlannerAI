@@ -1,5 +1,3 @@
-
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { Budget, Itinerary, Vibe, FoodPreference, BlogReference, TripType, LocationSuggestion } from '../types';
 import { extractJson, cleanCitations } from './jsonUtils';
@@ -23,35 +21,19 @@ export const getDestinationSuggestions = async (query: string): Promise<Location
 
     const prompt = query.trim()
         ? `You are a master geographer AI. Based on the user input "${query}", provide up to 5 location suggestions.
-        CRITICAL HIERARCHY RULE: You MUST rank the results in this strict order of importance:
-        1. Country
-        2. State / Region
-        3. City
-        4. Village / Locality
-        For example, if the user types "Georgia", the country "Georgia" MUST be the first result, followed by "Georgia, USA".
-        Provide only a JSON array of objects.`
-        : `Suggest 5 popular and diverse travel locations from around the world, including a mix of cities, states/provinces, and countries. Provide only a JSON array of objects.`;
-
-    const responseSchema = {
-        type: Type.ARRAY,
-        items: {
-            type: Type.OBJECT,
-            properties: {
-                type: { type: Type.STRING, description: "The type of location, e.g., 'Country', 'State', 'City'." },
-                name: { type: Type.STRING, description: "The name of the location." },
-                parentHierarchy: { type: Type.STRING, description: "The parent region, e.g., 'USA' or 'France'. Empty for countries." },
-            },
-            required: ["type", "name", "parentHierarchy"]
-        },
-        description: "A hierarchically sorted list of up to 5 location suggestions."
-    };
+        CRITICAL HIERARCHY RULE: Rank results: 1. Country, 2. State/Region, 3. City, 4. Village/Locality.
+        For example, if input is "Georgia", "Georgia" (Country) MUST be first, then "Georgia, USA".
+        Your response MUST be a single, valid JSON array of objects. Each object MUST have "type" (string), "name" (string), and "parentHierarchy" (string).
+        DO NOT add any text before or after the JSON array. Start with '[' and end with ']'.`
+        : `Suggest 5 popular and diverse travel locations from around the world.
+        Your response MUST be a single, valid JSON array of objects. Each object MUST have "type" (string), "name" (string), and "parentHierarchy" (string).
+        DO NOT add any text before or after the JSON array. Start with '[' and end with ']'.`;
     
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: prompt,
       config: {
         responseMimeType: "application/json",
-        responseSchema: responseSchema,
         thinkingConfig: { thinkingBudget: 0 },
       }
     });
@@ -61,7 +43,9 @@ export const getDestinationSuggestions = async (query: string): Promise<Location
         console.error("AI response for suggestions was empty or invalid:", response);
         return [];
     }
-    const resultJson = JSON.parse(resultText);
+    
+    const jsonString = extractJson(resultText);
+    const resultJson = JSON.parse(jsonString);
 
     if (!Array.isArray(resultJson)) {
       console.error("Invalid response format from AI. Expected an array.");

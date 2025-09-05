@@ -25,7 +25,7 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({ isOpen, onClose, onSe
     const [viewDate, setViewDate] = useState(new Date(initialViewDate.getFullYear(), initialViewDate.getMonth(), 1));
 
     useEffect(() => {
-        const bottomNav = document.querySelector('.md\\:hidden.fixed.bottom-0');
+        const bottomNav = document.querySelector('#bottom-nav-bar');
         if (isOpen) {
           document.body.style.overflow = 'hidden';
           if (bottomNav) (bottomNav as HTMLElement).style.display = 'none';
@@ -166,7 +166,7 @@ const SelectionPage = <T extends any>({
 }: SelectionPageProps<T>) => {
 
   useEffect(() => {
-    const bottomNav = document.querySelector('.md\\:hidden.fixed.bottom-0');
+    const bottomNav = document.querySelector('#bottom-nav-bar');
     if (isOpen) {
       document.body.style.overflow = 'hidden';
       if (bottomNav) (bottomNav as HTMLElement).style.display = 'none';
@@ -451,13 +451,14 @@ const PackingAssistantForm: React.FC<PackingAssistantFormProps> = ({ onSubmit, i
     );
   };
   
+{/* FIX: Add missing return statement with JSX for the component. */}
   return (
     <div className="max-w-xl mx-auto">
       <BackToHomeButton onClick={onBack} />
 
       <div className="text-center mb-10">
         <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Smart Bag Packing</h1>
-        <p className="mt-2 text-lg text-slate-600">Enter your trip details for an AI-powered packing list.</p>
+        <p className="mt-2 text-lg text-slate-600">Get an AI-powered packing list tailored to your trip.</p>
       </div>
 
       {error && (
@@ -470,119 +471,121 @@ const PackingAssistantForm: React.FC<PackingAssistantFormProps> = ({ onSubmit, i
       <form onSubmit={handleSubmit} className="space-y-8 bg-white/60 backdrop-blur-md p-8 rounded-2xl border border-slate-200/70 shadow-xl">
         <div className="relative">
           <label htmlFor="destination" className="block text-sm font-medium text-slate-700 mb-1">Destination</label>
-            <div className="relative" onClick={() => handleOpenSelection('destination', 'Select Destination')}>
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 20l-4.95-5.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
-                </div>
-                <input id="destination" ref={inputRef} type="text" value={formData.destination} onChange={isMobile ? undefined : handleDestinationChange} onBlur={isMobile ? undefined : handleDestinationBlur} placeholder="e.g., Goa, India" className="w-full pl-10 pr-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition" required autoComplete="off" readOnly={isMobile} />
+          <div className="relative" onClick={() => handleOpenSelection('destination', 'Select Destination')}>
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 20l-4.95-5.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
             </div>
-            {isSuggestionsLoading && !isMobile && <div className="absolute right-3 top-9"><svg className="animate-spin h-5 w-5 text-violet-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>}
-            {!isMobile && suggestions.length > 0 && (
-                <ul ref={suggestionsRef} className="absolute z-10 w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg max-h-60 overflow-y-auto">
-                    {suggestions.map((s, i) => (
-                        <li key={i} onClick={() => handleSuggestionClick(s)} className="px-4 py-3 cursor-pointer hover:bg-violet-100/60 flex justify-between items-center transition-colors">
-                            <div>
-                                <span className="font-semibold text-slate-800">{s.name}</span>
-                                {s.parentHierarchy && <span className="text-sm text-slate-600">, {s.parentHierarchy}</span>}
-                            </div>
-                            <span className="text-xs bg-slate-200 text-slate-700 font-medium px-2 py-0.5 rounded-full">{s.type}</span>
-                        </li>
-                    ))}
-                </ul>
-            )}
-            {destinationError && (
-                <div style={{ animation: 'validation-fade-in 0.3s ease' }} className="mt-2 text-sm text-rose-700 bg-rose-100/60 p-2 rounded-md flex items-center space-x-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
-                    <span>{destinationError}</span>
-                </div>
-            )}
+            <input id="destination" ref={inputRef} type="text" value={formData.destination} onChange={isMobile ? undefined : handleDestinationChange} onBlur={isMobile ? undefined : handleDestinationBlur} placeholder="e.g., Goa, India" className="w-full pl-10 pr-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition" required autoComplete="off" readOnly={isMobile} />
+          </div>
+          {isSuggestionsLoading && !isMobile && <div className="absolute right-3 top-9"><svg className="animate-spin h-5 w-5 text-violet-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>}
+          {!isMobile && suggestions.length > 0 && (
+             <ul ref={suggestionsRef} className="absolute z-10 w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg max-h-60 overflow-y-auto">
+                {suggestions.map((s, i) => (
+                    <li key={i} onClick={() => handleSuggestionClick(s)} className="px-4 py-3 cursor-pointer hover:bg-violet-100/60 flex justify-between items-center transition-colors">
+                        <div>
+                            <span className="font-semibold text-slate-800">{s.name}</span>
+                            {s.parentHierarchy && <span className="text-sm text-slate-600">, {s.parentHierarchy}</span>}
+                        </div>
+                        <span className="text-xs bg-slate-200 text-slate-700 font-medium px-2 py-0.5 rounded-full">{s.type}</span>
+                    </li>
+                ))}
+            </ul>
+          )}
+          {destinationError && (
+            <div style={{ animation: 'validation-fade-in 0.3s ease' }} className="mt-2 text-sm text-rose-700 bg-rose-100/60 p-2 rounded-md flex items-center space-x-2">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
+                <span>{destinationError}</span>
+            </div>
+          )}
         </div>
         
-        <div className="relative">
-            <label className="block text-sm font-medium text-slate-700 mb-1">Output Language</label>
-            {isMobile ? (
-                <div onClick={() => handleOpenSelection('language', 'Select Language')} className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition flex justify-between items-center text-left cursor-pointer">
-                    <span className="truncate">{formData.language}</span>
-                    <svg className={`h-5 w-5 text-slate-400`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
-                </div>
-            ) : (
-                <div ref={langDropdownRef} className="relative">
-                    <input 
-                        type="text"
-                        value={isLangDropdownOpen ? langSearchTerm : formData.language}
-                        onChange={e => {
-                            setLangSearchTerm(e.target.value);
-                            if (!isLangDropdownOpen) {
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="min-w-0">
+              <label className="block text-sm font-medium text-slate-700 mb-1">Trip Dates</label>
+              <button
+                  type="button"
+                  onClick={() => setIsDatePickerOpen(true)}
+                  className="w-full flex justify-between items-center text-left p-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
+              >
+                  <div className="flex items-center space-x-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" /></svg>
+                      <span className="font-semibold text-slate-800">
+                          {new Date(formData.startDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {formData.endDate ? new Date(formData.endDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '...'}
+                      </span>
+                  </div>
+                  <span className="bg-violet-100 text-violet-700 font-bold px-2 py-0.5 rounded-full text-sm">{days} {days === 1 ? 'day' : 'days'}</span>
+              </button>
+          </div>
+          <div className="relative">
+                <label className="block text-sm font-medium text-slate-700 mb-1">Language</label>
+                {isMobile ? (
+                    <div onClick={() => handleOpenSelection('language', 'Select Language')} className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition flex justify-between items-center text-left cursor-pointer h-[42px]">
+                        <span className="truncate">{formData.language}</span>
+                        <svg className={`h-5 w-5 text-slate-400`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+                    </div>
+                ) : (
+                    <div ref={langDropdownRef} className="relative">
+                        <input 
+                            type="text"
+                            value={isLangDropdownOpen ? langSearchTerm : formData.language}
+                            onChange={e => {
+                                setLangSearchTerm(e.target.value);
+                                if (!isLangDropdownOpen) {
+                                    setIsLangDropdownOpen(true);
+                                }
+                            }}
+                            onFocus={() => {
+                                setLangSearchTerm('');
                                 setIsLangDropdownOpen(true);
-                            }
-                        }}
-                        onFocus={() => {
-                            setLangSearchTerm('');
-                            setIsLangDropdownOpen(true);
-                        }}
-                        className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
-                        placeholder="Search language..."
-                        autoComplete="off"
-                    />
-                    {isLangDropdownOpen && (
-                        <ul className="absolute z-20 w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg max-h-60 overflow-y-auto">
-                            {languages
-                                .filter(l => l.toLowerCase().includes(langSearchTerm.toLowerCase()))
-                                .map(lang => (
-                                    <li 
-                                        key={lang} 
-                                        onClick={() => {
-                                            handleInputChange('language', lang);
-                                            setIsLangDropdownOpen(false);
-                                        }}
-                                        className="px-4 py-3 cursor-pointer hover:bg-violet-100/60"
-                                    >
-                                        {lang}
-                                    </li>
-                            ))}
-                        </ul>
-                    )}
-                </div>
-            )}
+                            }}
+                            className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
+                            placeholder="Search language..."
+                            autoComplete="off"
+                        />
+                        {isLangDropdownOpen && (
+                            <ul className="absolute z-20 w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg max-h-60 overflow-y-auto">
+                                {languages
+                                    .filter(l => l.toLowerCase().includes(langSearchTerm.toLowerCase()))
+                                    .map(lang => (
+                                        <li 
+                                            key={lang} 
+                                            onClick={() => {
+                                                handleInputChange('language', lang);
+                                                setIsLangDropdownOpen(false);
+                                            }}
+                                            className="px-4 py-3 cursor-pointer hover:bg-violet-100/60"
+                                        >
+                                            {lang}
+                                        </li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
+                )}
+            </div>
         </div>
-
-        <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Trip Dates</label>
-            <button
-                type="button"
-                onClick={() => setIsDatePickerOpen(true)}
-                className="w-full flex justify-between items-center text-left p-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
-            >
-                <div className="flex items-center space-x-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" /></svg>
-                    <span className="font-semibold text-slate-800">
-                        {new Date(formData.startDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {formData.endDate ? new Date(formData.endDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '...'}
-                    </span>
-                </div>
-                <span className="bg-violet-100 text-violet-700 font-bold px-2 py-0.5 rounded-full text-sm">{days} {days === 1 ? 'day' : 'days'}</span>
-            </button>
-        </div>
-
+        
         <div className="text-center pt-4">
           <button
             type="submit"
-            className="w-full sm:w-auto px-10 py-4 bg-indigo-600 text-white font-bold rounded-full hover:bg-indigo-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:bg-indigo-400/80 disabled:cursor-not-allowed disabled:shadow-md disabled:scale-100"
+            className="w-full sm:w-auto px-10 py-4 bg-violet-600 text-white font-bold rounded-full hover:bg-violet-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:bg-violet-400/80 disabled:cursor-not-allowed disabled:shadow-md disabled:scale-100"
             disabled={!isDestinationSelected || !!destinationError || isLoading}
           >
-            ✨ Pack My Adventure!
+            🧳 Pack My Bag
           </button>
         </div>
       </form>
-      {renderSelectionPage()}
-      <DateRangePicker
+      <DateRangePicker 
         isOpen={isDatePickerOpen}
         onClose={() => setIsDatePickerOpen(false)}
         onSelect={handleDateSelect}
         initialStartDate={formData.startDate}
         initialEndDate={formData.endDate}
       />
+      {renderSelectionPage()}
     </div>
   );
 };
 
+{/* FIX: Add missing default export. */}
 export default PackingAssistantForm;
