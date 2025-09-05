@@ -28,14 +28,14 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({ isOpen, onClose, onSe
     useEffect(() => {
         const bottomNav = document.querySelector('#bottom-nav-bar');
         if (isOpen) {
-          document.body.style.overflow = 'hidden';
+          document.body.classList.add('body-scroll-lock');
           if (bottomNav) (bottomNav as HTMLElement).style.display = 'none';
         } else {
-          document.body.style.overflow = 'auto';
+          document.body.classList.remove('body-scroll-lock');
            if (bottomNav) (bottomNav as HTMLElement).style.display = 'flex';
         }
         return () => {
-            document.body.style.overflow = 'auto';
+            document.body.classList.remove('body-scroll-lock');
             if (bottomNav) (bottomNav as HTMLElement).style.display = 'flex';
         };
     }, [isOpen]);
@@ -173,14 +173,14 @@ const SelectionPage = <T extends any>({
   useEffect(() => {
     const bottomNav = document.querySelector('#bottom-nav-bar');
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
+      document.body.classList.add('body-scroll-lock');
       if (bottomNav) (bottomNav as HTMLElement).style.display = 'none';
     } else {
-      document.body.style.overflow = 'auto';
+      document.body.classList.remove('body-scroll-lock');
        if (bottomNav) (bottomNav as HTMLElement).style.display = 'flex';
     }
     return () => {
-        document.body.style.overflow = 'auto';
+        document.body.classList.remove('body-scroll-lock');
         if (bottomNav) (bottomNav as HTMLElement).style.display = 'flex';
     };
   }, [isOpen]);
@@ -994,5 +994,4 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
       );
 };
 
-// FIX: Changed export from UnifiedPlannerForm to Questionnaire
 export default Questionnaire;

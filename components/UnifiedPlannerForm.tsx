@@ -28,14 +28,14 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({ isOpen, onClose, onSe
     useEffect(() => {
         const bottomNav = document.querySelector('#bottom-nav-bar');
         if (isOpen) {
-          document.body.style.overflow = 'hidden';
+          document.body.classList.add('body-scroll-lock');
           if (bottomNav) (bottomNav as HTMLElement).style.display = 'none';
         } else {
-          document.body.style.overflow = 'auto';
+          document.body.classList.remove('body-scroll-lock');
            if (bottomNav) (bottomNav as HTMLElement).style.display = 'flex';
         }
         return () => {
-            document.body.style.overflow = 'auto';
+            document.body.classList.remove('body-scroll-lock');
             if (bottomNav) (bottomNav as HTMLElement).style.display = 'flex';
         };
     }, [isOpen]);
@@ -173,14 +173,14 @@ const SelectionPage = <T extends any>({
   useEffect(() => {
     const bottomNav = document.querySelector('#bottom-nav-bar');
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
+      document.body.classList.add('body-scroll-lock');
       if (bottomNav) (bottomNav as HTMLElement).style.display = 'none';
     } else {
-      document.body.style.overflow = 'auto';
+      document.body.classList.remove('body-scroll-lock');
        if (bottomNav) (bottomNav as HTMLElement).style.display = 'flex';
     }
     return () => {
-        document.body.style.overflow = 'auto';
+        document.body.classList.remove('body-scroll-lock');
         if (bottomNav) (bottomNav as HTMLElement).style.display = 'flex';
     };
   }, [isOpen]);
@@ -544,14 +544,8 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, initi
             ? `${suggestion.name}, ${(suggestion as LocationSuggestion).parentHierarchy}`
             : suggestion.name;
         handleInputChange(field, fullName);
-        if (field === 'destination') {
-          setIsDestinationSelected(true);
-          setDestinationError(null);
-        }
-        if (field === 'startPoint') {
-          setIsStartPointSelected(true);
-          setStartPointError(null);
-        }
+        if (field === 'destination') setIsDestinationSelected(true);
+        if (field === 'startPoint') setIsStartPointSelected(true);
     } else {
         handleInputChange(field, item);
     }
@@ -683,8 +677,8 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, initi
       <BackToHomeButton onClick={onBack} />
 
       <div className="text-center mb-10">
-        <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Unified Adventure Planner</h1>
-        <p className="mt-2 text-lg text-slate-600">Fill in your trip details for a complete, AI-generated plan.</p>
+        <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Unified Trip Planner</h1>
+        <p className="mt-2 text-lg text-slate-600">Get a complete plan: itinerary, packing list, food guide, and more!</p>
       </div>
 
       {error && (
@@ -981,7 +975,7 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, initi
                 className="w-full sm:w-auto px-10 py-4 bg-violet-600 text-white font-bold rounded-full hover:bg-violet-700 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-violet-500/30 disabled:bg-violet-400/80 disabled:cursor-not-allowed disabled:shadow-md disabled:scale-100"
                 disabled={!isDestinationSelected || !!destinationError || (showStartPoint && (!isStartPointSelected || !!startPointError)) || formData.vibe.length === 0}
               >
-                ✨ Plan My Adventure
+                ✨ Create My Unified Plan
               </button>
             </div>
           </form>
