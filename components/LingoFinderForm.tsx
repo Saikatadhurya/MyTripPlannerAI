@@ -148,7 +148,7 @@ const LingoFinderForm: React.FC<LingoFinderFormProps> = ({ onSubmit, isLoading, 
   }, []);
   
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);

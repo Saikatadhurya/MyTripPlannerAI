@@ -3,7 +3,7 @@ import BottomNavBar, { BottomNavBarProps } from './BottomNavBar';
 import QuickNavButton from './QuickNavButton';
 
 // A simple hook to check for screen size
-const useIsMobile = (breakpoint = 768) => {
+const useIsMobile = (breakpoint = 640) => {
     const [isMobile, setIsMobile] = useState(window.innerWidth < breakpoint);
 
     useEffect(() => {

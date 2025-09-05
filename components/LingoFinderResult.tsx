@@ -94,9 +94,9 @@ const LingoFinderResult: React.FC<LingoFinderResultProps> = ({ recommendations, 
             </header>
             
             <div className="space-y-4">
-                {recommendations.categories.map(category => (
+                {recommendations.categories.map((category, index) => (
                     <AccordionItem
-                        key={category.categoryName}
+                        key={category.categoryName || index}
                         category={category}
                         isOpen={openCategory === category.categoryName}
                         onToggle={() => toggleCategory(category.categoryName)}

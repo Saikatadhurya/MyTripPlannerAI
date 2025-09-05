@@ -353,7 +353,7 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, initi
   }, []);
 
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
@@ -677,8 +677,8 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, initi
       <BackToHomeButton onClick={onBack} />
 
       <div className="text-center mb-10">
-        <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Unified Trip Planner</h1>
-        <p className="mt-2 text-lg text-slate-600">Get a complete plan: itinerary, packing list, food guide, and more!</p>
+        <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Plan Your Adventure</h1>
+        <p className="mt-2 text-lg text-slate-600">Tell us about your dream trip, and we'll craft the perfect plan.</p>
       </div>
 
       {error && (
@@ -975,7 +975,7 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, initi
                 className="w-full sm:w-auto px-10 py-4 bg-violet-600 text-white font-bold rounded-full hover:bg-violet-700 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-violet-500/30 disabled:bg-violet-400/80 disabled:cursor-not-allowed disabled:shadow-md disabled:scale-100"
                 disabled={!isDestinationSelected || !!destinationError || (showStartPoint && (!isStartPointSelected || !!startPointError)) || formData.vibe.length === 0}
               >
-                ✨ Create My Unified Plan
+                ✨ Plan My Adventure
               </button>
             </div>
           </form>
@@ -991,4 +991,5 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, initi
       );
 };
 
+// FIX: Added default export to resolve module import error.
 export default UnifiedPlannerForm;

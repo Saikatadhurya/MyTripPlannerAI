@@ -13,101 +13,40 @@ export const generateFoodRecommendations = async (data: FoodFinderRequestData, o
   const isMultiStop = coveredDestinations && coveredDestinations.length > 1;
   const destinationsString = isMultiStop ? coveredDestinations.map(d => d.name).join(', ') : destination;
 
-  let multiStopInstructions = '';
-  if (isMultiStop) {
-    multiStopInstructions = `
-    This is a multi-stop trip covering: ${destinationsString}.
-    CRITICAL STRUCTURE REQUIREMENT: For each food category (breakfast, lunch, etc.), you MUST group the food items by location.
-    The JSON for each category should be an array of objects, where each object has a "location" key (e.g., "Goa") and an "items" key which is an array of the food recommendations for that location.
-    
-    Example for 'breakfast' category:
-    "breakfast": [
-      {
-        "location": "Bangalore",
-        "items": [ { "name": "Idli-Vada", "description": "Classic South Indian breakfast..." } ]
-      },
-      {
-        "location": "Goa",
-        "items": [ { "name": "Patal Bhaji", "description": "A spicy Goan curry..." } ]
-      }
-    ]
+  const prompt = `**Role:** Pragmatic Local Food Scout and Culinary Expert
 
-    The "destination" field in the root of the JSON response should be a descriptive name for the trip, like "${destination} region tour".
-    `;
-  } else {
-    multiStopInstructions = `
-    This is a single-destination trip to ${destination}.
-    CRITICAL STRUCTURE REQUIREMENT: For each food category (breakfast, lunch, etc.), your response MUST be an array containing a SINGLE object.
-    This object must have a "location" key set to "${destination}" and an "items" key which is an array of the food recommendations.
-    
-    Example for 'breakfast' category:
-    "breakfast": [
-      {
-        "location": "${destination}",
-        "items": [ { "name": "...", "description": "..." }, { "name": "...", "description": "..." } ]
-      }
-    ]
-    `;
-  }
+**Objective:** Generate a comprehensive list of local and popular food recommendations for the user's trip, formatted as a single, valid JSON object.
 
-  const prompt = `
-    You are a Pragmatic Local Food Scout. Your primary mission is to return a useful, relevant, and populated list of food recommendations for a traveler visiting ${destinationsString}, written in ${language}.
-    **CRITICAL FAILURE CONDITION:** Returning an empty or mostly empty list is a complete failure of your task. You must ALWAYS find something relevant.
-    ${multiStopInstructions}
-
-    Trip Details:
+**Context:**
+- **Core Philosophy:** Your goal is to return a useful, relevant, and populated list. An empty list is a failure. You must find what people genuinely love to eat there.
+- **Trip Details:**
+    - Destination(s): ${destinationsString}
     - Dietary Preference: ${foodPreference}
     - Date: ${startDate}
     - Include Alcoholic Drinks: ${includeAlcoholicDrinks ? 'Yes' : 'No'}
-    - Language: ${language}
+    - Language for Output: ${language}
+- **Trip Type:** ${isMultiStop ? 'Multi-Stop Trip' : 'Single Destination Trip'}
 
-    **MANDATORY Blended Research Methodology:**
-    You must perform a blended search. Do not stop if you can't find "unique" dishes. Your goal is to find what people love to eat there.
+**Instructions:**
+Your entire response MUST be a single, valid JSON object. Do not include any text, markdown, or explanations before or after the JSON.
 
-    1.  **Phase 1: Hyper-Local Search.** Begin by searching for dishes that are unique or originated in each of the destinations: ${destinationsString}. Use specific search terms like "${destination} famous food", "${destination} own dish". This is your top priority.
+**1. Research Methodology (MANDATORY):**
+   - **Step A (Hyper-Local):** First, search for dishes that are unique to or originated in each destination.
+   - **Step B (Popular Regional):** Immediately after, broaden your search to find popular REGIONAL dishes commonly eaten in the area. This is critical for smaller towns.
+   - **Step C (Synthesize):** For every regional dish, you MUST add context in its description explaining why it's relevant to the specific location (e.g., "A beloved Bengali street food... you'll find excellent versions at Durgapur's Benachity market.").
 
-    2.  **Phase 2: Popular Regional Search.** Immediately after, and regardless of the results of Phase 1, you MUST broaden your search to find popular REGIONAL dishes that are commonly eaten and well-regarded in ${destinationsString}. This is especially critical for smaller towns or cities that may not have many unique dishes. Use search terms like "best food in ${destination}", "popular restaurants in ${destination}".
+**2. JSON Structure Rules (MANDATORY):**
+   - The root object must contain a "destination" key and keys for each food category (e.g., "breakfast", "lunch", etc.).
+   - **Location Grouping (CRITICAL):**
+     - For **Multi-Stop Trips**, each category's value MUST be an array of objects, grouped by location. Example: \`"breakfast": [{ "location": "Bangalore", "items": [...] }, { "location": "Goa", "items": [...] }]\`
+     - For **Single Destination Trips**, each category's value MUST be an array containing a SINGLE object. Example: \`"breakfast": [{ "location": "${destination}", "items": [...] }]\`
+   - **Content Prioritization:** Prioritize populating 'iconicDishes', 'snacksAndStreetFood', 'lunch', 'dinner', and 'dessertAndSweets'.
+   - **Drinks:** If 'includeAlcoholicDrinks' is 'Yes', you MUST include local alcoholic options. Otherwise, provide only non-alcoholic drinks.
 
-    3.  **Phase 3: Synthesize and Contextualize.**
-        - Combine the findings from both phases.
-        - **This is NON-NEGOTIABLE:** For every dish that is a regional specialty rather than one unique to the city, you MUST add local context to its description. Your value is in telling the user *why* this regional dish is relevant to their trip to ${destination}.
-        - **GOOD CONTEXT:** "Ghugni: A beloved Bengali street food made from chickpeas. You'll find excellent versions of it at the stalls in Durgapur's Benachity market."
-        - **BAD CONTEXT:** "Ghugni: A chickpea curry."
-
-    **MANDATORY JSON OUTPUT:**
-    The response MUST be ONLY a single, valid JSON object that strictly follows this structure. All text content must be in ${language}. For each of the 13 categories, you should strive to provide 2-4 food items per location. If a category is genuinely empty after an exhaustive search, return an empty array for it.
-
-    JSON Structure:
-    {
-      "destination": "string",
-      "breakfast": [{ "location": "string", "items": [{ "name": "string", "description": "string" }] }],
-      "lunch": [{ "location": "string", "items": [{ "name": "string", "description": "string" }] }],
-      "snacksAndStreetFood": [{ "location": "string", "items": [{ "name": "string", "description": "string" }] }],
-      "dinner": [{ "location": "string", "items": [{ "name": "string", "description": "string" }] }],
-      "dessertAndSweets": [{ "location": "string", "items": [{ "name": "string", "description": "string" }] }],
-      "drinksAndBeverages": [{ "location": "string", "items": [{ "name": "string", "description": "string" }] }],
-      "iconicDishes": [{ "location": "string", "items": [{ "name": "string", "description": "string" }] }],
-      "hiddenRecipes": [{ "location": "string", "items": [{ "name": "string", "description": "string" }] }],
-      "trendingOrViralFoods": [{ "location": "string", "items": [{ "name": "string", "description": "string" }] }],
-      "chefsSpecials": [{ "location": "string", "items": [{ "name": "string", "description": "string" }] }],
-      "festivalFoods": [{ "location": "string", "items": [{ "name": "string", "description": "string" }] }],
-      "seasonalSpecials": [{ "location": "string", "items": [{ "name": "string", "description": "string" }] }],
-      "streetFestivalsAndFoodMelas": [{ "location": "string", "items": [{ "name": "string", "description": "string" }] }]
-    }
-
-    **CRITICAL JSON RULES:**
-    - Prioritize populating 'iconicDishes', 'snacksAndStreetFood', 'lunch', 'dinner', and 'dessertAndSweets'. These should not be empty unless absolutely impossible.
-    - Descriptions must be short, enticing, and informative, with local context where required.
-    - The 'drinksAndBeverages' array should always contain **non-alcoholic** options appropriate for the destination. If 'Include Alcoholic Drinks' is 'Yes', you MUST also add recommendations for local alcoholic beverages (e.g., local beers, wines, spirits). If 'No', the array MUST NOT contain any alcoholic drinks.
-    - The ENTIRE response, including all names and descriptions, MUST be translated into ${language}.
-    - **CRITICAL JSON VALIDATION RULE**: The output MUST be a perfectly valid JSON object. This is the single most important instruction.
-        a. **NO UNESCAPED QUOTES**: Inside any JSON string value, you MUST NEVER use a double quote character ("). It will break the JSON and cause an error.
-        b. **HOW TO HANDLE QUOTES**: If you need to include a quote inside a description or title, you have two options:
-            i. **PREFERRED**: Use single quotes instead (e.g., "A dish called 'Ghoogni Chaat'.").
-            ii. **ALTERNATIVE**: If you absolutely must use a double quote, you MUST escape it with a backslash (e.g., "The chef says, \\"It's a must-try!\\"").
-        c. **FAILURE TO FOLLOW THIS RULE WILL RENDER THE ENTIRE OUTPUT USELESS.** You must double-check every string value for unescaped double quotes before finishing your response.
-    - **ABSOLUTE FINAL INSTRUCTION**: Your entire response MUST be the raw JSON object. It MUST start with the character '{' and end with the character '}'. You MUST NOT wrap it in markdown (like \`\`\`json), and you MUST NOT add any introductory text. The response must be immediately parsable as JSON.
-  `;
+**3. Final Formatting & Validation:**
+   - **Language:** All text in the JSON MUST be in ${language}.
+   - **JSON Validity (CRITICAL):** Ensure the output is a perfectly valid JSON object. Do not use unescaped double quotes inside strings. Use single quotes or escape them (\\").
+`;
   
   let fullText = '';
   try {

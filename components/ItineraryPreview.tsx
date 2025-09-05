@@ -106,7 +106,7 @@ const getAboutSectionsForDestination = (destinationDetails: Itinerary['coveredDe
 
 const DestinationInfoTabs: React.FC<{ destinationDetails: Itinerary['coveredDestinations'][0] }> = ({ destinationDetails }) => {
     const sections = getAboutSectionsForDestination(destinationDetails);
-    const availableSections = sections.filter(section => (section.content || (section.items && section.items.length > 0)));
+    const availableSections = sections.filter(section => (section.content || (Array.isArray(section.items) && section.items.length > 0)));
     const [activeTab, setActiveTab] = useState(availableSections[0]?.title || '');
 
     if (availableSections.length === 0) {
@@ -152,7 +152,7 @@ const DestinationInfoTabs: React.FC<{ destinationDetails: Itinerary['coveredDest
                                 {section.content && (
                                     <div dangerouslySetInnerHTML={parseBold(section.content as string)} />
                                 )}
-                                {section.items && section.items.length > 0 && (
+                                {Array.isArray(section.items) && section.items.length > 0 && (
                                     <ul className="list-disc pl-5 space-y-1">
                                         {section.items.map((item, index) => (
                                             <li key={index} dangerouslySetInnerHTML={parseBold(item)} />
