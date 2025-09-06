@@ -43,15 +43,15 @@ const SelectionPage = <T extends any>({
       if (bottomNav) (bottomNav as HTMLElement).style.display = 'flex';
     }
     return () => {
-      document.body.classList.remove('body-scroll-lock');
-      if (bottomNav) (bottomNav as HTMLElement).style.display = 'flex';
+        document.body.classList.remove('body-scroll-lock');
+        if (bottomNav) (bottomNav as HTMLElement).style.display = 'flex';
     };
   }, [isOpen]);
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-slate-50 z-[60] flex flex-col slide-down-animation">
+    <div className="fixed inset-0 bg-white z-[60] flex flex-col slide-down-animation">
       <header className="flex-shrink-0 flex items-center p-2 border-b border-slate-200 bg-white">
         <button onClick={onClose} className="p-2 mr-2 text-slate-600 hover:text-slate-900 rounded-full hover:bg-slate-100">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
