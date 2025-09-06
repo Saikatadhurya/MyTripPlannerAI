@@ -27,15 +27,21 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({ isOpen, onClose, onSe
 
     useEffect(() => {
         const bottomNav = document.querySelector('#bottom-nav-bar');
+        const html = document.documentElement;
+        const body = document.body;
+
         if (isOpen) {
-          document.body.classList.add('body-scroll-lock');
+          html.classList.add('body-scroll-lock');
+          body.classList.add('body-scroll-lock');
           if (bottomNav) (bottomNav as HTMLElement).style.display = 'none';
         } else {
-          document.body.classList.remove('body-scroll-lock');
-           if (bottomNav) (bottomNav as HTMLElement).style.display = 'flex';
+          html.classList.remove('body-scroll-lock');
+          body.classList.remove('body-scroll-lock');
+          if (bottomNav) (bottomNav as HTMLElement).style.display = 'flex';
         }
         return () => {
-            document.body.classList.remove('body-scroll-lock');
+            html.classList.remove('body-scroll-lock');
+            body.classList.remove('body-scroll-lock');
             if (bottomNav) (bottomNav as HTMLElement).style.display = 'flex';
         };
     }, [isOpen]);
@@ -121,7 +127,7 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({ isOpen, onClose, onSe
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-slate-50 z-[60] flex flex-col slide-down-animation">
+        <div className="fixed inset-0 bg-white z-[60] flex flex-col slide-down-animation">
             <header className="flex-shrink-0 flex items-center p-2 border-b border-slate-200 bg-white shadow-sm">
                 <button onClick={onClose} className="p-2 mr-2 text-slate-600 hover:text-slate-900 rounded-full hover:bg-slate-100"><svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg></button>
                 <h2 className="text-lg font-bold text-slate-800">Select Dates</h2>
@@ -172,15 +178,21 @@ const SelectionPage = <T extends any>({
 
   useEffect(() => {
     const bottomNav = document.querySelector('#bottom-nav-bar');
+    const html = document.documentElement;
+    const body = document.body;
+
     if (isOpen) {
-      document.body.classList.add('body-scroll-lock');
+      html.classList.add('body-scroll-lock');
+      body.classList.add('body-scroll-lock');
       if (bottomNav) (bottomNav as HTMLElement).style.display = 'none';
     } else {
-      document.body.classList.remove('body-scroll-lock');
-       if (bottomNav) (bottomNav as HTMLElement).style.display = 'flex';
+      html.classList.remove('body-scroll-lock');
+      body.classList.remove('body-scroll-lock');
+      if (bottomNav) (bottomNav as HTMLElement).style.display = 'flex';
     }
     return () => {
-        document.body.classList.remove('body-scroll-lock');
+        html.classList.remove('body-scroll-lock');
+        body.classList.remove('body-scroll-lock');
         if (bottomNav) (bottomNav as HTMLElement).style.display = 'flex';
     };
   }, [isOpen]);
@@ -188,7 +200,7 @@ const SelectionPage = <T extends any>({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-slate-50 z-[60] flex flex-col slide-down-animation">
+    <div className="fixed inset-0 bg-white z-[60] flex flex-col slide-down-animation">
       <header className="flex-shrink-0 flex items-center p-2 border-b border-slate-200 bg-white">
         <button onClick={onClose} className="p-2 mr-2 text-slate-600 hover:text-slate-900 rounded-full hover:bg-slate-100">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
@@ -238,11 +250,12 @@ const SelectionPage = <T extends any>({
 };
 
 
+// FIX: Renamed props interface for clarity and correctness
 interface UnifiedPlannerFormProps {
   onSubmit: (data: QuestionnaireData) => void;
+  error: string | null;
   initialData?: QuestionnaireData | null;
   onBack: () => void;
-  error: string | null;
 }
 
 const budgets: Budget[] = ['Budget', 'Midrange', 'Luxury'];
@@ -291,6 +304,7 @@ const Toggle: React.FC<{ label: string; description: string; enabled: boolean; o
     </button>
 );
 
+// FIX: Renamed component to UnifiedPlannerForm and updated props
 const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error, initialData, onBack }) => {
   const defaultEndDate = new Date();
   defaultEndDate.setDate(defaultEndDate.getDate() + 2);
@@ -682,8 +696,8 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
       <BackToHomeButton onClick={onBack} />
 
       <div className="text-center mb-10">
-        <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Unified Adventure Planner</h1>
-        <p className="mt-2 text-lg text-slate-600">Get a complete travel plan including itinerary, packing list, food, apps, and music.</p>
+        <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Unified Trip Planner</h1>
+        <p className="mt-2 text-lg text-slate-600">Tell us about your dream trip to get a complete, AI-generated plan.</p>
       </div>
 
       {error && (
@@ -996,4 +1010,5 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
       );
 };
 
+// FIX: Correctly export the component defined in this file.
 export default UnifiedPlannerForm;

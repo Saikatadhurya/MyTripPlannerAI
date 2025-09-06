@@ -26,15 +26,21 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({ isOpen, onClose, onSe
 
     useEffect(() => {
         const bottomNav = document.querySelector('#bottom-nav-bar');
+        const html = document.documentElement;
+        const body = document.body;
+
         if (isOpen) {
-          document.body.classList.add('body-scroll-lock');
+          html.classList.add('body-scroll-lock');
+          body.classList.add('body-scroll-lock');
           if (bottomNav) (bottomNav as HTMLElement).style.display = 'none';
         } else {
-          document.body.classList.remove('body-scroll-lock');
-           if (bottomNav) (bottomNav as HTMLElement).style.display = 'flex';
+          html.classList.remove('body-scroll-lock');
+          body.classList.remove('body-scroll-lock');
+          if (bottomNav) (bottomNav as HTMLElement).style.display = 'flex';
         }
         return () => {
-            document.body.classList.remove('body-scroll-lock');
+            html.classList.remove('body-scroll-lock');
+            body.classList.remove('body-scroll-lock');
             if (bottomNav) (bottomNav as HTMLElement).style.display = 'flex';
         };
     }, [isOpen]);
@@ -171,15 +177,21 @@ const SelectionPage = <T extends any>({
 
   useEffect(() => {
     const bottomNav = document.querySelector('#bottom-nav-bar');
+    const html = document.documentElement;
+    const body = document.body;
+
     if (isOpen) {
-      document.body.classList.add('body-scroll-lock');
+      html.classList.add('body-scroll-lock');
+      body.classList.add('body-scroll-lock');
       if (bottomNav) (bottomNav as HTMLElement).style.display = 'none';
     } else {
-      document.body.classList.remove('body-scroll-lock');
-       if (bottomNav) (bottomNav as HTMLElement).style.display = 'flex';
+      html.classList.remove('body-scroll-lock');
+      body.classList.remove('body-scroll-lock');
+      if (bottomNav) (bottomNav as HTMLElement).style.display = 'flex';
     }
     return () => {
-        document.body.classList.remove('body-scroll-lock');
+        html.classList.remove('body-scroll-lock');
+        body.classList.remove('body-scroll-lock');
         if (bottomNav) (bottomNav as HTMLElement).style.display = 'flex';
     };
   }, [isOpen]);

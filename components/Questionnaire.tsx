@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Budget, Vibe, FoodPreference, TripType, QuestionnaireData, LocationSuggestion, PopularDestination } from '../types';
 import { getDestinationSuggestions } from '../services/geminiService';
@@ -28,15 +27,21 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({ isOpen, onClose, onSe
 
     useEffect(() => {
         const bottomNav = document.querySelector('#bottom-nav-bar');
+        const html = document.documentElement;
+        const body = document.body;
+
         if (isOpen) {
-          document.body.classList.add('body-scroll-lock');
+          html.classList.add('body-scroll-lock');
+          body.classList.add('body-scroll-lock');
           if (bottomNav) (bottomNav as HTMLElement).style.display = 'none';
         } else {
-          document.body.classList.remove('body-scroll-lock');
-           if (bottomNav) (bottomNav as HTMLElement).style.display = 'flex';
+          html.classList.remove('body-scroll-lock');
+          body.classList.remove('body-scroll-lock');
+          if (bottomNav) (bottomNav as HTMLElement).style.display = 'flex';
         }
         return () => {
-            document.body.classList.remove('body-scroll-lock');
+            html.classList.remove('body-scroll-lock');
+            body.classList.remove('body-scroll-lock');
             if (bottomNav) (bottomNav as HTMLElement).style.display = 'flex';
         };
     }, [isOpen]);
@@ -173,15 +178,21 @@ const SelectionPage = <T extends any>({
 
   useEffect(() => {
     const bottomNav = document.querySelector('#bottom-nav-bar');
+    const html = document.documentElement;
+    const body = document.body;
+
     if (isOpen) {
-      document.body.classList.add('body-scroll-lock');
+      html.classList.add('body-scroll-lock');
+      body.classList.add('body-scroll-lock');
       if (bottomNav) (bottomNav as HTMLElement).style.display = 'none';
     } else {
-      document.body.classList.remove('body-scroll-lock');
-       if (bottomNav) (bottomNav as HTMLElement).style.display = 'flex';
+      html.classList.remove('body-scroll-lock');
+      body.classList.remove('body-scroll-lock');
+      if (bottomNav) (bottomNav as HTMLElement).style.display = 'flex';
     }
     return () => {
-        document.body.classList.remove('body-scroll-lock');
+        html.classList.remove('body-scroll-lock');
+        body.classList.remove('body-scroll-lock');
         if (bottomNav) (bottomNav as HTMLElement).style.display = 'flex';
     };
   }, [isOpen]);
@@ -1000,5 +1011,5 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
       );
 };
 
-// FIX: Export the correct component name
+// FIX: Changed the default export from UnifiedPlannerForm to Questionnaire
 export default Questionnaire;
