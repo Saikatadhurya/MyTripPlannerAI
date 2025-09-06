@@ -21,7 +21,7 @@ export const generateLingoGuide = async (data: LingoFinderRequestData, onChunk?:
     3.  **Generate Phrases:** For each category, provide 5-8 useful phrases. Each phrase object MUST contain three fields:
         - \`english\`: The phrase in English.
         - \`local\`: The direct translation of the phrase in the identified local language.
-        - \`pronunciation\`: A simple, easy-to-read phonetic spelling of the local phrase to help with pronunciation.
+        - \`pronunciation\`: A simple, easy-to-read phonetic spelling of the \`local\` phrase. **CRITICAL PRONUNCIATION RULE:** This pronunciation guide MUST be written in the script and phonetic system of the target output language, which is **'${language}'**. For example, if the output language is Hindi, the pronunciation for 'Konnichiwa' should be written in Devanagari script (e.g., 'कोनिचिवा'). If the output language is English, a simple romanization (like 'Konnichiwa') is acceptable.
 
     **JSON OUTPUT SPECIFICATION:**
     The response MUST be ONLY a single, valid JSON object that strictly follows this structure. All text content must be in ${language}.
