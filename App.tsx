@@ -1,4 +1,5 @@
 
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { QuestionnaireData, PackingListRequestData, PackingList, FoodFinderRequestData, FoodRecommendations, AppFinderRequestData, AppRecommendations, MusicFinderRequestData, MusicRecommendations, LingoFinderRequestData, LingoRecommendations, QuestionnaireData as InitialQuestionnaireData, UnifiedPlan, UnifiedPlanLoadingStatus, Itinerary } from './types';
 import { generateItinerary } from './services/geminiService';
@@ -25,7 +26,6 @@ import ScrollToTopButton from './components/ScrollToTopButton';
 import ContactUs from './components/ContactUs';
 import Navigation from './components/Navigation';
 import UnifiedResultPreview from './components/UnifiedResultPreview';
-// FIX: Removed misleading comment. The component is correctly named UnifiedPlannerForm.
 import UnifiedPlannerForm from './components/UnifiedPlannerForm';
 import ItineraryPreview from './components/ItineraryPreview';
 import LoadingIndicator from './components/LoadingIndicator';

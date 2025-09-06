@@ -205,7 +205,6 @@ const SelectionPage = <T extends any>({
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder={searchPlaceholder}
             className="w-full pl-10 pr-4 py-2 bg-slate-100 text-gray-800 border border-slate-200 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
-            autoFocus
           />
         </div>
       </div>
@@ -292,7 +291,7 @@ const Toggle: React.FC<{ label: string; description: string; enabled: boolean; o
     </button>
 );
 
-const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, initialData, onBack, error }) => {
+const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error, initialData, onBack }) => {
   const defaultEndDate = new Date();
   defaultEndDate.setDate(defaultEndDate.getDate() + 2);
 
@@ -677,8 +676,8 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, initi
       <BackToHomeButton onClick={onBack} />
 
       <div className="text-center mb-10">
-        <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Plan Your Adventure</h1>
-        <p className="mt-2 text-lg text-slate-600">Tell us about your dream trip, and we'll craft the perfect plan.</p>
+        <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Unified Adventure Planner</h1>
+        <p className="mt-2 text-lg text-slate-600">Get a complete travel plan including itinerary, packing list, food, apps, and music.</p>
       </div>
 
       {error && (
@@ -991,5 +990,4 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, initi
       );
 };
 
-// FIX: Added default export to resolve module import error.
 export default UnifiedPlannerForm;
