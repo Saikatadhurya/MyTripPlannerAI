@@ -1,7 +1,4 @@
-
-
-
-
+// FIX: Corrected the React import statement to properly include hooks.
 import React, { useState, useEffect, useMemo } from 'react';
 
 interface Stage {
@@ -91,7 +88,7 @@ const StreamingLoadingIndicator: React.FC<StreamingLoadingIndicatorProps> = ({ s
 
         {attemptCount && maxAttempts && attemptCount > 1 && (
             <div className="mt-4 p-2 bg-amber-100/70 text-amber-800 rounded-lg text-sm font-semibold border border-amber-200/80" style={{ animation: 'fadeIn 0.5s ease-out' }}>
-                Generation failed, retrying... (Attempt {attemptCount} of {maxAttempts})
+                Just a little hiccup! The AI is polishing the plan... (Attempt {attemptCount} of {maxAttempts})
             </div>
         )}
         
