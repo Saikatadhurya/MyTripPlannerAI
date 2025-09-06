@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Budget, Vibe, FoodPreference, TripType, QuestionnaireData, LocationSuggestion, PopularDestination } from '../types';
 import { getDestinationSuggestions } from '../services/geminiService';
@@ -576,8 +577,14 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                 });
             }, 500);
         } else {
-            if (field === 'destination') setDestinationSuggestions([]);
-            if (field === 'startPoint') setStartPointSuggestions([]);
+            if (field === 'destination') {
+                setDestinationSuggestions([]);
+                setIsDestinationSuggestionsLoading(false);
+            }
+            if (field === 'startPoint') {
+                setStartPointSuggestions([]);
+                setIsStartPointSuggestionsLoading(false);
+            }
         }
     }
   };

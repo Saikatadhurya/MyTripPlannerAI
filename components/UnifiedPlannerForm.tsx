@@ -573,8 +573,14 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
                 });
             }, 500);
         } else {
-            if (field === 'destination') setDestinationSuggestions([]);
-            if (field === 'startPoint') setStartPointSuggestions([]);
+            if (field === 'destination') {
+                setDestinationSuggestions([]);
+                setIsDestinationSuggestionsLoading(false);
+            }
+            if (field === 'startPoint') {
+                setStartPointSuggestions([]);
+                setIsStartPointSuggestionsLoading(false);
+            }
         }
     }
   };
