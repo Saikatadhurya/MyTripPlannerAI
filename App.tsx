@@ -894,7 +894,7 @@ const App: React.FC = () => {
         </div>
       </div>
       
-      {view !== 'unifiedResult' && (
+      {view !== 'unifiedResult' && !isLoading && (
         <Navigation
             onGoHome={handleBackToHome}
             onGoToContact={() => handleViewChange('contact')}
