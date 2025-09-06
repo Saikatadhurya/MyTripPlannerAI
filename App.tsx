@@ -1,6 +1,4 @@
 
-
-
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { QuestionnaireData, PackingListRequestData, PackingList, FoodFinderRequestData, FoodRecommendations, AppFinderRequestData, AppRecommendations, MusicFinderRequestData, MusicRecommendations, LingoFinderRequestData, LingoRecommendations, QuestionnaireData as InitialQuestionnaireData, UnifiedPlan, UnifiedPlanLoadingStatus, Itinerary } from './types';
 import { generateItinerary } from './services/geminiService';
@@ -133,7 +131,14 @@ const App: React.FC = () => {
   const [itineraryStreamedText, setItineraryStreamedText] = useState('');
   const [itineraryAttemptCount, setItineraryAttemptCount] = useState(0);
   const [miniAppAttemptCount, setMiniAppAttemptCount] = useState(0);
+
+  // State to hold form data for persistence on cancellation
   const [initialQuestionnaireData, setInitialQuestionnaireData] = useState<InitialQuestionnaireData | null>(null);
+  const [packingRequestData, setPackingRequestData] = useState<PackingListRequestData | null>(null);
+  const [foodRequestData, setFoodRequestData] = useState<FoodFinderRequestData | null>(null);
+  const [appRequestData, setAppRequestData] = useState<AppFinderRequestData | null>(null);
+  const [musicRequestData, setMusicRequestData] = useState<MusicFinderRequestData | null>(null);
+  const [lingoRequestData, setLingoRequestData] = useState<LingoFinderRequestData | null>(null);
   
   const mainContentRef = useRef<HTMLDivElement>(null);
 
@@ -200,6 +205,30 @@ const App: React.FC = () => {
     handleViewChange('questionnaire');
   }, [handleViewChange]);
 
+  const handleStartPackingAssistant = useCallback(() => {
+    setPackingRequestData(null);
+    handleViewChange('packingAssistantForm');
+  }, [handleViewChange]);
+
+  const handleStartFoodFinder = useCallback(() => {
+    setFoodRequestData(null);
+    handleViewChange('foodFinderForm');
+  }, [handleViewChange]);
+
+  const handleStartAppFinder = useCallback(() => {
+    setAppRequestData(null);
+    handleViewChange('appFinderForm');
+  }, [handleViewChange]);
+
+  const handleStartMusicFinder = useCallback(() => {
+    setMusicRequestData(null);
+    handleViewChange('musicFinderForm');
+  }, [handleViewChange]);
+
+  const handleStartLingoFinder = useCallback(() => {
+    setLingoRequestData(null);
+    handleViewChange('lingoFinderForm');
+  }, [handleViewChange]);
 
   const handleBackToHome = useCallback(() => {
     setItinerary(null);
@@ -209,6 +238,11 @@ const App: React.FC = () => {
     setMusicRecommendations(null);
     setLingoRecommendations(null);
     setInitialQuestionnaireData(null);
+    setPackingRequestData(null);
+    setFoodRequestData(null);
+    setAppRequestData(null);
+    setMusicRequestData(null);
+    setLingoRequestData(null);
     setUnifiedPlan({ itinerary: null, packingList: null, foodRecommendations: null, appRecommendations: null, musicRecommendations: null });
     setQuestionnaireDataForUnifiedPlan(null);
     handleViewChange('landing');
@@ -246,6 +280,7 @@ const App: React.FC = () => {
   }, [view, handleViewChange]);
 
   const handleGenerateItinerary = useCallback(async (data: QuestionnaireData) => {
+    setInitialQuestionnaireData(data);
     setIsLoading(true);
     setError(null);
     setItinerary(null);
@@ -478,6 +513,7 @@ const App: React.FC = () => {
 
 
   const handleGenerateUnifiedPlan = useCallback(async (data: QuestionnaireData) => {
+    setInitialQuestionnaireData(data);
     setQuestionnaireDataForUnifiedPlan(data);
     setUnifiedPlan({ itinerary: null, packingList: null, foodRecommendations: null, appRecommendations: null, musicRecommendations: null });
     setError(null);
@@ -531,6 +567,7 @@ const App: React.FC = () => {
 
 
   const handleGeneratePackingList = useCallback(async (data: PackingListRequestData) => {
+    setPackingRequestData(data);
     setIsLoading(true);
     setError(null);
     setPackingList(null);
@@ -579,6 +616,7 @@ const App: React.FC = () => {
 }, [handleViewChange]);
 
   const handleGenerateFoodRecommendations = useCallback(async (data: FoodFinderRequestData) => {
+    setFoodRequestData(data);
     setIsLoading(true);
     setError(null);
     setFoodRecommendations(null);
@@ -627,6 +665,7 @@ const App: React.FC = () => {
 }, [handleViewChange]);
   
   const handleGenerateAppRecommendations = useCallback(async (data: AppFinderRequestData) => {
+    setAppRequestData(data);
     setIsLoading(true);
     setError(null);
     setAppRecommendations(null);
@@ -675,6 +714,7 @@ const App: React.FC = () => {
 }, [handleViewChange]);
   
   const handleGenerateMusicRecommendations = useCallback(async (data: MusicFinderRequestData) => {
+    setMusicRequestData(data);
     setIsLoading(true);
     setError(null);
     setMusicRecommendations(null);
@@ -723,6 +763,7 @@ const App: React.FC = () => {
 }, [handleViewChange]);
   
   const handleGenerateLingoGuide = useCallback(async (data: LingoFinderRequestData) => {
+    setLingoRequestData(data);
     setIsLoading(true);
     setError(null);
     setLingoRecommendations(null);
@@ -841,7 +882,7 @@ const App: React.FC = () => {
     switch (view) {
       case 'landing':
         return (
-            <LandingPage onPlanUnifiedTrip={handleStartUnifiedPlanner} onPlanItinerary={handleStartItineraryPlanner} onStartPacking={() => handleViewChange('packingAssistantForm')} onStartFoodFinder={() => handleViewChange('foodFinderForm')} onStartAppFinder={() => handleViewChange('appFinderForm')} onStartMusicFinder={() => handleViewChange('musicFinderForm')} onStartLingoFinder={() => handleViewChange('lingoFinderForm')} />
+            <LandingPage onPlanUnifiedTrip={handleStartUnifiedPlanner} onPlanItinerary={handleStartItineraryPlanner} onStartPacking={handleStartPackingAssistant} onStartFoodFinder={handleStartFoodFinder} onStartAppFinder={handleStartAppFinder} onStartMusicFinder={handleStartMusicFinder} onStartLingoFinder={handleStartLingoFinder} />
         );
       case 'unifiedPlannerForm':
         return <UnifiedPlannerForm onSubmit={handleGenerateUnifiedPlan} initialData={initialQuestionnaireData} onBack={handleBackToHome} error={error} />;
@@ -851,27 +892,27 @@ const App: React.FC = () => {
         if (itinerary) return <ItineraryPreview itinerary={itinerary} onRegenerate={() => handleViewChange('questionnaire')} />;
         break;
       case 'packingAssistantForm':
-        return <PackingAssistantForm onSubmit={handleGeneratePackingList} isLoading={false} error={error} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} />;
+        return <PackingAssistantForm onSubmit={handleGeneratePackingList} isLoading={false} error={error} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} initialData={packingRequestData} />;
       case 'packingAssistantResult':
         if (packingList) return <PackingListPreview packingList={packingList} onRegenerate={() => handleViewChange('packingAssistantForm')} />;
         break;
       case 'foodFinderForm':
-        return <FoodFinderForm onSubmit={handleGenerateFoodRecommendations} isLoading={false} error={error} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} />;
+        return <FoodFinderForm onSubmit={handleGenerateFoodRecommendations} isLoading={false} error={error} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} initialData={foodRequestData} />;
       case 'foodFinderResult':
         if (foodRecommendations) return <FoodFinderResult recommendations={foodRecommendations} onRegenerate={() => handleViewChange('foodFinderForm')} />;
         break;
       case 'appFinderForm':
-        return <AppFinderForm onSubmit={handleGenerateAppRecommendations} isLoading={false} error={error} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} />;
+        return <AppFinderForm onSubmit={handleGenerateAppRecommendations} isLoading={false} error={error} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} initialData={appRequestData} />;
       case 'appFinderResult':
         if (appRecommendations) return <AppFinderResult recommendations={appRecommendations} onRegenerate={() => handleViewChange('appFinderForm')} />;
         break;
       case 'musicFinderForm':
-        return <MusicFinderForm onSubmit={handleGenerateMusicRecommendations} isLoading={false} error={error} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} />;
+        return <MusicFinderForm onSubmit={handleGenerateMusicRecommendations} isLoading={false} error={error} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} initialData={musicRequestData} />;
       case 'musicFinderResult':
         if (musicRecommendations) return <MusicFinderResult recommendations={musicRecommendations} onRegenerate={() => handleViewChange('musicFinderForm')} />;
         break;
       case 'lingoFinderForm':
-        return <LingoFinderForm onSubmit={handleGenerateLingoGuide} isLoading={false} error={error} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} />;
+        return <LingoFinderForm onSubmit={handleGenerateLingoGuide} isLoading={false} error={error} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} initialData={lingoRequestData} />;
       case 'lingoFinderResult':
         if (lingoRecommendations) return <LingoFinderResult recommendations={lingoRecommendations} onRegenerate={() => handleViewChange('lingoFinderForm')} />;
         break;
@@ -881,7 +922,7 @@ const App: React.FC = () => {
     
     // Fallback for any unhandled case or error state where data is null
     return (
-        <LandingPage onPlanUnifiedTrip={handleStartUnifiedPlanner} onPlanItinerary={handleStartItineraryPlanner} onStartPacking={() => handleViewChange('packingAssistantForm')} onStartFoodFinder={() => handleViewChange('foodFinderForm')} onStartAppFinder={() => handleViewChange('appFinderForm')} onStartMusicFinder={() => handleViewChange('musicFinderForm')} onStartLingoFinder={() => handleViewChange('lingoFinderForm')} />
+        <LandingPage onPlanUnifiedTrip={handleStartUnifiedPlanner} onPlanItinerary={handleStartItineraryPlanner} onStartPacking={handleStartPackingAssistant} onStartFoodFinder={handleStartFoodFinder} onStartAppFinder={handleStartAppFinder} onStartMusicFinder={handleStartMusicFinder} onStartLingoFinder={handleStartLingoFinder} />
     );
   };
 
@@ -902,11 +943,11 @@ const App: React.FC = () => {
             onGoToContact={() => handleViewChange('contact')}
             onPlanTrip={() => handleStartUnifiedPlanner()}
             onStartItineraryPlanner={handleStartItineraryPlanner}
-            onStartPacking={() => handleViewChange('packingAssistantForm')}
-            onStartFoodFinder={() => handleViewChange('foodFinderForm')}
-            onStartAppFinder={() => handleViewChange('appFinderForm')}
-            onStartMusicFinder={() => handleViewChange('musicFinderForm')}
-            onStartLingoFinder={() => handleViewChange('lingoFinderForm')}
+            onStartPacking={handleStartPackingAssistant}
+            onStartFoodFinder={handleStartFoodFinder}
+            onStartAppFinder={handleStartAppFinder}
+            onStartMusicFinder={handleStartMusicFinder}
+            onStartLingoFinder={handleStartLingoFinder}
             activeView={view}
             isFormView={isFormView}
         />

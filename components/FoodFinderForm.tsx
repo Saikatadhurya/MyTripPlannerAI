@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { FoodFinderRequestData, FoodPreference, LocationSuggestion, PopularDestination } from '../types';
 import { getDestinationSuggestions } from '../services/geminiService';
@@ -113,6 +114,7 @@ interface FoodFinderFormProps {
   onBack: () => void;
   onCancel: () => void;
   streamedText: string;
+  initialData?: FoodFinderRequestData | null;
 }
 
 const foodPreferences: {label: FoodPreference, icon: string}[] = [
@@ -144,8 +146,8 @@ const Toggle: React.FC<{ label: string; description: string; enabled: boolean; o
     </button>
 );
 
-const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, error, onBack, onCancel, streamedText }) => {
-  const [formData, setFormData] = useState<FoodFinderRequestData>({
+const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, error, onBack, onCancel, streamedText, initialData }) => {
+  const [formData, setFormData] = useState<FoodFinderRequestData>(initialData || {
     destination: '',
     startDate: new Date().toISOString().split('T')[0],
     foodPreference: 'Non-Veg',
@@ -155,7 +157,7 @@ const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, er
 
   const [suggestions, setSuggestions] = useState<LocationSuggestion[]>([]);
   const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false);
-  const [isDestinationSelected, setIsDestinationSelected] = useState(false);
+  const [isDestinationSelected, setIsDestinationSelected] = useState(!!initialData?.destination);
   const [destinationError, setDestinationError] = useState<string | null>(null);
   const [popularDestinations, setPopularDestinations] = useState<PopularDestination[]>([]);
   const debounceTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
