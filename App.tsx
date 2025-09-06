@@ -139,6 +139,17 @@ const App: React.FC = () => {
   const cancellationFlags = useRef<Partial<Record<keyof UnifiedPlanLoadingStatus, boolean>>>({});
   const simplePlanCancellationFlag = useRef(false);
 
+  const formViews: View[] = [
+    'questionnaire',
+    'packingAssistantForm',
+    'foodFinderForm',
+    'appFinderForm',
+    'musicFinderForm',
+    'lingoFinderForm',
+    'unifiedPlannerForm',
+  ];
+  const isFormView = formViews.includes(view);
+
 
   const scrollToTop = useCallback(() => {
     mainContentRef.current?.scrollTo(0, 0);
@@ -895,6 +906,7 @@ const App: React.FC = () => {
             onStartMusicFinder={() => handleViewChange('musicFinderForm')}
             onStartLingoFinder={() => handleViewChange('lingoFinderForm')}
             activeView={view}
+            isFormView={isFormView}
         />
       )}
       <ScrollToTopButton isUnifiedView={view === 'unifiedResult'} />

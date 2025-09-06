@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import BottomNavBar, { BottomNavBarProps } from './BottomNavBar';
 import QuickNavButton from './QuickNavButton';
@@ -22,6 +23,9 @@ const Navigation: React.FC<BottomNavBarProps> = (props) => {
     const isMobile = useIsMobile();
 
     if (isMobile) {
+        if (props.isFormView) {
+            return null;
+        }
         return <BottomNavBar {...props} />;
     }
 

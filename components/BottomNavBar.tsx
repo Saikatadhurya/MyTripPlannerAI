@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 
 // --- Bottom Nav Bar Component ---
@@ -12,6 +13,7 @@ export interface BottomNavBarProps {
   onStartLingoFinder: () => void;
   onGoToContact: () => void;
   activeView: string;
+  isFormView?: boolean;
 }
 
 const NavItem: React.FC<{
