@@ -1,7 +1,15 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { LingoRecommendations, PhraseCategory } from '../types';
 
-const AccordionItem: React.FC<{ category: PhraseCategory, isOpen: boolean, onToggle: () => void }> = ({ category, isOpen, onToggle }) => {
+const AccordionItem: React.FC<{
+    category: PhraseCategory;
+    isOpen: boolean;
+    onToggle: () => void;
+    onPlay: (text: string, lang: string) => void;
+    speakingPhrase: string | null;
+    localLanguage: string;
+}> = ({ category, isOpen, onToggle, onPlay, speakingPhrase, localLanguage }) => {
     const [copiedPhrase, setCopiedPhrase] = useState<string | null>(null);
 
     const handleCopy = (text: string) => {
@@ -39,11 +47,33 @@ const AccordionItem: React.FC<{ category: PhraseCategory, isOpen: boolean, onTog
                             {category.phrases.map((phrase, index) => (
                                 <div key={index} className="p-4 bg-white/50 rounded-lg border border-white/50">
                                     <p className="font-semibold text-slate-800">{phrase.english}</p>
-                                    <div className="flex items-center justify-between mt-2">
-                                        <p className="text-sky-700 font-bold text-lg">{phrase.local}</p>
-                                        <button onClick={() => handleCopy(phrase.local)} className="px-3 py-1 text-sm font-semibold text-slate-600 bg-slate-200/70 rounded-full hover:bg-slate-300/80 transition-colors no-print">
-                                            {copiedPhrase === phrase.local ? 'Copied!' : 'Copy'}
-                                        </button>
+                                    <div className="flex items-center justify-between mt-2 gap-2">
+                                        <p className="text-sky-700 font-bold text-lg break-all">{phrase.local}</p>
+                                        <div className="flex items-center space-x-2 flex-shrink-0">
+                                            <button
+                                                onClick={() => onPlay(phrase.local, localLanguage)}
+                                                className="p-2 text-slate-600 bg-slate-200/70 rounded-full hover:bg-slate-300/80 transition-colors no-print"
+                                                aria-label={`Listen to "${phrase.local}"`}
+                                            >
+                                                {speakingPhrase === phrase.local ? (
+                                                    <svg className="h-5 w-5 text-violet-600" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                        <style>
+                                                            {`.wave-line{stroke:currentColor;stroke-width:2;stroke-linecap:round;animation:wave 1.5s linear infinite}.wave-line:nth-child(2){animation-delay:.2s}.wave-line:nth-child(3){animation-delay:.4s}@keyframes wave{0%,100%{stroke-dasharray:2 12;stroke-dashoffset:0}50%{stroke-dasharray:7 12;stroke-dashoffset:-5}}`}
+                                                        </style>
+                                                        <path className="wave-line" d="M6 18V6"/>
+                                                        <path className="wave-line" d="M12 18V6"/>
+                                                        <path className="wave-line" d="M18 18V6"/>
+                                                    </svg>
+                                                ) : (
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                                                    </svg>
+                                                )}
+                                            </button>
+                                            <button onClick={() => handleCopy(phrase.local)} className="px-3 py-1 text-sm font-semibold text-slate-600 bg-slate-200/70 rounded-full hover:bg-slate-300/80 transition-colors no-print">
+                                                {copiedPhrase === phrase.local ? 'Copied!' : 'Copy'}
+                                            </button>
+                                        </div>
                                     </div>
                                     <p className="text-sm text-slate-600 italic mt-1">"{phrase.pronunciation}"</p>
                                 </div>
@@ -65,6 +95,68 @@ interface LingoFinderResultProps {
 
 const LingoFinderResult: React.FC<LingoFinderResultProps> = ({ recommendations, onRegenerate, isUnifiedView = false }) => {
     const [openCategory, setOpenCategory] = useState<string | null>(recommendations.categories[0]?.categoryName || null);
+    const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+    const [speakingPhrase, setSpeakingPhrase] = useState<string | null>(null);
+    const [isSpeechSupported, setIsSpeechSupported] = useState(false);
+
+    useEffect(() => {
+        if ('speechSynthesis' in window) {
+            setIsSpeechSupported(true);
+            const loadVoices = () => {
+                const availableVoices = window.speechSynthesis.getVoices();
+                if (availableVoices.length > 0) {
+                    setVoices(availableVoices);
+                }
+            };
+            window.speechSynthesis.onvoiceschanged = loadVoices;
+            loadVoices();
+            return () => {
+                window.speechSynthesis.onvoiceschanged = null;
+                window.speechSynthesis.cancel();
+            };
+        }
+    }, []);
+
+    const getLangCode = (langName: string): string => {
+        const name = langName.toLowerCase();
+        const map: { [key: string]: string } = {
+            'japanese': 'ja', 'spanish': 'es', 'french': 'fr', 'german': 'de', 'italian': 'it',
+            'portuguese': 'pt', 'russian': 'ru', 'chinese': 'zh', 'hindi': 'hi', 'arabic': 'ar', 'korean': 'ko'
+        };
+        return map[name] || '';
+    };
+
+    const handlePlay = (text: string, langName: string) => {
+        if (!isSpeechSupported || voices.length === 0) {
+            alert("Sorry, your browser doesn't support text-to-speech, or voices haven't loaded yet. Please try again in a moment.");
+            return;
+        }
+
+        window.speechSynthesis.cancel();
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        const targetLangName = langName.toLowerCase();
+        const langCode = getLangCode(targetLangName);
+
+        const voice = voices.find(v => v.lang.toLowerCase().startsWith(langCode)) || voices.find(v => v.name.toLowerCase().includes(targetLangName));
+        
+        if (voice) {
+            utterance.voice = voice;
+            utterance.lang = voice.lang;
+        } else if (langCode) {
+            utterance.lang = langCode;
+        }
+
+        utterance.onstart = () => setSpeakingPhrase(text);
+        utterance.onend = () => setSpeakingPhrase(null);
+        utterance.onerror = () => {
+            setSpeakingPhrase(null);
+            console.error("Speech synthesis error occurred.");
+            alert("Sorry, an error occurred while trying to play the audio.");
+        };
+
+        window.speechSynthesis.speak(utterance);
+    };
 
     const toggleCategory = (categoryName: string) => {
         setOpenCategory(prev => (prev === categoryName ? null : categoryName));
@@ -100,6 +192,9 @@ const LingoFinderResult: React.FC<LingoFinderResultProps> = ({ recommendations, 
                         category={category}
                         isOpen={openCategory === category.categoryName}
                         onToggle={() => toggleCategory(category.categoryName)}
+                        onPlay={handlePlay}
+                        speakingPhrase={speakingPhrase}
+                        localLanguage={recommendations.localLanguage}
                     />
                 ))}
             </div>
