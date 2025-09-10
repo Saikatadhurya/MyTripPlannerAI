@@ -155,9 +155,8 @@ export interface FoodRecommendations {
     hiddenRecipes: FoodItemGroup[];
     trendingOrViralFoods: FoodItemGroup[];
     chefsSpecials: FoodItemGroup[];
-    festivalFoods: FoodItemGroup[];
     seasonalSpecials: FoodItemGroup[];
-    streetFestivalsAndFoodMelas: FoodItemGroup[];
+    festivalAndStreetFoods: FoodItemGroup[];
 }
 
 export interface AppFinderRequestData {
