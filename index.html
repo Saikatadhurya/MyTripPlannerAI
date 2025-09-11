@@ -2,14 +2,29 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <!-- FIX: Replaced placeholder favicon with a custom, relevant SVG icon for the travel app. -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3e%3ccircle cx='16' cy='16' r='16' fill='%236D28D9'/%3e%3cpath d='M15.25 7C11.25 7 8 10.25 8 14.25C8 19.5 15.25 25 15.25 25C15.25 25 22.5 19.5 22.5 14.25C22.5 10.25 19.25 7 15.25 7ZM15.25 16.5C13.9 16.5 12.75 15.35 12.75 14C12.75 12.65 13.9 11.5 15.25 11.5C16.6 11.5 17.75 12.65 17.75 14C17.75 15.35 16.6 16.5 15.25 16.5Z' fill='white'/%3e%3c/svg%3e" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- FIX: Added meta description for better SEO and social sharing previews. -->
+    <meta name="description" content="Get personalized travel itineraries powered by AI. From budget planning to day-wise activities, we've got you covered." />
     <title>Plan Your Dream Trip with AI</title>
+    <!-- FIX: Added Tailwind CSS configuration script to properly set the Inter font family. -->
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            },
+          }
+        }
+      }
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
       body {
-        font-family: 'Inter', sans-serif;
+        /* FIX: Removed explicit font-family to allow Tailwind to manage it for better consistency. */
         background-color: #ffffff; /* Set a pure white background */
       }
       .pdf-export-render {
@@ -345,7 +360,7 @@
 }
 </script>
 </head>
-  <body class="text-gray-800">
+  <body class="font-sans text-gray-800">
     <div class="floating-icon-container" aria-hidden="true">
       <div class="floating-icon" style="font-size: 2.5rem; top: 10%; left: 5%; animation-duration: 25s;">✈️</div>
       <div class="floating-icon" style="font-size: 1.5rem; top: 20%; left: 80%; animation-duration: 18s; animation-delay: 2s;">🌍</div>
