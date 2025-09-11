@@ -3,111 +3,7 @@ import { PackingListRequestData, LocationSuggestion, PopularDestination } from '
 import { getDestinationSuggestions } from '../services/geminiService';
 import BackToHomeButton from './BackToHomeButton';
 import DateRangePicker from './DateRangePicker';
-
-// --- Reusable Typeahead Selection Page ---
-interface SelectionPageProps<T> {
-  isOpen: boolean;
-  title: string;
-  items: T[];
-  onClose: () => void;
-  onSelect: (item: T) => void;
-  renderItem: (item: T, index: number) => React.ReactNode;
-  searchValue: string;
-  onSearchChange: (value: string) => void;
-  searchPlaceholder?: string;
-  isLoading?: boolean;
-  popularItems?: T[];
-  renderPopularItem?: (item: T, index: number) => React.ReactNode;
-}
-
-const SelectionPage = <T extends any>({
-  isOpen,
-  title,
-  items,
-  onClose,
-  onSelect,
-  renderItem,
-  searchValue,
-  onSearchChange,
-  searchPlaceholder = "Search...",
-  isLoading = false,
-  popularItems,
-  renderPopularItem,
-}: SelectionPageProps<T>) => {
-
-  useEffect(() => {
-    const bottomNav = document.querySelector('#bottom-nav-bar');
-    const html = document.documentElement;
-    const body = document.body;
-
-    if (isOpen) {
-      html.classList.add('body-scroll-lock');
-      body.classList.add('body-scroll-lock');
-      if (bottomNav) (bottomNav as HTMLElement).style.display = 'none';
-    } else {
-      html.classList.remove('body-scroll-lock');
-      body.classList.remove('body-scroll-lock');
-      if (bottomNav) (bottomNav as HTMLElement).style.display = 'flex';
-    }
-    return () => {
-        html.classList.remove('body-scroll-lock');
-        body.classList.remove('body-scroll-lock');
-        if (bottomNav) (bottomNav as HTMLElement).style.display = 'flex';
-    };
-  }, [isOpen]);
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-white z-[60] flex flex-col slide-down-animation">
-      <header className="flex-shrink-0 flex items-center p-2 border-b border-slate-200 bg-white">
-        <button onClick={onClose} className="p-2 mr-2 text-slate-600 hover:text-slate-900 rounded-full hover:bg-slate-100">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
-        </button>
-        <h2 className="text-lg font-bold text-slate-800">{title}</h2>
-      </header>
-
-      <div className="flex-shrink-0 p-4 border-b border-slate-200 bg-white">
-        <div className="relative">
-          <svg className="absolute inset-y-0 left-0 pl-3 h-full w-5 text-gray-400 pointer-events-none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" /></svg>
-          <input
-            type="text"
-            value={searchValue}
-            onChange={(e) => onSearchChange(e.target.value)}
-            placeholder={searchPlaceholder}
-            className="w-full pl-10 pr-4 py-2 bg-slate-100 text-gray-800 border border-slate-200 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
-          />
-        </div>
-      </div>
-
-      <main className="flex-grow overflow-y-auto">
-        {isLoading ? (
-          <div className="text-center p-8 text-slate-600 font-semibold">Loading suggestions...</div>
-        ) : searchValue.trim() === '' && popularItems && popularItems.length > 0 && renderPopularItem ? (
-            <div>
-              <h3 className="p-4 text-sm font-bold text-slate-500 uppercase tracking-wider bg-slate-100 border-b border-slate-200">Popular Searches</h3>
-              <ul className="divide-y divide-slate-200">
-                  {popularItems.map((item, index) => (
-                      <li key={index} onClick={() => onSelect(item)}>
-                          {renderPopularItem(item, index)}
-                      </li>
-                  ))}
-              </ul>
-            </div>
-        ) : (
-          <ul className="divide-y divide-slate-200">
-            {items.map((item, index) => (
-              <li key={index} onClick={() => onSelect(item)}>
-                {renderItem(item, index)}
-              </li>
-            ))}
-          </ul>
-        )}
-      </main>
-    </div>
-  );
-};
-
+import SelectionPage from './SelectionPage';
 
 interface PackingAssistantFormProps {
   onSubmit: (data: PackingListRequestData) => void;
@@ -371,6 +267,7 @@ const PackingAssistantForm: React.FC<PackingAssistantFormProps> = ({ onSubmit, i
             isLoading={isLoading}
             popularItems={popularItems}
             renderPopularItem={renderPopularItem}
+            accentColor="violet"
         />
     );
   };
