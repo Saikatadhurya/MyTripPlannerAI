@@ -364,12 +364,12 @@
     <script type="module" src="/index.tsx"></script>
     
     <!--
-      iOS Keyboard Fix & UX Enhancement using Visual Viewport API
-      This script addresses a common issue on iOS where the on-screen keyboard
-      can cover fixed-position elements like a bottom navigation bar.
-      By listening to the `visualViewport` API, this script dynamically adjusts
-      the `bottom` position of the navbar to keep it visible above the keyboard,
-      improving user experience during text input.
+      Robust iOS Keyboard Fix using Visual Viewport API
+      This script addresses a notorious bug in iOS Safari where fixed-position elements (like a bottom navbar)
+      get stuck in the middle of the screen after the on-screen keyboard is dismissed. This robust solution
+      uses the `visualViewport` API to track the keyboard state and force a repaint on the navbar when the
+      keyboard is dismissed, resolving the rendering glitch.
+
     -->
     <script>
       (function() {
@@ -385,30 +385,38 @@
         }
 
         const installIosKeyboardFix = () => {
-          // This function will be called on every visual viewport resize event.
-          const adjustNavPosition = () => {
-            const nav = document.querySelector('#bottom-nav-bar');
-            // If the nav bar isn't on the page (e.g., in a form view or modal), do nothing.
-            if (!nav) {
-              return;
+                    const footer = document.querySelector('#bottom-nav-bar');
+          if (!footer) {
+            return;
+          }
+          
+          // Heuristic to check if the keyboard is open. It's open if the visual viewport
+          // is significantly smaller than the layout viewport. We use a threshold (e.g., 90%)
+          // to account for small differences or browser chrome.
+          const isKeyboardOpen = () => window.visualViewport.height < window.innerHeight * 0.9;
+          
+          let keyboardWasOpen = isKeyboardOpen();
+
+          window.visualViewport.addEventListener('resize', () => {
+            const keyboardIsOpenNow = isKeyboardOpen();
+
+            
+                       // The repaint logic should trigger only on the transition from open to closed.
+            if (keyboardWasOpen && !keyboardIsOpenNow) {
+              // The bug causes the `fixed` element to be stuck. By briefly changing its `position`,
+              // we force Safari to recalculate its layout from scratch when we set it back.
+              footer.style.position = 'absolute'; // Temporarily break the 'fixed' layout context.
+              
+              // Using requestAnimationFrame ensures our change back to 'fixed' happens
+              // right before the next browser repaint, making the fix smooth and efficient.
+              requestAnimationFrame(() => {
+                footer.style.position = 'fixed'; // Restore the correct positioning.
+              });
             }
             
-            // Calculate the height of the on-screen keyboard by finding the
-            // difference between the total window height and the visible area height.
-            const keyboardHeight = window.innerHeight - window.visualViewport.height;
-            
-            // Set the `bottom` style property to lift the nav bar above the keyboard.
-            // When the keyboard is closed, keyboardHeight will be close to 0,
-            // returning the nav bar to its original position at the bottom of the screen.
-            // We use Math.max to prevent negative values from minor resize fluctuations.
-            nav.style.bottom = `${Math.max(0, keyboardHeight)}px`;
-          };
+            keyboardWasOpen = keyboardIsOpenNow;
+          });
 
-          // Listen for resize events on the visual viewport, which fire when the keyboard appears or disappears.
-          window.visualViewport.addEventListener('resize', adjustNavPosition);
-          
-          // Call it once initially to set the position correctly on page load.
-          adjustNavPosition();
         };
 
         // Wait until the DOM is fully loaded to ensure the nav bar element is available to be selected.
