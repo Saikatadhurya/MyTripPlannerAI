@@ -26,6 +26,11 @@
       body {
         /* FIX: Removed explicit font-family to allow Tailwind to manage it for better consistency. */
         background-color: #ffffff; /* Set a pure white background */
+        padding-top: env(safe-area-inset-top);
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
+        padding-bottom: env(safe-area-inset-bottom);
+        background: #fff; /* or your app bg */
       }
       .pdf-export-render {
         position: fixed !important;
