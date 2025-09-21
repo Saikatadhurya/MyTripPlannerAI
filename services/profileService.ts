@@ -133,8 +133,12 @@ class ProfileService {
   // Check if user has Google account linked
   async hasGoogleAccount(): Promise<boolean> {
     try {
-      const socialAccounts = await this.getSocialAccounts();
-      return socialAccounts.data?.some((account: any) => account.provider === 'google') || false;
+      const resp = await this.getSocialAccounts();
+      const list = Array.isArray(resp)
+        ? resp
+        : (resp as any)?.data?.social_accounts ?? (resp as any)?.data ?? [];
+      if (!Array.isArray(list)) return false;
+      return list.some((account: any) => account?.provider === 'google');
     } catch (error) {
       console.error('Error checking Google account:', error);
       return false;

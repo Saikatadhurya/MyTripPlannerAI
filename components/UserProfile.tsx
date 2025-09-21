@@ -13,9 +13,10 @@ interface UserProfileProps {
   user: User;
   onLogout: () => void;
   onEditProfile: () => void;
+  onGoToContact: () => void;
 }
 
-const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onEditProfile }) => {
+const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onEditProfile, onGoToContact }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   // Debug logging to understand the user object structure
@@ -143,7 +144,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onEditProfile
             </button>
 
             <button
-              onClick={() => {/* Handle help */}}
+              onClick={() => { setIsDropdownOpen(false); onGoToContact(); }}
               className="w-full flex items-center px-3 py-2 text-sm text-slate-700 rounded-lg hover:bg-violet-50 transition-colors duration-200"
             >
               <svg className="w-4 h-4 mr-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
