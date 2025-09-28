@@ -61,17 +61,20 @@ interface LingoFinderResultProps {
     recommendations: LingoRecommendations;
     onRegenerate: () => void;
     isUnifiedView?: boolean;
+    onPrint?: () => void;
 }
 
-const LingoFinderResult: React.FC<LingoFinderResultProps> = ({ recommendations, onRegenerate, isUnifiedView = false }) => {
+const LingoFinderResult: React.FC<LingoFinderResultProps> = ({ recommendations, onRegenerate, isUnifiedView = false, onPrint }) => {
     const [openCategory, setOpenCategory] = useState<string | null>(recommendations.categories[0]?.categoryName || null);
 
     const toggleCategory = (categoryName: string) => {
         setOpenCategory(prev => (prev === categoryName ? null : categoryName));
     };
 
+    const handlePrint = onPrint || (() => window.print());
+
     return (
-        <div className="max-w-3xl mx-auto space-y-12 animated-card">
+        <div className="max-w-3xl mx-auto space-y-12 animated-card" id="lingo-finder-result-content">
             {!isUnifiedView && (
             <div className="flex justify-start items-center no-print">
                 <button
@@ -116,13 +119,13 @@ const LingoFinderResult: React.FC<LingoFinderResultProps> = ({ recommendations, 
                     </button>
                     )}
                     <button
-                        onClick={() => window.print()}
+                        onClick={handlePrint}
                         className="inline-flex items-center justify-center w-full sm:w-auto px-8 py-3 bg-white/60 text-slate-800 font-bold rounded-full hover:bg-white/80 transition-all duration-300 shadow-md border border-white/50"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
                             <path fillRule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v-1a1 1 0 011-1h10a1 1 0 011 1v1h1a2 2 0 002-2v-3a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clipRule="evenodd" />
                         </svg>
-                        <span>Print Guide</span>
+                        <span>{isUnifiedView ? 'Print This Section' : 'Print Guide'}</span>
                     </button>
                 </div>
             </div>

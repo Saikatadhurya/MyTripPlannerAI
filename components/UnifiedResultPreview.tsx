@@ -6,8 +6,9 @@ import FoodFinderResult from './FoodFinderResult';
 import AppFinderResult from './AppFinderResult';
 import MusicFinderResult from './MusicFinderResult';
 import Guidebook from './Guidebook';
+import LingoFinderResult from './LingoFinderResult';
 
-type Tab = 'itinerary' | 'packing' | 'food' | 'apps' | 'music';
+type Tab = 'itinerary' | 'packing' | 'food' | 'apps' | 'music' | 'lingo';
 
 const tabs: { id: Tab; name: string; icon: React.ReactNode }[] = [
     { id: 'itinerary', name: 'Itinerary', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" /><path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h.01a1 1 0 100-2H10zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h.01a1 1 0 100-2H10z" clipRule="evenodd" /></svg> },
@@ -15,6 +16,7 @@ const tabs: { id: Tab; name: string; icon: React.ReactNode }[] = [
     { id: 'food', name: 'Food Guide', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21.5,12a9.5,9.5 0 1,1 -19,0" /><path strokeLinecap="round" strokeLinejoin="round" d="M12,2a10,10 0 0,0 -10,10 h20 a10,10 0 0,0 -10,-10" /><path strokeLinecap="round" strokeLinejoin="round" d="M12,18v4" /></svg> },
     { id: 'apps', name: 'Local Apps', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M7 2a2 2 0 00-2 2v12a2 2 0 002 2h6a2 2 0 002-2V4a2 2 0 00-2-2H7zm3 14a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" /></svg> },
     { id: 'music', name: 'Music', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 18V5l12-2v13M9 18a3 3 0 11-6 0 3 3 0 016 0zm12-2a3 3 0 11-6 0 3 3 0 016 0z" /></svg> },
+    { id: 'lingo', name: 'Lingo', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18 3a1 1 0 00-1.447-.894L4.12 6.586a1 1 0 000 1.828l11.44-3.578A1 1 0 0018 3zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" /></svg> },
 ];
 
 interface UnifiedResultPreviewProps {
@@ -23,9 +25,9 @@ interface UnifiedResultPreviewProps {
     stepErrors: Partial<Record<keyof UnifiedPlanLoadingStatus, string>>;
     onPlanNew: () => void;
     onRegenerate: () => void;
-    onRegenerateStep: (step: Tab) => void;
+    onRegenerateStep: (step: keyof UnifiedPlanLoadingStatus) => void;
     onCancel: () => void;
-    onCancelStep: (step: Tab) => void;
+    onCancelStep: (step: keyof UnifiedPlanLoadingStatus) => void;
     onTabChangeScrollToTop: () => void;
     itineraryStreamedText: string;
 }
@@ -100,6 +102,7 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
             case 'food': return plan.foodRecommendations;
             case 'apps': return plan.appRecommendations;
             case 'music': return plan.musicRecommendations;
+            case 'lingo': return plan.lingoRecommendations;
             default: return null;
         }
     };
@@ -163,6 +166,8 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
                 return <AppFinderResult recommendations={plan.appRecommendations!} onRegenerate={onRegenerate} isUnifiedView onPrint={() => handlePrintSection('apps')} />;
             case 'music':
                 return <MusicFinderResult recommendations={plan.musicRecommendations!} onRegenerate={onRegenerate} isUnifiedView onPrint={() => handlePrintSection('music')} />;
+            case 'lingo':
+                return <LingoFinderResult recommendations={plan.lingoRecommendations!} onRegenerate={() => onRegenerateStep('lingo')} isUnifiedView onPrint={() => handlePrintSection('lingo')} />;
             default:
                 return null;
         }

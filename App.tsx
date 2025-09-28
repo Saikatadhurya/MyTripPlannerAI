@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { QuestionnaireData, PackingListRequestData, PackingList, FoodFinderRequestData, FoodRecommendations, AppFinderRequestData, AppRecommendations, MusicFinderRequestData, MusicRecommendations, LingoFinderRequestData, LingoRecommendations, QuestionnaireData as InitialQuestionnaireData, UnifiedPlan, UnifiedPlanLoadingStatus, Itinerary } from './types';
 import { generateItinerary } from './services/geminiService';
@@ -120,8 +119,8 @@ const App: React.FC = () => {
   const [lingoRecommendations, setLingoRecommendations] = useState<LingoRecommendations | null>(null);
   
   // State for the new unified plan
-  const [unifiedPlan, setUnifiedPlan] = useState<UnifiedPlan>({ itinerary: null, packingList: null, foodRecommendations: null, appRecommendations: null, musicRecommendations: null });
-  const [unifiedPlanLoadingStatus, setUnifiedPlanLoadingStatus] = useState<UnifiedPlanLoadingStatus>({ itinerary: 'pending', packing: 'pending', food: 'pending', apps: 'pending', music: 'pending' });
+  const [unifiedPlan, setUnifiedPlan] = useState<UnifiedPlan>({ itinerary: null, packingList: null, foodRecommendations: null, appRecommendations: null, musicRecommendations: null, lingoRecommendations: null });
+  const [unifiedPlanLoadingStatus, setUnifiedPlanLoadingStatus] = useState<UnifiedPlanLoadingStatus>({ itinerary: 'pending', packing: 'pending', food: 'pending', apps: 'pending', music: 'pending', lingo: 'pending' });
   const [questionnaireDataForUnifiedPlan, setQuestionnaireDataForUnifiedPlan] = useState<QuestionnaireData | null>(null);
   
   const [isLoading, setIsLoading] = useState(false);
@@ -243,7 +242,7 @@ const App: React.FC = () => {
     setAppRequestData(null);
     setMusicRequestData(null);
     setLingoRequestData(null);
-    setUnifiedPlan({ itinerary: null, packingList: null, foodRecommendations: null, appRecommendations: null, musicRecommendations: null });
+    setUnifiedPlan({ itinerary: null, packingList: null, foodRecommendations: null, appRecommendations: null, musicRecommendations: null, lingoRecommendations: null });
     setQuestionnaireDataForUnifiedPlan(null);
     handleViewChange('landing');
   }, [handleViewChange]);
@@ -379,6 +378,7 @@ const App: React.FC = () => {
             food: 'foodRecommendations',
             apps: 'appRecommendations',
             music: 'musicRecommendations',
+            lingo: 'lingoRecommendations',
         };
         return map[step];
     };
@@ -491,9 +491,16 @@ const App: React.FC = () => {
                     },
                     onSuccess: (result) => setUnifiedPlan(prev => ({ ...prev, musicRecommendations: result })),
                 },
+                lingo: {
+                    generator: () => {
+                       const lingoData: LingoFinderRequestData = { destination: data.destination, language: data.language };
+                       return generateLingoGuide(lingoData);
+                    },
+                    onSuccess: (result) => setUnifiedPlan(prev => ({ ...prev, lingoRecommendations: result })),
+                },
             };
 
-            const parallelSteps: (keyof Omit<UnifiedPlanLoadingStatus, 'itinerary'>)[] = ['packing', 'food', 'apps', 'music'];
+            const parallelSteps: (keyof Omit<UnifiedPlanLoadingStatus, 'itinerary'>)[] = ['packing', 'food', 'apps', 'music', 'lingo'];
             const stepsToRun = parallelSteps.filter(step => unifiedPlanLoadingStatus[step] === 'pending');
 
             if (stepsToRun.length > 0) {
@@ -515,7 +522,7 @@ const App: React.FC = () => {
   const handleGenerateUnifiedPlan = useCallback(async (data: QuestionnaireData) => {
     setInitialQuestionnaireData(data);
     setQuestionnaireDataForUnifiedPlan(data);
-    setUnifiedPlan({ itinerary: null, packingList: null, foodRecommendations: null, appRecommendations: null, musicRecommendations: null });
+    setUnifiedPlan({ itinerary: null, packingList: null, foodRecommendations: null, appRecommendations: null, musicRecommendations: null, lingoRecommendations: null });
     setError(null);
     setItineraryStreamedText('');
     setItineraryAttemptCount(0);
@@ -523,7 +530,7 @@ const App: React.FC = () => {
     cancellationFlags.current = {};
     handleViewChange('unifiedResult');
     // This state change will trigger the pipeline `useEffect`
-    setUnifiedPlanLoadingStatus({ itinerary: 'pending', packing: 'pending', food: 'pending', apps: 'pending', music: 'pending' });
+    setUnifiedPlanLoadingStatus({ itinerary: 'pending', packing: 'pending', food: 'pending', apps: 'pending', music: 'pending', lingo: 'pending' });
   }, [handleViewChange]);
 
   const handleRegenerateUnifiedPlanStep = useCallback((step: keyof UnifiedPlanLoadingStatus) => {
@@ -541,6 +548,7 @@ const App: React.FC = () => {
             foodRecommendations: null,
             appRecommendations: null,
             musicRecommendations: null,
+            lingoRecommendations: null,
         });
         setUnifiedPlanLoadingStatus({
             itinerary: 'pending',
@@ -548,6 +556,7 @@ const App: React.FC = () => {
             food: 'pending',
             apps: 'pending',
             music: 'pending',
+            lingo: 'pending',
         });
         setUnifiedStepErrors({});
     } else {

@@ -1,4 +1,3 @@
-
 export type Budget = 'Budget' | 'Midrange' | 'Luxury';
 export type Vibe = 'Adventure & Thrill' | 'Relaxation & Wellness' | 'Cultural & Heritage' | 'Nature & Wildlife' | 'Food & Culinary' | 'Nightlife & Entertainment' | 'Luxury & Leisure' | 'Romantic & Family Getaways';
 export type FoodPreference = 'Veg' | 'Non-Veg' | 'Vegan';
@@ -242,6 +241,7 @@ export interface UnifiedPlan {
   appRecommendations: AppRecommendations | null;
   foodRecommendations: FoodRecommendations | null;
   musicRecommendations: MusicRecommendations | null;
+  lingoRecommendations: LingoRecommendations | null;
 }
 
 export type UnifiedPlanLoadingState = 'pending' | 'loading' | 'done' | 'error' | 'cancelled';
@@ -252,4 +252,5 @@ export interface UnifiedPlanLoadingStatus {
   apps: UnifiedPlanLoadingState;
   food: UnifiedPlanLoadingState;
   music: UnifiedPlanLoadingState;
+  lingo: UnifiedPlanLoadingState;
 }
