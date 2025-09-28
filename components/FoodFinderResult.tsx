@@ -1,4 +1,3 @@
-
 import React, { useMemo } from 'react';
 import { FoodRecommendations, FoodItem, FoodItemGroup } from '../types';
 
@@ -57,6 +56,12 @@ const CategoryCard: React.FC<{
     const uniqueLocations = useMemo(() => new Set(items.flatMap(group => group.location)), [items]);
     const isMultiLocation = uniqueLocations.size > 1;
 
+    const handleFoodItemClick = (foodItem: { name: string; locations: string[] }) => {
+        const searchTerm = `${foodItem.name} food ${foodItem.locations[0] || ''}`.trim();
+        const googleImagesUrl = `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(searchTerm)}`;
+        window.open(googleImagesUrl, '_blank', 'noopener,noreferrer');
+    };
+
     return (
         <div className={`bg-white/20 backdrop-blur-xl border border-white/30 rounded-2xl p-6 transition-transform hover:scale-105 shadow-lg border-l-4 ${borderColor}`}>
             <div className="flex items-center space-x-3 mb-4">
@@ -66,20 +71,29 @@ const CategoryCard: React.FC<{
                 <h3 className="text-xl font-bold text-slate-800">{title}</h3>
             </div>
             <div className="space-y-4">
-                 <ul className="space-y-4">
+                 <ul className="space-y-2 -m-3">
                     {aggregatedItems.map((item, itemIndex) => (
                         <li key={itemIndex}>
-                            <div className="font-semibold text-slate-900 flex flex-wrap items-center gap-x-2 gap-y-1">
-                                <span className="text-base">{item.name}</span>
-                                {isMultiLocation && (
-                                    item.locations.map((location, locIndex) => (
-                                        <span key={locIndex} className="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 whitespace-nowrap">
-                                            📍 {location}
-                                        </span>
-                                    ))
-                                )}
-                            </div>
-                            <p className="text-sm text-slate-600 mt-1">{item.description}</p>
+                            <button
+                                onClick={() => handleFoodItemClick(item)}
+                                className="w-full text-left p-3 rounded-lg hover:bg-amber-100/50 focus:outline-none focus:ring-2 focus:ring-amber-400 transition-colors"
+                                aria-label={`Search for images of ${item.name}`}
+                            >
+                                <div className="font-semibold text-slate-900 flex flex-wrap items-center gap-x-2 gap-y-1">
+                                    <span className="text-base">{item.name}</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-slate-400 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                    </svg>
+                                    {isMultiLocation && (
+                                        item.locations.map((location, locIndex) => (
+                                            <span key={locIndex} className="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 whitespace-nowrap">
+                                                📍 {location}
+                                            </span>
+                                        ))
+                                    )}
+                                </div>
+                                <p className="text-sm text-slate-600 mt-1">{item.description}</p>
+                            </button>
                         </li>
                     ))}
                 </ul>
