@@ -161,39 +161,39 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
         <p className="mt-4 text-lg text-slate-600 max-w-2xl mx-auto">
           From custom itineraries and smart packing lists to local food and music discovery, our AI crafts your complete travel experience. Just tell us where you want to go.
         </p>
-                 <div className="mt-8">
-             {user ? (
-               <>
-                 <button
-                   onClick={() => onPlanUnifiedTrip()}
-                   className="inline-block px-10 py-4 bg-violet-600 text-white font-bold rounded-full text-lg shadow-lg shadow-violet-500/30 hover:bg-violet-700 hover:shadow-xl hover:shadow-violet-500/40 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-violet-300"
-                 >
-                   ✨ Build Your Ultimate Itinerary
-                 </button>
-                 <p className="mt-4 text-sm text-violet-700/80 font-medium tracking-wide">
-                   Includes: Itinerary, Packing, Food, Apps & Music
-                 </p>
-               </>
-             ) : (
-               <>
-                 <button
-                   disabled
-                   className="inline-block px-10 py-4 bg-gray-400 text-gray-600 font-bold rounded-full text-lg shadow-lg cursor-not-allowed opacity-60"
-                 >
-                   🔒 Build Your Ultimate Itinerary
-                 </button>
-                 <p className="mt-4 text-sm text-gray-600 font-medium tracking-wide">
-                   Sign in to unlock the full itinerary planner
-                 </p>
-                                   <button
-                    onClick={onOpenAuthModal}
-                    className="mt-3 inline-block px-6 py-2 bg-violet-600 text-white font-semibold rounded-full text-sm shadow-lg shadow-violet-500/30 hover:bg-violet-700 hover:shadow-xl hover:shadow-violet-500/40 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-violet-300"
-                  >
-                    Sign In to Continue
-                  </button>
-               </>
-             )}
-         </div>
+        <div className="mt-8">
+          {user ? (
+            <>
+              <button
+                onClick={() => onPlanUnifiedTrip()}
+                className="cta-pulse inline-block px-10 py-4 bg-violet-600 text-white font-bold rounded-full text-lg shadow-lg shadow-violet-500/30 hover:bg-violet-700 hover:shadow-xl hover:shadow-violet-500/40 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-violet-300"
+              >
+                ✨ Build Your Ultimate Itinerary
+              </button>
+              <p className="mt-4 text-sm text-violet-700/80 font-medium tracking-wide">
+                Includes: Itinerary, Packing, Food, Apps & Music
+              </p>
+            </>
+          ) : (
+            <>
+              <button
+                disabled
+                className="inline-block px-10 py-4 bg-gray-400 text-gray-600 font-bold rounded-full text-lg shadow-lg cursor-not-allowed opacity-60"
+              >
+                🔒 Build Your Ultimate Itinerary
+              </button>
+              <p className="mt-4 text-sm text-gray-600 font-medium tracking-wide">
+                Sign in to unlock the full itinerary planner
+              </p>
+              <button
+                onClick={onOpenAuthModal}
+                className="mt-3 inline-block px-6 py-2 bg-violet-600 text-white font-semibold rounded-full text-sm shadow-lg shadow-violet-500/30 hover:bg-violet-700 hover:shadow-xl hover:shadow-violet-500/40 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-violet-300"
+              >
+                Sign In to Continue
+              </button>
+            </>
+          )}
+        </div>
       </div>
       
       {/* Mini Apps Section */}
