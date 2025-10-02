@@ -108,9 +108,10 @@ interface AppFinderResultProps {
     recommendations: AppRecommendations;
     onRegenerate: () => void;
     isUnifiedView?: boolean;
+    onPrint?: () => void;
 }
 
-const AppFinderResult: React.FC<AppFinderResultProps> = ({ recommendations, onRegenerate, isUnifiedView = false }) => {
+const AppFinderResult: React.FC<AppFinderResultProps> = ({ recommendations, onRegenerate, isUnifiedView = false, onPrint }) => {
     const iconClass = "h-6 w-6";
     
     const categoryDetails = {
@@ -125,9 +126,10 @@ const AppFinderResult: React.FC<AppFinderResultProps> = ({ recommendations, onRe
     };
 
     const displayOrder = Object.keys(categoryDetails) as Array<keyof typeof categoryDetails>;
+    const handlePrint = onPrint || (() => window.print());
 
     return (
-        <div className="max-w-6xl mx-auto space-y-12 animated-card">
+        <div className="max-w-6xl mx-auto space-y-12 animated-card" id="app-finder-result-content">
             {!isUnifiedView && (
             <div className="flex justify-start items-center no-print">
                 <button
@@ -177,13 +179,13 @@ const AppFinderResult: React.FC<AppFinderResultProps> = ({ recommendations, onRe
                     </button>
                     )}
                     <button
-                        onClick={() => window.print()}
+                        onClick={handlePrint}
                         className="inline-flex items-center justify-center w-full sm:w-auto px-8 py-3 bg-white/60 text-slate-800 font-bold rounded-full hover:bg-white/80 transition-all duration-300 shadow-md border border-white/50"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
                             <path fillRule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v-1a1 1 0 011-1h10a1 1 0 011 1v1h1a2 2 0 002-2v-3a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clipRule="evenodd" />
                         </svg>
-                        <span>Print App Guide</span>
+                        <span>{isUnifiedView ? 'Print This Section' : 'Print App Guide'}</span>
                     </button>
                 </div>
             </div>

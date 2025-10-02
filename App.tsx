@@ -1,10 +1,12 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { QuestionnaireData, PackingListRequestData, PackingList, FoodFinderRequestData, FoodRecommendations, AppFinderRequestData, AppRecommendations, MusicFinderRequestData, MusicRecommendations, QuestionnaireData as InitialQuestionnaireData, UnifiedPlan, UnifiedPlanLoadingStatus, Itinerary } from './types';
+import { QuestionnaireData, PackingListRequestData, PackingList, FoodFinderRequestData, FoodRecommendations, AppFinderRequestData, AppRecommendations, MusicFinderRequestData, MusicRecommendations, LingoFinderRequestData, LingoRecommendations, QuestionnaireData as InitialQuestionnaireData, UnifiedPlan, UnifiedPlanLoadingStatus, Itinerary } from './types';
 import { generateItinerary } from './services/geminiService';
 import { generatePackingList } from './services/packingService';
 import { generateFoodRecommendations } from './services/foodService';
 import { generateAppRecommendations } from './services/appFinderService';
 import { generateMusicRecommendations } from './services/musicService';
+import { generateLingoGuide } from './services/lingoService';
+
 import { authService, User } from './services/authService';
 
 import LandingPage from './components/LandingPage';
@@ -17,15 +19,19 @@ import AppFinderForm from './components/AppFinderForm';
 import AppFinderResult from './components/AppFinderResult';
 import MusicFinderForm from './components/MusicFinderForm';
 import MusicFinderResult from './components/MusicFinderResult';
+import LingoFinderForm from './components/LingoFinderForm';
+import LingoFinderResult from './components/LingoFinderResult';
 import ScrollToTopButton from './components/ScrollToTopButton';
 import ContactUs from './components/ContactUs';
-import QuickNavButton from './components/QuickNavButton';
+import Navigation from './components/Navigation';
 import UnifiedResultPreview from './components/UnifiedResultPreview';
+// FIX: Corrected import to reflect named export from the correct file.
 import UnifiedPlannerForm from './components/UnifiedPlannerForm';
 import ItineraryPreview from './components/ItineraryPreview';
 import LoadingIndicator from './components/LoadingIndicator';
 import Header from './components/Header';
 import EditProfile from './components/EditProfile';
+import QuickNavButton from './components/QuickNavButton';
 
 // --- Bottom Nav Bar Component ---
 interface BottomNavBarProps {
@@ -184,7 +190,7 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({
 };
 
 
-type View = 'landing' | 'questionnaire' | 'itineraryResult' | 'packingAssistantForm' | 'packingAssistantResult' | 'foodFinderForm' | 'foodFinderResult' | 'appFinderForm' | 'appFinderResult' | 'musicFinderForm' | 'musicFinderResult' | 'contact' | 'unifiedPlannerForm' | 'unifiedResult' | 'editProfile';
+type View = 'landing' | 'questionnaire' | 'itineraryResult' | 'packingAssistantForm' | 'packingAssistantResult' | 'foodFinderForm' | 'foodFinderResult' | 'appFinderForm' | 'appFinderResult' | 'musicFinderForm' | 'musicFinderResult' | 'lingoFinderForm' | 'lingoFinderResult' | 'contact' | 'unifiedPlannerForm' | 'unifiedResult' | 'editProfile';
 
 // --- Loading State Constants ---
 const itineraryStages = [
@@ -248,6 +254,17 @@ const musicFunFacts = [
     { icon: '🎤', text: 'Checking the top of the charts...' },
     { icon: '💿', text: 'Building the perfect travel playlist...' },
 ];
+const lingoStages = [
+    { key: '"localLanguage":', text: 'Identifying the local language' },
+    { key: '"categoryName":"Dining', text: 'Translating dining phrases' },
+    { key: '"categoryName":"Emergencies"', text: 'Preparing emergency phrases' },
+];
+const lingoFunFacts = [
+    { icon: '🌍', text: 'Learning local greetings...' },
+    { icon: '💬', text: 'Translating essential phrases...' },
+    { icon: '🗣️', text: 'Perfecting pronunciations...' },
+    { icon: '✍️', text: 'Building your custom phrasebook...' },
+];
 
 
 const App: React.FC = () => {
@@ -259,10 +276,11 @@ const App: React.FC = () => {
   const [foodRecommendations, setFoodRecommendations] = useState<FoodRecommendations | null>(null);
   const [appRecommendations, setAppRecommendations] = useState<AppRecommendations | null>(null);
   const [musicRecommendations, setMusicRecommendations] = useState<MusicRecommendations | null>(null);
+  const [lingoRecommendations, setLingoRecommendations] = useState<LingoRecommendations | null>(null);
   
   // State for the new unified plan
-  const [unifiedPlan, setUnifiedPlan] = useState<UnifiedPlan>({ itinerary: null, packingList: null, foodRecommendations: null, appRecommendations: null, musicRecommendations: null });
-  const [unifiedPlanLoadingStatus, setUnifiedPlanLoadingStatus] = useState<UnifiedPlanLoadingStatus>({ itinerary: 'pending', packing: 'pending', food: 'pending', apps: 'pending', music: 'pending' });
+  const [unifiedPlan, setUnifiedPlan] = useState<UnifiedPlan>({ itinerary: null, packingList: null, foodRecommendations: null, appRecommendations: null, musicRecommendations: null, lingoRecommendations: null });
+  const [unifiedPlanLoadingStatus, setUnifiedPlanLoadingStatus] = useState<UnifiedPlanLoadingStatus>({ itinerary: 'pending', packing: 'pending', food: 'pending', apps: 'pending', music: 'pending', lingo: 'pending' });
   const [questionnaireDataForUnifiedPlan, setQuestionnaireDataForUnifiedPlan] = useState<QuestionnaireData | null>(null);
   
   const [isLoading, setIsLoading] = useState(false);
@@ -271,7 +289,15 @@ const App: React.FC = () => {
   const [streamedText, setStreamedText] = useState('');
   const [itineraryStreamedText, setItineraryStreamedText] = useState('');
   const [itineraryAttemptCount, setItineraryAttemptCount] = useState(0);
+  const [miniAppAttemptCount, setMiniAppAttemptCount] = useState(0);
+
+  // State to hold form data for persistence on cancellation
   const [initialQuestionnaireData, setInitialQuestionnaireData] = useState<InitialQuestionnaireData | null>(null);
+  const [packingRequestData, setPackingRequestData] = useState<PackingListRequestData | null>(null);
+  const [foodRequestData, setFoodRequestData] = useState<FoodFinderRequestData | null>(null);
+  const [appRequestData, setAppRequestData] = useState<AppFinderRequestData | null>(null);
+  const [musicRequestData, setMusicRequestData] = useState<MusicFinderRequestData | null>(null);
+  const [lingoRequestData, setLingoRequestData] = useState<LingoFinderRequestData | null>(null);
   
   const mainContentRef = useRef<HTMLDivElement>(null);
 
@@ -283,6 +309,18 @@ const App: React.FC = () => {
 
   // --- Unified Planner Pipeline State ---
   const cancellationFlags = useRef<Partial<Record<keyof UnifiedPlanLoadingStatus, boolean>>>({});
+  const simplePlanCancellationFlag = useRef(false);
+
+  const formViews: View[] = [
+    'questionnaire',
+    'packingAssistantForm',
+    'foodFinderForm',
+    'appFinderForm',
+    'musicFinderForm',
+    'lingoFinderForm',
+    'unifiedPlannerForm',
+  ];
+  const isFormView = formViews.includes(view);
 
   // Initialize authentication state
   useEffect(() => {
@@ -402,16 +440,42 @@ const App: React.FC = () => {
     return data;
   }
 
-  const handleStartUnifiedPlanner = useCallback((destination?: string) => {
-    setInitialQuestionnaireData(createInitialData(destination));
-    handleViewChange('unifiedPlannerForm');
-  }, [handleViewChange]);
+  const handleStartUnifiedPlanner = useCallback((destination?: string | React.MouseEvent) => {
+      // Check if the argument is a string. If it's a mouse event or undefined, treat it as no destination.
+      const dest = typeof destination === 'string' ? destination : undefined;
+      setInitialQuestionnaireData(createInitialData(dest));
+      handleViewChange('unifiedPlannerForm');
+    }, [handleViewChange]);
   
   const handleStartItineraryPlanner = useCallback(() => {
     setInitialQuestionnaireData(createInitialData());
     handleViewChange('questionnaire');
   }, [handleViewChange]);
 
+  const handleStartPackingAssistant = useCallback(() => {
+    setPackingRequestData(null);
+    handleViewChange('packingAssistantForm');
+  }, [handleViewChange]);
+
+  const handleStartFoodFinder = useCallback(() => {
+    setFoodRequestData(null);
+    handleViewChange('foodFinderForm');
+  }, [handleViewChange]);
+
+  const handleStartAppFinder = useCallback(() => {
+    setAppRequestData(null);
+    handleViewChange('appFinderForm');
+  }, [handleViewChange]);
+
+  const handleStartMusicFinder = useCallback(() => {
+    setMusicRequestData(null);
+    handleViewChange('musicFinderForm');
+  }, [handleViewChange]);
+
+  const handleStartLingoFinder = useCallback(() => {
+    setLingoRequestData(null);
+    handleViewChange('lingoFinderForm');
+  }, [handleViewChange]);
 
   const handleBackToHome = useCallback(() => {
     setItinerary(null);
@@ -419,8 +483,14 @@ const App: React.FC = () => {
     setFoodRecommendations(null);
     setAppRecommendations(null);
     setMusicRecommendations(null);
+    setLingoRecommendations(null);
     setInitialQuestionnaireData(null);
-    setUnifiedPlan({ itinerary: null, packingList: null, foodRecommendations: null, appRecommendations: null, musicRecommendations: null });
+    setPackingRequestData(null);
+    setFoodRequestData(null);
+    setAppRequestData(null);
+    setMusicRequestData(null);
+    setLingoRequestData(null);
+    setUnifiedPlan({ itinerary: null, packingList: null, foodRecommendations: null, appRecommendations: null, musicRecommendations: null, lingoRecommendations: null });
     setQuestionnaireDataForUnifiedPlan(null);
     handleViewChange('landing');
   }, [handleViewChange]);
@@ -448,12 +518,17 @@ const App: React.FC = () => {
         return;
     }
 
+    if (view === 'itineraryResult' || view === 'packingAssistantResult' || view === 'foodFinderResult' || view === 'appFinderResult' || view === 'musicFinderResult' || view === 'lingoFinderResult') {
+        simplePlanCancellationFlag.current = true;
+    }
+
     const formViews: Partial<Record<View, View>> = {
       'itineraryResult': 'questionnaire',
       'packingAssistantResult': 'packingAssistantForm',
       'foodFinderResult': 'foodFinderForm',
       'appFinderResult': 'appFinderForm',
       'musicFinderResult': 'musicFinderForm',
+      'lingoFinderResult': 'lingoFinderForm',
     };
     
     const targetView = formViews[view] || 'landing';
@@ -462,24 +537,55 @@ const App: React.FC = () => {
   }, [view, handleViewChange]);
 
   const handleGenerateItinerary = useCallback(async (data: QuestionnaireData) => {
+    setInitialQuestionnaireData(data);
     setIsLoading(true);
     setError(null);
     setItinerary(null);
-    setStreamedText('');
     handleViewChange('itineraryResult');
-    try {
-        const result = await generateItinerary(
-            data.destination, data.startPoint, data.tripType, data.days, data.budget, data.vibe, data.persons, data.foodPreference, data.startDate, data.includeMedical, data.language, data.isRoundTrip, data.currency,
-            (chunk) => setStreamedText(prev => prev + chunk)
-        );
-        setItinerary(result);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-    } catch (e) {
-        setError(e instanceof Error ? e.message : 'An unknown error occurred');
-        handleViewChange('questionnaire');
-    } finally {
-        setIsLoading(false);
+    
+    simplePlanCancellationFlag.current = false;
+    const maxRetries = 3;
+    let lastError: Error | null = null;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        setItineraryAttemptCount(attempt);
+        setStreamedText(''); // Reset for each attempt
+
+        if (simplePlanCancellationFlag.current) break;
+
+        try {
+            const result = await generateItinerary(
+                data.destination, data.startPoint, data.tripType, data.days, data.budget, data.vibe, data.persons, data.foodPreference, data.startDate, data.includeMedical, data.language, data.isRoundTrip, data.currency,
+                (chunk) => {
+                    if (simplePlanCancellationFlag.current) throw new Error("Cancelled");
+                    setStreamedText(prev => prev + chunk);
+                }
+            );
+            
+            if (simplePlanCancellationFlag.current) break;
+
+            setItinerary(result);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            setItineraryAttemptCount(0);
+            setIsLoading(false);
+            return; 
+
+        } catch (e) {
+            lastError = e instanceof Error ? e : new Error('An unknown error occurred');
+            console.error(`Attempt ${attempt} for itinerary failed:`, lastError);
+            
+            if (lastError.message === "Cancelled") break;
+            if (attempt < maxRetries) await new Promise(resolve => setTimeout(resolve, 1500));
+        }
     }
+    
+    if (!simplePlanCancellationFlag.current && lastError) {
+        setError(lastError.message);
+        handleViewChange('questionnaire');
+    }
+    
+    setIsLoading(false);
+    setItineraryAttemptCount(0);
   }, [handleViewChange]);
   
     // Helper to run each non-streaming generation step with retry/cancellation
@@ -530,6 +636,7 @@ const App: React.FC = () => {
             food: 'foodRecommendations',
             apps: 'appRecommendations',
             music: 'musicRecommendations',
+            lingo: 'lingoRecommendations',
         };
         return map[step];
     };
@@ -642,9 +749,16 @@ const App: React.FC = () => {
                     },
                     onSuccess: (result) => setUnifiedPlan(prev => ({ ...prev, musicRecommendations: result })),
                 },
+                lingo: {
+                    generator: () => {
+                       const lingoData: LingoFinderRequestData = { destination: data.destination, language: data.language };
+                       return generateLingoGuide(lingoData);
+                    },
+                    onSuccess: (result) => setUnifiedPlan(prev => ({ ...prev, lingoRecommendations: result })),
+                },
             };
 
-            const parallelSteps: (keyof Omit<UnifiedPlanLoadingStatus, 'itinerary'>)[] = ['packing', 'food', 'apps', 'music'];
+            const parallelSteps: (keyof Omit<UnifiedPlanLoadingStatus, 'itinerary'>)[] = ['packing', 'food', 'apps', 'music', 'lingo'];
             const stepsToRun = parallelSteps.filter(step => unifiedPlanLoadingStatus[step] === 'pending');
 
             if (stepsToRun.length > 0) {
@@ -664,8 +778,9 @@ const App: React.FC = () => {
 
 
   const handleGenerateUnifiedPlan = useCallback(async (data: QuestionnaireData) => {
+    setInitialQuestionnaireData(data);
     setQuestionnaireDataForUnifiedPlan(data);
-    setUnifiedPlan({ itinerary: null, packingList: null, foodRecommendations: null, appRecommendations: null, musicRecommendations: null });
+    setUnifiedPlan({ itinerary: null, packingList: null, foodRecommendations: null, appRecommendations: null, musicRecommendations: null, lingoRecommendations: null });
     setError(null);
     setItineraryStreamedText('');
     setItineraryAttemptCount(0);
@@ -673,7 +788,7 @@ const App: React.FC = () => {
     cancellationFlags.current = {};
     handleViewChange('unifiedResult');
     // This state change will trigger the pipeline `useEffect`
-    setUnifiedPlanLoadingStatus({ itinerary: 'pending', packing: 'pending', food: 'pending', apps: 'pending', music: 'pending' });
+    setUnifiedPlanLoadingStatus({ itinerary: 'pending', packing: 'pending', food: 'pending', apps: 'pending', music: 'pending', lingo: 'pending' });
   }, [handleViewChange]);
 
   const handleRegenerateUnifiedPlanStep = useCallback((step: keyof UnifiedPlanLoadingStatus) => {
@@ -685,20 +800,21 @@ const App: React.FC = () => {
 
     // If itinerary is regenerated, all dependent steps must be regenerated too.
     if (step === 'itinerary') {
-        setUnifiedPlan(prev => ({
-            ...prev,
+        setUnifiedPlan({
             itinerary: null,
             packingList: null,
             foodRecommendations: null,
             appRecommendations: null,
             musicRecommendations: null,
-        }));
+            lingoRecommendations: null,
+        });
         setUnifiedPlanLoadingStatus({
             itinerary: 'pending',
             packing: 'pending',
             food: 'pending',
             apps: 'pending',
             music: 'pending',
+            lingo: 'pending',
         });
         setUnifiedStepErrors({});
     } else {
@@ -718,95 +834,280 @@ const App: React.FC = () => {
 
 
   const handleGeneratePackingList = useCallback(async (data: PackingListRequestData) => {
+    setPackingRequestData(data);
     setIsLoading(true);
     setError(null);
     setPackingList(null);
-    setStreamedText('');
     handleViewChange('packingAssistantResult');
-    try {
-        const result = await generatePackingList(data, (chunk) => setStreamedText(prev => prev + chunk));
-        setPackingList(result);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-    } catch (e) {
-        setError(e instanceof Error ? e.message : 'An unknown error occurred');
-        handleViewChange('packingAssistantForm');
-    } finally {
-        setIsLoading(false);
+
+    simplePlanCancellationFlag.current = false;
+    const maxRetries = 3;
+    let lastError: Error | null = null;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        setMiniAppAttemptCount(attempt);
+        setStreamedText('');
+
+        if (simplePlanCancellationFlag.current) break;
+
+        try {
+            const result = await generatePackingList(data, (chunk) => {
+                if (simplePlanCancellationFlag.current) throw new Error("Cancelled");
+                setStreamedText(prev => prev + chunk);
+            });
+            
+            if (simplePlanCancellationFlag.current) break;
+
+            setPackingList(result);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            setMiniAppAttemptCount(0);
+            setIsLoading(false);
+            return;
+
+        } catch (e) {
+            lastError = e instanceof Error ? e : new Error('An unknown error occurred');
+            console.error(`Attempt ${attempt} for packing list failed:`, lastError);
+            
+            if (lastError.message === "Cancelled") break;
+            if (attempt < maxRetries) await new Promise(resolve => setTimeout(resolve, 1500));
+        }
     }
-  }, [handleViewChange]);
+    
+    if (!simplePlanCancellationFlag.current && lastError) {
+        setError(lastError.message);
+        handleViewChange('packingAssistantForm');
+    }
+    
+    setIsLoading(false);
+    setMiniAppAttemptCount(0);
+}, [handleViewChange]);
 
   const handleGenerateFoodRecommendations = useCallback(async (data: FoodFinderRequestData) => {
+    setFoodRequestData(data);
     setIsLoading(true);
     setError(null);
     setFoodRecommendations(null);
-    setStreamedText('');
     handleViewChange('foodFinderResult');
-    try {
-        const result = await generateFoodRecommendations(data, (chunk) => setStreamedText(prev => prev + chunk));
-        setFoodRecommendations(result);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-    } catch (e) {
-        setError(e instanceof Error ? e.message : 'An unknown error occurred');
-        handleViewChange('foodFinderForm');
-    } finally {
-        setIsLoading(false);
+    
+    simplePlanCancellationFlag.current = false;
+    const maxRetries = 3;
+    let lastError: Error | null = null;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        setMiniAppAttemptCount(attempt);
+        setStreamedText('');
+
+        if (simplePlanCancellationFlag.current) break;
+
+        try {
+            const result = await generateFoodRecommendations(data, (chunk) => {
+                if (simplePlanCancellationFlag.current) throw new Error("Cancelled");
+                setStreamedText(prev => prev + chunk)
+            });
+            
+            if (simplePlanCancellationFlag.current) break;
+
+            setFoodRecommendations(result);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            setMiniAppAttemptCount(0);
+            setIsLoading(false);
+            return;
+
+        } catch (e) {
+            lastError = e instanceof Error ? e : new Error('An unknown error occurred');
+            console.error(`Attempt ${attempt} for food recommendations failed:`, lastError);
+            
+            if (lastError.message === "Cancelled") break;
+            if (attempt < maxRetries) await new Promise(resolve => setTimeout(resolve, 1500));
+        }
     }
-  }, [handleViewChange]);
+    
+    if (!simplePlanCancellationFlag.current && lastError) {
+        setError(lastError.message);
+        handleViewChange('foodFinderForm');
+    }
+    
+    setIsLoading(false);
+    setMiniAppAttemptCount(0);
+}, [handleViewChange]);
   
   const handleGenerateAppRecommendations = useCallback(async (data: AppFinderRequestData) => {
+    setAppRequestData(data);
     setIsLoading(true);
     setError(null);
     setAppRecommendations(null);
-    setStreamedText('');
     handleViewChange('appFinderResult');
-    try {
-        const result = await generateAppRecommendations(data, (chunk) => setStreamedText(prev => prev + chunk));
-        setAppRecommendations(result);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-    } catch (e) {
-        setError(e instanceof Error ? e.message : 'An unknown error occurred');
-        handleViewChange('appFinderForm');
-    } finally {
-        setIsLoading(false);
+    
+    simplePlanCancellationFlag.current = false;
+    const maxRetries = 3;
+    let lastError: Error | null = null;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        setMiniAppAttemptCount(attempt);
+        setStreamedText('');
+
+        if (simplePlanCancellationFlag.current) break;
+
+        try {
+            const result = await generateAppRecommendations(data, (chunk) => {
+                if (simplePlanCancellationFlag.current) throw new Error("Cancelled");
+                setStreamedText(prev => prev + chunk)
+            });
+            
+            if (simplePlanCancellationFlag.current) break;
+
+            setAppRecommendations(result);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            setMiniAppAttemptCount(0);
+            setIsLoading(false);
+            return;
+
+        } catch (e) {
+            lastError = e instanceof Error ? e : new Error('An unknown error occurred');
+            console.error(`Attempt ${attempt} for app recommendations failed:`, lastError);
+            
+            if (lastError.message === "Cancelled") break;
+            if (attempt < maxRetries) await new Promise(resolve => setTimeout(resolve, 1500));
+        }
     }
-  }, [handleViewChange]);
+    
+    if (!simplePlanCancellationFlag.current && lastError) {
+        setError(lastError.message);
+        handleViewChange('appFinderForm');
+    }
+    
+    setIsLoading(false);
+    setMiniAppAttemptCount(0);
+}, [handleViewChange]);
   
   const handleGenerateMusicRecommendations = useCallback(async (data: MusicFinderRequestData) => {
+    setMusicRequestData(data);
     setIsLoading(true);
     setError(null);
     setMusicRecommendations(null);
-    setStreamedText('');
     handleViewChange('musicFinderResult');
-    try {
-        const result = await generateMusicRecommendations(data, (chunk) => setStreamedText(prev => prev + chunk));
-        setMusicRecommendations(result);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-    } catch (e) {
-        setError(e instanceof Error ? e.message : 'An unknown error occurred');
-        handleViewChange('musicFinderForm');
-    } finally {
-        setIsLoading(false);
+    
+    simplePlanCancellationFlag.current = false;
+    const maxRetries = 3;
+    let lastError: Error | null = null;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        setMiniAppAttemptCount(attempt);
+        setStreamedText('');
+
+        if (simplePlanCancellationFlag.current) break;
+
+        try {
+            const result = await generateMusicRecommendations(data, (chunk) => {
+                if (simplePlanCancellationFlag.current) throw new Error("Cancelled");
+                setStreamedText(prev => prev + chunk)
+            });
+            
+            if (simplePlanCancellationFlag.current) break;
+
+            setMusicRecommendations(result);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            setMiniAppAttemptCount(0);
+            setIsLoading(false);
+            return;
+
+        } catch (e) {
+            lastError = e instanceof Error ? e : new Error('An unknown error occurred');
+            console.error(`Attempt ${attempt} for music recommendations failed:`, lastError);
+            
+            if (lastError.message === "Cancelled") break;
+            if (attempt < maxRetries) await new Promise(resolve => setTimeout(resolve, 1500));
+        }
     }
-  }, [handleViewChange]);
+    
+    if (!simplePlanCancellationFlag.current && lastError) {
+        setError(lastError.message);
+        handleViewChange('musicFinderForm');
+    }
+    
+    setIsLoading(false);
+    setMiniAppAttemptCount(0);
+}, [handleViewChange]);
+  
+  const handleGenerateLingoGuide = useCallback(async (data: LingoFinderRequestData) => {
+    setLingoRequestData(data);
+    setIsLoading(true);
+    setError(null);
+    setLingoRecommendations(null);
+    handleViewChange('lingoFinderResult');
+    
+    simplePlanCancellationFlag.current = false;
+    const maxRetries = 3;
+    let lastError: Error | null = null;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        setMiniAppAttemptCount(attempt);
+        setStreamedText('');
+
+        if (simplePlanCancellationFlag.current) break;
+
+        try {
+            const result = await generateLingoGuide(data, (chunk) => {
+                if (simplePlanCancellationFlag.current) throw new Error("Cancelled");
+                setStreamedText(prev => prev + chunk)
+            });
+            
+            if (simplePlanCancellationFlag.current) break;
+
+            setLingoRecommendations(result);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            setMiniAppAttemptCount(0);
+            setIsLoading(false);
+            return;
+
+        } catch (e) {
+            lastError = e instanceof Error ? e : new Error('An unknown error occurred');
+            console.error(`Attempt ${attempt} for lingo guide failed:`, lastError);
+            
+            if (lastError.message === "Cancelled") break;
+            if (attempt < maxRetries) await new Promise(resolve => setTimeout(resolve, 1500));
+        }
+    }
+    
+    if (!simplePlanCancellationFlag.current && lastError) {
+        setError(lastError.message);
+        handleViewChange('lingoFinderForm');
+    }
+    
+    setIsLoading(false);
+    setMiniAppAttemptCount(0);
+}, [handleViewChange]);
+
 
   const renderContent = () => {
     if (isLoading) {
       let loadingProps;
       switch (view) {
         case 'itineraryResult':
-          loadingProps = { title: "Crafting Your Itinerary...", stages: itineraryStages, funFacts: itineraryFunFacts, accentColor: 'violet' as const };
+          loadingProps = { 
+            title: "Crafting Your Itinerary...", 
+            stages: itineraryStages, 
+            funFacts: itineraryFunFacts, 
+            accentColor: 'violet' as const,
+            attemptCount: itineraryAttemptCount,
+            maxAttempts: 3,
+            showTimer: true,
+          };
           break;
         case 'packingAssistantResult':
-          loadingProps = { title: "Building Your Packing List...", stages: packingStages, funFacts: packingFunFacts, accentColor: 'violet' as const };
+          loadingProps = { title: "Building Your Packing List...", stages: packingStages, funFacts: packingFunFacts, accentColor: 'violet' as const, attemptCount: miniAppAttemptCount, maxAttempts: 3 };
           break;
         case 'foodFinderResult':
-          loadingProps = { title: "Cooking Up Recommendations...", stages: foodStages, funFacts: foodFunFacts, accentColor: 'amber' as const };
+          loadingProps = { title: "Cooking Up Recommendations...", stages: foodStages, funFacts: foodFunFacts, accentColor: 'amber' as const, attemptCount: miniAppAttemptCount, maxAttempts: 3 };
           break;
         case 'appFinderResult':
-          loadingProps = { title: "Scanning for Local Apps...", stages: appStages, funFacts: appFunFacts, accentColor: 'teal' as const };
+          loadingProps = { title: "Scanning for Local Apps...", stages: appStages, funFacts: appFunFacts, accentColor: 'teal' as const, attemptCount: miniAppAttemptCount, maxAttempts: 3 };
           break;
         case 'musicFinderResult':
-          loadingProps = { title: "Curating Your Playlist...", stages: musicStages, funFacts: musicFunFacts, accentColor: 'fuchsia' as const };
+          loadingProps = { title: "Curating Your Playlist...", stages: musicStages, funFacts: musicFunFacts, accentColor: 'fuchsia' as const, attemptCount: miniAppAttemptCount, maxAttempts: 3 };
+          break;
+        case 'lingoFinderResult':
+          loadingProps = { title: "Translating Local Phrases...", stages: lingoStages, funFacts: lingoFunFacts, accentColor: 'sky' as const, attemptCount: miniAppAttemptCount, maxAttempts: 3 };
           break;
       }
       
@@ -827,6 +1128,7 @@ const App: React.FC = () => {
                     funFacts={itineraryFunFacts}
                     attemptCount={itineraryAttemptCount}
                     maxAttempts={3}
+                    showTimer={true}
                 />
             );
         }
@@ -837,7 +1139,7 @@ const App: React.FC = () => {
             loadingStatus={unifiedPlanLoadingStatus} 
             stepErrors={unifiedStepErrors} 
             onPlanNew={handleBackToHome} 
-            onRegenerate={() => { if(questionnaireDataForUnifiedPlan) handleGenerateUnifiedPlan(questionnaireDataForUnifiedPlan)}} 
+            onRegenerate={() => handleRegenerateUnifiedPlanStep('itinerary')} 
             onRegenerateStep={handleRegenerateUnifiedPlanStep} 
             onCancel={handleCancelGeneration} 
             onCancelStep={handleCancelUnifiedPlanStep} 
@@ -849,7 +1151,7 @@ const App: React.FC = () => {
     switch (view) {
       case 'landing':
         return (
-            <LandingPage user={user} onPlanUnifiedTrip={handleStartUnifiedPlanner} onPlanItinerary={handleStartItineraryPlanner} onStartPacking={() => handleViewChange('packingAssistantForm')} onStartFoodFinder={() => handleViewChange('foodFinderForm')} onStartAppFinder={() => handleViewChange('appFinderForm')} onStartMusicFinder={() => handleViewChange('musicFinderForm')} onOpenAuthModal={() => setIsAuthModalOpen(true)} />
+            <LandingPage user={user} onPlanUnifiedTrip={handleStartUnifiedPlanner} onPlanItinerary={handleStartItineraryPlanner} onStartPacking={handleStartPackingAssistant} onStartFoodFinder={handleStartFoodFinder} onStartAppFinder={handleStartAppFinder} onStartMusicFinder={handleStartMusicFinder} onStartLingoFinder={handleStartLingoFinder} onOpenAuthModal={() => setIsAuthModalOpen(true)} />
         );
       case 'unifiedPlannerForm':
         return <UnifiedPlannerForm onSubmit={handleGenerateUnifiedPlan} initialData={initialQuestionnaireData} onBack={handleBackToHome} error={error} />;
@@ -859,24 +1161,29 @@ const App: React.FC = () => {
         if (itinerary) return <ItineraryPreview itinerary={itinerary} onRegenerate={() => handleViewChange('questionnaire')} />;
         break;
       case 'packingAssistantForm':
-        return <PackingAssistantForm onSubmit={handleGeneratePackingList} isLoading={false} error={error} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} />;
+        return <PackingAssistantForm onSubmit={handleGeneratePackingList} isLoading={false} error={error} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} initialData={packingRequestData} />;
       case 'packingAssistantResult':
         if (packingList) return <PackingListPreview packingList={packingList} onRegenerate={() => handleViewChange('packingAssistantForm')} />;
         break;
       case 'foodFinderForm':
-        return <FoodFinderForm onSubmit={handleGenerateFoodRecommendations} isLoading={false} error={error} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} />;
+        return <FoodFinderForm onSubmit={handleGenerateFoodRecommendations} isLoading={false} error={error} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} initialData={foodRequestData} />;
       case 'foodFinderResult':
         if (foodRecommendations) return <FoodFinderResult recommendations={foodRecommendations} onRegenerate={() => handleViewChange('foodFinderForm')} />;
         break;
       case 'appFinderForm':
-        return <AppFinderForm onSubmit={handleGenerateAppRecommendations} isLoading={false} error={error} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} />;
+        return <AppFinderForm onSubmit={handleGenerateAppRecommendations} isLoading={false} error={error} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} initialData={appRequestData} />;
       case 'appFinderResult':
         if (appRecommendations) return <AppFinderResult recommendations={appRecommendations} onRegenerate={() => handleViewChange('appFinderForm')} />;
         break;
       case 'musicFinderForm':
-        return <MusicFinderForm onSubmit={handleGenerateMusicRecommendations} isLoading={false} error={error} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} />;
+        return <MusicFinderForm onSubmit={handleGenerateMusicRecommendations} isLoading={false} error={error} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} initialData={musicRequestData} />;
       case 'musicFinderResult':
         if (musicRecommendations) return <MusicFinderResult recommendations={musicRecommendations} onRegenerate={() => handleViewChange('musicFinderForm')} />;
+        break;
+      case 'lingoFinderForm':
+        return <LingoFinderForm onSubmit={handleGenerateLingoGuide} isLoading={false} error={error} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} initialData={lingoRequestData} />;
+      case 'lingoFinderResult':
+        if (lingoRecommendations) return <LingoFinderResult recommendations={lingoRecommendations} onRegenerate={() => handleViewChange('lingoFinderForm')} />;
         break;
       case 'contact':
         return <ContactUs onBack={handleBackToHome} />;
@@ -886,31 +1193,49 @@ const App: React.FC = () => {
     
     // Fallback for any unhandled case or error state where data is null
     return (
-        <LandingPage user={user} onPlanUnifiedTrip={handleStartUnifiedPlanner} onPlanItinerary={handleStartItineraryPlanner} onStartPacking={() => handleViewChange('packingAssistantForm')} onStartFoodFinder={() => handleViewChange('foodFinderForm')} onStartAppFinder={() => handleViewChange('appFinderForm')} onStartMusicFinder={() => handleViewChange('musicFinderForm')} onOpenAuthModal={() => setIsAuthModalOpen(true)} />
+        <LandingPage user={user} onPlanUnifiedTrip={handleStartUnifiedPlanner} onPlanItinerary={handleStartItineraryPlanner} onStartPacking={handleStartPackingAssistant} onStartFoodFinder={handleStartFoodFinder} onStartAppFinder={handleStartAppFinder} onStartMusicFinder={handleStartMusicFinder} onStartLingoFinder={handleStartLingoFinder} onOpenAuthModal={() => setIsAuthModalOpen(true)} />
     );
   };
 
   return (
     <>
-      {view === 'landing' && (
-        <Header 
-          user={user}
-          onLogin={handleLogin}
-          onSignup={handleSignup}
-          onLogout={handleLogout}
-          onEditProfile={handleEditProfile}
-          isLoading={isAuthLoading}
-          error={authError}
-          isAuthModalOpen={isAuthModalOpen}
-          onOpenAuthModal={() => setIsAuthModalOpen(true)}
-          onCloseAuthModal={() => setIsAuthModalOpen(false)}
+      <div className="page-content-wrapper">
+        {view === 'landing' && (
+          <Header 
+            user={user}
+            onLogin={handleLogin}
+            onSignup={handleSignup}
+            onLogout={handleLogout}
+            onEditProfile={handleEditProfile}
+            isLoading={isAuthLoading}
+            error={authError}
+            isAuthModalOpen={isAuthModalOpen}
+            onOpenAuthModal={() => setIsAuthModalOpen(true)}
+            onCloseAuthModal={() => setIsAuthModalOpen(false)}
+          />
+        )}
+        <div ref={mainContentRef} className="min-h-screen">
+          <main className={`container mx-auto px-4 sm:px-6 lg:px-8 pb-24 sm:pb-8 relative ${view === 'landing' ? 'pt-32' : 'pt-8'}`}>
+              {renderContent()}
+          </main>
+        </div>
+      </div>
+      
+      {view !== 'unifiedResult' && !isLoading && (
+        <Navigation
+            onGoHome={handleBackToHome}
+            onGoToContact={() => handleViewChange('contact')}
+            onPlanTrip={() => handleStartUnifiedPlanner()}
+            onStartItineraryPlanner={handleStartItineraryPlanner}
+            onStartPacking={handleStartPackingAssistant}
+            onStartFoodFinder={handleStartFoodFinder}
+            onStartAppFinder={handleStartAppFinder}
+            onStartMusicFinder={handleStartMusicFinder}
+            onStartLingoFinder={handleStartLingoFinder}
+            activeView={view}
+            isFormView={isFormView}
         />
       )}
-      <div ref={mainContentRef} className="min-h-screen">
-        <main className={`container mx-auto px-4 sm:px-6 lg:px-8 pb-24 sm:pb-8 relative ${view === 'landing' ? 'pt-32' : 'pt-8'}`}>
-            {renderContent()}
-        </main>
-      </div>
       {view !== 'unifiedResult' && (
         <>
             <QuickNavButton

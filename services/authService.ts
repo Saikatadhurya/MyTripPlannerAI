@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/auth'; // Replace with your backend URL if different
+const API_URL = 'http://localhost:5000/auth'; // Backend auth API URL
 
 export interface User {
   id: string;

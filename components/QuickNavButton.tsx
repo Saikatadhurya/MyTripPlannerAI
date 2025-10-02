@@ -1,15 +1,16 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { User } from '../services/authService';
 
 interface QuickNavButtonProps {
   user: User | null;
   onPlanTrip: () => void;
-  onPlanItinerary: () => void;
+  // FIX: Renamed prop to be consistent with BottomNavBarProps
+  onStartItineraryPlanner: () => void;
   onStartPacking: () => void;
   onStartFoodFinder: () => void;
   onStartAppFinder: () => void;
   onStartMusicFinder: () => void;
+  onStartLingoFinder: () => void;
   onGoHome: () => void;
   onGoToContact: () => void;
   onOpenAuthModal: () => void;
@@ -18,11 +19,13 @@ interface QuickNavButtonProps {
 const QuickNavButton: React.FC<QuickNavButtonProps> = ({
   user,
   onPlanTrip,
-  onPlanItinerary,
+  // FIX: Renamed prop to be consistent with BottomNavBarProps
+  onStartItineraryPlanner,
   onStartPacking,
   onStartFoodFinder,
   onStartAppFinder,
   onStartMusicFinder,
+  onStartLingoFinder,
   onGoHome,
   onGoToContact,
   onOpenAuthModal,
@@ -63,9 +66,10 @@ const QuickNavButton: React.FC<QuickNavButtonProps> = ({
     {
         title: 'Quick Tools',
         items: [
+            // FIX: Renamed prop to be consistent with BottomNavBarProps
             { 
                 label: 'Day-by-Day Itinerary', 
-                action: user ? onPlanItinerary : onOpenAuthModal, 
+                action: user ? onStartItineraryPlanner : onOpenAuthModal, 
                 icon: user ? '🗓️' : '🔒',
                 locked: !user,
                 tooltip: user ? undefined : 'Sign in to unlock'
@@ -98,6 +102,7 @@ const QuickNavButton: React.FC<QuickNavButtonProps> = ({
                 locked: !user,
                 tooltip: user ? undefined : 'Sign in to unlock'
             },
+            { label: 'Local Lingo Guide', action: onStartLingoFinder, icon: '🗣️' },
         ]
     },
     {
@@ -112,7 +117,7 @@ const QuickNavButton: React.FC<QuickNavButtonProps> = ({
   let itemIndex = 0;
 
   return (
-    <div ref={navRef} className="fixed bottom-6 left-6 z-50 no-print hidden sm:block" aria-live="polite">
+    <div ref={navRef} className="fixed bottom-6 left-6 z-50 no-print" aria-live="polite">
       {/* Wrapper to handle positioning and animation context */}
       <div className="relative flex flex-col items-start">
 

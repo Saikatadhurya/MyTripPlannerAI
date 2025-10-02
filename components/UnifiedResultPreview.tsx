@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { UnifiedPlan, UnifiedPlanLoadingStatus } from '../types';
 import ItineraryPreview from './ItineraryPreview';
@@ -8,15 +6,17 @@ import FoodFinderResult from './FoodFinderResult';
 import AppFinderResult from './AppFinderResult';
 import MusicFinderResult from './MusicFinderResult';
 import Guidebook from './Guidebook';
+import LingoFinderResult from './LingoFinderResult';
 
-type Tab = 'itinerary' | 'packing' | 'food' | 'apps' | 'music';
+type Tab = 'itinerary' | 'packing' | 'food' | 'apps' | 'music' | 'lingo';
 
 const tabs: { id: Tab; name: string; icon: React.ReactNode }[] = [
-    { id: 'itinerary', name: 'Itinerary', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" /><path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h.01a1 1 0 100-2H10zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h.01a1 1 0 100-2H10z" clipRule="evenodd" /></svg> },
-    { id: 'packing', name: 'Packing', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 2a3 3 0 00-3 3v1H5a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V8a2 2 0 00-2-2h-2V5a3 3 0 00-3-3zm-1 4a1 1 0 10-2 0v1h2V6z" clipRule="evenodd" /></svg> },
-    { id: 'food', name: 'Food Guide', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a1 1 0 011 1v1a1 1 0 01-2 0V3a1 1 0 011-1zM4 9a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zm3 3a1 1 0 00-1 1v4a1 1 0 102 0v-4a1 1 0 00-1-1zm5 0a1 1 0 00-1 1v4a1 1 0 102 0v-4a1 1 0 00-1-1z" /></svg> },
-    { id: 'apps', name: 'Local Apps', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M7 2a2 2 0 00-2 2v12a2 2 0 002 2h6a2 2 0 002-2V4a2 2 0 00-2-2H7zm3 14a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" /></svg> },
-    { id: 'music', name: 'Music', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3V4a1 1 0 00-1-1z" /></svg> },
+    { id: 'itinerary', name: 'Itinerary', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" /><path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h.01a1 1 0 100-2H10zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h.01a1 1 0 100-2H10z" clipRule="evenodd" /></svg> },
+    { id: 'packing', name: 'Packing', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 2a3 3 0 00-3 3v1H5a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V8a2 2 0 00-2-2h-2V5a3 3 0 00-3-3zm-1 4a1 1 0 10-2 0v1h2V6z" clipRule="evenodd" /></svg> },
+    { id: 'food', name: 'Food Guide', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21.5,12a9.5,9.5 0 1,1 -19,0" /><path strokeLinecap="round" strokeLinejoin="round" d="M12,2a10,10 0 0,0 -10,10 h20 a10,10 0 0,0 -10,-10" /><path strokeLinecap="round" strokeLinejoin="round" d="M12,18v4" /></svg> },
+    { id: 'apps', name: 'Local Apps', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M7 2a2 2 0 00-2 2v12a2 2 0 002 2h6a2 2 0 002-2V4a2 2 0 00-2-2H7zm3 14a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" /></svg> },
+    { id: 'music', name: 'Music', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 18V5l12-2v13M9 18a3 3 0 11-6 0 3 3 0 016 0zm12-2a3 3 0 11-6 0 3 3 0 016 0z" /></svg> },
+    { id: 'lingo', name: 'Lingo', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18 3a1 1 0 00-1.447-.894L4.12 6.586a1 1 0 000 1.828l11.44-3.578A1 1 0 0018 3zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" /></svg> },
 ];
 
 interface UnifiedResultPreviewProps {
@@ -25,9 +25,9 @@ interface UnifiedResultPreviewProps {
     stepErrors: Partial<Record<keyof UnifiedPlanLoadingStatus, string>>;
     onPlanNew: () => void;
     onRegenerate: () => void;
-    onRegenerateStep: (step: Tab) => void;
+    onRegenerateStep: (step: keyof UnifiedPlanLoadingStatus) => void;
     onCancel: () => void;
-    onCancelStep: (step: Tab) => void;
+    onCancelStep: (step: keyof UnifiedPlanLoadingStatus) => void;
     onTabChangeScrollToTop: () => void;
     itineraryStreamedText: string;
 }
@@ -35,7 +35,6 @@ interface UnifiedResultPreviewProps {
 const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadingStatus, stepErrors, onPlanNew, onRegenerate, onRegenerateStep, onCancel, onCancelStep, onTabChangeScrollToTop, itineraryStreamedText }) => {
     const [activeTab, setActiveTab] = useState<Tab>('itinerary');
     const [isExportingPdf, setIsExportingPdf] = useState(false);
-    const [isPrinting, setIsPrinting] = useState(false);
     
     const isPlanComplete = Object.values(loadingStatus).every(status => status === 'done');
 
@@ -43,27 +42,57 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
         onTabChangeScrollToTop();
     }, [activeTab, onTabChangeScrollToTop]);
 
-    const handleAfterPrint = () => {
-        setIsPrinting(false);
-        setIsExportingPdf(false);
-        window.removeEventListener('afterprint', handleAfterPrint);
-    };
-
     useEffect(() => {
-        if (isPrinting) {
-            window.addEventListener('afterprint', handleAfterPrint);
-            window.print();
+        if (isExportingPdf) {
+            const mediaQueryList = window.matchMedia('print');
+    
+            const handlePrintChange = (mql: MediaQueryListEvent) => {
+                // If the media query no longer matches, the print dialog has been closed.
+                if (!mql.matches) {
+                    document.body.classList.remove('printing-guidebook');
+                    setIsExportingPdf(false);
+                    // Clean up the listener once it has done its job.
+                    mediaQueryList.removeEventListener('change', handlePrintChange);
+                }
+            };
+    
+            mediaQueryList.addEventListener('change', handlePrintChange);
+    
+            document.body.classList.add('printing-guidebook');
+            // A short timeout allows the loader modal to render before the blocking print dialog appears.
+            const printTimeout = setTimeout(() => {
+                window.print();
+            }, 100);
+    
+            // Cleanup function for when the component unmounts or isExportingPdf becomes false.
+            return () => {
+                clearTimeout(printTimeout);
+                document.body.classList.remove('printing-guidebook');
+                mediaQueryList.removeEventListener('change', handlePrintChange);
+            };
         }
-
-        return () => {
-            window.removeEventListener('afterprint', handleAfterPrint);
-        };
-    }, [isPrinting]);
-
+    }, [isExportingPdf]);
+    
     const handleExportPdf = () => {
         if (isExportingPdf || !isPlanComplete) return;
         setIsExportingPdf(true);
-        setIsPrinting(true);
+    };
+
+    const handlePrintSection = (tabId: Tab) => {
+        const body = document.body;
+        const printClasses = ['printing-single-tab', `printing-${tabId}`];
+
+        // Add classes to the body to scope the print styles
+        body.classList.add(...printClasses);
+
+        const cleanup = () => {
+            // Remove the classes after printing is done or cancelled
+            body.classList.remove(...printClasses);
+            window.removeEventListener('afterprint', cleanup);
+        };
+
+        window.addEventListener('afterprint', cleanup);
+        window.print();
     };
     
     const getPlanDataForTab = (tab: Tab) => {
@@ -73,6 +102,7 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
             case 'food': return plan.foodRecommendations;
             case 'apps': return plan.appRecommendations;
             case 'music': return plan.musicRecommendations;
+            case 'lingo': return plan.lingoRecommendations;
             default: return null;
         }
     };
@@ -127,15 +157,17 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
 
         switch (activeTab) {
             case 'itinerary':
-                return <ItineraryPreview itinerary={plan.itinerary!} onRegenerate={onRegenerate} isUnifiedView />;
+                return <ItineraryPreview itinerary={plan.itinerary!} onRegenerate={onRegenerate} isUnifiedView onPrint={() => handlePrintSection('itinerary')} />;
             case 'packing':
-                return <PackingListPreview packingList={plan.packingList!} onRegenerate={onRegenerate} isUnifiedView />;
+                return <PackingListPreview packingList={plan.packingList!} onRegenerate={onRegenerate} isUnifiedView onPrint={() => handlePrintSection('packing')} />;
             case 'food':
-                return <FoodFinderResult recommendations={plan.foodRecommendations!} onRegenerate={onRegenerate} isUnifiedView />;
+                return <FoodFinderResult recommendations={plan.foodRecommendations!} onRegenerate={onRegenerate} isUnifiedView onPrint={() => handlePrintSection('food')} />;
             case 'apps':
-                return <AppFinderResult recommendations={plan.appRecommendations!} onRegenerate={onRegenerate} isUnifiedView />;
+                return <AppFinderResult recommendations={plan.appRecommendations!} onRegenerate={onRegenerate} isUnifiedView onPrint={() => handlePrintSection('apps')} />;
             case 'music':
-                return <MusicFinderResult recommendations={plan.musicRecommendations!} onRegenerate={onRegenerate} isUnifiedView />;
+                return <MusicFinderResult recommendations={plan.musicRecommendations!} onRegenerate={onRegenerate} isUnifiedView onPrint={() => handlePrintSection('music')} />;
+            case 'lingo':
+                return <LingoFinderResult recommendations={plan.lingoRecommendations!} onRegenerate={() => onRegenerateStep('lingo')} isUnifiedView onPrint={() => handlePrintSection('lingo')} />;
             default:
                 return null;
         }
@@ -143,13 +175,28 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
     
     return (
         <>
-            {isPrinting && (
-                <div className="printable-container">
-                    <Guidebook plan={plan} />
+            {isExportingPdf && (
+                <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex flex-col items-center justify-center z-[100] no-print fade-in">
+                    <div className="bg-white p-8 rounded-2xl shadow-xl text-center">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-600 mx-auto"></div>
+                        <h3 className="mt-6 text-2xl font-bold text-slate-800">Preparing Guidebook...</h3>
+                        <p className="mt-2 text-slate-600">Please wait while we generate your personalized PDF.</p>
+                        <button
+                            onClick={() => setIsExportingPdf(false)}
+                            className="mt-6 px-6 py-2 bg-slate-200 text-slate-700 font-semibold rounded-full hover:bg-slate-300 transition-colors"
+                        >
+                            Cancel
+                        </button>
+                    </div>
                 </div>
             )}
-            <div className={`max-w-7xl mx-auto space-y-8 animated-card ${isPrinting ? 'no-print' : ''}`}>
-                <header className="flex flex-col sm:flex-row justify-between items-center gap-4 py-4 no-print">
+            
+            <div className="printable-container">
+                <Guidebook plan={plan} />
+            </div>
+
+            <div className="max-w-7xl mx-auto space-y-8 animated-card unified-interactive-view">
+                <header className="flex flex-col sm:flex-row justify-between items-center gap-4 py-4 no-print unified-header">
                      <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight text-center sm:text-left">
                         Your Unified Trip Plan to <span className="text-violet-700">{plan.itinerary?.destination || '...'}</span>
                     </h1>
@@ -190,9 +237,9 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
                 </header>
                 
                 {/* Responsive Navigation */}
-                <nav className="no-print fixed bottom-0 left-0 right-0 z-30 sm:sticky sm:top-4 sm:mb-2">
-                    <div className="w-full bg-white/80 backdrop-blur-xl border-t border-white/50 shadow-[0_-5px_15px_-5px_rgba(0,0,0,0.1)] sm:max-w-max sm:mx-auto sm:rounded-full sm:p-1 sm:border sm:shadow-lg">
-                        <div className="flex justify-around sm:justify-center sm:space-x-1">
+                <nav className="no-print fixed bottom-0 left-0 right-0 z-50 md:sticky md:top-4 md:z-40 md:mb-6 unified-nav">
+                    <div className="w-full bg-white/80 backdrop-blur-xl border-t border-white/50 shadow-[0_-10px_25px_-5px_rgba(0,0,0,0.1),_0_-8px_10px_-6px_rgba(0,0,0,0.1)] md:max-w-max md:mx-auto md:rounded-full md:p-1 md:border md:shadow-lg">
+                        <div className="flex h-20 md:h-auto justify-around md:justify-center md:space-x-1">
                             {tabs.map(tab => {
                                 const status = loadingStatus[tab.id];
                                 const dataExists = !!getPlanDataForTab(tab.id);
@@ -201,14 +248,14 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
                                     <button
                                         key={tab.id}
                                         onClick={() => setActiveTab(tab.id)}
-                                        className={`relative flex flex-col items-center justify-center flex-1 pt-2 pb-1 transition-colors duration-200 sm:flex-row sm:flex-none sm:px-4 sm:py-2 sm:space-x-2 sm:rounded-full
+                                        className={`relative flex flex-col items-center justify-center flex-1 space-y-1 transition-colors duration-200 md:flex-row md:flex-none md:px-4 md:py-2 md:space-x-2 md:rounded-full
                                             ${activeTab === tab.id
-                                                ? 'text-violet-600 sm:bg-violet-600 sm:text-white sm:shadow'
+                                                ? 'text-violet-600 md:bg-violet-600 md:text-white md:shadow'
                                                 : 'text-slate-600 hover:bg-violet-100/70'
                                             }`}
                                         aria-current={activeTab === tab.id ? 'page' : undefined}
                                     >
-                                        <div className="relative">
+                                        <div className="relative flex-shrink-0">
                                             {tab.icon}
                                             {/* Status Indicator Dot */}
                                             {status !== 'pending' && (
@@ -219,7 +266,7 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
                                                 `}></span>
                                             )}
                                         </div>
-                                        <span className="text-xs font-semibold sm:text-sm">{tab.name}</span>
+                                        <span className="text-xs font-semibold md:text-sm">{tab.name}</span>
                                     </button>
                                 );
                             })}
@@ -227,12 +274,11 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadi
                     </div>
                 </nav>
 
-
-                <main className="mt-6">
+                <main>
                     {renderTabContent()}
                 </main>
                 {/* Spacer for bottom nav on mobile */}
-                <div className="h-20 sm:h-0" />
+                <div className="h-20 md:h-0" />
             </div>
         </>
     );

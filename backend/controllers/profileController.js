@@ -189,10 +189,10 @@ class ProfileController {
   async connectSocialAccount(req, res) {
     try {
       const userId = req.user.id;
-      const { provider, providerId } = req.body;
+      const { provider, provider_id } = req.body;
 
       // Validate input
-      if (!provider || !providerId) {
+      if (!provider || !provider_id) {
         return res.status(400).json({
           success: false,
           message: 'Provider and provider ID are required'
@@ -206,7 +206,7 @@ class ProfileController {
         });
       }
 
-      const socialAccount = await userModel.connectSocialAccount(userId, provider.toLowerCase(), providerId);
+      const socialAccount = await userModel.connectSocialAccount(userId, provider.toLowerCase(), provider_id);
 
       res.json({
         success: true,

@@ -1,4 +1,3 @@
-
 import { GoogleGenAI } from "@google/genai";
 import { AppFinderRequestData, AppRecommendations } from '../types';
 import { extractJson, cleanCitations } from './jsonUtils';
@@ -25,7 +24,7 @@ export const generateAppRecommendations = async (data: AppFinderRequestData, onC
   }
 
   const prompt = `
-    You are a tech-savvy local guide and an expert global travel assistant. Your mission is to provide a traveler with a curated list of the most useful, relevant, and currently available mobile apps for their trip to ${destinationsString}. Your recommendations MUST include popular local alternatives to global apps.
+    You are a tech-savvy local guide and an expert global travel assistant. Your mission is to provide a traveler with a curated list of the most useful, relevant, and currently available mobile apps for their trip to ${destinationsString}, written in ${language}. Your recommendations MUST include popular local alternatives to global apps.
     ${multiStopInstructions}
 
     **CRITICAL INSTRUCTIONS & PROTOCOL:**

@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect } from 'react';
 import { Itinerary } from '../types';
 import ExportOptions from './ExportOptions';
@@ -10,32 +9,6 @@ const parseBold = (text: string | undefined) => {
   if (!text) return { __html: '' };
   // Simple regex to replace **text** with <strong>text</strong>
   return { __html: text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') };
-};
-
-const InfoSection: React.FC<{ title: string; icon: React.ReactNode; items?: string[]; children?: React.ReactNode }> = ({ title, icon, items, children }) => {
-  if ((!items || items.length === 0) && !children) {
-    return null;
-  }
-  return (
-    <div className="bg-white/40 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/50 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-      <div className="flex items-center space-x-4 mb-4">
-        <div className="flex-shrink-0 bg-violet-100 text-violet-600 rounded-lg p-3">
-          {icon}
-        </div>
-        <h3 className="text-xl font-bold text-slate-800 break-words">{title}</h3>
-      </div>
-      <div className="prose prose-slate max-w-none text-gray-700 pl-1">
-        {children}
-        {items && items.length > 0 && (
-          <ul className="list-disc pl-5 space-y-1">
-            {items.map((item, index) => (
-              <li key={index} dangerouslySetInnerHTML={parseBold(item)} />
-            ))}
-          </ul>
-        )}
-      </div>
-    </div>
-  );
 };
 
 const SummaryItem: React.FC<{ icon: React.ReactNode; label: string; children: React.ReactNode }> = ({ icon, label, children }) => (
@@ -116,9 +89,88 @@ interface ItineraryPreviewProps {
   itinerary: Itinerary;
   onRegenerate: () => void;
   isUnifiedView?: boolean;
+  onPrint?: () => void;
 }
 
-const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegenerate, isUnifiedView = false }) => {
+const getAboutSectionsForDestination = (destinationDetails: Itinerary['coveredDestinations'][0]) => {
+    const iconClass = "h-5 w-5";
+    return [
+      { title: 'History', items: destinationDetails.historicBackground, content: null, icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg> },
+      { title: 'Culture', items: destinationDetails.famousCulture, content: null, icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M15 21a6 6 0 00-9-5.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-3-5.197m0 0A7.962 7.962 0 0112 4.354a7.962 7.962 0 013 3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 003-5.197z" /></svg> },
+      { title: 'Nature', items: destinationDetails.naturalPlaces, content: null, icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9V3m0 18a9 9 0 009-9m-9 9a9 9 0 00-9-9" /></svg> },
+      { title: 'Museums', items: destinationDetails.museums, content: null, icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" /></svg> },
+      { title: 'Restaurants', items: destinationDetails.recommendedRestaurants, content: null, icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM18 13.5l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 18l-1.035.259a3.375 3.375 0 00-2.456 2.456L18 21.75l-.259-1.035a3.375 3.375 0 00-2.456-2.456L14.25 18l1.035-.259a3.375 3.375 0 002.456-2.456L18 13.5z" /></svg> },
+      { title: 'Souvenirs', items: destinationDetails.specialOrnaments, content: null, icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" /></svg> },
+      { title: 'Events', items: null, content: destinationDetails.specialEvents, icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg> },
+    ];
+};
+
+const DestinationInfoTabs: React.FC<{ destinationDetails: Itinerary['coveredDestinations'][0] }> = ({ destinationDetails }) => {
+    const sections = getAboutSectionsForDestination(destinationDetails);
+    const availableSections = sections.filter(section => (section.content || (Array.isArray(section.items) && section.items.length > 0)));
+    const [activeTab, setActiveTab] = useState(availableSections[0]?.title || '');
+
+    if (availableSections.length === 0) {
+        return null;
+    }
+
+    return (
+        <div className="bg-white/40 backdrop-blur-lg rounded-2xl shadow-lg border border-white/50 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+            <nav className="no-print border-b border-violet-200/50 p-2 sm:p-3">
+                <div className="flex space-x-1 sm:space-x-2 overflow-x-auto hide-scrollbar [mask-image:linear-gradient(to_right,rgba(0,0,0,1)_85%,rgba(0,0,0,0))] lg:[mask-image:none]">
+                    {availableSections.map(section => (
+                        <button
+                            key={section.title}
+                            onClick={() => setActiveTab(section.title)}
+                            className={`flex-shrink-0 flex items-center space-x-2 px-3 py-2 text-sm sm:text-base font-semibold rounded-md transition-all duration-200 ${
+                                activeTab === section.title
+                                ? 'bg-violet-600 text-white shadow'
+                                : 'text-slate-600 hover:bg-white/60'
+                            }`}
+                        >
+                            {section.icon}
+                            <span>{section.title}</span>
+                        </button>
+                    ))}
+                </div>
+            </nav>
+
+            <div key={activeTab} className="relative p-4 sm:p-6" style={{animation: 'fadeIn 0.4s ease-out'}}>
+                {availableSections.map(section => {
+                    const isActive = activeTab === section.title;
+                    return (
+                        <div
+                            key={section.title}
+                            className={`destination-info-tab-content ${isActive ? 'block' : 'hidden'} print:block print:mb-8`}
+                        >
+                            <div className="hidden print:flex items-center space-x-4 mb-4">
+                                <div className="flex-shrink-0 bg-violet-100 text-violet-600 rounded-lg p-3">
+                                    {section.icon}
+                                </div>
+                                <h3 className="text-xl font-bold text-slate-800">{section.title}</h3>
+                            </div>
+                            <div className="prose prose-slate max-w-none text-gray-700 print:pl-1">
+                                {section.content && (
+                                    <div dangerouslySetInnerHTML={parseBold(section.content as string)} />
+                                )}
+                                {Array.isArray(section.items) && section.items.length > 0 && (
+                                    <ul className="list-disc pl-5 space-y-1">
+                                        {section.items.map((item, index) => (
+                                            <li key={index} dangerouslySetInnerHTML={parseBold(item)} />
+                                        ))}
+                                    </ul>
+                                )}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+};
+
+
+const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegenerate, isUnifiedView = false, onPrint }) => {
   const [blogs, setBlogs] = useState<Itinerary['referenceBlogs']>([]);
   const [isLoadingBlogs, setIsLoadingBlogs] = useState(true);
   
@@ -138,7 +190,6 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
     day: 'numeric',
   });
   
-  const iconClass = "h-6 w-6";
   const currencySymbol = getCurrencySymbol(itinerary.currency);
   const isRoadTrip = itinerary.tripType === 'Car' || itinerary.tripType === 'Bike';
 
@@ -200,18 +251,6 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
     }
   ];
   
-  const getAboutSectionsForDestination = (destinationDetails: Itinerary['coveredDestinations'][0]) => {
-    return [
-      { title: 'History', items: destinationDetails.historicBackground, icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg> },
-      { title: 'Culture', items: destinationDetails.famousCulture, icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M15 21a6 6 0 00-9-5.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-3-5.197m0 0A7.962 7.962 0 0112 4.354a7.962 7.962 0 013 3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 003-5.197z" /></svg> },
-      { title: 'Nature', items: destinationDetails.naturalPlaces, icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9V3m0 18a9 9 0 009-9m-9 9a9 9 0 00-9-9" /></svg> },
-      { title: 'Museums', items: destinationDetails.museums, icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" /></svg> },
-      { title: 'Restaurants', items: destinationDetails.recommendedRestaurants, icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM18 13.5l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 18l-1.035.259a3.375 3.375 0 00-2.456 2.456L18 21.75l-.259-1.035a3.375 3.375 0 00-2.456-2.456L14.25 18l1.035-.259a3.375 3.375 0 002.456-2.456L18 13.5z" /></svg> },
-      { title: 'Souvenirs', items: destinationDetails.specialOrnaments, icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" /></svg> },
-      { title: 'Events', content: destinationDetails.specialEvents, icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg> },
-    ].filter(section => (section.content || (section.items && section.items.length > 0)));
-  };
-
   const generateMapsUrl = () => {
     const waypoints: string[] = [];
 
@@ -385,44 +424,78 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
             </div>
         </section>
       )}
+
+      {isLoadingBlogs ? (
+        <section>
+          <h2 className="text-3xl font-bold text-slate-800 mb-6 animated-card flex items-center space-x-3" style={{ animationDelay: '900ms' }}>
+             <svg className="animate-spin h-6 w-6 text-violet-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+             <span>Finding helpful blogs...</span>
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {Array(2).fill(0).map((_, i) => (
+              <div key={i} className="bg-white/40 p-5 rounded-xl border border-white/50 shadow-lg animate-pulse">
+                <div className="h-4 bg-slate-200/50 rounded w-1/4"></div>
+                <div className="h-5 bg-slate-200/50 rounded mt-2 w-3/4"></div>
+                <div className="h-4 bg-slate-200/50 rounded mt-3 w-full"></div>
+                <div className="h-4 bg-slate-200/50 rounded mt-1 w-5/6"></div>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : (
+        blogs && blogs.length > 0 && (
+        <section>
+          <h2 className="text-3xl font-bold text-slate-800 mb-6 animated-card" style={{ animationDelay: '900ms' }}>Reference Blog Posts</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {blogs.map((blog, index) => {
+               const isTransport = isTransportBlog(blog);
+               return (
+                <a 
+                  key={index}
+                  href={blog.url} target="_blank" rel="noopener noreferrer"
+                  className={`block p-5 rounded-xl shadow-lg border transition-all duration-300 hover:shadow-xl hover:-translate-y-1 animated-card ${
+                    isTransport 
+                      ? 'bg-sky-50/40 backdrop-blur-lg border-sky-300/50 hover:border-sky-400/50' 
+                      : 'bg-white/40 backdrop-blur-lg border-white/50 hover:border-violet-300/50'
+                  }`}
+                   style={{ animationDelay: `${950 + index * 100}ms` }}
+                >
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      {blog.source && <p className={`text-xs font-semibold uppercase tracking-wider ${isTransport ? 'text-sky-600' : 'text-violet-600'}`}>{blog.source}</p>}
+                      <h4 className="text-lg font-bold text-slate-800 mt-1 hover:underline break-words">{blog.title}</h4>
+                    </div>
+                    {isTransport && (
+                      <div className="flex-shrink-0 ml-4 bg-sky-100 text-sky-600 rounded-full p-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M18.562 6.077C18.238 5.437 17.562 5 16.808 5H3.192c-.754 0-1.43.437-1.754 1.077L.05 9.423A.5.5 0 00.5 10h19a.5.5 0 00.45-.577l-1.388-3.346zM2 11v4a1 1 0 001 1h1a1 1 0 001-1v-4H2zm15 0v4a1 1 0 001 1h1a1 1 0 001-1v-4h-3zM5 11v4a1 1 0 001 1h8a1 1 0 001-1v-4H5z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-sm text-slate-600 mt-2">{blog.description}</p>
+                </a>
+              );
+            })}
+          </div>
+        </section>
+        )
+      )}
       
       <section>
-        <h2 className="text-3xl font-bold text-slate-800 mb-6 animated-card" style={{ animationDelay: '900ms' }}>About the Destinations</h2>
+        <h2 className="text-3xl font-bold text-slate-800 mb-6 animated-card" style={{ animationDelay: '1050ms' }}>About the Destinations</h2>
         <div className="space-y-10">
-          {itinerary.coveredDestinations && itinerary.coveredDestinations.map((dest, destIndex) => {
-            const aboutSections = getAboutSectionsForDestination(dest);
-            const eventSection = aboutSections.find(s => s.title === 'Events');
-            const otherSections = aboutSections.filter(s => s.title !== 'Events');
-            
-            return (
-              <div key={destIndex} className="animated-card" style={{ animationDelay: `${950 + destIndex * 200}ms` }}>
+          {itinerary.coveredDestinations?.map((dest, destIndex) => (
+            <div key={destIndex} className="animated-card" style={{ animationDelay: `${1100 + destIndex * 200}ms` }}>
                 <h3 className="text-2xl font-bold text-slate-700 mb-4 border-b border-violet-200 pb-2 break-words" dangerouslySetInnerHTML={parseBold(dest.name)} />
-                {otherSections.length > 0 && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {otherSections.map((section, index) => (
-                      <InfoSection key={index} title={section.title} icon={section.icon} items={section.items}>
-                        {section.content && !section.items ? (
-                          <div dangerouslySetInnerHTML={parseBold(section.content as string)} />
-                        ) : null}
-                      </InfoSection>
-                    ))}
-                  </div>
-                )}
-                {eventSection && (
-                    <div className="mt-6">
-                        <InfoSection title={eventSection.title} icon={eventSection.icon}>
-                           {eventSection.content && <div dangerouslySetInnerHTML={parseBold(eventSection.content as string)} />}
-                        </InfoSection>
-                    </div>
-                )}
-              </div>
-            )
-          })}
+                <DestinationInfoTabs destinationDetails={dest} />
+            </div>
+          ))}
         </div>
       </section>
 
       <section className="space-y-8">
-        <h2 className="text-3xl font-bold text-slate-800 animated-card" style={{ animationDelay: '1050ms' }}>Daily Itinerary</h2>
+        <h2 className="text-3xl font-bold text-slate-800 animated-card" style={{ animationDelay: '1200ms' }}>Daily Itinerary</h2>
         {itinerary.plan.map((day, index) => {
           let dailyFuelCostPerPerson = 0;
           let totalDailyCostPerPerson = parseFloat(day.approxCost) || 0;
@@ -438,7 +511,7 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
           }
 
           return (
-          <div key={day.day} className="bg-white/40 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/50 transition-all duration-300 hover:shadow-2xl hover:border-violet-300/50 hover:-translate-y-1 animated-card" style={{ animationDelay: `${1100 + index * 100}ms` }}>
+          <div key={day.day} className="bg-white/40 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/50 transition-all duration-300 hover:shadow-2xl hover:border-violet-300/50 hover:-translate-y-1 animated-card" style={{ animationDelay: `${1250 + index * 100}ms` }}>
             <div className="flex justify-between items-start">
               <div className="flex-1">
                 <p className="text-sm font-semibold text-violet-700">Day {day.day}</p>
@@ -528,65 +601,8 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
         )})}
       </section>
 
-      {isLoadingBlogs ? (
-        <section>
-          <h2 className="text-3xl font-bold text-slate-800 mb-6 animated-card flex items-center space-x-3">
-             <svg className="animate-spin h-6 w-6 text-violet-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-             <span>Finding helpful blogs...</span>
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {Array(2).fill(0).map((_, i) => (
-              <div key={i} className="bg-white/40 p-5 rounded-xl border border-white/50 shadow-lg animate-pulse">
-                <div className="h-4 bg-slate-200/50 rounded w-1/4"></div>
-                <div className="h-5 bg-slate-200/50 rounded mt-2 w-3/4"></div>
-                <div className="h-4 bg-slate-200/50 rounded mt-3 w-full"></div>
-                <div className="h-4 bg-slate-200/50 rounded mt-1 w-5/6"></div>
-              </div>
-            ))}
-          </div>
-        </section>
-      ) : (
-        blogs && blogs.length > 0 && (
-        <section>
-          <h2 className="text-3xl font-bold text-slate-800 mb-6 animated-card" style={{ animationDelay: '1250ms' }}>Reference Blog Posts</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {blogs.map((blog, index) => {
-               const isTransport = isTransportBlog(blog);
-               return (
-                <a 
-                  key={index}
-                  href={blog.url} target="_blank" rel="noopener noreferrer"
-                  className={`block p-5 rounded-xl shadow-lg border transition-all duration-300 hover:shadow-xl hover:-translate-y-1 animated-card ${
-                    isTransport 
-                      ? 'bg-sky-50/40 backdrop-blur-lg border-sky-300/50 hover:border-sky-400/50' 
-                      : 'bg-white/40 backdrop-blur-lg border-white/50 hover:border-violet-300/50'
-                  }`}
-                   style={{ animationDelay: `${1300 + index * 100}ms` }}
-                >
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      {blog.source && <p className={`text-xs font-semibold uppercase tracking-wider ${isTransport ? 'text-sky-600' : 'text-violet-600'}`}>{blog.source}</p>}
-                      <h4 className="text-lg font-bold text-slate-800 mt-1 hover:underline break-words">{blog.title}</h4>
-                    </div>
-                    {isTransport && (
-                      <div className="flex-shrink-0 ml-4 bg-sky-100 text-sky-600 rounded-full p-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M18.562 6.077C18.238 5.437 17.562 5 16.808 5H3.192c-.754 0-1.43.437-1.754 1.077L.05 9.423A.5.5 0 00.5 10h19a.5.5 0 00.45-.577l-1.388-3.346zM2 11v4a1 1 0 001 1h1a1 1 0 001-1v-4H2zm15 0v4a1 1 0 001 1h1a1 1 0 001-1v-4h-3zM5 11v4a1 1 0 001 1h8a1 1 0 001-1v-4H5z" clipRule="evenodd" />
-                        </svg>
-                      </div>
-                    )}
-                  </div>
-                  <p className="text-sm text-slate-600 mt-2">{blog.description}</p>
-                </a>
-              );
-            })}
-          </div>
-        </section>
-        )
-      )}
-
       <div className="pt-8 text-center no-print">
-        <ExportOptions itinerary={itinerary} />
+        <ExportOptions itinerary={itinerary} onPrint={onPrint} isUnifiedView={isUnifiedView} />
         {!isUnifiedView && (
         <button
             onClick={onRegenerate}

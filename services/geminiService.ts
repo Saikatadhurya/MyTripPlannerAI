@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { Budget, Itinerary, Vibe, FoodPreference, BlogReference, TripType, LocationSuggestion } from '../types';
 import { extractJson, cleanCitations } from './jsonUtils';
@@ -22,35 +21,19 @@ export const getDestinationSuggestions = async (query: string): Promise<Location
 
     const prompt = query.trim()
         ? `You are a master geographer AI. Based on the user input "${query}", provide up to 5 location suggestions.
-        CRITICAL HIERARCHY RULE: You MUST rank the results in this strict order of importance:
-        1. Country
-        2. State / Region
-        3. City
-        4. Village / Locality
-        For example, if the user types "Georgia", the country "Georgia" MUST be the first result, followed by "Georgia, USA".
-        Provide only a JSON array of objects.`
-        : `Suggest 5 popular and diverse travel locations from around the world, including a mix of cities, states/provinces, and countries. Provide only a JSON array of objects.`;
-
-    const responseSchema = {
-        type: Type.ARRAY,
-        items: {
-            type: Type.OBJECT,
-            properties: {
-                type: { type: Type.STRING, description: "The type of location, e.g., 'Country', 'State', 'City'." },
-                name: { type: Type.STRING, description: "The name of the location." },
-                parentHierarchy: { type: Type.STRING, description: "The parent region, e.g., 'USA' or 'France'. Empty for countries." },
-            },
-            required: ["type", "name", "parentHierarchy"]
-        },
-        description: "A hierarchically sorted list of up to 5 location suggestions."
-    };
+        CRITICAL HIERARCHY RULE: Rank results: 1. Country, 2. State/Region, 3. City, 4. Village/Locality.
+        For example, if input is "Georgia", "Georgia" (Country) MUST be first, then "Georgia, USA".
+        Your response MUST be a single, valid JSON array of objects. Each object MUST have "type" (string), "name" (string), and "parentHierarchy" (string).
+        DO NOT add any text before or after the JSON array. Start with '[' and end with ']'.`
+        : `Suggest 5 popular and diverse travel locations from around the world.
+        Your response MUST be a single, valid JSON array of objects. Each object MUST have "type" (string), "name" (string), and "parentHierarchy" (string).
+        DO NOT add any text before or after the JSON array. Start with '[' and end with ']'.`;
     
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: prompt,
       config: {
         responseMimeType: "application/json",
-        responseSchema: responseSchema,
         thinkingConfig: { thinkingBudget: 0 },
       }
     });
@@ -60,7 +43,9 @@ export const getDestinationSuggestions = async (query: string): Promise<Location
         console.error("AI response for suggestions was empty or invalid:", response);
         return [];
     }
-    const resultJson = JSON.parse(resultText);
+    
+    const jsonString = extractJson(resultText);
+    const resultJson = JSON.parse(jsonString);
 
     if (!Array.isArray(resultJson)) {
       console.error("Invalid response format from AI. Expected an array.");
@@ -94,7 +79,7 @@ export const getReferenceBlogs = async (destination: string, language: string): 
   try {
     // --- Find blogs using Google Search ---
     const searchPrompt = `Find up to 5 helpful and popular travel blog posts for planning a trip to ${destination}. Prioritize blogs written in ${language}.`;
-    const searchResponse = await ai.models.generateContent({
+    const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: searchPrompt,
       config: {
@@ -103,7 +88,7 @@ export const getReferenceBlogs = async (destination: string, language: string): 
       },
     });
 
-    const groundingChunks = searchResponse.candidates?.[0]?.groundingMetadata?.groundingChunks;
+    const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
 
     if (!Array.isArray(groundingChunks) || groundingChunks.length === 0) {
       return [];
@@ -181,7 +166,7 @@ export const generateItinerary = async (
 
       1.  **Feasibility & Route Planning**: First, you MUST estimate if a meaningful road trip circuit that includes or goes towards "${destination}" is possible within ${days} days, using a ${tripType} with a daily driving limit of ${dailyLimit}.
           - **IF FEASIBLE**:
-              - **A. Itinerary Density & Maximization (CRITICAL):** Your primary goal is to **maximize the number of interesting and feasible places covered** within the given **${days} days**. A longer duration MUST result in a richer, denser itinerary with more stops, not just a slower pace between fewer locations. You MUST intelligently add relevant destinations to create a comprehensive tour circuit that makes full and enjoyable use of the time. Do not leave days with minimal activity; fill them with travel to new locations or exploration.
+              - **A. Itinerary Density & Maximization (CRITICAL):** Your primary goal is to **maximize the number of interesting and feasible places covered** within the given **${days} days**, adhering to the MAXIMALIST & EFFICIENT philosophy outlined above. A longer duration MUST result in a richer, denser itinerary with more stops, not just a slower pace between fewer locations. You MUST intelligently add relevant destinations to create a comprehensive tour circuit that makes full and enjoyable use of the time. Do not leave days with minimal activity; fill them with travel to new locations or exploration.
               - **B. Example:** For a 15-day car trip from "Jaipur" with the main destination as "Jaisalmer", a simple route (Jaipur -> Jodhpur -> Jaisalmer -> Bikaner -> Jaipur) would be **too sparse**. A **correct, enriched itinerary** MUST include other logical and famous stops like **Udaipur, Chittorgarh, Kumbhalgarh, and Ranakpur** to create a full Rajasthan heritage circuit that properly utilizes the 15 days.
               - **C. Route Design:** Based on the above, design a logical, sequential road trip circuit starting and ending at "${startPoint}". The route must maximize sightseeing of famous places based on the vibe: "${vibe.join(', ')}". The farthest point should be near "${destination}".
           - **IF NOT FEASIBLE**: Do NOT fail. You MUST plan a realistic road trip circuit to an alternative region or set of destinations reachable within the timeframe that still fits the user's vibe. The "destination" field in the JSON response MUST be updated to a more descriptive name for this new circuit (e.g., 'Rajasthan Heritage Circuit'). You MUST also add a note in the new 'planNote' field in the root of the JSON response, explaining the change clearly and starting with "NOTE:". For example: "NOTE: A road trip to ${destination} and back in ${days} days isn't feasible. I've created an alternative Coastal Karnataka Temple & Adventure Circuit that fits your timeline and preferences."
@@ -212,7 +197,7 @@ export const generateItinerary = async (
       This is a multi-stop round trip tour request. The user wants to travel from "${startPoint}", cover a series of interesting locations via public transport, and return to "${startPoint}" within ${days} days. The main destination of interest is "${destination}".
 
       1.  **Route & Transport Planning**:
-          -   **A. Itinerary Density & Maximization (CRITICAL):** Your primary goal is to **maximize the number of interesting and feasible places covered** within the given **${days} days**, using public transport. A longer duration MUST result in a richer, denser itinerary with more stops, not just more days in the same few cities. You MUST intelligently add relevant destinations to create a comprehensive tour circuit that makes full and enjoyable use of the time. For example, a 15-day trip should cover significantly more cities than a 5-day trip.
+          -   **A. Itinerary Density & Maximization (CRITICAL):** Your primary goal is to **maximize the number of interesting and feasible places covered** within the given **${days} days**, using public transport, adhering to the MAXIMALIST & EFFICIENT philosophy outlined above. A longer duration MUST result in a richer, denser itinerary with more stops, not just more days in the same few cities. You MUST intelligently add relevant destinations to create a comprehensive tour circuit that makes full and enjoyable use of the time. For example, a 15-day trip should cover significantly more cities than a 5-day trip.
           -   **B. Route Design & Transport Details:** Design a logical, sequential tour circuit starting and ending at "${startPoint}". The route must maximize sightseeing of famous places based on the vibe: "${vibe.join(', ')}". The farthest point should be near "${destination}". Unlike a road trip, the travel between cities/stops MUST be planned using the most efficient and budget-appropriate public transport. Provide realistic options like **trains** (mentioning class options), **buses** (mentioning carrier types like Volvo/sleeper), **shared cars**, or **flights** if the distance is significant.
 
       2.  **Distance & Time Accuracy (CRITICAL)**: You MUST use your search capabilities to get accurate travel distances and realistic travel times for the suggested mode of public transport (train, bus, etc.) between all stops in the circuit. These MUST be reflected in the daily 'activities' descriptions and 'transport' suggestions. Inaccurate details are a critical failure.
@@ -230,6 +215,13 @@ export const generateItinerary = async (
   
   const prompt = `Create a detailed travel itinerary in ${language}. The user wants to plan a ${days}-day trip to ${destination} with a ${budget} budget.
   
+  **CORE ITINERARY PHILOSOPHY: MAXIMALIST & EFFICIENT**
+  Your core directive is to create a dense and efficient travel plan that maximizes the user's time. Assume the traveler is energetic and wants to see and do as much as possible.
+  - **NO WASTED TIME:** Minimize downtime. Days should be packed with activities from morning to evening. Avoid suggesting entire "rest days" or "leisure days" unless the trip is extremely long or the vibe is explicitly 'Relaxation'.
+  - **MAXIMIZE SIGHTSEEING:** For any given location, you must include not only the main attractions but also highly-rated secondary attractions, local experiences, and hidden gems.
+  - **DAY TRIPS ARE ESSENTIAL:** For trips longer than 3-4 days to a single city, you MUST incorporate relevant and feasible day trips to nearby towns, natural parks, or historical sites to enrich the itinerary. For example, a 7-day trip to Paris should include a day trip to the Palace of Versailles.
+  - **TRAVEL DAY EFFICIENCY:** On days that involve travel between cities, the itinerary should still include activities either in the departure city in the morning or in the arrival city in the afternoon/evening. A travel day should not be solely dedicated to transit unless the journey is exceptionally long (over 8 hours).
+
   Trip Details:
   - Destination: ${destination}
   - Starting Point: ${startPoint || 'Not specified'}
@@ -248,10 +240,14 @@ export const generateItinerary = async (
   CRITICAL COST BREAKDOWN INSTRUCTIONS (MANDATORY):
   1.  **budgetSummary.total**: This MUST be the sum of all other per-person costs in the budgetSummary (stay, food, and any fuel or miscellaneous costs).
   2.  **budgetSummary.miscellaneous**:
-      - **For 'Car' and 'Bike' trips**: You MUST estimate a per-person budget for **tolls, parking, and minor unforeseen expenses**. This should be roughly 10-15% of the combined stay, food, and fuel costs.
-      - **For 'Standard' trips**: You MUST estimate a per-person budget for **local transport, activity entry fees, tips, and minor unforeseen expenses**. This should be roughly 10-15% of the combined stay and food costs.
-  3.  **plan.approxCost**: This field now represents the per-person daily cost for activities and food ONLY. It MUST EXCLUDE any inter-city travel fuel costs or miscellaneous budget items.
-
+      - **For 'Car' and 'Bike' trips**: You MUST estimate a per-person budget for **tolls, parking, and minor unforeseen expenses**.
+      - **For 'Standard' trips**: You MUST estimate a per-person budget for **local transport, tips, and other minor unforeseen expenses**. Entry fees for major attractions MUST NOT be included here; they belong in the daily cost.
+  3.  **plan.approxCost (CRITICAL - DYNAMIC CALCULATION REQUIRED)**: This field MUST represent the realistic per-person daily cost for **that day's specific activities and food ONLY**.
+      - **YOU ARE STRICTLY FORBIDDEN FROM SIMPLY AVERAGING THE TOTAL BUDGET.** Averaging is a critical failure.
+      - **HOW TO CALCULATE (MANDATORY):** For each day, you MUST use your search capabilities to estimate the real entry fees for all ticketed attractions listed in that day's 'activities'. You will then sum these entry fees with a reasonable estimate for that day's food recommendations. The final sum is the value for 'approxCost'.
+      - **Example:** A day visiting the **Louvre Museum** in Paris will have a significantly higher 'approxCost' than a day spent on a **free walking tour**.
+      - This value must EXCLUDE inter-city travel fuel and miscellaneous budget items.
+  
   ${(tripType === 'Car' || tripType === 'Bike') ? `
   CRITICAL VEHICLE-SPECIFIC INSTRUCTIONS:
   1.  **Vehicle Assumption**: Assume the user has a personal or rented vehicle. All 'transport' suggestions MUST be vehicle-centric (driving routes, times).
@@ -313,23 +309,32 @@ export const generateItinerary = async (
   1.  All string values in the JSON must be in ${language}.
   2.  The 'plan' array must have exactly ${days} elements.
   3.  The 'coveredDestinations' array is mandatory and must be populated if the trip covers multiple locations (e.g., a round trip or a regional tour). For a trip to a single city, it should contain details for just that destination.
-  4.  **COST FORMATTING (MANDATORY)**: All cost fields ('stay', 'food', 'fuel', 'miscellaneous', 'total' in 'budgetSummary'; 'approxCost' in 'plan'; 'cost' in 'transport') MUST be a string containing ONLY numbers (e.g., "1500", "250.50"). Do NOT include currency symbols, currency codes, or any text. All costs must be per person (unless specified otherwise in instructions) and calculated in the user's chosen currency: "${currency}".
-  5.  **MANDATORY BOLDING**: You MUST use bold markdown (**text**) to highlight key information. This includes, but is not limited to: names of specific attractions, restaurants, hotels, important timings, unique cultural items, and critical travel advice. This is crucial for readability.
-  6.  If 'includeMedical' is true, the 'medicalFacilities' array for each day must list at least one nearby hospital or pharmacy.
-  7.  The 'referenceBlogs' field should be an empty array. It will be populated later.
-  8.  For 'Standard' trip types, 'transport' suggestions should be tailored to the selected budget. For 'Car' or 'Bike' trips, you MUST follow the critical vehicle instructions provided above.
-  9.  For 'historicBackground', 'famousCulture', 'naturalPlaces', 'museums', and 'specialOrnaments', provide a list of 3-5 key bullet points. Each point must be a descriptive string. Do not provide a single paragraph.
-  10. For 'specialEvents', find specific events, festivals, or notable occurrences happening ONLY during the travel dates (starting ${startDate} for ${days} days). If no specific major events are found, you MUST return a helpful message like 'No major special events were found for your travel dates, but you can enjoy ongoing local experiences.'
-  11. **Currency Conversion (CRITICAL)**:
-      a. First, determine the primary local currency of the destination "${destination}".
-      b. Compare the local currency with the user's chosen currency: "${currency}".
-      c. If they are different, you MUST populate the 'currencyConversion' object in the JSON response. Provide a simple, clear text representation of the approximate exchange rate in the 'rateText' field, showing the value of 1 unit of the destination's local currency in terms of the user's chosen currency (e.g., '1 INR ≈ 0.012 USD'). The 'fromCurrency' MUST be the user's chosen currency code (e.g., 'USD'), and 'toCurrency' MUST be the destination's local currency code (e.g., 'INR').
-      d. If the user's chosen currency is the same as the local currency, the 'currencyConversion' field MUST be omitted from the JSON response.
-  12. **CRITICAL JSON VALIDATION RULE**: Your entire response depends on this. The output MUST be a single, perfectly valid JSON object.
+  4.  **ACTIVITY TIMINGS (CRITICAL):** For each string in the 'activities' array, you MUST prefix the activity with a specific time or time range. The timings should be realistic, accounting for travel between activities, duration of the activity, and meals. Format it as **HH:MM AM/PM - HH:MM AM/PM:** or **HH:MM AM/PM:**. For example: "**09:00 AM - 11:00 AM:** Visit the Louvre Museum." or "**01:00 PM:** Lunch at a local cafe.". Be specific and logical.
+  5.  **COST FORMATTING (MANDATORY)**: All cost fields ('stay', 'food', 'fuel', 'miscellaneous', 'total' in 'budgetSummary'; 'approxCost' in 'plan'; 'cost' in 'transport') MUST be a string containing ONLY numbers (e.g., "1500", "250.50"). Do NOT include currency symbols, currency codes, or any text. All costs must be per person (unless specified otherwise in instructions) and calculated in the user's chosen currency: "${currency}".
+  6.  **MANDATORY BOLDING**: You MUST use bold markdown (**text**) to highlight key information. This includes, but is not limited to: names of specific attractions, restaurants, hotels, important timings, unique cultural items, and critical travel advice. This is crucial for readability.
+  7.  **ABSOLUTE RULE - NO TECHNICAL JARGON IN USER TEXT:** This is a critical rule for maintaining a professional user experience.
+      -   All text that will be shown to the user (e.g., in 'planNote', 'activities', descriptions, etc.) MUST be written in friendly, natural language.
+      -   You are **STRICTLY FORBIDDEN** from ever mentioning any internal JSON field names from the schema provided. This includes, but is not limited to: 'budgetSummary.total', 'approxCost', 'placesToStay', 'historicBackground', etc.
+      -   **Correct Example:** "The total estimated cost for your trip, excluding flights..."
+      -   **INCORRECT EXAMPLE (FAILURE):** "The cost is not included in the 'budgetSummary.total'..."
+      -   **Correct Example:** "...and the approximate cost for each day's activities and food."
+      -   **INCORRECT EXAMPLE (FAILURE):** "...and the 'approxCost' for each day."
+      -   Mentioning any technical variable name in user-facing text is a critical failure. You MUST rephrase to explain the concept naturally.
+  8.  If 'includeMedical' is true, the 'medicalFacilities' array for each day must list at least one nearby hospital or pharmacy.
+  9.  The 'referenceBlogs' field should be an empty array. It will be populated later.
+  10. For 'Standard' trip types, 'transport' suggestions should be tailored to the selected budget. For 'Car' or 'Bike' trips, you MUST follow the critical vehicle instructions provided above.
+  11. For 'historicBackground', 'famousCulture', 'naturalPlaces', 'museums', 'specialOrnaments', and 'recommendedRestaurants', provide a list of 1-3 very concise bullet points. Each point must be a short, descriptive phrase (around 5-10 words maximum). For restaurants, this can be just the name.
+  12. For 'specialEvents', find specific events, festivals, or notable occurrences happening ONLY during the travel dates (starting ${startDate} for ${days} days). The description must be very concise (1-2 sentences). If no specific major events are found, you MUST return a helpful and concise message like 'No major special events are scheduled for your travel dates, but you can enjoy ongoing local experiences.'
+  13. **Currency Conversion (CRITICAL)**:
+    a. First, determine the primary local currency of the destination "${destination}".
+    b. Compare the local currency with the user's chosen currency: "${currency}".
+    c. If they are different, you MUST populate the 'currencyConversion' object in the JSON response. Provide a simple, clear text representation of the approximate exchange rate in the 'rateText' field. The format MUST be '1 [DESTINATION CURRENCY CODE] = [VALUE] [SOURCE CURRENCY CODE]'. For example, if the source currency is INR and the destination currency is USD, the text should be like '1 USD = 83 INR'. The 'fromCurrency' MUST be the user's chosen currency code (e.g., 'INR'), and 'toCurrency' MUST be the destination's local currency code (e.g., 'USD').
+    d. If the user's chosen currency is the same as the local currency, the 'currencyConversion' field MUST be omitted from the JSON response.
+  14. **CRITICAL JSON VALIDATION RULE**: Your entire response depends on this.
       a. **NO UNESCAPED QUOTES**: Inside any JSON string value, you MUST NEVER use a double quote character ("). It will break the JSON parsing.
       b. **HOW TO HANDLE QUOTES**: To include a quote inside a string, you MUST use single quotes (e.g., "Visit the 'Eiffel Tower' at night.") or escape the double quote with a backslash (e.g., "The guide said, \\"Welcome to Paris!\\"").
       c. **FAILURE IS NOT AN OPTION**: You MUST double-check every string for unescaped quotes. Failure to follow this rule will make the entire response useless.
-  13. **ABSOLUTE FINAL INSTRUCTION**: Your entire response MUST be the raw JSON object. It MUST start with the character '{' and end with the character '}'. You MUST NOT wrap it in markdown (like \`\`\`json), and you MUST NOT add any introductory text like "Here is your itinerary:". The response should be immediately parsable as JSON.
+  15. **ABSOLUTE FINAL INSTRUCTION**: Your entire response MUST be the raw JSON object. It MUST start with the character '{' and end with the character '}'. You MUST NOT wrap it in markdown (like \`\`\`json), and you MUST NOT add any introductory text. The response should be immediately parsable as JSON.
   `;
   
     let fullText = '';

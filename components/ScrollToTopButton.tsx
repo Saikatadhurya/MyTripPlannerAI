@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 
 interface ScrollToTopButtonProps {
@@ -43,7 +42,7 @@ const ScrollToTopButton: React.FC<ScrollToTopButtonProps> = ({ isUnifiedView = f
     <button
       type="button"
       onClick={scrollToTop}
-      className={`fixed ${bottomPositionClass} right-6 z-50 flex items-center justify-center
+      className={`fixed ${bottomPositionClass} right-6 z-40 flex items-center justify-center
                   w-10 h-10 md:w-12 md:h-12 
                   rounded-full 
                   bg-gradient-to-br from-indigo-600 to-violet-600 
@@ -52,7 +51,8 @@ const ScrollToTopButton: React.FC<ScrollToTopButtonProps> = ({ isUnifiedView = f
                   transition-all duration-300 ease-in-out
                   transform hover:scale-110 
                   focus:outline-none focus:ring-4 focus:ring-violet-300
-                  ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5 pointer-events-none'}`}
+                  ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5 pointer-events-none'}
+                  no-print`}
       aria-label="Scroll to top"
     >
       <svg

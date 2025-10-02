@@ -70,8 +70,8 @@ const Header: React.FC<HeaderProps> = ({
   const containerInitialClasses = "justify-between px-4 sm:px-6 lg:px-8";
   
   // Classes for the scrolled, glassmorphic state
-  const headerScrolledClasses = "py-4 bg-white/70 backdrop-blur-xl shadow-md slide-down-animation";
-  const containerScrolledClasses = "justify-between px-4 sm:px-6 lg:px-8";
+  const headerScrolledClasses = "py-4 bg-white/90 backdrop-blur-xl shadow-lg slide-down-animation";
+  const containerScrolledClasses = "justify-start px-4 sm:px-6 lg:px-8";
   
   // Logo scaling effect
   const logoContainerBaseClasses = "flex items-center space-x-3 text-slate-800 transition-transform duration-300";

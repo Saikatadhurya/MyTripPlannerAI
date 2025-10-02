@@ -1,4 +1,3 @@
-
 export type Budget = 'Budget' | 'Midrange' | 'Luxury';
 export type Vibe = 'Adventure & Thrill' | 'Relaxation & Wellness' | 'Cultural & Heritage' | 'Nature & Wildlife' | 'Food & Culinary' | 'Nightlife & Entertainment' | 'Luxury & Leisure' | 'Romantic & Family Getaways';
 export type FoodPreference = 'Veg' | 'Non-Veg' | 'Vegan';
@@ -15,6 +14,7 @@ export interface QuestionnaireData {
     persons: number;
     foodPreference: FoodPreference;
     startDate: string;
+    endDate?: string;
     includeMedical: boolean;
     language: string;
     currency: string;
@@ -154,9 +154,8 @@ export interface FoodRecommendations {
     hiddenRecipes: FoodItemGroup[];
     trendingOrViralFoods: FoodItemGroup[];
     chefsSpecials: FoodItemGroup[];
-    festivalFoods: FoodItemGroup[];
     seasonalSpecials: FoodItemGroup[];
-    streetFestivalsAndFoodMelas: FoodItemGroup[];
+    festivalAndStreetFoods: FoodItemGroup[];
 }
 
 export interface AppFinderRequestData {
@@ -212,12 +211,37 @@ export interface MusicRecommendations {
     musicCategories: MusicGenreCategory[];
 }
 
+// Types for Local Lingo Guide
+export interface LingoFinderRequestData {
+    destination: string;
+    language: string;
+}
+
+export interface Phrase {
+    english: string;
+    local: string;
+    pronunciation: string;
+}
+
+export interface PhraseCategory {
+    categoryName: string;
+    phrases: Phrase[];
+}
+
+export interface LingoRecommendations {
+    destination: string;
+    localLanguage: string;
+    categories: PhraseCategory[];
+}
+
+
 export interface UnifiedPlan {
   itinerary: Itinerary | null;
   packingList: PackingList | null;
   appRecommendations: AppRecommendations | null;
   foodRecommendations: FoodRecommendations | null;
   musicRecommendations: MusicRecommendations | null;
+  lingoRecommendations: LingoRecommendations | null;
 }
 
 export type UnifiedPlanLoadingState = 'pending' | 'loading' | 'done' | 'error' | 'cancelled';
@@ -228,4 +252,5 @@ export interface UnifiedPlanLoadingStatus {
   apps: UnifiedPlanLoadingState;
   food: UnifiedPlanLoadingState;
   music: UnifiedPlanLoadingState;
+  lingo: UnifiedPlanLoadingState;
 }

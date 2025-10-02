@@ -2,20 +2,35 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <!-- FIX: Replaced placeholder favicon with a custom, relevant SVG icon for the travel app. -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3e%3ccircle cx='16' cy='16' r='16' fill='%236D28D9'/%3e%3cpath d='M15.25 7C11.25 7 8 10.25 8 14.25C8 19.5 15.25 25 15.25 25C15.25 25 22.5 19.5 22.5 14.25C22.5 10.25 19.25 7 15.25 7ZM15.25 16.5C13.9 16.5 12.75 15.35 12.75 14C12.75 12.65 13.9 11.5 15.25 11.5C16.6 11.5 17.75 12.65 17.75 14C17.75 15.35 16.6 16.5 15.25 16.5Z' fill='white'/%3e%3c/svg%3e" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- FIX: Added meta description for better SEO and social sharing previews. -->
+    <meta name="description" content="Get personalized travel itineraries powered by AI. From budget planning to day-wise activities, we've got you covered." />
     <title>Plan Your Dream Trip with AI</title>
+    <!-- FIX: Added Tailwind CSS configuration script to properly set the Inter font family. -->
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            },
+          }
+        }
+      }
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
       body {
-        font-family: 'Inter', sans-serif;
-        background-color: #f8f9fa; /* A very light off-white */
-        background-image:
-          radial-gradient(at 0% 0%, hsla(210, 80%, 90%, 0.4) 0px, transparent 50%),
-          radial-gradient(at 100% 100%, hsla(300, 80%, 95%, 0.4) 0px, transparent 50%),
-          radial-gradient(at 100% 0%, hsla(340, 80%, 90%, 0.3) 0px, transparent 50%);
-        background-attachment: fixed;
+        /* FIX: Removed explicit font-family to allow Tailwind to manage it for better consistency. */
+        background-color: #ffffff; /* Set a pure white background */
+        padding-top: env(safe-area-inset-top);
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
+        padding-bottom: env(safe-area-inset-bottom);
+        background: #fff; /* or your app bg */
       }
       .pdf-export-render {
         position: fixed !important;
@@ -26,6 +41,9 @@
         pointer-events: none; /* Not interactive */
         width: 8.5in; /* Standard letter width for layout calculation */
         background: white !important; /* Ensure background is not transparent */
+      }
+      .printable-container {
+        display: none;
       }
       @media print {
         body {
@@ -143,6 +161,61 @@
             opacity: 1 !important;
             transform: none !important;
         }
+
+        /* Lingo Guide Accordion Print Fix */
+        .printable-accordion-content {
+            max-height: none !important;
+            opacity: 1 !important;
+            overflow: visible !important;
+            display: block !important;
+            grid-template-rows: 1fr !important;
+        }
+        .printable-accordion-toggle-icon {
+            display: none !important;
+        }
+
+        /* --- GUIDEBOOK PRINTING OVERRIDES --- */
+        /* When printing the full guidebook, hide the interactive UI */
+        body.printing-guidebook .unified-interactive-view {
+            display: none !important;
+        }
+        /* And ensure the printable container is visible */
+        body.printing-guidebook .printable-container {
+            display: block !important;
+        }
+
+        /* --- SINGLE TAB PRINTING OVERRIDES --- */
+        /* Hide the full guidebook content when printing a single tab */
+        body.printing-single-tab .printable-container {
+          display: none !important;
+        }
+        
+        /* When printing a single tab, hide the unified header and nav by default */
+        body.printing-single-tab .unified-header,
+        body.printing-single-tab .unified-nav {
+            display: none !important;
+        }
+        
+        /* Hide all tab content panels by default when printing a single tab */
+        body.printing-single-tab #itinerary-preview-content,
+        body.printing-single-tab #packing-list-preview-content,
+        body.printing-single-tab #food-finder-result-content,
+        body.printing-single-tab #app-finder-result-content,
+        body.printing-single-tab #music-finder-result-content,
+        body.printing-single-tab #lingo-finder-result-content {
+            display: none !important;
+        }
+        
+        /* Then, selectively un-hide ONLY the specific tab's content panel we want to print */
+        body.printing-itinerary #itinerary-preview-content,
+        body.printing-packing #packing-list-preview-content,
+        body.printing-food #food-finder-result-content,
+        body.printing-apps #app-finder-result-content,
+        body.printing-music #music-finder-result-content,
+        body.printing-lingo #lingo-finder-result-content {
+            display: block !important;
+            padding-top: 2rem;
+        }
       }
       @keyframes fadeIn {
         from { opacity: 0; transform: translateY(10px); }
@@ -204,6 +277,22 @@
         animation: slideDown 0.3s ease-out;
       }
       
+      /* Date Picker Modal Animations */
+      .auth-modal-enter {
+        animation: modal-fade-in 0.3s ease-out;
+      }
+      .auth-modal-content-enter {
+        animation: modal-content-enter 0.3s ease-out;
+      }
+      @keyframes modal-fade-in {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      @keyframes modal-content-enter {
+        from { opacity: 0; transform: scale(0.95) translateY(10px); }
+        to { opacity: 1; transform: scale(1) translateY(0); }
+      }
+
       /* Minimal iOS datepicker fix - only affects date inputs */
       @supports (-webkit-touch-callout: none) {
         input[type="date"] {
@@ -219,6 +308,52 @@
           padding: 12px 16px;
         }
       }
+
+      /* Floating Icons Background */
+      .floating-icon-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: -1;
+        overflow: hidden;
+        pointer-events: none;
+      }
+      .floating-icon {
+        position: absolute;
+        color: #e2e8f0; /* Light gray */
+        animation: float 20s ease-in-out infinite;
+        opacity: 0.15; /* Reduced opacity for a more subtle effect */
+        user-select: none;
+      }
+
+      @keyframes float {
+        0% { transform: translateY(0px) rotate(0deg); }
+        25% { transform: translateY(-25px) translateX(10px) rotate(5deg); }
+        50% { transform: translateY(0px) rotate(0deg); }
+        75% { transform: translateY(25px) translateX(-10px) rotate(-5deg); }
+        100% { transform: translateY(0px) rotate(0deg); }
+      }
+
+      /* CTA Pulse Animation */
+      @keyframes pulse-shadow {
+        0% {
+          box-shadow: 0 0 0 0 rgba(109, 40, 217, 0.7);
+        }
+        70% {
+          box-shadow: 0 0 0 15px rgba(109, 40, 217, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(109, 40, 217, 0);
+        }
+      }
+      .cta-pulse {
+        animation: pulse-shadow 2.5s infinite;
+      }
+      .body-scroll-lock {
+        overflow: hidden;
+      }
     </style>
   <script type="importmap">
 {
@@ -232,36 +367,88 @@
 }
 </script>
 </head>
-  <body class="text-gray-800">
+  <body class="font-sans text-gray-800">
+    <div class="floating-icon-container" aria-hidden="true">
+      <div class="floating-icon" style="font-size: 2.5rem; top: 10%; left: 5%; animation-duration: 25s;">✈️</div>
+      <div class="floating-icon" style="font-size: 1.5rem; top: 20%; left: 80%; animation-duration: 18s; animation-delay: 2s;">🌍</div>
+      <div class="floating-icon" style="font-size: 3rem; top: 70%; left: 10%; animation-duration: 22s; animation-delay: 4s;">🗺️</div>
+      <div class="floating-icon" style="font-size: 2rem; top: 85%; left: 90%; animation-duration: 28s; animation-delay: 1s;">📸</div>
+      <div class="floating-icon" style="font-size: 1.25rem; top: 50%; left: 50%; animation-duration: 15s; animation-delay: 5s;">🏨</div>
+      <div class="floating-icon" style="font-size: 2.5rem; top: 5%; left: 40%; animation-duration: 20s; animation-delay: 3s;">🎟️</div>
+      <div class="floating-icon" style="font-size: 1.75rem; top: 40%; left: 15%; animation-duration: 23s; animation-delay: 6s;">🧭</div>
+      <div class="floating-icon" style="font-size: 2rem; top: 60%; left: 70%; animation-duration: 19s;">☀️</div>
+      <div class="floating-icon" style="font-size: 1.75rem; top: 80%; left: 25%; animation-duration: 26s; animation-delay: 7s;">🧳</div>
+      <div class="floating-icon" style="font-size: 2rem; top: 15%; left: 65%; animation-duration: 17s; animation-delay: 8s;">🍔</div>
+      <div class="floating-icon" style="font-size: 1.5rem; top: 55%; left: 30%; animation-duration: 24s;">🎶</div>
+      <div class="floating-icon" style="font-size: 1.75rem; top: 30%; left: 90%; animation-duration: 21s; animation-delay: 5s;">📱</div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
     
-    <!-- Minimal iOS datepicker fix - no layout breaking -->
+    <!--
+      Robust iOS Keyboard Fix using Visual Viewport API
+      This script addresses a notorious bug in iOS Safari where fixed-position elements (like a bottom navbar)
+      get stuck in the middle of the screen after the on-screen keyboard is dismissed. This robust solution
+      uses the `visualViewport` API to track the keyboard state and force a repaint on the navbar when the
+      keyboard is dismissed, resolving the rendering glitch.
+
+    -->
     <script>
-      // Only run on iOS devices
-      if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
-        document.addEventListener('DOMContentLoaded', function() {
-          // Find all date inputs
-          const dateInputs = document.querySelectorAll('input[type="date"]');
+      (function() {
+        // Run this fix only on iOS devices to avoid unintended side effects on other platforms.
+        if (!/iPad|iPhone|iPod/.test(navigator.userAgent) || window.MSStream) {
+          return;
+        }
+
+        // This fix relies on the Visual Viewport API, which is the most reliable way to
+        // detect changes in the visible area of the screen, like when the keyboard appears.
+        if (!window.visualViewport) {
+          return;
+        }
+
+        const installIosKeyboardFix = () => {
+                    const footer = document.querySelector('#bottom-nav-bar');
+          if (!footer) {
+            return;
+          }
           
-          dateInputs.forEach(input => {
-            // Handle focus - when date picker opens
-            input.addEventListener('focus', function() {
-              // Simple fix: ensure input is visible without breaking layout
-              setTimeout(() => {
-                const rect = this.getBoundingClientRect();
-                if (rect.bottom > window.innerHeight) {
-                  // Only scroll if input is below viewport
-                  this.scrollIntoView({ 
-                    behavior: 'smooth', 
-                    block: 'center'
-                  });
-                }
-              }, 100);
-            });
+          // Heuristic to check if the keyboard is open. It's open if the visual viewport
+          // is significantly smaller than the layout viewport. We use a threshold (e.g., 90%)
+          // to account for small differences or browser chrome.
+          const isKeyboardOpen = () => window.visualViewport.height < window.innerHeight * 0.9;
+          
+          let keyboardWasOpen = isKeyboardOpen();
+
+          window.visualViewport.addEventListener('resize', () => {
+            const keyboardIsOpenNow = isKeyboardOpen();
+
+            
+                       // The repaint logic should trigger only on the transition from open to closed.
+            if (keyboardWasOpen && !keyboardIsOpenNow) {
+              // The bug causes the `fixed` element to be stuck. By briefly changing its `position`,
+              // we force Safari to recalculate its layout from scratch when we set it back.
+              footer.style.position = 'absolute'; // Temporarily break the 'fixed' layout context.
+              
+              // Using requestAnimationFrame ensures our change back to 'fixed' happens
+              // right before the next browser repaint, making the fix smooth and efficient.
+              requestAnimationFrame(() => {
+                footer.style.position = 'fixed'; // Restore the correct positioning.
+              });
+            }
+            
+            keyboardWasOpen = keyboardIsOpenNow;
           });
-        });
-      }
+
+        };
+
+        // Wait until the DOM is fully loaded to ensure the nav bar element is available to be selected.
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', installIosKeyboardFix);
+        } else {
+          // DOM is already ready.
+          installIosKeyboardFix();
+        }
+      })();
     </script>
   </body>
 </html>

@@ -1,4 +1,3 @@
-
 import { GoogleGenAI } from "@google/genai";
 import { MusicFinderRequestData, MusicRecommendations } from '../types';
 import { extractJson, cleanCitations } from './jsonUtils';
@@ -22,7 +21,7 @@ export const generateMusicRecommendations = async (data: MusicFinderRequestData,
   }
 
   const prompt = `
-    You are an expert Music Curator and Ethnomusicologist AI. Your mission is to provide a traveler with an authentic, popular, and well-organized music guide for "${destinationsString}". Your output must be intelligent and adapt to the destination's unique musical landscape.
+    You are an expert Music Curator and Ethnomusicologist AI. Your mission is to provide a traveler with an authentic, popular, and well-organized music guide for "${destinationsString}", written in ${language}. Your output must be intelligent and adapt to the destination's unique musical landscape.
     ${multiStopInstructions}
 
     **CRITICAL CURATION PROTOCOL:**

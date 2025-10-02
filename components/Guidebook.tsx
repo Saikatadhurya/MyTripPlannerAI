@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { UnifiedPlan } from '../types';
 import ItineraryPreview from './ItineraryPreview';
@@ -6,6 +5,7 @@ import PackingListPreview from './PackingListPreview';
 import FoodFinderResult from './FoodFinderResult';
 import AppFinderResult from './AppFinderResult';
 import MusicFinderResult from './MusicFinderResult';
+import LingoFinderResult from './LingoFinderResult';
 
 interface GuidebookProps {
   plan: UnifiedPlan;
@@ -38,6 +38,7 @@ const Guidebook: React.FC<GuidebookProps> = ({ plan }) => {
               {plan.foodRecommendations && <li><a href="#gb-food">Food Guide</a></li>}
               {plan.appRecommendations && <li><a href="#gb-apps">Local Apps</a></li>}
               {plan.musicRecommendations && <li><a href="#gb-music">Music Playlist</a></li>}
+              {plan.lingoRecommendations && <li><a href="#gb-lingo">Lingo Guide</a></li>}
             </ul>
           </nav>
         </div>
@@ -67,6 +68,11 @@ const Guidebook: React.FC<GuidebookProps> = ({ plan }) => {
       {plan.musicRecommendations && (
         <div id="gb-music" className="guidebook-page">
           <MusicFinderResult recommendations={plan.musicRecommendations} onRegenerate={() => {}} isUnifiedView />
+        </div>
+      )}
+      {plan.lingoRecommendations && (
+        <div id="gb-lingo" className="guidebook-page">
+            <LingoFinderResult recommendations={plan.lingoRecommendations} onRegenerate={() => {}} isUnifiedView />
         </div>
       )}
     </div>

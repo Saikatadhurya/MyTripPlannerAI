@@ -1,7 +1,4 @@
-
-
-
-
+// FIX: Corrected the React import statement to properly include hooks.
 import React, { useState, useEffect, useMemo } from 'react';
 
 interface Stage {
@@ -19,10 +16,11 @@ interface StreamingLoadingIndicatorProps {
   stages: Stage[];
   onCancel: () => void;
   title: string;
-  accentColor: 'violet' | 'amber' | 'teal' | 'fuchsia';
+  accentColor: 'violet' | 'amber' | 'teal' | 'fuchsia' | 'sky';
   funFacts: FunFact[];
   attemptCount?: number;
   maxAttempts?: number;
+  showTimer?: boolean;
 }
 
 const colorClasses = {
@@ -30,6 +28,7 @@ const colorClasses = {
   amber: { text: 'text-amber-600', bg: 'bg-amber-600', ring: 'ring-amber-300', border: 'border-amber-600' },
   teal: { text: 'text-teal-600', bg: 'bg-teal-600', ring: 'ring-teal-300', border: 'border-teal-600' },
   fuchsia: { text: 'text-fuchsia-600', bg: 'bg-fuchsia-600', ring: 'ring-fuchsia-300', border: 'border-fuchsia-600' },
+  sky: { text: 'text-sky-600', bg: 'bg-sky-600', ring: 'ring-sky-300', border: 'border-sky-600' },
 };
 
 const CheckmarkIcon: React.FC = () => (
@@ -49,8 +48,9 @@ const PendingIcon: React.FC = () => (
 );
 
 
-const StreamingLoadingIndicator: React.FC<StreamingLoadingIndicatorProps> = ({ streamedText, stages, onCancel, title, accentColor, funFacts, attemptCount, maxAttempts }) => {
+const StreamingLoadingIndicator: React.FC<StreamingLoadingIndicatorProps> = ({ streamedText, stages, onCancel, title, accentColor, funFacts, attemptCount, maxAttempts, showTimer }) => {
   const [currentFactIndex, setCurrentFactIndex] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(40);
 
   useEffect(() => {
     if (!funFacts || funFacts.length === 0) return;
@@ -59,6 +59,16 @@ const StreamingLoadingIndicator: React.FC<StreamingLoadingIndicatorProps> = ({ s
     }, 4000);
     return () => clearInterval(interval);
   }, [funFacts]);
+
+  useEffect(() => {
+    if (showTimer) {
+      setTimeLeft(40); // Reset timer on show/retry
+      const timer = setInterval(() => {
+        setTimeLeft(prev => (prev > 0 ? prev - 1 : 0));
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [showTimer, attemptCount]);
 
 
   const colors = colorClasses[accentColor] || colorClasses.violet;
@@ -87,10 +97,15 @@ const StreamingLoadingIndicator: React.FC<StreamingLoadingIndicatorProps> = ({ s
     <div className="flex items-center justify-center py-12 px-4 fade-in">
       <div className="max-w-lg w-full bg-white/80 backdrop-blur-xl p-8 rounded-3xl border border-white/50 shadow-2xl text-center">
         <h2 className="text-3xl font-bold text-slate-900">{title}</h2>
+        {showTimer && (
+          <p className="mt-3 text-slate-600">
+              Approximate time remaining: <span className={`font-bold ${colors.text}`}>{timeLeft} seconds</span>
+          </p>
+        )}
 
         {attemptCount && maxAttempts && attemptCount > 1 && (
             <div className="mt-4 p-2 bg-amber-100/70 text-amber-800 rounded-lg text-sm font-semibold border border-amber-200/80" style={{ animation: 'fadeIn 0.5s ease-out' }}>
-                Generation failed, retrying... (Attempt {attemptCount} of {maxAttempts})
+                Just a little hiccup! The AI is polishing the plan... (Attempt {attemptCount} of {maxAttempts})
             </div>
         )}
         

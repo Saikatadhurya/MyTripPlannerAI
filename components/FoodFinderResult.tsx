@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { FoodRecommendations, FoodItem, FoodItemGroup } from '../types';
 
 const CategoryCard: React.FC<{
@@ -7,7 +7,7 @@ const CategoryCard: React.FC<{
     items: FoodItemGroup[];
     accentColor: string;
 }> = ({ title, icon, items, accentColor }) => {
-    if (!items || !items.some(group => group.items.length > 0)) return null;
+    if (!items || !items.some(group => group.items && group.items.length > 0)) return null;
 
     const accentClasses: { [key: string]: string } = {
         purple: 'border-purple-500 bg-purple-100 text-purple-600',
@@ -27,13 +27,40 @@ const CategoryCard: React.FC<{
     
     const [borderColor, iconBgColor] = accentClasses[accentColor]?.split(' ') || ['border-gray-500', 'bg-gray-100', 'text-gray-600'];
     
-    // Create a flat list of items, each with its location
-    const flatItems = items.flatMap(group => 
-        group.items.map(item => ({ ...item, location: group.location }))
-    );
+    const aggregatedItems = useMemo(() => {
+        const foodMap = new Map<string, { name: string; description: string; locations: Set<string> }>();
 
-    const uniqueLocations = new Set(items.map(group => group.location));
+        items.forEach(group => {
+            if (!group.items) return;
+            group.items.forEach(item => {
+                const normalizedName = item.name.trim().toLowerCase();
+                if (foodMap.has(normalizedName)) {
+                    const existing = foodMap.get(normalizedName)!;
+                    existing.locations.add(group.location);
+                } else {
+                    foodMap.set(normalizedName, {
+                        name: item.name,
+                        description: item.description,
+                        locations: new Set([group.location]),
+                    });
+                }
+            });
+        });
+
+        return Array.from(foodMap.values()).map(item => ({
+            ...item,
+            locations: Array.from(item.locations),
+        }));
+    }, [items]);
+    
+    const uniqueLocations = useMemo(() => new Set(items.flatMap(group => group.location)), [items]);
     const isMultiLocation = uniqueLocations.size > 1;
+
+    const handleFoodItemClick = (foodItem: { name: string; locations: string[] }) => {
+        const searchTerm = `${foodItem.name} food ${foodItem.locations[0] || ''}`.trim();
+        const googleImagesUrl = `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(searchTerm)}`;
+        window.open(googleImagesUrl, '_blank', 'noopener,noreferrer');
+    };
 
     return (
         <div className={`bg-white/20 backdrop-blur-xl border border-white/30 rounded-2xl p-6 transition-transform hover:scale-105 shadow-lg border-l-4 ${borderColor}`}>
@@ -44,18 +71,29 @@ const CategoryCard: React.FC<{
                 <h3 className="text-xl font-bold text-slate-800">{title}</h3>
             </div>
             <div className="space-y-4">
-                 <ul className="space-y-4">
-                    {flatItems.map((item, itemIndex) => (
+                 <ul className="space-y-2 -m-3">
+                    {aggregatedItems.map((item, itemIndex) => (
                         <li key={itemIndex}>
-                            <strong className="font-semibold text-slate-900 block">
-                                {item.name}
-                                {isMultiLocation && (
-                                    <span className="ml-2 text-xs font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 align-middle">
-                                        📍 {item.location}
-                                    </span>
-                                )}
-                            </strong>
-                            <p className="text-sm text-slate-600">{item.description}</p>
+                            <button
+                                onClick={() => handleFoodItemClick(item)}
+                                className="w-full text-left p-3 rounded-lg hover:bg-amber-100/50 focus:outline-none focus:ring-2 focus:ring-amber-400 transition-colors"
+                                aria-label={`Search for images of ${item.name}`}
+                            >
+                                <div className="font-semibold text-slate-900 flex flex-wrap items-center gap-x-2 gap-y-1">
+                                    <span className="text-base">{item.name}</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-slate-400 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                    </svg>
+                                    {isMultiLocation && (
+                                        item.locations.map((location, locIndex) => (
+                                            <span key={locIndex} className="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 whitespace-nowrap">
+                                                📍 {location}
+                                            </span>
+                                        ))
+                                    )}
+                                </div>
+                                <p className="text-sm text-slate-600 mt-1">{item.description}</p>
+                            </button>
                         </li>
                     ))}
                 </ul>
@@ -68,9 +106,10 @@ interface FoodFinderResultProps {
     recommendations: FoodRecommendations;
     onRegenerate: () => void;
     isUnifiedView?: boolean;
+    onPrint?: () => void;
 }
 
-const FoodFinderResult: React.FC<FoodFinderResultProps> = ({ recommendations, onRegenerate, isUnifiedView = false }) => {
+const FoodFinderResult: React.FC<FoodFinderResultProps> = ({ recommendations, onRegenerate, isUnifiedView = false, onPrint }) => {
     const iconClass = "h-6 w-6";
     const categoryDetails = {
         iconicDishes: { title: "Iconic Dishes", icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>, color: "orange"},
@@ -83,16 +122,16 @@ const FoodFinderResult: React.FC<FoodFinderResultProps> = ({ recommendations, on
         hiddenRecipes: { title: "Hidden Recipes", icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" /></svg>, color: "brown"},
         trendingOrViralFoods: { title: "Trending / Viral Foods", icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414l-3 3a1 1 0 01-1.414-1.414l3-3a1 1 0 011.414 0zm8 8a1 1 0 01-1.414 0l-3-3a1 1 0 011.414-1.414l3 3a1 1 0 010 1.414z" clipRule="evenodd" /></svg>, color: "fuchsia"},
         chefsSpecials: { title: "Chef’s Specials", icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M11.348 2.368A2.5 2.5 0 008.86 1.114L8.06 3.99a2.5 2.5 0 004.68.63l.66-2.525a2.5 2.5 0 00-2.052-.727zM12.34 3.99l-2.08 7.925a.5.5 0 01-.958.01l-2.08-7.925a2.5 2.5 0 014.68-.63l.218.83a.5.5 0 00.958-.25l.218-.83a2.5 2.5 0 012.34.38l.01.006.01.005a2.5 2.5 0 011.268 4.093l-1.39 1.39a.5.5 0 000 .707l1.39 1.39a2.5 2.5 0 01-3.172 3.84l-1.39-1.39a.5.5 0 00-.707 0l-1.39 1.39a2.5 2.5 0 01-3.84-3.172l1.39-1.39a.5.5 0 000-.707l-1.39-1.39A2.5 2.5 0 015.66 3.618l.01-.005.01-.006a2.5 2.5 0 014.68.63z" clipRule="evenodd" /></svg>, color: "gold"},
-        festivalFoods: { title: "Festival Foods", icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5 5a3 3 0 013-3h4a3 3 0 013 3v2a3 3 0 01-3 3H8a3 3 0 01-3-3V5zm3-1a1 1 0 00-1 1v2a1 1 0 001 1h4a1 1 0 001-1V5a1 1 0 00-1-1H8zM4 11a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1z" clipRule="evenodd" /></svg>, color: "red"},
         seasonalSpecials: { title: "Seasonal Specials", icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 2a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 2zM5.226 5.226a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zM13.713 5.226a.75.75 0 010 1.06l-1.06 1.06a.75.75 0 01-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zM2 10a.75.75 0 01.75-.75h1.5a.75.75 0 010 1.5h-1.5A.75.75 0 012 10zM15.5 9.25a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5a.75.75 0 01.75-.75zM10 18a.75.75 0 01-.75-.75v-1.5a.75.75 0 011.5 0v1.5A.75.75 0 0110 18zM5.226 13.713a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zM13.713 13.713a.75.75 0 010 1.06l-1.06 1.06a.75.75 0 01-1.06-1.06l1.06-1.06a.75.75 0 011.06 0z" clipRule="evenodd" /></svg>, color: "lime"},
-        streetFestivalsAndFoodMelas: { title: "Street Festivals & Food Melas", icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M6 3a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zM7 6a1 1 0 011-1h4a1 1 0 110 2H8a1 1 0 01-1-1zM8 9a1 1 0 000 2h4a1 1 0 100-2H8z" clipRule="evenodd" /><path d="M4 12a2 2 0 012-2h8a2 2 0 012 2v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5z" /></svg>, color: "indigo"},
+        festivalAndStreetFoods: { title: "Festival & Street Foods", icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M6 3a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zM7 6a1 1 0 011-1h4a1 1 0 110 2H8a1 1 0 01-1-1zM8 9a1 1 0 000 2h4a1 1 0 100-2H8z" clipRule="evenodd" /><path d="M4 12a2 2 0 012-2h8a2 2 0 012 2v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5z" /></svg>, color: "indigo"},
     };
 
     // The order in which categories will be displayed
     const displayOrder = Object.keys(categoryDetails) as Array<keyof typeof categoryDetails>;
+    const handlePrint = onPrint || (() => window.print());
 
     return (
-        <div className="max-w-6xl mx-auto space-y-12 animated-card">
+        <div className="max-w-6xl mx-auto space-y-12 animated-card" id="food-finder-result-content">
             {!isUnifiedView && (
             <div className="flex justify-start items-center no-print">
                 <button
@@ -142,13 +181,13 @@ const FoodFinderResult: React.FC<FoodFinderResultProps> = ({ recommendations, on
                     </button>
                     )}
                     <button
-                        onClick={() => window.print()}
+                        onClick={handlePrint}
                         className="inline-flex items-center justify-center w-full sm:w-auto px-8 py-3 bg-white/60 text-slate-800 font-bold rounded-full hover:bg-white/80 transition-all duration-300 shadow-md border border-white/50"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
                             <path fillRule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v-1a1 1 0 011-1h10a1 1 0 011 1v1h1a2 2 0 002-2v-3a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clipRule="evenodd" />
                         </svg>
-                        <span>Print Guide</span>
+                        <span>{isUnifiedView ? 'Print This Section' : 'Print Guide'}</span>
                     </button>
                 </div>
             </div>
