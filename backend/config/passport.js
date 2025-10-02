@@ -1,6 +1,7 @@
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const userModel = require('../models/userModel');
+const { initUserLimits, ensureFeaturesSeeded } = require('../models/usageModel');
 require('dotenv').config();
 
 /**
@@ -64,6 +65,10 @@ passport.use('google', new GoogleStrategy(
                 email: profile.emails[0].value,
                 password_hash: null
             });
+
+            // Seed features and initialize this user's limits
+            await ensureFeaturesSeeded();
+            await initUserLimits(user.id);
 
             // Link Google account to new user
             await userModel.createSocialAccount({

@@ -1,6 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { MusicFinderRequestData, MusicRecommendations } from '../types';
 import { extractJson, cleanCitations } from './jsonUtils';
+import { incrementUsage } from './usageService';
 
 export const generateMusicRecommendations = async (data: MusicFinderRequestData, onChunk?: (chunk: string) => void): Promise<MusicRecommendations> => {
   if (!process.env.API_KEY) {
@@ -123,6 +124,8 @@ export const generateMusicRecommendations = async (data: MusicFinderRequestData,
       }
 
       const cleanedJson = cleanCitations(parsedJson);
+
+      try { await incrementUsage('music'); } catch (e) { console.error('Failed to increment usage for music', e); }
 
       return cleanedJson;
   } catch (error) {

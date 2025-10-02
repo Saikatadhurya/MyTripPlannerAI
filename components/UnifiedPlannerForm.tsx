@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Budget, Vibe, FoodPreference, TripType, QuestionnaireData, LocationSuggestion, PopularDestination } from '../types';
 import { getDestinationSuggestions } from '../services/geminiService';
+import { useQuotas } from '../hooks/useQuotas';
+import { User } from '../services/authService';
 import { currencies } from '../data/currencies';
 import BackToHomeButton from './BackToHomeButton';
 import DateRangePicker from './DateRangePicker';
@@ -12,6 +14,7 @@ interface UnifiedPlannerFormProps {
   error: string | null;
   initialData?: QuestionnaireData | null;
   onBack: () => void;
+  user: User | null;
 }
 
 const budgets: Budget[] = ['Budget', 'Midrange', 'Luxury'];
@@ -61,7 +64,8 @@ const Toggle: React.FC<{ label: string; description: string; enabled: boolean; o
 );
 
 // FIX: Renamed component to UnifiedPlannerForm and updated props
-const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error, initialData, onBack }) => {
+const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error, initialData, onBack, user }) => {
+  const { quotas, quotasLoading } = useQuotas(user);
   const defaultEndDate = new Date();
   defaultEndDate.setDate(defaultEndDate.getDate() + 2);
 
@@ -455,6 +459,15 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
       <div className="text-center mb-10">
         <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Unified Trip Planner</h1>
         <p className="mt-2 text-lg text-slate-600">Tell us about your dream trip to get a complete, AI-generated plan.</p>
+        {user && (
+          <div className="mt-3 inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-violet-100 text-violet-800">
+            {quotasLoading ? (
+              <>⏳ Loading limits...</>
+            ) : (
+              <>✨ {quotas.unified || quotas.itinerary ? `${(quotas.unified || quotas.itinerary).remaining}/${(quotas.unified || quotas.itinerary).weekly_limit}` : '0/5'} uses left this week</>
+            )}
+          </div>
+        )}
       </div>
 
       {error && (
@@ -749,9 +762,9 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
               <button
                 type="submit"
                 className="w-full sm:w-auto px-10 py-4 bg-violet-600 text-white font-bold rounded-full hover:bg-violet-700 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-violet-500/30 disabled:bg-violet-400/80 disabled:cursor-not-allowed disabled:shadow-md disabled:scale-100"
-                disabled={!isDestinationSelected || !!destinationError || (showStartPoint && (!isStartPointSelected || !!startPointError)) || formData.vibe.length === 0}
+                disabled={!isDestinationSelected || !!destinationError || (showStartPoint && (!isStartPointSelected || !!startPointError)) || formData.vibe.length === 0 || quotasLoading}
               >
-                ✨ Plan My Adventure
+                {quotasLoading ? '⏳ Loading limits...' : '✨ Plan My Adventure'}
               </button>
             </div>
           </form>

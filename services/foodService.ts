@@ -2,6 +2,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { FoodFinderRequestData, FoodRecommendations } from '../types';
 import { extractJson, cleanCitations } from './jsonUtils';
+import { incrementUsage } from './usageService';
 
 export const generateFoodRecommendations = async (data: FoodFinderRequestData, onChunk?: (chunk: string) => void): Promise<FoodRecommendations> => {
   if (!process.env.API_KEY) {
@@ -139,6 +140,8 @@ export const generateFoodRecommendations = async (data: FoodFinderRequestData, o
       }
 
       const cleanedJson = cleanCitations(parsedJson);
+
+      try { await incrementUsage('food'); } catch (e) { console.error('Failed to increment usage for food', e); }
 
       return cleanedJson;
   } catch (error) {

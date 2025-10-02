@@ -1,6 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { AppFinderRequestData, AppRecommendations } from '../types';
 import { extractJson, cleanCitations } from './jsonUtils';
+import { incrementUsage } from './usageService';
 
 export const generateAppRecommendations = async (data: AppFinderRequestData, onChunk?: (chunk: string) => void): Promise<AppRecommendations> => {
   if (!process.env.API_KEY) {
@@ -107,6 +108,8 @@ export const generateAppRecommendations = async (data: AppFinderRequestData, onC
       }
 
       const cleanedJson = cleanCitations(parsedJson);
+
+      try { await incrementUsage('apps'); } catch (e) { console.error('Failed to increment usage for apps', e); }
 
       return cleanedJson;
   } catch (error) {

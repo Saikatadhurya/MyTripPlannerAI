@@ -6,6 +6,7 @@ const session = require('express-session');
 const passport = require('passport');
 const authRoutes = require('./routes/authRoutes');
 const profileRoutes = require('./routes/profileRoutes');
+const usageRoutes = require('./routes/usageRoutes');
 const protect = require('./middleware/authMiddleware');
 const cors = require('cors');
 require('./config/passport');
@@ -42,6 +43,7 @@ app.use(express.static(path.join(__dirname, '../dist')));
 // Routes
 app.use('/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
+app.use('/api/usage', usageRoutes);
 
 app.get('/protected', protect, (req, res) => {
     res.json({ message: `Welcome ${req.user.email}, you have access to protected data!` });

@@ -2,6 +2,7 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { PackingList, PackingListRequestData } from '../types';
 import { extractJson, cleanCitations } from './jsonUtils';
+import { incrementUsage } from './usageService';
 
 export const generatePackingList = async (data: PackingListRequestData, onChunk?: (chunk: string) => void): Promise<PackingList> => {
   if (!process.env.API_KEY) {
@@ -96,6 +97,8 @@ export const generatePackingList = async (data: PackingListRequestData, onChunk?
       }
       
       const cleanedJson = cleanCitations(parsedJson);
+
+      try { await incrementUsage('packing'); } catch (e) { console.error('Failed to increment usage for packing', e); }
 
       return {
         ...cleanedJson,

@@ -1,5 +1,6 @@
 
 import { GoogleGenAI } from "@google/genai";
+// Note: usage checks should be done in the route/controller before calling this generator.
 import { FoodFinderRequestData, FoodRecommendations } from '../types';
 import { extractJson, cleanCitations } from './jsonUtils';
 

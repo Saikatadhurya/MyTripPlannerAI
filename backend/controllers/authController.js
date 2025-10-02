@@ -1,5 +1,6 @@
 const userModel = require('../models/userModel');
 const jwt = require('../utils/jwt');
+const { initUserLimits, ensureFeaturesSeeded } = require('../models/usageModel');
 
 exports.signup = async (req, res) => {
     const { full_name, email, password } = req.body;
@@ -16,6 +17,10 @@ exports.signup = async (req, res) => {
 
         const password_hash = await userModel.hashPassword(password);
         const newUser = await userModel.createUser({ full_name, email, password_hash });
+
+        // Ensure features exist and initialize limits for this new user
+        await ensureFeaturesSeeded();
+        await initUserLimits(newUser.id);
 
         const token = jwt.generateToken({ id: newUser.id, email: newUser.email });
         res.status(201).json({ message: 'User registered successfully', user: newUser, token });

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { PopularDestination } from '../types';
 import { User } from '../services/authService';
+import { useQuotas } from '../hooks/useQuotas';
 import TestimonialsCarousel from './TestimonialsCarousel';
 
 interface LandingPageProps {
@@ -17,6 +18,7 @@ interface LandingPageProps {
 
 const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPlanItinerary, onStartPacking, onStartFoodFinder, onStartAppFinder, onStartMusicFinder, onStartLingoFinder, onOpenAuthModal }) => {
   const [destinations, setDestinations] = useState<PopularDestination[]>([]);
+  const { quotas, quotasLoading } = useQuotas(user);
 
   useEffect(() => {
     const fetchDestinations = async () => {
@@ -161,14 +163,23 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
         <p className="mt-4 text-lg text-slate-600 max-w-2xl mx-auto">
           From custom itineraries and smart packing lists to local food and music discovery, our AI crafts your complete travel experience. Just tell us where you want to go.
         </p>
-        <div className="mt-8">
+         <div className="mt-8">
           {user ? (
             <>
               <button
-                onClick={() => onPlanUnifiedTrip()}
-                className="cta-pulse inline-block px-10 py-4 bg-violet-600 text-white font-bold rounded-full text-lg shadow-lg shadow-violet-500/30 hover:bg-violet-700 hover:shadow-xl hover:shadow-violet-500/40 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-violet-300"
+                 disabled={quotasLoading}
+                 onClick={() => { if (!quotasLoading) onPlanUnifiedTrip(); }}
+                 className={`cta-pulse inline-block px-10 py-4 font-bold rounded-full text-lg shadow-lg transition-all duration-300 transform focus:outline-none focus:ring-4 ${
+                   quotasLoading
+                     ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                     : 'bg-violet-600 text-white shadow-violet-500/30 hover:bg-violet-700 hover:shadow-xl hover:shadow-violet-500/40 hover:scale-105 focus:ring-violet-300'
+                 }`}
               >
-                ✨ Build Your Ultimate Itinerary
+                 {(() => {
+                   const q = quotas.unified || quotas.itinerary;
+                   const suffix = quotasLoading ? ' (loading...)' : (q ? ` (left ${q.remaining}/${q.weekly_limit})` : '');
+                   return `✨ Build Your Ultimate Itinerary${suffix}`;
+                 })()}
               </button>
               <p className="mt-4 text-sm text-violet-700/80 font-medium tracking-wide">
                 Includes: Itinerary, Packing, Food, Apps & Music
@@ -203,15 +214,17 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
         <div className="mt-10 grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6">
           {miniApps.map((app, index) => {
             const colors = colorClasses[app.color];
-            const isLocked = app.locked || false;
+            const quota = user ? (quotas[app.id] || (app.id === 'itinerary' ? quotas.unified : undefined)) : undefined;
+            const labelSuffix = quotasLoading ? ' (loading...)' : (quota ? ` (${quota.remaining}/${quota.weekly_limit})` : '');
+            const isLocked = app.locked || quotasLoading;
             return (
               <div
                 key={app.id}
-                onClick={app.onClick}
+                onClick={() => { if (!isLocked) app.onClick(); }}
                 onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
-                        app.onClick();
+                        if (!isLocked) app.onClick();
                     }
                 }}
                 role="button"
@@ -235,7 +248,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
                         ? 'bg-gray-400 text-gray-600 cursor-not-allowed' 
                         : colors.button
                     }`}>
-                            {isLocked ? `🔒 ${app.buttonText}` : app.buttonText}
+                             {isLocked ? `🔒 ${app.buttonText}` : `${app.buttonText}${labelSuffix}`}
                         </span>
                     </div>
                 </div>
