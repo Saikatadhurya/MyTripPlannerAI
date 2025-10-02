@@ -6,6 +6,7 @@ import { generateFoodRecommendations } from './services/foodService';
 import { generateAppRecommendations } from './services/appFinderService';
 import { generateMusicRecommendations } from './services/musicService';
 import { generateLingoGuide } from './services/lingoService';
+import { incrementUsage } from './services/usageService';
 
 import { authService, User } from './services/authService';
 
@@ -565,6 +566,16 @@ const App: React.FC = () => {
             if (simplePlanCancellationFlag.current) break;
 
             setItinerary(result);
+            
+            // Increment usage after successful generation
+            try {
+              await incrementUsage('itinerary');
+              console.log('Successfully incremented usage for itinerary');
+            } catch (error) {
+              console.error('Failed to increment usage for itinerary:', error);
+              // Don't fail the whole operation if usage tracking fails
+            }
+            
             await new Promise(resolve => setTimeout(resolve, 1000));
             setItineraryAttemptCount(0);
             setIsLoading(false);
@@ -686,6 +697,16 @@ const App: React.FC = () => {
                     }
 
                     setUnifiedPlan(prev => ({ ...prev, itinerary: result }));
+                    
+                    // Increment usage after successful unified plan generation
+                    try {
+                      await incrementUsage('unified');
+                      console.log('Successfully incremented usage for unified planner');
+                    } catch (error) {
+                      console.error('Failed to increment usage for unified planner:', error);
+                      // Don't fail the whole operation if usage tracking fails
+                    }
+                    
                     setUnifiedPlanLoadingStatus(prev => ({ ...prev, itinerary: 'done' }));
                     setItineraryAttemptCount(0);
                     return; // Success, exit loop
@@ -859,6 +880,16 @@ const App: React.FC = () => {
             if (simplePlanCancellationFlag.current) break;
 
             setPackingList(result);
+            
+            // Increment usage after successful generation
+            try {
+              await incrementUsage('packing');
+              console.log('Successfully incremented usage for packing assistant');
+            } catch (error) {
+              console.error('Failed to increment usage for packing assistant:', error);
+              // Don't fail the whole operation if usage tracking fails
+            }
+            
             await new Promise(resolve => setTimeout(resolve, 1000));
             setMiniAppAttemptCount(0);
             setIsLoading(false);
@@ -908,6 +939,16 @@ const App: React.FC = () => {
             if (simplePlanCancellationFlag.current) break;
 
             setFoodRecommendations(result);
+            
+            // Increment usage after successful generation
+            try {
+              await incrementUsage('food');
+              console.log('Successfully incremented usage for food finder');
+            } catch (error) {
+              console.error('Failed to increment usage for food finder:', error);
+              // Don't fail the whole operation if usage tracking fails
+            }
+            
             await new Promise(resolve => setTimeout(resolve, 1000));
             setMiniAppAttemptCount(0);
             setIsLoading(false);
@@ -957,6 +998,16 @@ const App: React.FC = () => {
             if (simplePlanCancellationFlag.current) break;
 
             setAppRecommendations(result);
+            
+            // Increment usage after successful generation
+            try {
+              await incrementUsage('apps');
+              console.log('Successfully incremented usage for app finder');
+            } catch (error) {
+              console.error('Failed to increment usage for app finder:', error);
+              // Don't fail the whole operation if usage tracking fails
+            }
+            
             await new Promise(resolve => setTimeout(resolve, 1000));
             setMiniAppAttemptCount(0);
             setIsLoading(false);
@@ -1006,6 +1057,16 @@ const App: React.FC = () => {
             if (simplePlanCancellationFlag.current) break;
 
             setMusicRecommendations(result);
+            
+            // Increment usage after successful generation
+            try {
+              await incrementUsage('music');
+              console.log('Successfully incremented usage for music finder');
+            } catch (error) {
+              console.error('Failed to increment usage for music finder:', error);
+              // Don't fail the whole operation if usage tracking fails
+            }
+            
             await new Promise(resolve => setTimeout(resolve, 1000));
             setMiniAppAttemptCount(0);
             setIsLoading(false);
@@ -1055,6 +1116,16 @@ const App: React.FC = () => {
             if (simplePlanCancellationFlag.current) break;
 
             setLingoRecommendations(result);
+            
+            // Increment usage after successful generation
+            try {
+              await incrementUsage('lingo');
+              console.log('Successfully incremented usage for lingo finder');
+            } catch (error) {
+              console.error('Failed to increment usage for lingo finder:', error);
+              // Don't fail the whole operation if usage tracking fails
+            }
+            
             await new Promise(resolve => setTimeout(resolve, 1000));
             setMiniAppAttemptCount(0);
             setIsLoading(false);

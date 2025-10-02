@@ -38,5 +38,16 @@ export function useQuotas(user: User | null) {
     refetchQuotas();
   }, [user]);
 
+  // Listen for quota updates and refresh automatically
+  useEffect(() => {
+    const handleQuotasUpdated = () => {
+      console.log('useQuotas: Received quotasUpdated event, refreshing...');
+      refetchQuotas();
+    };
+
+    window.addEventListener('quotasUpdated', handleQuotasUpdated);
+    return () => window.removeEventListener('quotasUpdated', handleQuotasUpdated);
+  }, []);
+
   return { quotas, quotasLoading, refetchQuotas };
 }

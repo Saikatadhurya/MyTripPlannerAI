@@ -38,6 +38,9 @@ export async function incrementUsage(featureId: string): Promise<void> {
   try {
     const res = await axios.post(`${API_URL}/increment`, { featureId }, { headers });
     console.log('Increment usage response:', res.data);
+    
+    // Trigger a custom event to notify components to refresh quotas
+    window.dispatchEvent(new CustomEvent('quotasUpdated', { detail: { featureId } }));
   } catch (error: any) {
     console.error('Error incrementing usage:', error);
     console.error('Error response:', error.response?.data);
