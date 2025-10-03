@@ -6,7 +6,7 @@ const { FEATURE_KEYS, getRemainingQuota, ensureFeaturesSeeded, initUserLimits } 
 // Map feature ids to keys for frontend display
 const FEATURE_MAP = [
   { id: 'unified', key: FEATURE_KEYS.UNIFIED_PLANNER },
-  { id: 'itinerary', key: FEATURE_KEYS.UNIFIED_PLANNER }, // If itinerary uses unified bucket
+  { id: 'itinerary', key: FEATURE_KEYS.ITINERARY_PLANNER },
   { id: 'packing', key: FEATURE_KEYS.PACKING_ASSISTANT },
   { id: 'food', key: FEATURE_KEYS.FOOD_FINDER },
   { id: 'apps', key: FEATURE_KEYS.APP_FINDER },
