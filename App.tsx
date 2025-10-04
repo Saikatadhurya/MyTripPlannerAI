@@ -131,7 +131,7 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({
 
   const navItems = [
     { ids: ['landing'], label: 'Home', icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" /></svg>, action: onGoHome, locked: false },
-    { ids: ['unifiedPlannerForm', 'questionnaire'], label: 'Plan Trip', icon: user ? <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM18 13.5l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 18l-1.035.259a3.375 3.375 0 00-2.456 2.456L18 21.75l-.259-1.035a3.375 3.375 0 00-2.456-2.456L14.25 18l1.035-.259a3.375 3.375 0 002.456-2.456L18 13.5z" /></svg> : lockedIcon, action: onPlanTrip, locked: !user, tooltip: user ? undefined : 'Sign in to unlock' },
+    { ids: ['unifiedPlannerForm', 'questionnaire'], label: 'Plan Trip', icon: user ? <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456L18 13.5l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 18l-1.035.259a3.375 3.375 0 00-2.456 2.456L18 21.75l-.259-1.035a3.375 3.375 0 00-2.456-2.456L14.25 18l1.035-.259a3.375 3.375 0 002.456-2.456L18 13.5z" /></svg> : lockedIcon, action: onPlanTrip, locked: !user, tooltip: user ? undefined : 'Sign in to unlock' },
     { ids: ['packingAssistantForm'], label: 'Packing', icon: user ? <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 2a3 3 0 00-3 3v1H5a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V8a2 2 0 00-2-2h-2V5a3 3 0 00-3-3zm-1 4a1 1 0 10-2 0v1h2V6z" clipRule="evenodd" /></svg> : lockedIcon, action: onStartPacking, locked: !user, tooltip: user ? undefined : 'Sign in to unlock' },
     { ids: ['foodFinderForm'], label: 'Food', icon: user ? <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path d="M11 3a1 1 0 10-2 0v1.088A7 7 0 004.53 10.756.5.5 0 005 11h10a.5.5 0 00.47-.244A7 7 0 0011 4.088V3z" /><path fillRule="evenodd" d="M15 13a.5.5 0 01.5.5v2a.5.5 0 01-.5.5H5a.5.5 0 01-.5-.5v-2a.5.5 0 01.5-.5h10z" clipRule="evenodd" /></svg> : lockedIcon, action: onStartFoodFinder, locked: !user, tooltip: user ? undefined : 'Sign in to unlock' },
   ];
@@ -734,6 +734,351 @@ const App: React.FC = () => {
         runItineraryStep();
     }, [view, questionnaireDataForUnifiedPlan, unifiedPlanLoadingStatus.itinerary]);
 
+    const handleGeneratePackingList = useCallback(async (data: PackingListRequestData, isUnified = false): Promise<PackingList | null> => {
+      if (!isUnified) {
+        setPackingRequestData(data);
+        setIsLoading(true);
+        setError(null);
+        setPackingList(null);
+        handleViewChange('packingAssistantResult');
+      }
+  
+      simplePlanCancellationFlag.current = false;
+      const maxRetries = 3;
+      let lastError: Error | null = null;
+  
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+          if (!isUnified) setMiniAppAttemptCount(attempt);
+          if (!isUnified) setStreamedText('');
+  
+          if (simplePlanCancellationFlag.current) break;
+  
+          try {
+              const result = await generatePackingList(data, (chunk) => {
+                  if (simplePlanCancellationFlag.current) throw new Error("Cancelled");
+                  if (!isUnified) setStreamedText(prev => prev + chunk);
+              });
+              
+              if (simplePlanCancellationFlag.current) break;
+  
+              if (!isUnified) {
+                setPackingList(result);
+                try {
+                  await incrementUsage('packing');
+                  console.log('Successfully incremented usage for packing assistant');
+                } catch (error) {
+                  console.error('Failed to increment usage for packing assistant:', error);
+                }
+              }
+              
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              if (!isUnified) {
+                setMiniAppAttemptCount(0);
+                setIsLoading(false);
+              }
+              return result;
+  
+          } catch (e) {
+              lastError = e instanceof Error ? e : new Error('An unknown error occurred');
+              console.error(`Attempt ${attempt} for packing list failed:`, lastError);
+              
+              if (lastError.message === "Cancelled") break;
+              if (attempt < maxRetries) await new Promise(resolve => setTimeout(resolve, 1500));
+          }
+      }
+      
+      if (!simplePlanCancellationFlag.current && lastError) {
+          if (!isUnified) {
+            setError(lastError.message);
+            handleViewChange('packingAssistantForm');
+          } else {
+            throw lastError;
+          }
+      }
+      
+      if (!isUnified) {
+        setIsLoading(false);
+        setMiniAppAttemptCount(0);
+      }
+      return null;
+  }, [handleViewChange]);
+  
+    const handleGenerateFoodRecommendations = useCallback(async (data: FoodFinderRequestData, isUnified = false): Promise<FoodRecommendations | null> => {
+      if (!isUnified) {
+        setFoodRequestData(data);
+        setIsLoading(true);
+        setError(null);
+        setFoodRecommendations(null);
+        handleViewChange('foodFinderResult');
+      }
+      
+      simplePlanCancellationFlag.current = false;
+      const maxRetries = 3;
+      let lastError: Error | null = null;
+  
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+          if (!isUnified) setMiniAppAttemptCount(attempt);
+          if (!isUnified) setStreamedText('');
+  
+          if (simplePlanCancellationFlag.current) break;
+  
+          try {
+              const result = await generateFoodRecommendations(data, (chunk) => {
+                  if (simplePlanCancellationFlag.current) throw new Error("Cancelled");
+                  if (!isUnified) setStreamedText(prev => prev + chunk)
+              });
+              
+              if (simplePlanCancellationFlag.current) break;
+  
+              if (!isUnified) {
+                setFoodRecommendations(result);
+                try {
+                  await incrementUsage('food');
+                  console.log('Successfully incremented usage for food finder');
+                } catch (error) {
+                  console.error('Failed to increment usage for food finder:', error);
+                }
+              }
+              
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              if (!isUnified) {
+                setMiniAppAttemptCount(0);
+                setIsLoading(false);
+              }
+              return result;
+  
+          } catch (e) {
+              lastError = e instanceof Error ? e : new Error('An unknown error occurred');
+              console.error(`Attempt ${attempt} for food recommendations failed:`, lastError);
+              
+              if (lastError.message === "Cancelled") break;
+              if (attempt < maxRetries) await new Promise(resolve => setTimeout(resolve, 1500));
+          }
+      }
+      
+      if (!simplePlanCancellationFlag.current && lastError) {
+        if (!isUnified) {
+          setError(lastError.message);
+          handleViewChange('foodFinderForm');
+        } else {
+          throw lastError;
+        }
+      }
+      
+      if (!isUnified) {
+        setIsLoading(false);
+        setMiniAppAttemptCount(0);
+      }
+      return null;
+  }, [handleViewChange]);
+    
+    const handleGenerateAppRecommendations = useCallback(async (data: AppFinderRequestData, isUnified = false): Promise<AppRecommendations | null> => {
+      if (!isUnified) {
+        setAppRequestData(data);
+        setIsLoading(true);
+        setError(null);
+        setAppRecommendations(null);
+        handleViewChange('appFinderResult');
+      }
+      
+      simplePlanCancellationFlag.current = false;
+      const maxRetries = 3;
+      let lastError: Error | null = null;
+  
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+          if (!isUnified) setMiniAppAttemptCount(attempt);
+          if (!isUnified) setStreamedText('');
+  
+          if (simplePlanCancellationFlag.current) break;
+  
+          try {
+              const result = await generateAppRecommendations(data, (chunk) => {
+                  if (simplePlanCancellationFlag.current) throw new Error("Cancelled");
+                  if (!isUnified) setStreamedText(prev => prev + chunk)
+              });
+              
+              if (simplePlanCancellationFlag.current) break;
+  
+              if (!isUnified) {
+                setAppRecommendations(result);
+                try {
+                  await incrementUsage('apps');
+                  console.log('Successfully incremented usage for app finder');
+                } catch (error) {
+                  console.error('Failed to increment usage for app finder:', error);
+                }
+              }
+              
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              if (!isUnified) {
+                setMiniAppAttemptCount(0);
+                setIsLoading(false);
+              }
+              return result;
+  
+          } catch (e) {
+              lastError = e instanceof Error ? e : new Error('An unknown error occurred');
+              console.error(`Attempt ${attempt} for app recommendations failed:`, lastError);
+              
+              if (lastError.message === "Cancelled") break;
+              if (attempt < maxRetries) await new Promise(resolve => setTimeout(resolve, 1500));
+          }
+      }
+      
+      if (!simplePlanCancellationFlag.current && lastError) {
+        if (!isUnified) {
+          setError(lastError.message);
+          handleViewChange('appFinderForm');
+        } else {
+          throw lastError;
+        }
+      }
+      
+      if (!isUnified) {
+        setIsLoading(false);
+        setMiniAppAttemptCount(0);
+      }
+      return null;
+  }, [handleViewChange]);
+    
+    const handleGenerateMusicRecommendations = useCallback(async (data: MusicFinderRequestData, isUnified = false): Promise<MusicRecommendations | null> => {
+      if (!isUnified) {
+        setMusicRequestData(data);
+        setIsLoading(true);
+        setError(null);
+        setMusicRecommendations(null);
+        handleViewChange('musicFinderResult');
+      }
+      
+      simplePlanCancellationFlag.current = false;
+      const maxRetries = 3;
+      let lastError: Error | null = null;
+  
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+          if (!isUnified) setMiniAppAttemptCount(attempt);
+          if (!isUnified) setStreamedText('');
+  
+          if (simplePlanCancellationFlag.current) break;
+  
+          try {
+              const result = await generateMusicRecommendations(data, (chunk) => {
+                  if (simplePlanCancellationFlag.current) throw new Error("Cancelled");
+                  if (!isUnified) setStreamedText(prev => prev + chunk)
+              });
+              
+              if (simplePlanCancellationFlag.current) break;
+  
+              if (!isUnified) {
+                setMusicRecommendations(result);
+                try {
+                  await incrementUsage('music');
+                  console.log('Successfully incremented usage for music finder');
+                } catch (error) {
+                  console.error('Failed to increment usage for music finder:', error);
+                }
+              }
+              
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              if (!isUnified) {
+                setMiniAppAttemptCount(0);
+                setIsLoading(false);
+              }
+              return result;
+  
+          } catch (e) {
+              lastError = e instanceof Error ? e : new Error('An unknown error occurred');
+              console.error(`Attempt ${attempt} for music recommendations failed:`, lastError);
+              
+              if (lastError.message === "Cancelled") break;
+              if (attempt < maxRetries) await new Promise(resolve => setTimeout(resolve, 1500));
+          }
+      }
+      
+      if (!simplePlanCancellationFlag.current && lastError) {
+        if (!isUnified) {
+          setError(lastError.message);
+          handleViewChange('musicFinderForm');
+        } else {
+          throw lastError;
+        }
+      }
+      
+      if (!isUnified) {
+        setIsLoading(false);
+        setMiniAppAttemptCount(0);
+      }
+      return null;
+  }, [handleViewChange]);
+    
+    const handleGenerateLingoGuide = useCallback(async (data: LingoFinderRequestData, isUnified = false): Promise<LingoRecommendations | null> => {
+      if (!isUnified) {
+        setLingoRequestData(data);
+        setIsLoading(true);
+        setError(null);
+        setLingoRecommendations(null);
+        handleViewChange('lingoFinderResult');
+      }
+      
+      simplePlanCancellationFlag.current = false;
+      const maxRetries = 3;
+      let lastError: Error | null = null;
+  
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+          if (!isUnified) setMiniAppAttemptCount(attempt);
+          if (!isUnified) setStreamedText('');
+  
+          if (simplePlanCancellationFlag.current) break;
+  
+          try {
+              const result = await generateLingoGuide(data, (chunk) => {
+                  if (simplePlanCancellationFlag.current) throw new Error("Cancelled");
+                  if (!isUnified) setStreamedText(prev => prev + chunk)
+              });
+              
+              if (simplePlanCancellationFlag.current) break;
+  
+              if (!isUnified) {
+                setLingoRecommendations(result);
+                try {
+                  await incrementUsage('lingo');
+                  console.log('Successfully incremented usage for lingo finder');
+                } catch (error) {
+                  console.error('Failed to increment usage for lingo finder:', error);
+                }
+              }
+              
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              if (!isUnified) {
+                setMiniAppAttemptCount(0);
+                setIsLoading(false);
+              }
+              return result;
+  
+          } catch (e) {
+              lastError = e instanceof Error ? e : new Error('An unknown error occurred');
+              console.error(`Attempt ${attempt} for lingo guide failed:`, lastError);
+              
+              if (lastError.message === "Cancelled") break;
+              if (attempt < maxRetries) await new Promise(resolve => setTimeout(resolve, 1500));
+          }
+      }
+      
+      if (!simplePlanCancellationFlag.current && lastError) {
+        if (!isUnified) {
+          setError(lastError.message);
+          handleViewChange('lingoFinderForm');
+        } else {
+          throw lastError;
+        }
+      }
+      
+      if (!isUnified) {
+        setIsLoading(false);
+        setMiniAppAttemptCount(0);
+      }
+      return null;
+  }, [handleViewChange]);
+
     // Effect for parallel generation of other steps, dependent on itinerary completion
     useEffect(() => {
         const runParallelSteps = async () => {
@@ -745,37 +1090,37 @@ const App: React.FC = () => {
                 packing: {
                     generator: () => {
                         const packingData: PackingListRequestData = { destination: data.destination, startDate: data.startDate, days: data.days, language: data.language, coveredDestinations: isMultiStop ? currentItinerary!.coveredDestinations : undefined };
-                        return generatePackingList(packingData);
+                        return handleGeneratePackingList(packingData, true);
                     },
-                    onSuccess: (result) => setUnifiedPlan(prev => ({ ...prev, packingList: result })),
+                    onSuccess: (result) => { if (result) setUnifiedPlan(prev => ({ ...prev, packingList: result })); },
                 },
                 food: {
                     generator: () => {
                         const foodData: FoodFinderRequestData = { destination: data.destination, startDate: data.startDate, foodPreference: data.foodPreference, includeAlcoholicDrinks: data.includeAlcoholicDrinks, language: data.language, coveredDestinations: isMultiStop ? currentItinerary!.coveredDestinations : undefined };
-                        return generateFoodRecommendations(foodData);
+                        return handleGenerateFoodRecommendations(foodData, true);
                     },
-                    onSuccess: (result) => setUnifiedPlan(prev => ({ ...prev, foodRecommendations: result })),
+                    onSuccess: (result) => { if (result) setUnifiedPlan(prev => ({ ...prev, foodRecommendations: result })); },
                 },
                 apps: {
                     generator: () => {
                         const appData: AppFinderRequestData = { destination: data.destination, language: data.language, coveredDestinations: isMultiStop ? currentItinerary!.coveredDestinations : undefined };
-                        return generateAppRecommendations(appData);
+                        return handleGenerateAppRecommendations(appData, true);
                     },
-                    onSuccess: (result) => setUnifiedPlan(prev => ({ ...prev, appRecommendations: result })),
+                    onSuccess: (result) => { if (result) setUnifiedPlan(prev => ({ ...prev, appRecommendations: result })); },
                 },
                 music: {
                     generator: () => {
                         const musicData: MusicFinderRequestData = { destination: data.destination, language: data.language, coveredDestinations: isMultiStop ? currentItinerary!.coveredDestinations : undefined };
-                        return generateMusicRecommendations(musicData);
+                        return handleGenerateMusicRecommendations(musicData, true);
                     },
-                    onSuccess: (result) => setUnifiedPlan(prev => ({ ...prev, musicRecommendations: result })),
+                    onSuccess: (result) => { if (result) setUnifiedPlan(prev => ({ ...prev, musicRecommendations: result })); },
                 },
                 lingo: {
                     generator: () => {
                        const lingoData: LingoFinderRequestData = { destination: data.destination, language: data.language };
-                       return generateLingoGuide(lingoData);
+                       return handleGenerateLingoGuide(lingoData, true);
                     },
-                    onSuccess: (result) => setUnifiedPlan(prev => ({ ...prev, lingoRecommendations: result })),
+                    onSuccess: (result) => { if (result) setUnifiedPlan(prev => ({ ...prev, lingoRecommendations: result })); },
                 },
             };
 
@@ -795,7 +1140,7 @@ const App: React.FC = () => {
         if (view === 'unifiedResult' && unifiedPlan.itinerary && unifiedPlanLoadingStatus.itinerary === 'done') {
             runParallelSteps();
         }
-    }, [view, unifiedPlan.itinerary, unifiedPlanLoadingStatus.itinerary, questionnaireDataForUnifiedPlan, generateStep]);
+    }, [view, unifiedPlan.itinerary, unifiedPlanLoadingStatus.itinerary, questionnaireDataForUnifiedPlan, generateStep, handleGeneratePackingList, handleGenerateFoodRecommendations, handleGenerateAppRecommendations, handleGenerateMusicRecommendations, handleGenerateLingoGuide]);
 
 
   const handleGenerateUnifiedPlan = useCallback(async (data: QuestionnaireData) => {
@@ -853,301 +1198,6 @@ const App: React.FC = () => {
       cancellationFlags.current[step] = true;
   }, []);
 
-
-  const handleGeneratePackingList = useCallback(async (data: PackingListRequestData) => {
-    setPackingRequestData(data);
-    setIsLoading(true);
-    setError(null);
-    setPackingList(null);
-    handleViewChange('packingAssistantResult');
-
-    simplePlanCancellationFlag.current = false;
-    const maxRetries = 3;
-    let lastError: Error | null = null;
-
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        setMiniAppAttemptCount(attempt);
-        setStreamedText('');
-
-        if (simplePlanCancellationFlag.current) break;
-
-        try {
-            const result = await generatePackingList(data, (chunk) => {
-                if (simplePlanCancellationFlag.current) throw new Error("Cancelled");
-                setStreamedText(prev => prev + chunk);
-            });
-            
-            if (simplePlanCancellationFlag.current) break;
-
-            setPackingList(result);
-            
-            // Increment usage after successful generation
-            try {
-              await incrementUsage('packing');
-              console.log('Successfully incremented usage for packing assistant');
-            } catch (error) {
-              console.error('Failed to increment usage for packing assistant:', error);
-              // Don't fail the whole operation if usage tracking fails
-            }
-            
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            setMiniAppAttemptCount(0);
-            setIsLoading(false);
-            return;
-
-        } catch (e) {
-            lastError = e instanceof Error ? e : new Error('An unknown error occurred');
-            console.error(`Attempt ${attempt} for packing list failed:`, lastError);
-            
-            if (lastError.message === "Cancelled") break;
-            if (attempt < maxRetries) await new Promise(resolve => setTimeout(resolve, 1500));
-        }
-    }
-    
-    if (!simplePlanCancellationFlag.current && lastError) {
-        setError(lastError.message);
-        handleViewChange('packingAssistantForm');
-    }
-    
-    setIsLoading(false);
-    setMiniAppAttemptCount(0);
-}, [handleViewChange]);
-
-  const handleGenerateFoodRecommendations = useCallback(async (data: FoodFinderRequestData) => {
-    setFoodRequestData(data);
-    setIsLoading(true);
-    setError(null);
-    setFoodRecommendations(null);
-    handleViewChange('foodFinderResult');
-    
-    simplePlanCancellationFlag.current = false;
-    const maxRetries = 3;
-    let lastError: Error | null = null;
-
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        setMiniAppAttemptCount(attempt);
-        setStreamedText('');
-
-        if (simplePlanCancellationFlag.current) break;
-
-        try {
-            const result = await generateFoodRecommendations(data, (chunk) => {
-                if (simplePlanCancellationFlag.current) throw new Error("Cancelled");
-                setStreamedText(prev => prev + chunk)
-            });
-            
-            if (simplePlanCancellationFlag.current) break;
-
-            setFoodRecommendations(result);
-            
-            // Increment usage after successful generation
-            try {
-              await incrementUsage('food');
-              console.log('Successfully incremented usage for food finder');
-            } catch (error) {
-              console.error('Failed to increment usage for food finder:', error);
-              // Don't fail the whole operation if usage tracking fails
-            }
-            
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            setMiniAppAttemptCount(0);
-            setIsLoading(false);
-            return;
-
-        } catch (e) {
-            lastError = e instanceof Error ? e : new Error('An unknown error occurred');
-            console.error(`Attempt ${attempt} for food recommendations failed:`, lastError);
-            
-            if (lastError.message === "Cancelled") break;
-            if (attempt < maxRetries) await new Promise(resolve => setTimeout(resolve, 1500));
-        }
-    }
-    
-    if (!simplePlanCancellationFlag.current && lastError) {
-        setError(lastError.message);
-        handleViewChange('foodFinderForm');
-    }
-    
-    setIsLoading(false);
-    setMiniAppAttemptCount(0);
-}, [handleViewChange]);
-  
-  const handleGenerateAppRecommendations = useCallback(async (data: AppFinderRequestData) => {
-    setAppRequestData(data);
-    setIsLoading(true);
-    setError(null);
-    setAppRecommendations(null);
-    handleViewChange('appFinderResult');
-    
-    simplePlanCancellationFlag.current = false;
-    const maxRetries = 3;
-    let lastError: Error | null = null;
-
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        setMiniAppAttemptCount(attempt);
-        setStreamedText('');
-
-        if (simplePlanCancellationFlag.current) break;
-
-        try {
-            const result = await generateAppRecommendations(data, (chunk) => {
-                if (simplePlanCancellationFlag.current) throw new Error("Cancelled");
-                setStreamedText(prev => prev + chunk)
-            });
-            
-            if (simplePlanCancellationFlag.current) break;
-
-            setAppRecommendations(result);
-            
-            // Increment usage after successful generation
-            try {
-              await incrementUsage('apps');
-              console.log('Successfully incremented usage for app finder');
-            } catch (error) {
-              console.error('Failed to increment usage for app finder:', error);
-              // Don't fail the whole operation if usage tracking fails
-            }
-            
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            setMiniAppAttemptCount(0);
-            setIsLoading(false);
-            return;
-
-        } catch (e) {
-            lastError = e instanceof Error ? e : new Error('An unknown error occurred');
-            console.error(`Attempt ${attempt} for app recommendations failed:`, lastError);
-            
-            if (lastError.message === "Cancelled") break;
-            if (attempt < maxRetries) await new Promise(resolve => setTimeout(resolve, 1500));
-        }
-    }
-    
-    if (!simplePlanCancellationFlag.current && lastError) {
-        setError(lastError.message);
-        handleViewChange('appFinderForm');
-    }
-    
-    setIsLoading(false);
-    setMiniAppAttemptCount(0);
-}, [handleViewChange]);
-  
-  const handleGenerateMusicRecommendations = useCallback(async (data: MusicFinderRequestData) => {
-    setMusicRequestData(data);
-    setIsLoading(true);
-    setError(null);
-    setMusicRecommendations(null);
-    handleViewChange('musicFinderResult');
-    
-    simplePlanCancellationFlag.current = false;
-    const maxRetries = 3;
-    let lastError: Error | null = null;
-
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        setMiniAppAttemptCount(attempt);
-        setStreamedText('');
-
-        if (simplePlanCancellationFlag.current) break;
-
-        try {
-            const result = await generateMusicRecommendations(data, (chunk) => {
-                if (simplePlanCancellationFlag.current) throw new Error("Cancelled");
-                setStreamedText(prev => prev + chunk)
-            });
-            
-            if (simplePlanCancellationFlag.current) break;
-
-            setMusicRecommendations(result);
-            
-            // Increment usage after successful generation
-            try {
-              await incrementUsage('music');
-              console.log('Successfully incremented usage for music finder');
-            } catch (error) {
-              console.error('Failed to increment usage for music finder:', error);
-              // Don't fail the whole operation if usage tracking fails
-            }
-            
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            setMiniAppAttemptCount(0);
-            setIsLoading(false);
-            return;
-
-        } catch (e) {
-            lastError = e instanceof Error ? e : new Error('An unknown error occurred');
-            console.error(`Attempt ${attempt} for music recommendations failed:`, lastError);
-            
-            if (lastError.message === "Cancelled") break;
-            if (attempt < maxRetries) await new Promise(resolve => setTimeout(resolve, 1500));
-        }
-    }
-    
-    if (!simplePlanCancellationFlag.current && lastError) {
-        setError(lastError.message);
-        handleViewChange('musicFinderForm');
-    }
-    
-    setIsLoading(false);
-    setMiniAppAttemptCount(0);
-}, [handleViewChange]);
-  
-  const handleGenerateLingoGuide = useCallback(async (data: LingoFinderRequestData) => {
-    setLingoRequestData(data);
-    setIsLoading(true);
-    setError(null);
-    setLingoRecommendations(null);
-    handleViewChange('lingoFinderResult');
-    
-    simplePlanCancellationFlag.current = false;
-    const maxRetries = 3;
-    let lastError: Error | null = null;
-
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        setMiniAppAttemptCount(attempt);
-        setStreamedText('');
-
-        if (simplePlanCancellationFlag.current) break;
-
-        try {
-            const result = await generateLingoGuide(data, (chunk) => {
-                if (simplePlanCancellationFlag.current) throw new Error("Cancelled");
-                setStreamedText(prev => prev + chunk)
-            });
-            
-            if (simplePlanCancellationFlag.current) break;
-
-            setLingoRecommendations(result);
-            
-            // Increment usage after successful generation
-            try {
-              await incrementUsage('lingo');
-              console.log('Successfully incremented usage for lingo finder');
-            } catch (error) {
-              console.error('Failed to increment usage for lingo finder:', error);
-              // Don't fail the whole operation if usage tracking fails
-            }
-            
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            setMiniAppAttemptCount(0);
-            setIsLoading(false);
-            return;
-
-        } catch (e) {
-            lastError = e instanceof Error ? e : new Error('An unknown error occurred');
-            console.error(`Attempt ${attempt} for lingo guide failed:`, lastError);
-            
-            if (lastError.message === "Cancelled") break;
-            if (attempt < maxRetries) await new Promise(resolve => setTimeout(resolve, 1500));
-        }
-    }
-    
-    if (!simplePlanCancellationFlag.current && lastError) {
-        setError(lastError.message);
-        handleViewChange('lingoFinderForm');
-    }
-    
-    setIsLoading(false);
-    setMiniAppAttemptCount(0);
-}, [handleViewChange]);
 
 
   const renderContent = () => {
@@ -1259,84 +1309,63 @@ const App: React.FC = () => {
       case 'contact':
         return <ContactUs onBack={handleBackToHome} />;
       case 'editProfile':
-        return <EditProfile user={user!} onBack={handleBackToHome} onProfileUpdate={handleProfileUpdate} />;
+        return <EditProfile user={user!} onBack={handleBackToHome} onUpdate={handleProfileUpdate} error={authError} />;
+      default:
+        return null;
     }
-    
-    // Fallback for any unhandled case or error state where data is null
-    return (
-        <LandingPage user={user} onPlanUnifiedTrip={handleStartUnifiedPlanner} onPlanItinerary={handleStartItineraryPlanner} onStartPacking={handleStartPackingAssistant} onStartFoodFinder={handleStartFoodFinder} onStartAppFinder={handleStartAppFinder} onStartMusicFinder={handleStartMusicFinder} onStartLingoFinder={handleStartLingoFinder} onOpenAuthModal={() => setIsAuthModalOpen(true)} />
-    );
   };
 
   return (
-    <>
-      <div className="page-content-wrapper">
-        {view === 'landing' && (
-          <Header 
-            user={user}
-            onLogin={handleLogin}
-            onSignup={handleSignup}
-            onLogout={handleLogout}
-            onEditProfile={handleEditProfile}
-            isLoading={isAuthLoading}
-            error={authError}
-            isAuthModalOpen={isAuthModalOpen}
-            onOpenAuthModal={() => setIsAuthModalOpen(true)}
-            onCloseAuthModal={() => setIsAuthModalOpen(false)}
-          />
-        )}
-        <div ref={mainContentRef} className="min-h-screen">
-          <main className={`container mx-auto px-4 sm:px-6 lg:px-8 pb-24 sm:pb-8 relative ${view === 'landing' ? 'pt-32' : 'pt-8'}`}>
-              {renderContent()}
-          </main>
-        </div>
+    <div className="flex flex-col h-screen overflow-hidden">
+      <Header user={user} onLogout={handleLogout} onOpenAuthModal={() => setIsAuthModalOpen(true)} />
+      <div ref={mainContentRef} className="flex-1 overflow-y-auto">
+        {renderContent()}
       </div>
-      
-      {view !== 'unifiedResult' && !isLoading && (
-        <Navigation
-            onGoHome={handleBackToHome}
-            onGoToContact={() => handleViewChange('contact')}
-            onPlanTrip={() => handleStartUnifiedPlanner()}
-            onStartItineraryPlanner={handleStartItineraryPlanner}
-            onStartPacking={handleStartPackingAssistant}
-            onStartFoodFinder={handleStartFoodFinder}
-            onStartAppFinder={handleStartAppFinder}
-            onStartMusicFinder={handleStartMusicFinder}
-            onStartLingoFinder={handleStartLingoFinder}
-            activeView={view}
-            isFormView={isFormView}
-        />
+      <BottomNavBar
+        onGoHome={() => handleViewChange('landing')}
+        onPlanTrip={() => handleViewChange('unifiedPlannerForm')}
+        onStartPacking={() => handleStartPackingAssistant()}
+        onStartFoodFinder={() => handleStartFoodFinder()}
+        onStartAppFinder={() => handleStartAppFinder()}
+        onStartMusicFinder={() => handleStartMusicFinder()}
+        onGoToContact={() => handleViewChange('contact')}
+        onOpenAuthModal={() => setIsAuthModalOpen(true)}
+        activeView={view}
+        user={user}
+      />
+      {isAuthModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-lg shadow-lg p-6 max-w-sm w-full">
+            <h2 className="text-lg font-semibold mb-4">Login / Signup</h2>
+            {authError && <p className="text-red-500 text-sm mb-4">{authError}</p>}
+            <div className="flex flex-col space-y-4">
+              <button
+                onClick={() => handleLogin('test@example.com', 'password')}
+                className="w-full bg-violet-600 text-white rounded-lg py-2 hover:bg-violet-700 transition-colors"
+              >
+                Login as Test User
+              </button>
+              <button
+                onClick={() => handleSignup('Test User', 'test@example.com', 'password', 'password')}
+                className="w-full bg-green-600 text-white rounded-lg py-2 hover:bg-green-700 transition-colors"
+              >
+                Signup as Test User
+              </button>
+              <button
+                onClick={() => setIsAuthModalOpen(false)}
+                className="w-full bg-gray-200 text-gray-700 rounded-lg py-2 hover:bg-gray-300 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       )}
-      {view !== 'unifiedResult' && (
-        <>
-            <QuickNavButton
-              user={user}
-              onGoHome={handleBackToHome}
-              onGoToContact={() => handleViewChange('contact')}
-              onPlanTrip={handleStartUnifiedPlanner}
-              onPlanItinerary={handleStartItineraryPlanner}
-              onStartPacking={() => handleViewChange('packingAssistantForm')}
-              onStartFoodFinder={() => handleViewChange('foodFinderForm')}
-              onStartAppFinder={() => handleViewChange('appFinderForm')}
-              onStartMusicFinder={() => handleViewChange('musicFinderForm')}
-              onOpenAuthModal={() => setIsAuthModalOpen(true)}
-            />
-            <BottomNavBar
-              onGoHome={handleBackToHome}
-              onGoToContact={() => handleViewChange('contact')}
-              onPlanTrip={handleStartUnifiedPlanner}
-              onStartPacking={() => handleViewChange('packingAssistantForm')}
-              onStartFoodFinder={() => handleViewChange('foodFinderForm')}
-              onStartAppFinder={() => handleViewChange('appFinderForm')}
-              onStartMusicFinder={() => handleViewChange('musicFinderForm')}
-              activeView={view}
-              user={user}
-              onOpenAuthModal={() => setIsAuthModalOpen(true)}
-            />
-        </>
-      )}
-      <ScrollToTopButton isUnifiedView={view === 'unifiedResult'} />
-    </>
+      <div className="hidden">
+        {/* Debugging information */}
+        <pre>{JSON.stringify({ view, user, itinerary, packingList, foodRecommendations, appRecommendations, musicRecommendations, lingoRecommendations, unifiedPlan, unifiedPlanLoadingStatus, error }, null, 2)}</pre>
+      </div>
+    </div>
   );
 };
 
