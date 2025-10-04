@@ -109,7 +109,7 @@ export const generateAppRecommendations = async (data: AppFinderRequestData, onC
 
       const cleanedJson = cleanCitations(parsedJson);
 
-      try { await incrementUsage('apps'); } catch (e) { console.error('Failed to increment usage for apps', e); }
+      // try { await incrementUsage('apps'); } catch (e) { console.error('Failed to increment usage for apps', e); }
 
       return cleanedJson;
   } catch (error) {

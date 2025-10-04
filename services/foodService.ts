@@ -141,7 +141,7 @@ export const generateFoodRecommendations = async (data: FoodFinderRequestData, o
 
       const cleanedJson = cleanCitations(parsedJson);
 
-      try { await incrementUsage('food'); } catch (e) { console.error('Failed to increment usage for food', e); }
+      // try { await incrementUsage('food'); } catch (e) { console.error('Failed to increment usage for food', e); }
 
       return cleanedJson;
   } catch (error) {

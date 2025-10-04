@@ -8,7 +8,6 @@ const FEATURE_KEYS = {
   PACKING_ASSISTANT: 'packing_assistant',
   LINGO_FINDER: 'lingo_finder',
   APP_FINDER: 'app_finder',
-  ITINERARY_PLANNER: 'itinerary_planner',
 };
 
 // Default weekly limits
@@ -19,7 +18,6 @@ const DEFAULT_LIMITS = {
   [FEATURE_KEYS.PACKING_ASSISTANT]: { display_name: 'Packing Assistant', weekly_limit: 2 },
   [FEATURE_KEYS.LINGO_FINDER]: { display_name: 'Lingo Finder', weekly_limit: 2 },
   [FEATURE_KEYS.APP_FINDER]: { display_name: 'App Finder', weekly_limit: 2 },
-  [FEATURE_KEYS.ITINERARY_PLANNER]: { display_name: 'Itinerary Planner', weekly_limit: 2 },
 };
 
 function getCurrentWeekStartDateSql() {

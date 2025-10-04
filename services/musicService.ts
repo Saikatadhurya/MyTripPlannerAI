@@ -125,7 +125,7 @@ export const generateMusicRecommendations = async (data: MusicFinderRequestData,
 
       const cleanedJson = cleanCitations(parsedJson);
 
-      try { await incrementUsage('music'); } catch (e) { console.error('Failed to increment usage for music', e); }
+      // try { await incrementUsage('music'); } catch (e) { console.error('Failed to increment usage for music', e); }
 
       return cleanedJson;
   } catch (error) {

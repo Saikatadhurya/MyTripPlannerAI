@@ -98,7 +98,7 @@ export const generatePackingList = async (data: PackingListRequestData, onChunk?
       
       const cleanedJson = cleanCitations(parsedJson);
 
-      try { await incrementUsage('packing'); } catch (e) { console.error('Failed to increment usage for packing', e); }
+      // try { await incrementUsage('packing'); } catch (e) { console.error('Failed to increment usage for packing', e); }
 
       return {
         ...cleanedJson,

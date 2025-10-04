@@ -381,7 +381,7 @@ export const generateItinerary = async (
         const cleanedJson = cleanCitations(parsedJson);
 
         // Increment usage on successful generation
-        try { await incrementUsage('itinerary'); } catch (e) { console.error('Failed to increment usage for itinerary', e); }
+        // try { await incrementUsage('itinerary'); } catch (e) { console.error('Failed to increment usage for itinerary', e); }
 
         return {
             ...cleanedJson,
