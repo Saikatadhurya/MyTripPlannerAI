@@ -59,18 +59,18 @@ const Header: React.FC<HeaderProps> = ({
     }
   };
 
-  // Base classes for the fixed header
-  const headerBaseClasses = "fixed top-0 left-0 right-0 z-50 w-full transition-all duration-300 ease-in-out no-print";
+  // Base classes for the fixed header - set a consistent height so main content can be offset
+  const headerBaseClasses = "fixed top-0 left-0 right-0 z-50 w-full transition-all duration-300 ease-in-out no-print h-20 md:h-24";
   
   // Container for the content inside the header
-  const containerBaseClasses = "flex items-center transition-all duration-300 ease-in-out container mx-auto";
+  const containerBaseClasses = "flex items-center transition-all duration-300 ease-in-out container mx-auto h-full";
 
   // Classes for the initial, transparent, centered state
-  const headerInitialClasses = "py-8";
+  const headerInitialClasses = ""; // height is controlled by headerBaseClasses
   const containerInitialClasses = "justify-between px-4 sm:px-6 lg:px-8";
   
   // Classes for the scrolled, glassmorphic state
-  const headerScrolledClasses = "py-4 bg-white/90 backdrop-blur-xl shadow-lg slide-down-animation";
+  const headerScrolledClasses = "bg-white/90 backdrop-blur-xl shadow-lg slide-down-animation";
   const containerScrolledClasses = "justify-start px-4 sm:px-6 lg:px-8";
   
   // Logo scaling effect

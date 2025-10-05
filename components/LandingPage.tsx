@@ -62,7 +62,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
   
   const miniApps = [
     {
-      id: 'itinerary',
+      id: 'itinerary_planner',
       title: 'Itinerary Planner',
       description: 'Get a detailed, step-by-step plan',
       onClick: user ? onPlanItinerary : onOpenAuthModal,
@@ -176,7 +176,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
                  }`}
               >
                  {(() => {
-                   const q = quotas.unified || quotas.itinerary;
+                   const q = quotas.unified;
                    const suffix = quotasLoading ? ' (loading...)' : (q ? ` (left ${q.remaining}/${q.weekly_limit})` : '');
                    return `✨ Build Your Ultimate Itinerary${suffix}`;
                  })()}
@@ -214,7 +214,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
         <div className="mt-10 grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6">
           {miniApps.map((app, index) => {
             const colors = colorClasses[app.color];
-            const quota = user ? (quotas[app.id] || (app.id === 'itinerary' ? quotas.unified : undefined)) : undefined;
+            const quota = user ? quotas[app.id] : undefined;
             const labelSuffix = quotasLoading ? ' (loading...)' : (quota ? ` (${quota.remaining}/${quota.weekly_limit})` : '');
             const isLocked = app.locked || quotasLoading;
             return (

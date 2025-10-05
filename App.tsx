@@ -1317,8 +1317,10 @@ const App: React.FC = () => {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
-      <Header user={user} onLogout={handleLogout} onOpenAuthModal={() => setIsAuthModalOpen(true)} />
-      <div ref={mainContentRef} className="flex-1 overflow-y-auto">
+  <Header user={user} onLogout={handleLogout} onEditProfile={handleEditProfile} onLogin={handleLogin} onSignup={handleSignup} isLoading={isAuthLoading} error={authError} isAuthModalOpen={isAuthModalOpen} onOpenAuthModal={() => setIsAuthModalOpen(true)} onCloseAuthModal={() => setIsAuthModalOpen(false)} />
+  {/* Spacer to offset the fixed header so content isn't hidden behind it */}
+  <div className="h-20 md:h-24" />
+  <div ref={mainContentRef} className="flex-1 overflow-y-auto">
         {renderContent()}
       </div>
       <BottomNavBar
@@ -1333,34 +1335,7 @@ const App: React.FC = () => {
         activeView={view}
         user={user}
       />
-      {isAuthModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-lg shadow-lg p-6 max-w-sm w-full">
-            <h2 className="text-lg font-semibold mb-4">Login / Signup</h2>
-            {authError && <p className="text-red-500 text-sm mb-4">{authError}</p>}
-            <div className="flex flex-col space-y-4">
-              <button
-                onClick={() => handleLogin('test@example.com', 'password')}
-                className="w-full bg-violet-600 text-white rounded-lg py-2 hover:bg-violet-700 transition-colors"
-              >
-                Login as Test User
-              </button>
-              <button
-                onClick={() => handleSignup('Test User', 'test@example.com', 'password', 'password')}
-                className="w-full bg-green-600 text-white rounded-lg py-2 hover:bg-green-700 transition-colors"
-              >
-                Signup as Test User
-              </button>
-              <button
-                onClick={() => setIsAuthModalOpen(false)}
-                className="w-full bg-gray-200 text-gray-700 rounded-lg py-2 hover:bg-gray-300 transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Auth modal is handled by Header via the AuthModal component */}
       <div className="hidden">
         {/* Debugging information */}
         <pre>{JSON.stringify({ view, user, itinerary, packingList, foodRecommendations, appRecommendations, musicRecommendations, lingoRecommendations, unifiedPlan, unifiedPlanLoadingStatus, error }, null, 2)}</pre>
