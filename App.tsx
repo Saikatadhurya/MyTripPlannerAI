@@ -351,12 +351,11 @@ const App: React.FC = () => {
       setIsAuthModalOpen(false); // Close modal on successful login
       handleViewChange('landing'); // Redirect to landing page
       
-      // Trigger quota refresh after successful login with a longer delay
-      console.log('App: Scheduling quota refresh...');
+      // Simple refresh after login to ensure token is available
+      console.log('App: Refreshing page to ensure token is available...');
       setTimeout(() => {
-        console.log('App: Triggering quota refresh...');
-        window.dispatchEvent(new CustomEvent('quotasUpdated', { detail: { reason: 'login' } }));
-      }, 200);
+        window.location.reload();
+      }, 500);
     } catch (error) {
       console.error('App: Login failed:', error);
       setAuthError(error instanceof Error ? error.message : 'Login failed');
@@ -379,10 +378,10 @@ const App: React.FC = () => {
       setIsAuthModalOpen(false); // Close modal on successful signup
       handleViewChange('landing'); // Redirect to landing page
       
-      // Trigger quota refresh after successful signup with a longer delay
+      // Simple refresh after signup to ensure token is available
       setTimeout(() => {
-        window.dispatchEvent(new CustomEvent('quotasUpdated', { detail: { reason: 'signup' } }));
-      }, 200);
+        window.location.reload();
+      }, 500);
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : 'Signup failed');
       setIsAuthModalOpen(true); // Keep modal open to display error
