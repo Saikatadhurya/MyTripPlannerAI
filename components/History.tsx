@@ -314,7 +314,7 @@ const History: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <div className="max-w-6xl mx-auto px-4 py-8">
         <BackToHomeButton onBack={onBack} />
         
@@ -359,7 +359,7 @@ const History: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 multiple
                 value={selectedTags}
                 onChange={(e) => {
-                  const values = Array.from(e.target.selectedOptions, option => option.value);
+                  const values = Array.from((e.target as HTMLSelectElement).selectedOptions, option => option.value);
                   setSelectedTags(values);
                 }}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"

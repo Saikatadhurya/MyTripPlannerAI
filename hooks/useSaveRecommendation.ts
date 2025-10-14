@@ -14,7 +14,9 @@ interface UseSaveRecommendationReturn {
 export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
   const saveRecommendation = useCallback(async (data: SaveAppRecommendationRequest) => {
     try {
+      console.log('Attempting to save recommendation:', data);
       await historyService.saveAppRecommendation(data);
+      console.log('Successfully saved recommendation');
     } catch (error) {
       console.error('Failed to save recommendation:', error);
       // Don't throw error to avoid breaking the user experience

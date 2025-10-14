@@ -62,7 +62,10 @@ class HistoryService {
   // Save app recommendation to history
   async saveAppRecommendation(data: SaveAppRecommendationRequest): Promise<AppRecommendationHistory> {
     const headers = authService.getAuthHeaders();
+    console.log('Saving app recommendation with headers:', headers);
+    console.log('API URL:', `${API_URL}/save`);
     const response = await axios.post(`${API_URL}/save`, data, { headers });
+    console.log('Save response:', response.data);
     return response.data.data;
   }
 

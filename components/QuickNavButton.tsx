@@ -13,6 +13,7 @@ interface QuickNavButtonProps {
   onStartLingoFinder: () => void;
   onGoHome: () => void;
   onGoToContact: () => void;
+  onGoToHistory: () => void;
   onOpenAuthModal: () => void;
 }
 
@@ -28,6 +29,7 @@ const QuickNavButton: React.FC<QuickNavButtonProps> = ({
   onStartLingoFinder,
   onGoHome,
   onGoToContact,
+  onGoToHistory,
   onOpenAuthModal,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -109,6 +111,13 @@ const QuickNavButton: React.FC<QuickNavButtonProps> = ({
         title: 'General',
         items: [
             { label: 'Go Home', action: onGoHome, icon: '🏠', locked: false },
+            { 
+                label: 'My History', 
+                action: user ? onGoToHistory : onOpenAuthModal, 
+                icon: user ? '📋' : '🔒',
+                locked: !user,
+                tooltip: user ? undefined : 'Sign in to view your history'
+            },
             { label: 'Contact Us', action: onGoToContact, icon: '✉️', locked: false },
         ]
     }
