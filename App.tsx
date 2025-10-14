@@ -334,14 +334,31 @@ const App: React.FC = () => {
 
   // Authentication handlers
   const handleLogin = async (email: string, password: string) => {
+    console.log('App: Starting login process for:', email);
     setIsAuthLoading(true);
     setAuthError(null);
     try {
+      console.log('App: Calling authService.login...');
       const response = await authService.login({ email, password });
+      console.log('App: Login successful, response:', response);
+      
+      // Wait a bit to ensure the token is properly set in authService
+      console.log('App: Waiting 50ms for token to be set...');
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
+      console.log('App: Setting user state...');
       setUser(response.user);
       setIsAuthModalOpen(false); // Close modal on successful login
       handleViewChange('landing'); // Redirect to landing page
+      
+      // Trigger quota refresh after successful login with a longer delay
+      console.log('App: Scheduling quota refresh...');
+      setTimeout(() => {
+        console.log('App: Triggering quota refresh...');
+        window.dispatchEvent(new CustomEvent('quotasUpdated', { detail: { reason: 'login' } }));
+      }, 200);
     } catch (error) {
+      console.error('App: Login failed:', error);
       setAuthError(error instanceof Error ? error.message : 'Login failed');
       setIsAuthModalOpen(true); // Keep modal open to display error
     } finally {
@@ -354,9 +371,18 @@ const App: React.FC = () => {
     setAuthError(null);
     try {
       const response = await authService.signup({ full_name, email, password, confirmPassword });
+      
+      // Wait a bit to ensure the token is properly set in authService
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
       setUser(response.user);
       setIsAuthModalOpen(false); // Close modal on successful signup
       handleViewChange('landing'); // Redirect to landing page
+      
+      // Trigger quota refresh after successful signup with a longer delay
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('quotasUpdated', { detail: { reason: 'signup' } }));
+      }, 200);
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : 'Signup failed');
       setIsAuthModalOpen(true); // Keep modal open to display error

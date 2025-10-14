@@ -95,7 +95,10 @@ class AuthService {
 
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     try {
+      console.log('AuthService: Attempting login for:', credentials.email);
       const response = await axios.post(`${API_URL}/signin`, credentials);
+      console.log('AuthService: Login response received');
+      
       const { user, token } = response.data;
       
       const authenticatedUser: User = { 
@@ -108,10 +111,13 @@ class AuthService {
       this.currentUser = authenticatedUser;
       this.token = token;
       this.saveSession(authenticatedUser, token);
+      console.log('AuthService: Login successful for:', authenticatedUser.email);
 
       return { user: authenticatedUser, token };
     } catch (error) {
+      console.error('AuthService: Login failed:', error);
       if (axios.isAxiosError(error) && error.response) {
+        console.error('AuthService: API error:', error.response.data);
         throw new Error(error.response.data.message || 'Login failed');
       } else if (error instanceof Error) {
         throw error;
@@ -122,11 +128,14 @@ class AuthService {
 
   async signup(credentials: SignupCredentials): Promise<AuthResponse> {
     try {
+      console.log('AuthService: Attempting signup for:', credentials.email);
       const response = await axios.post(`${API_URL}/signup`, { 
         full_name: credentials.full_name, 
         email: credentials.email, 
         password: credentials.password 
       });
+      console.log('AuthService: Signup response received');
+      
       const { user, token } = response.data;
 
       const newUser: User = {
@@ -139,10 +148,13 @@ class AuthService {
       this.currentUser = newUser;
       this.token = token;
       this.saveSession(newUser, token);
+      console.log('AuthService: Signup successful for:', newUser.email);
 
       return { user: newUser, token };
     } catch (error) {
+      console.error('AuthService: Signup failed:', error);
       if (axios.isAxiosError(error) && error.response) {
+        console.error('AuthService: API error:', error.response.data);
         throw new Error(error.response.data.message || 'Signup failed');
       } else if (error instanceof Error) {
         throw error;

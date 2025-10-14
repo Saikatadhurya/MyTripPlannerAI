@@ -19,6 +19,13 @@ export async function fetchQuotas(): Promise<Record<string, QuotaInfo>> {
   console.log('Fetching quotas with headers:', headers);
   console.log('API URL:', `${API_URL}/quotas`);
   
+  // Check if we have a valid token before making the request
+  const token = authService.getToken();
+  if (!token) {
+    console.warn('fetchQuotas: No authentication token available');
+    throw new Error('No authentication token available');
+  }
+  
   try {
     const res = await axios.get(`${API_URL}/quotas`, { headers });
     console.log('Quotas response:', res.data);
@@ -27,6 +34,13 @@ export async function fetchQuotas(): Promise<Record<string, QuotaInfo>> {
     console.error('Error fetching quotas:', error);
     console.error('Error response:', error.response?.data);
     console.error('Error status:', error.response?.status);
+    
+    // If it's an authentication error, don't throw - let the hook handle it
+    if (error.response?.status === 401) {
+      console.warn('fetchQuotas: Authentication failed, token may be invalid');
+      throw new Error('Authentication failed');
+    }
+    
     throw error;
   }
 }

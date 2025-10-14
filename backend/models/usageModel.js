@@ -3,6 +3,7 @@ const { pool } = require('../config/db');
 // Feature keys
 const FEATURE_KEYS = {
   UNIFIED_PLANNER: 'unified_planner',
+  ITINERARY_PLANNER: 'itinerary_planner',
   FOOD_FINDER: 'food_finder',
   MUSIC_FINDER: 'music_finder',
   PACKING_ASSISTANT: 'packing_assistant',
@@ -13,6 +14,7 @@ const FEATURE_KEYS = {
 // Default weekly limits
 const DEFAULT_LIMITS = {
   [FEATURE_KEYS.UNIFIED_PLANNER]: { display_name: 'Unified Planner', weekly_limit: 5 },
+  [FEATURE_KEYS.ITINERARY_PLANNER]: { display_name: 'Itinerary Planner', weekly_limit: 2 },
   [FEATURE_KEYS.FOOD_FINDER]: { display_name: 'Food Finder', weekly_limit: 2 },
   [FEATURE_KEYS.MUSIC_FINDER]: { display_name: 'Music Finder', weekly_limit: 2 },
   [FEATURE_KEYS.PACKING_ASSISTANT]: { display_name: 'Packing Assistant', weekly_limit: 2 },

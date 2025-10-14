@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { fetchQuotas } from '../services/usageService';
 import { User } from '../services/authService';
+import { authService } from '../services/authService';
 
 export interface QuotaInfo {
   weekly_limit: number;
@@ -12,13 +13,27 @@ export function useQuotas(user: User | null) {
   const [quotas, setQuotas] = useState<Record<string, QuotaInfo>>({});
   const [quotasLoading, setQuotasLoading] = useState<boolean>(false);
 
-  const refetchQuotas = async () => {
+  const refetchQuotas = async (retryCount = 0) => {
     if (!user) {
       console.log('useQuotas: No user, clearing quotas');
       setQuotas({});
       setQuotasLoading(false);
       return;
     }
+
+    // Check if we have a valid token before attempting to fetch
+    const token = authService.getToken();
+    if (!token) {
+      console.log(`useQuotas: No token available, retrying in 100ms... (attempt ${retryCount + 1})`);
+      if (retryCount < 20) { // Retry up to 20 times (2 seconds total)
+        setTimeout(() => refetchQuotas(retryCount + 1), 100);
+      } else {
+        console.error('useQuotas: Token not available after retries, giving up');
+        setQuotasLoading(false);
+      }
+      return;
+    }
+
     console.log('useQuotas: Fetching quotas for user:', user.email);
     setQuotasLoading(true);
     try {
