@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Itinerary } from '../types';
 import ExportOptions from './ExportOptions';
 import { getReferenceBlogs } from '../services/geminiService';
+import { useSaveRecommendation } from '../hooks/useSaveRecommendation';
 
 // Helper to parse simple markdown bolding
 const parseBold = (text: string | undefined) => {
@@ -90,6 +91,7 @@ interface ItineraryPreviewProps {
   onRegenerate: () => void;
   isUnifiedView?: boolean;
   onPrint?: () => void;
+  requestData?: any; // Add request data for history saving
 }
 
 const getAboutSectionsForDestination = (destinationDetails: Itinerary['coveredDestinations'][0]) => {
@@ -170,9 +172,10 @@ const DestinationInfoTabs: React.FC<{ destinationDetails: Itinerary['coveredDest
 };
 
 
-const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegenerate, isUnifiedView = false, onPrint }) => {
+const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegenerate, isUnifiedView = false, onPrint, requestData }) => {
   const [blogs, setBlogs] = useState<Itinerary['referenceBlogs']>([]);
   const [isLoadingBlogs, setIsLoadingBlogs] = useState(true);
+  const { saveItineraryRecommendation } = useSaveRecommendation();
   
   useEffect(() => {
     const fetchBlogs = async () => {
@@ -183,6 +186,13 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
     };
     fetchBlogs();
   }, [itinerary.destination, itinerary.language]);
+
+  // Save to history when component mounts (only if not in unified view and request data is available)
+  useEffect(() => {
+    if (!isUnifiedView && requestData) {
+      saveItineraryRecommendation(requestData, itinerary, itinerary.destination, requestData.language);
+    }
+  }, [isUnifiedView, requestData, itinerary, saveItineraryRecommendation]);
 
   const formattedStartDate = new Date(itinerary.startDate + 'T00:00:00').toLocaleDateString('en-US', {
     year: 'numeric',

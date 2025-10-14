@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { PackingList } from '../types';
+import { useSaveRecommendation } from '../hooks/useSaveRecommendation';
 
 const parseBold = (text: string | undefined) => {
   if (!text) return { __html: '' };
@@ -70,10 +71,19 @@ interface PackingListPreviewProps {
     onRegenerate: () => void;
     isUnifiedView?: boolean;
     onPrint?: () => void;
+    requestData?: any; // Add request data for history saving
 }
 
-const PackingListPreview: React.FC<PackingListPreviewProps> = ({ packingList, onRegenerate, isUnifiedView = false, onPrint }) => {
+const PackingListPreview: React.FC<PackingListPreviewProps> = ({ packingList, onRegenerate, isUnifiedView = false, onPrint, requestData }) => {
     const iconClass = "h-6 w-6";
+    const { savePackingRecommendation } = useSaveRecommendation();
+    
+    // Save to history when component mounts (only if not in unified view and request data is available)
+    useEffect(() => {
+        if (!isUnifiedView && requestData) {
+            savePackingRecommendation(requestData, packingList, packingList.destination, requestData.language);
+        }
+    }, [isUnifiedView, requestData, packingList, savePackingRecommendation]);
     
     const categoryDetails = {
         clothingAndFootwear: { title: "Clothing & Footwear", items: packingList.clothingAndFootwear, icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>, color: "blue", className: "md:col-span-2" },

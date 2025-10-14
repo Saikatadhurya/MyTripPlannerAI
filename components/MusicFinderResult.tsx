@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { MusicRecommendations, MusicItem, MusicGenreCategory } from '../types';
+import { useSaveRecommendation } from '../hooks/useSaveRecommendation';
 
 const AppLinkButton: React.FC<{ appName: MusicItem['appLinks'][0]['appName'], musicTitle: string, artist: string }> = ({ appName, musicTitle, artist }) => {
     const styles = {
@@ -132,11 +133,20 @@ interface MusicFinderResultProps {
     onRegenerate: () => void;
     isUnifiedView?: boolean;
     onPrint?: () => void;
+    requestData?: any; // Add request data for history saving
 }
 
-const MusicFinderResult: React.FC<MusicFinderResultProps> = ({ recommendations, onRegenerate, isUnifiedView = false, onPrint }) => {
+const MusicFinderResult: React.FC<MusicFinderResultProps> = ({ recommendations, onRegenerate, isUnifiedView = false, onPrint, requestData }) => {
     const hasMusic = recommendations.musicCategories && recommendations.musicCategories.length > 0;
     const handlePrint = onPrint || (() => window.print());
+    const { saveMusicRecommendation } = useSaveRecommendation();
+    
+    // Save to history when component mounts (only if not in unified view and request data is available)
+    useEffect(() => {
+        if (!isUnifiedView && requestData) {
+            saveMusicRecommendation(requestData, recommendations, recommendations.destination, requestData.language);
+        }
+    }, [isUnifiedView, requestData, recommendations, saveMusicRecommendation]);
 
     return (
         <div className="max-w-5xl mx-auto space-y-12 animated-card" id="music-finder-result-content">

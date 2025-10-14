@@ -12,7 +12,10 @@ export interface BottomNavBarProps {
   onStartMusicFinder: () => void;
   onStartLingoFinder: () => void;
   onGoToContact: () => void;
+  onGoToHistory: () => void;
+  onOpenAuthModal: () => void;
   activeView: string;
+  user: any;
   isFormView?: boolean;
 }
 
@@ -39,8 +42,9 @@ const MoreMenu: React.FC<{
     onStartAppFinder: () => void;
     onStartMusicFinder: () => void;
     onStartLingoFinder: () => void;
+    onGoToContact: () => void;
     onClose: () => void;
-}> = ({ onStartItineraryPlanner, onStartFoodFinder, onStartAppFinder, onStartMusicFinder, onStartLingoFinder, onClose }) => {
+}> = ({ onStartItineraryPlanner, onStartFoodFinder, onStartAppFinder, onStartMusicFinder, onStartLingoFinder, onGoToContact, onClose }) => {
     const handleAction = (action: () => void) => {
         action();
         onClose();
@@ -69,6 +73,11 @@ const MoreMenu: React.FC<{
                 <span className="text-xl w-8 text-center">🗣️</span>
                 <span>Lingo Guide</span>
             </button>
+            <hr className="border-slate-200/80 mx-2 my-1" />
+            <button onClick={() => handleAction(onGoToContact)} className="w-full flex items-center text-left px-3 py-2.5 rounded-lg text-slate-800 font-semibold transition-colors duration-200 hover:bg-violet-100/80">
+                <span className="text-xl w-8 text-center">📞</span>
+                <span>Contact Us</span>
+            </button>
         </div>
     );
 };
@@ -83,7 +92,10 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({
   onStartMusicFinder,
   onStartLingoFinder,
   onGoToContact,
+  onGoToHistory,
+  onOpenAuthModal,
   activeView,
+  user,
 }) => {
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const moreMenuRef = useRef<HTMLDivElement>(null);
@@ -125,10 +137,10 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({
             icon={<svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 2a3 3 0 00-3 3v1H5a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V8a2 2 0 00-2-2h-2V5a3 3 0 00-3-3zm-1 4a1 1 0 10-2 0v1h2V6z" clipRule="evenodd" /></svg>}
           />
           <NavItem
-            label="Contact"
-            onClick={onGoToContact}
-            isActive={activeView === 'contact'}
-            icon={<svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+            label="History"
+            onClick={onGoToHistory}
+            isActive={activeView === 'history'}
+            icon={<svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" /></svg>}
           />
           <div ref={moreMenuRef} className="relative flex flex-1">
             {isMoreMenuOpen && (
@@ -138,6 +150,7 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({
                     onStartAppFinder={onStartAppFinder}
                     onStartMusicFinder={onStartMusicFinder}
                     onStartLingoFinder={onStartLingoFinder}
+                    onGoToContact={onGoToContact}
                     onClose={() => setIsMoreMenuOpen(false)}
                 />
             )}

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { LingoRecommendations, PhraseCategory } from '../types';
+import { useSaveRecommendation } from '../hooks/useSaveRecommendation';
 
 const AccordionItem: React.FC<{ category: PhraseCategory, isOpen: boolean, onToggle: () => void }> = ({ category, isOpen, onToggle }) => {
     const [copiedPhrase, setCopiedPhrase] = useState<string | null>(null);
@@ -62,16 +63,25 @@ interface LingoFinderResultProps {
     onRegenerate: () => void;
     isUnifiedView?: boolean;
     onPrint?: () => void;
+    requestData?: any; // Add request data for history saving
 }
 
-const LingoFinderResult: React.FC<LingoFinderResultProps> = ({ recommendations, onRegenerate, isUnifiedView = false, onPrint }) => {
+const LingoFinderResult: React.FC<LingoFinderResultProps> = ({ recommendations, onRegenerate, isUnifiedView = false, onPrint, requestData }) => {
     const [openCategory, setOpenCategory] = useState<string | null>(recommendations.categories[0]?.categoryName || null);
+    const { saveLingoRecommendation } = useSaveRecommendation();
 
     const toggleCategory = (categoryName: string) => {
         setOpenCategory(prev => (prev === categoryName ? null : categoryName));
     };
 
     const handlePrint = onPrint || (() => window.print());
+
+    // Save to history when component mounts (only if not in unified view and request data is available)
+    useEffect(() => {
+        if (!isUnifiedView && requestData) {
+            saveLingoRecommendation(requestData, recommendations, recommendations.destination, requestData.language);
+        }
+    }, [isUnifiedView, requestData, recommendations, saveLingoRecommendation]);
 
     return (
         <div className="max-w-3xl mx-auto space-y-12 animated-card" id="lingo-finder-result-content">

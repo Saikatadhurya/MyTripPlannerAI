@@ -22,15 +22,13 @@ import MusicFinderForm from './components/MusicFinderForm';
 import MusicFinderResult from './components/MusicFinderResult';
 import LingoFinderForm from './components/LingoFinderForm';
 import LingoFinderResult from './components/LingoFinderResult';
-import ScrollToTopButton from './components/ScrollToTopButton';
-import ContactUs from './components/ContactUs';
-import Navigation from './components/Navigation';
+import LoadingIndicator from './components/LoadingIndicator';
 import UnifiedResultPreview from './components/UnifiedResultPreview';
-// FIX: Corrected import to reflect named export from the correct file.
+import ContactUs from './components/ContactUs';
+import Header from './components/Header';
+import ScrollToTopButton from './components/ScrollToTopButton';
 import UnifiedPlannerForm from './components/UnifiedPlannerForm';
 import ItineraryPreview from './components/ItineraryPreview';
-import LoadingIndicator from './components/LoadingIndicator';
-import Header from './components/Header';
 import EditProfile from './components/EditProfile';
 import QuickNavButton from './components/QuickNavButton';
 
@@ -191,7 +189,7 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({
 };
 
 
-type View = 'landing' | 'questionnaire' | 'itineraryResult' | 'packingAssistantForm' | 'packingAssistantResult' | 'foodFinderForm' | 'foodFinderResult' | 'appFinderForm' | 'appFinderResult' | 'musicFinderForm' | 'musicFinderResult' | 'lingoFinderForm' | 'lingoFinderResult' | 'contact' | 'unifiedPlannerForm' | 'unifiedResult' | 'editProfile';
+type View = 'landing' | 'questionnaire' | 'itineraryResult' | 'packingAssistantForm' | 'packingAssistantResult' | 'foodFinderForm' | 'foodFinderResult' | 'appFinderForm' | 'appFinderResult' | 'musicFinderForm' | 'musicFinderResult' | 'lingoFinderForm' | 'lingoFinderResult' | 'contact' | 'unifiedPlannerForm' | 'unifiedResult' | 'editProfile' | 'history';
 
 // --- Loading State Constants ---
 const itineraryStages = [
@@ -1312,37 +1310,39 @@ const App: React.FC = () => {
       case 'questionnaire':
         return <Questionnaire onSubmit={handleGenerateItinerary} isLoading={false} error={error} initialData={initialQuestionnaireData} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} />;
       case 'itineraryResult':
-        if (itinerary) return <ItineraryPreview itinerary={itinerary} onRegenerate={() => handleViewChange('questionnaire')} />;
+        if (itinerary) return <ItineraryPreview itinerary={itinerary} onRegenerate={() => handleViewChange('questionnaire')} requestData={questionnaireDataForUnifiedPlan} />;
         break;
       case 'packingAssistantForm':
         return <PackingAssistantForm onSubmit={handleGeneratePackingList} isLoading={false} error={error} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} initialData={packingRequestData} user={user} />;
       case 'packingAssistantResult':
-        if (packingList) return <PackingListPreview packingList={packingList} onRegenerate={() => handleViewChange('packingAssistantForm')} />;
+        if (packingList) return <PackingListPreview packingList={packingList} onRegenerate={() => handleViewChange('packingAssistantForm')} requestData={packingRequestData} />;
         break;
       case 'foodFinderForm':
         return <FoodFinderForm onSubmit={handleGenerateFoodRecommendations} isLoading={false} error={error} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} initialData={foodRequestData} user={user} />;
       case 'foodFinderResult':
-        if (foodRecommendations) return <FoodFinderResult recommendations={foodRecommendations} onRegenerate={() => handleViewChange('foodFinderForm')} />;
+        if (foodRecommendations) return <FoodFinderResult recommendations={foodRecommendations} onRegenerate={() => handleViewChange('foodFinderForm')} requestData={foodRequestData} />;
         break;
       case 'appFinderForm':
         return <AppFinderForm onSubmit={handleGenerateAppRecommendations} isLoading={false} error={error} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} initialData={appRequestData} user={user} />;
       case 'appFinderResult':
-        if (appRecommendations) return <AppFinderResult recommendations={appRecommendations} onRegenerate={() => handleViewChange('appFinderForm')} />;
+        if (appRecommendations) return <AppFinderResult recommendations={appRecommendations} onRegenerate={() => handleViewChange('appFinderForm')} requestData={appRequestData} />;
         break;
       case 'musicFinderForm':
         return <MusicFinderForm onSubmit={handleGenerateMusicRecommendations} isLoading={false} error={error} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} initialData={musicRequestData} user={user} />;
       case 'musicFinderResult':
-        if (musicRecommendations) return <MusicFinderResult recommendations={musicRecommendations} onRegenerate={() => handleViewChange('musicFinderForm')} />;
+        if (musicRecommendations) return <MusicFinderResult recommendations={musicRecommendations} onRegenerate={() => handleViewChange('musicFinderForm')} requestData={musicRequestData} />;
         break;
       case 'lingoFinderForm':
         return <LingoFinderForm onSubmit={handleGenerateLingoGuide} isLoading={false} error={error} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} initialData={lingoRequestData} user={user} />;
       case 'lingoFinderResult':
-        if (lingoRecommendations) return <LingoFinderResult recommendations={lingoRecommendations} onRegenerate={() => handleViewChange('lingoFinderForm')} />;
+        if (lingoRecommendations) return <LingoFinderResult recommendations={lingoRecommendations} onRegenerate={() => handleViewChange('lingoFinderForm')} requestData={lingoRequestData} />;
         break;
       case 'contact':
         return <ContactUs onBack={handleBackToHome} />;
       case 'editProfile':
         return <EditProfile user={user!} onBack={handleBackToHome} onUpdate={handleProfileUpdate} error={authError} />;
+      case 'history':
+        return <History onBack={handleBackToHome} />;
       default:
         return null;
     }
@@ -1364,10 +1364,30 @@ const App: React.FC = () => {
         onStartAppFinder={() => handleStartAppFinder()}
         onStartMusicFinder={() => handleStartMusicFinder()}
         onGoToContact={() => handleViewChange('contact')}
+        onGoToHistory={() => handleViewChange('history')}
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
         activeView={view}
         user={user}
       />
+      
+      {/* Quick Navigation Button (Menu Toggler) - Desktop only */}
+      <QuickNavButton
+        user={user}
+        onPlanTrip={() => handleViewChange('unifiedPlannerForm')}
+        onStartPacking={() => handleStartPackingAssistant()}
+        onStartFoodFinder={() => handleStartFoodFinder()}
+        onStartAppFinder={() => handleStartAppFinder()}
+        onStartMusicFinder={() => handleStartMusicFinder()}
+        onStartLingoFinder={() => handleStartLingoFinder()}
+        onGoHome={() => handleViewChange('landing')}
+        onGoToContact={() => handleViewChange('contact')}
+        onGoToHistory={() => handleViewChange('history')}
+        onOpenAuthModal={() => setIsAuthModalOpen(true)}
+        activeView={view}
+      />
+      
+      {/* Scroll to Top Button */}
+      <ScrollToTopButton scrollContainerRef={mainContentRef} />
       {/* Auth modal is handled by Header via the AuthModal component */}
       <div className="hidden">
         {/* Debugging information */}
