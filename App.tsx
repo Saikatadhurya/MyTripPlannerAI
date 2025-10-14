@@ -419,6 +419,8 @@ const App: React.FC = () => {
     if (token && user) {
       try {
         const userData = JSON.parse(decodeURIComponent(user));
+        console.log('App: Processing Google OAuth callback for:', userData.email);
+        
         // Store the token and user data
         localStorage.setItem('planora_token', token);
         localStorage.setItem('planora_user', JSON.stringify(userData));
@@ -432,6 +434,12 @@ const App: React.FC = () => {
         
         // Redirect to landing page
         handleViewChange('landing');
+        
+        // Simple refresh after Google OAuth login to ensure token is available
+        console.log('App: Refreshing page after Google OAuth login...');
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
       } catch (error) {
         console.error('Error parsing user data from Google OAuth:', error);
         setAuthError('Failed to process Google authentication');
