@@ -182,6 +182,13 @@ const AppFinderForm: React.FC<AppFinderFormProps> = ({ onSubmit, isLoading, erro
         setDestinationError("Please pick a location from the list to lock it in! 🗺️");
         return;
     }
+
+    // Check quota limits
+    if (user && quotas.apps && quotas.apps.remaining <= 0) {
+        setDestinationError("You have reached your weekly limit for app recommendations. Please try again next week or upgrade your plan.");
+        return;
+    }
+
     onSubmit(formData);
   };
 
@@ -350,9 +357,9 @@ const AppFinderForm: React.FC<AppFinderFormProps> = ({ onSubmit, isLoading, erro
           <button
             type="submit"
             className="w-full sm:w-auto px-10 py-4 bg-teal-600 text-white font-bold rounded-full hover:bg-teal-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:bg-teal-400/80 disabled:cursor-not-allowed disabled:shadow-md disabled:scale-100"
-            disabled={!isDestinationSelected || !!destinationError || isLoading || quotasLoading}
+            disabled={!isDestinationSelected || !!destinationError || isLoading || quotasLoading || (user && quotas.apps && quotas.apps.remaining <= 0)}
           >
-            {quotasLoading ? '⏳ Loading limits...' : '📱 Find My Apps'}
+            {quotasLoading ? '⏳ Loading limits...' : (user && quotas.apps && quotas.apps.remaining <= 0) ? '🚫 Limit Reached' : '📱 Find My Apps'}
           </button>
         </div>
       </form>

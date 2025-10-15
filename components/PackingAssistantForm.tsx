@@ -210,6 +210,12 @@ const PackingAssistantForm: React.FC<PackingAssistantFormProps> = ({ onSubmit, i
         setDestinationError("Please pick a location from the list to lock it in! 🗺️");
         return;
     }
+
+    // Check quota limits
+    if (user && quotas.packing && quotas.packing.remaining <= 0) {
+        setDestinationError("You have reached your weekly limit for packing lists. Please try again next week or upgrade your plan.");
+        return;
+    }
     
     onSubmit({
       destination: formData.destination,
@@ -402,9 +408,9 @@ const PackingAssistantForm: React.FC<PackingAssistantFormProps> = ({ onSubmit, i
           <button
             type="submit"
             className="w-full sm:w-auto px-10 py-4 bg-violet-600 text-white font-bold rounded-full hover:bg-violet-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:bg-violet-400/80 disabled:cursor-not-allowed disabled:shadow-md disabled:scale-100"
-            disabled={!isDestinationSelected || !!destinationError || isLoading || quotasLoading}
+            disabled={!isDestinationSelected || !!destinationError || isLoading || quotasLoading || (user && quotas.packing && quotas.packing.remaining <= 0)}
           >
-            {quotasLoading ? '⏳ Loading limits...' : '🧳 Pack My Bag'}
+            {quotasLoading ? '⏳ Loading limits...' : (user && quotas.packing && quotas.packing.remaining <= 0) ? '🚫 Limit Reached' : '🧳 Pack My Bag'}
           </button>
         </div>
       </form>

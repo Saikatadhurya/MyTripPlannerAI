@@ -208,6 +208,13 @@ const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, er
         setDestinationError("Please pick a location from the list to lock it in! 🗺️");
         return;
     }
+
+    // Check quota limits
+    if (user && quotas.food && quotas.food.remaining <= 0) {
+        setDestinationError("You have reached your weekly limit for food recommendations. Please try again next week or upgrade your plan.");
+        return;
+    }
+
     onSubmit(formData);
   };
 
@@ -403,9 +410,9 @@ const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, er
           <button
             type="submit"
             className="w-full sm:w-auto px-10 py-4 bg-amber-600 text-white font-bold rounded-full hover:bg-amber-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:bg-amber-400/80 disabled:cursor-not-allowed disabled:shadow-md disabled:scale-100"
-            disabled={!isDestinationSelected || !!destinationError || isLoading || quotasLoading}
+            disabled={!isDestinationSelected || !!destinationError || isLoading || quotasLoading || (user && quotas.food && quotas.food.remaining <= 0)}
           >
-            {quotasLoading ? '⏳ Loading limits...' : '🍴 Discover My Local Feast'}
+            {quotasLoading ? '⏳ Loading limits...' : (user && quotas.food && quotas.food.remaining <= 0) ? '🚫 Limit Reached' : '🍴 Discover My Local Feast'}
           </button>
         </div>
       </form>

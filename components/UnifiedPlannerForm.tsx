@@ -379,6 +379,12 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
             hasError = true;
         }
     }
+
+    // Check quota limits
+    if (user && quotas.unified && quotas.unified.remaining <= 0) {
+        setDestinationError("You have reached your weekly limit for unified plans. Please try again next week or upgrade your plan.");
+        hasError = true;
+    }
     
     if (hasError) return;
     onSubmit(formData);
@@ -762,9 +768,9 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
               <button
                 type="submit"
                 className="w-full sm:w-auto px-10 py-4 bg-violet-600 text-white font-bold rounded-full hover:bg-violet-700 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-violet-500/30 disabled:bg-violet-400/80 disabled:cursor-not-allowed disabled:shadow-md disabled:scale-100"
-                disabled={!isDestinationSelected || !!destinationError || (showStartPoint && (!isStartPointSelected || !!startPointError)) || formData.vibe.length === 0 || quotasLoading}
+                disabled={!isDestinationSelected || !!destinationError || (showStartPoint && (!isStartPointSelected || !!startPointError)) || formData.vibe.length === 0 || quotasLoading || (user && quotas.unified && quotas.unified.remaining <= 0)}
               >
-                {quotasLoading ? '⏳ Loading limits...' : '✨ Plan My Adventure'}
+                {quotasLoading ? '⏳ Loading limits...' : (user && quotas.unified && quotas.unified.remaining <= 0) ? '🚫 Limit Reached' : '✨ Plan My Adventure'}
               </button>
             </div>
           </form>

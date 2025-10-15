@@ -9,6 +9,7 @@ import { generateLingoGuide } from './services/lingoService';
 import { incrementUsage } from './services/usageService';
 
 import { authService, User } from './services/authService';
+import { useQuotas } from './hooks/useQuotas';
 
 import LandingPage from './components/LandingPage';
 import Questionnaire from './components/Questionnaire';
@@ -31,6 +32,7 @@ import UnifiedPlannerForm from './components/UnifiedPlannerForm';
 import ItineraryPreview from './components/ItineraryPreview';
 import EditProfile from './components/EditProfile';
 import QuickNavButton from './components/QuickNavButton';
+import History from './components/History';
 
 // --- Bottom Nav Bar Component ---
 interface BottomNavBarProps {
@@ -309,6 +311,9 @@ const App: React.FC = () => {
   const [authError, setAuthError] = useState<string | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false); // New state for modal visibility
 
+  // Quota management
+  const { quotas } = useQuotas(user);
+
   // --- Unified Planner Pipeline State ---
   const cancellationFlags = useRef<Partial<Record<keyof UnifiedPlanLoadingStatus, boolean>>>({});
   const simplePlanCancellationFlag = useRef(false);
@@ -450,7 +455,7 @@ const App: React.FC = () => {
       // Clear URL parameters
       window.history.replaceState({}, document.title, window.location.pathname);
     }
-  }, [handleViewChange]);
+  }, [handleViewChange, user, quotas]);
 
   const createInitialData = (destination?: string) => {
     const data: QuestionnaireData = {
@@ -480,37 +485,37 @@ const App: React.FC = () => {
       const dest = typeof destination === 'string' ? destination : undefined;
       setInitialQuestionnaireData(createInitialData(dest));
       handleViewChange('unifiedPlannerForm');
-    }, [handleViewChange]);
+    }, [handleViewChange, user, quotas]);
   
   const handleStartItineraryPlanner = useCallback(() => {
     setInitialQuestionnaireData(createInitialData());
     handleViewChange('questionnaire');
-  }, [handleViewChange]);
+  }, [handleViewChange, user, quotas]);
 
   const handleStartPackingAssistant = useCallback(() => {
     setPackingRequestData(null);
     handleViewChange('packingAssistantForm');
-  }, [handleViewChange]);
+  }, [handleViewChange, user, quotas]);
 
   const handleStartFoodFinder = useCallback(() => {
     setFoodRequestData(null);
     handleViewChange('foodFinderForm');
-  }, [handleViewChange]);
+  }, [handleViewChange, user, quotas]);
 
   const handleStartAppFinder = useCallback(() => {
     setAppRequestData(null);
     handleViewChange('appFinderForm');
-  }, [handleViewChange]);
+  }, [handleViewChange, user, quotas]);
 
   const handleStartMusicFinder = useCallback(() => {
     setMusicRequestData(null);
     handleViewChange('musicFinderForm');
-  }, [handleViewChange]);
+  }, [handleViewChange, user, quotas]);
 
   const handleStartLingoFinder = useCallback(() => {
     setLingoRequestData(null);
     handleViewChange('lingoFinderForm');
-  }, [handleViewChange]);
+  }, [handleViewChange, user, quotas]);
 
   const handleBackToHome = useCallback(() => {
     setItinerary(null);
@@ -528,11 +533,11 @@ const App: React.FC = () => {
     setUnifiedPlan({ itinerary: null, packingList: null, foodRecommendations: null, appRecommendations: null, musicRecommendations: null, lingoRecommendations: null });
     setQuestionnaireDataForUnifiedPlan(null);
     handleViewChange('landing');
-  }, [handleViewChange]);
+  }, [handleViewChange, user, quotas]);
 
   const handleEditProfile = useCallback(() => {
     handleViewChange('editProfile');
-  }, [handleViewChange]);
+  }, [handleViewChange, user, quotas]);
 
   const handleProfileUpdate = useCallback((updatedUser: User) => {
     setUser(updatedUser);
@@ -572,6 +577,12 @@ const App: React.FC = () => {
   }, [view, handleViewChange]);
 
   const handleGenerateItinerary = useCallback(async (data: QuestionnaireData) => {
+    // Check quota limits before starting generation
+    if (user && quotas.itinerary && quotas.itinerary.remaining <= 0) {
+      setError("You have reached your weekly limit for itinerary plans. Please try again next week or upgrade your plan.");
+      return;
+    }
+
     setInitialQuestionnaireData(data);
     setIsLoading(true);
     setError(null);
@@ -631,7 +642,7 @@ const App: React.FC = () => {
     
     setIsLoading(false);
     setItineraryAttemptCount(0);
-  }, [handleViewChange]);
+  }, [handleViewChange, user, quotas]);
   
     // Helper to run each non-streaming generation step with retry/cancellation
     const generateStep = useCallback(async <T,>(
@@ -769,6 +780,12 @@ const App: React.FC = () => {
     }, [view, questionnaireDataForUnifiedPlan, unifiedPlanLoadingStatus.itinerary]);
 
     const handleGeneratePackingList = useCallback(async (data: PackingListRequestData, isUnified = false): Promise<PackingList | null> => {
+      // Check quota limits before starting generation (only for standalone usage)
+      if (!isUnified && user && quotas.packing && quotas.packing.remaining <= 0) {
+        setError("You have reached your weekly limit for packing lists. Please try again next week or upgrade your plan.");
+        return null;
+      }
+
       if (!isUnified) {
         setPackingRequestData(data);
         setIsLoading(true);
@@ -835,9 +852,15 @@ const App: React.FC = () => {
         setMiniAppAttemptCount(0);
       }
       return null;
-  }, [handleViewChange]);
+  }, [handleViewChange, user, quotas]);
   
     const handleGenerateFoodRecommendations = useCallback(async (data: FoodFinderRequestData, isUnified = false): Promise<FoodRecommendations | null> => {
+      // Check quota limits before starting generation (only for standalone usage)
+      if (!isUnified && user && quotas.food && quotas.food.remaining <= 0) {
+        setError("You have reached your weekly limit for food recommendations. Please try again next week or upgrade your plan.");
+        return null;
+      }
+
       if (!isUnified) {
         setFoodRequestData(data);
         setIsLoading(true);
@@ -904,9 +927,15 @@ const App: React.FC = () => {
         setMiniAppAttemptCount(0);
       }
       return null;
-  }, [handleViewChange]);
+  }, [handleViewChange, user, quotas]);
     
     const handleGenerateAppRecommendations = useCallback(async (data: AppFinderRequestData, isUnified = false): Promise<AppRecommendations | null> => {
+      // Check quota limits before starting generation (only for standalone usage)
+      if (!isUnified && user && quotas.apps && quotas.apps.remaining <= 0) {
+        setError("You have reached your weekly limit for app recommendations. Please try again next week or upgrade your plan.");
+        return null;
+      }
+
       if (!isUnified) {
         setAppRequestData(data);
         setIsLoading(true);
@@ -973,9 +1002,15 @@ const App: React.FC = () => {
         setMiniAppAttemptCount(0);
       }
       return null;
-  }, [handleViewChange]);
+  }, [handleViewChange, user, quotas]);
     
     const handleGenerateMusicRecommendations = useCallback(async (data: MusicFinderRequestData, isUnified = false): Promise<MusicRecommendations | null> => {
+      // Check quota limits before starting generation (only for standalone usage)
+      if (!isUnified && user && quotas.music && quotas.music.remaining <= 0) {
+        setError("You have reached your weekly limit for music recommendations. Please try again next week or upgrade your plan.");
+        return null;
+      }
+
       if (!isUnified) {
         setMusicRequestData(data);
         setIsLoading(true);
@@ -1042,9 +1077,15 @@ const App: React.FC = () => {
         setMiniAppAttemptCount(0);
       }
       return null;
-  }, [handleViewChange]);
+  }, [handleViewChange, user, quotas]);
     
     const handleGenerateLingoGuide = useCallback(async (data: LingoFinderRequestData, isUnified = false): Promise<LingoRecommendations | null> => {
+      // Check quota limits before starting generation (only for standalone usage)
+      if (!isUnified && user && quotas.lingo && quotas.lingo.remaining <= 0) {
+        setError("You have reached your weekly limit for language guides. Please try again next week or upgrade your plan.");
+        return null;
+      }
+
       if (!isUnified) {
         setLingoRequestData(data);
         setIsLoading(true);
@@ -1111,7 +1152,7 @@ const App: React.FC = () => {
         setMiniAppAttemptCount(0);
       }
       return null;
-  }, [handleViewChange]);
+  }, [handleViewChange, user, quotas]);
 
     // Effect for parallel generation of other steps, dependent on itinerary completion
     useEffect(() => {
@@ -1178,6 +1219,12 @@ const App: React.FC = () => {
 
 
   const handleGenerateUnifiedPlan = useCallback(async (data: QuestionnaireData) => {
+    // Check quota limits before starting generation
+    if (user && quotas.unified && quotas.unified.remaining <= 0) {
+      setError("You have reached your weekly limit for unified plans. Please try again next week or upgrade your plan.");
+      return;
+    }
+
     setInitialQuestionnaireData(data);
     setQuestionnaireDataForUnifiedPlan(data);
     setUnifiedPlan({ itinerary: null, packingList: null, foodRecommendations: null, appRecommendations: null, musicRecommendations: null, lingoRecommendations: null });
@@ -1189,7 +1236,7 @@ const App: React.FC = () => {
     handleViewChange('unifiedResult');
     // This state change will trigger the pipeline `useEffect`
     setUnifiedPlanLoadingStatus({ itinerary: 'pending', packing: 'pending', food: 'pending', apps: 'pending', music: 'pending', lingo: 'pending' });
-  }, [handleViewChange]);
+  }, [handleViewChange, user, quotas]);
 
   const handleRegenerateUnifiedPlanStep = useCallback((step: keyof UnifiedPlanLoadingStatus) => {
     if (!questionnaireDataForUnifiedPlan) return;
@@ -1311,7 +1358,7 @@ const App: React.FC = () => {
       case 'unifiedPlannerForm':
         return <UnifiedPlannerForm onSubmit={handleGenerateUnifiedPlan} initialData={initialQuestionnaireData} onBack={handleBackToHome} error={error} user={user} />;
       case 'questionnaire':
-        return <Questionnaire onSubmit={handleGenerateItinerary} isLoading={false} error={error} initialData={initialQuestionnaireData} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} />;
+        return <Questionnaire onSubmit={handleGenerateItinerary} isLoading={false} error={error} initialData={initialQuestionnaireData} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} user={user} />;
       case 'itineraryResult':
         if (itinerary) return <ItineraryPreview itinerary={itinerary} onRegenerate={() => handleViewChange('questionnaire')} requestData={questionnaireDataForUnifiedPlan} />;
         break;

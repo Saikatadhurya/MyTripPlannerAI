@@ -182,6 +182,13 @@ const MusicFinderForm: React.FC<MusicFinderFormProps> = ({ onSubmit, isLoading, 
         setDestinationError("Please pick a location from the list to lock it in! 🗺️");
         return;
     }
+
+    // Check quota limits
+    if (user && quotas.music && quotas.music.remaining <= 0) {
+        setDestinationError("You have reached your weekly limit for music recommendations. Please try again next week or upgrade your plan.");
+        return;
+    }
+
     onSubmit(formData);
   };
 
@@ -350,9 +357,9 @@ const MusicFinderForm: React.FC<MusicFinderFormProps> = ({ onSubmit, isLoading, 
           <button
             type="submit"
             className="w-full sm:w-auto px-10 py-4 bg-fuchsia-600 text-white font-bold rounded-full hover:bg-fuchsia-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:bg-fuchsia-400/80 disabled:cursor-not-allowed disabled:shadow-md disabled:scale-100"
-            disabled={!isDestinationSelected || !!destinationError || isLoading || quotasLoading}
+            disabled={!isDestinationSelected || !!destinationError || isLoading || quotasLoading || (user && quotas.music && quotas.music.remaining <= 0)}
           >
-            {quotasLoading ? '⏳ Loading limits...' : '🎶 Discover Local Music'}
+            {quotasLoading ? '⏳ Loading limits...' : (user && quotas.music && quotas.music.remaining <= 0) ? '🚫 Limit Reached' : '🎶 Discover Local Music'}
           </button>
         </div>
       </form>
