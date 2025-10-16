@@ -64,10 +64,12 @@ interface LingoFinderResultProps {
     isUnifiedView?: boolean;
     onPrint?: () => void;
     requestData?: any; // Add request data for history saving
+    isHistoryView?: boolean; // Add flag to indicate if this is from history
 }
 
-const LingoFinderResult: React.FC<LingoFinderResultProps> = ({ recommendations, onRegenerate, isUnifiedView = false, onPrint, requestData }) => {
+const LingoFinderResult: React.FC<LingoFinderResultProps> = ({ recommendations, onRegenerate, isUnifiedView = false, onPrint, requestData, isHistoryView = false }) => {
     const [openCategory, setOpenCategory] = useState<string | null>(recommendations.categories[0]?.categoryName || null);
+    const [hasBeenSaved, setHasBeenSaved] = useState(false);
     const { saveLingoRecommendation } = useSaveRecommendation();
 
     const toggleCategory = (categoryName: string) => {
@@ -78,14 +80,16 @@ const LingoFinderResult: React.FC<LingoFinderResultProps> = ({ recommendations, 
 
     // Save to history when component mounts (only if not in unified view and request data is available)
     useEffect(() => {
-        console.log('LingoFinderResult useEffect:', { isUnifiedView, requestData, recommendations });
-        if (!isUnifiedView && requestData) {
+        console.log('LingoFinderResult useEffect:', { isUnifiedView, requestData, recommendations, hasBeenSaved, isHistoryView });
+        // Don't save if this is a history view
+        if (!isUnifiedView && requestData && !hasBeenSaved && !isHistoryView) {
             console.log('Saving lingo recommendation to history...');
             saveLingoRecommendation(requestData, recommendations, recommendations.destination, requestData.language);
+            setHasBeenSaved(true);
         } else {
-            console.log('Not saving lingo recommendation:', { isUnifiedView, hasRequestData: !!requestData });
+            console.log('Not saving lingo recommendation:', { isUnifiedView, hasRequestData: !!requestData, hasBeenSaved, isHistoryView });
         }
-    }, [isUnifiedView, requestData, recommendations, saveLingoRecommendation]);
+    }, [isUnifiedView, requestData, recommendations, saveLingoRecommendation, hasBeenSaved, isHistoryView]);
 
     return (
         <div className="max-w-3xl mx-auto space-y-12 animated-card" id="lingo-finder-result-content">

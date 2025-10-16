@@ -105,15 +105,17 @@ class HistoryModel {
       const dataQuery = `
         SELECT 
           id,
-          recommendation_type,
+          recommendation_type as "recommendationType",
           destination,
           language,
+          request_data as "requestData",
+          response_data as "responseData",
           title,
           tags,
           notes,
-          trip_context,
-          created_at,
-          updated_at,
+          trip_context as "tripContext",
+          created_at as "created_at",
+          updated_at as "updated_at",
           -- Extract summary info from JSON based on recommendation type
           CASE 
             WHEN recommendation_type = 'apps' THEN
@@ -185,17 +187,17 @@ class HistoryModel {
       const query = `
         SELECT 
           id,
-          recommendation_type,
+          recommendation_type as "recommendationType",
           destination,
           language,
-          request_data,
-          response_data,
+          request_data as "requestData",
+          response_data as "responseData",
           title,
           tags,
           notes,
-          trip_context,
-          created_at,
-          updated_at
+          trip_context as "tripContext",
+          created_at as "created_at",
+          updated_at as "updated_at"
         FROM planora.recommendations_history
         WHERE id = $1 AND user_id = $2
       `;
@@ -285,13 +287,13 @@ class HistoryModel {
       const query = `
         SELECT 
           id,
-          recommendation_type,
+          recommendation_type as "recommendationType",
           destination,
           language,
           title,
           tags,
           notes,
-          created_at
+          created_at as "created_at"
         FROM planora.recommendations_history
         WHERE user_id = $1 AND trip_context->>'tripId' = $2
         ORDER BY created_at DESC

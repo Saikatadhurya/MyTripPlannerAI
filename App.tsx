@@ -281,6 +281,7 @@ const App: React.FC = () => {
   const [appRecommendations, setAppRecommendations] = useState<AppRecommendations | null>(null);
   const [musicRecommendations, setMusicRecommendations] = useState<MusicRecommendations | null>(null);
   const [lingoRecommendations, setLingoRecommendations] = useState<LingoRecommendations | null>(null);
+  const [isHistoryView, setIsHistoryView] = useState(false);
   
   // State for the new unified plan
   const [unifiedPlan, setUnifiedPlan] = useState<UnifiedPlan>({ itinerary: null, packingList: null, foodRecommendations: null, appRecommendations: null, musicRecommendations: null, lingoRecommendations: null });
@@ -532,8 +533,49 @@ const App: React.FC = () => {
     setLingoRequestData(null);
     setUnifiedPlan({ itinerary: null, packingList: null, foodRecommendations: null, appRecommendations: null, musicRecommendations: null, lingoRecommendations: null });
     setQuestionnaireDataForUnifiedPlan(null);
+    setIsHistoryView(false); // Reset history view flag
     handleViewChange('landing');
   }, [handleViewChange, user, quotas]);
+
+  const handleNavigateToResult = useCallback((type: string, responseData: any, requestData: any, isHistoryView: boolean = false) => {
+    setIsHistoryView(isHistoryView);
+    
+    // Set the appropriate data and navigate to the result view
+    switch (type) {
+      case 'lingo':
+        setLingoRecommendations(responseData);
+        setLingoRequestData(requestData);
+        handleViewChange('lingoFinderResult');
+        break;
+      case 'apps':
+        setAppRecommendations(responseData);
+        setAppRequestData(requestData);
+        handleViewChange('appFinderResult');
+        break;
+      case 'food':
+        setFoodRecommendations(responseData);
+        setFoodRequestData(requestData);
+        handleViewChange('foodFinderResult');
+        break;
+      case 'music':
+        setMusicRecommendations(responseData);
+        setMusicRequestData(requestData);
+        handleViewChange('musicFinderResult');
+        break;
+      case 'packing':
+        setPackingList(responseData);
+        setPackingRequestData(requestData);
+        handleViewChange('packingAssistantResult');
+        break;
+      case 'itinerary':
+        setItinerary(responseData);
+        setQuestionnaireDataForUnifiedPlan(requestData);
+        handleViewChange('itineraryResult');
+        break;
+      default:
+        console.warn('Unknown recommendation type:', type);
+    }
+  }, [handleViewChange]);
 
   const handleEditProfile = useCallback(() => {
     handleViewChange('editProfile');
@@ -1360,39 +1402,39 @@ const App: React.FC = () => {
       case 'questionnaire':
         return <Questionnaire onSubmit={handleGenerateItinerary} isLoading={false} error={error} initialData={initialQuestionnaireData} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} user={user} />;
       case 'itineraryResult':
-        if (itinerary) return <ItineraryPreview itinerary={itinerary} onRegenerate={() => handleViewChange('questionnaire')} requestData={questionnaireDataForUnifiedPlan} />;
+        if (itinerary) return <ItineraryPreview itinerary={itinerary} onRegenerate={() => handleViewChange('questionnaire')} requestData={questionnaireDataForUnifiedPlan} isHistoryView={isHistoryView} />;
         break;
       case 'packingAssistantForm':
         return <PackingAssistantForm onSubmit={handleGeneratePackingList} isLoading={false} error={error} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} initialData={packingRequestData} user={user} />;
       case 'packingAssistantResult':
-        if (packingList) return <PackingListPreview packingList={packingList} onRegenerate={() => handleViewChange('packingAssistantForm')} requestData={packingRequestData} />;
+        if (packingList) return <PackingListPreview packingList={packingList} onRegenerate={() => handleViewChange('packingAssistantForm')} requestData={packingRequestData} isHistoryView={isHistoryView} />;
         break;
       case 'foodFinderForm':
         return <FoodFinderForm onSubmit={handleGenerateFoodRecommendations} isLoading={false} error={error} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} initialData={foodRequestData} user={user} />;
       case 'foodFinderResult':
-        if (foodRecommendations) return <FoodFinderResult recommendations={foodRecommendations} onRegenerate={() => handleViewChange('foodFinderForm')} requestData={foodRequestData} />;
+        if (foodRecommendations) return <FoodFinderResult recommendations={foodRecommendations} onRegenerate={() => handleViewChange('foodFinderForm')} requestData={foodRequestData} isHistoryView={isHistoryView} />;
         break;
       case 'appFinderForm':
         return <AppFinderForm onSubmit={handleGenerateAppRecommendations} isLoading={false} error={error} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} initialData={appRequestData} user={user} />;
       case 'appFinderResult':
-        if (appRecommendations) return <AppFinderResult recommendations={appRecommendations} onRegenerate={() => handleViewChange('appFinderForm')} requestData={appRequestData} />;
+        if (appRecommendations) return <AppFinderResult recommendations={appRecommendations} onRegenerate={() => handleViewChange('appFinderForm')} requestData={appRequestData} isHistoryView={isHistoryView} />;
         break;
       case 'musicFinderForm':
         return <MusicFinderForm onSubmit={handleGenerateMusicRecommendations} isLoading={false} error={error} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} initialData={musicRequestData} user={user} />;
       case 'musicFinderResult':
-        if (musicRecommendations) return <MusicFinderResult recommendations={musicRecommendations} onRegenerate={() => handleViewChange('musicFinderForm')} requestData={musicRequestData} />;
+        if (musicRecommendations) return <MusicFinderResult recommendations={musicRecommendations} onRegenerate={() => handleViewChange('musicFinderForm')} requestData={musicRequestData} isHistoryView={isHistoryView} />;
         break;
       case 'lingoFinderForm':
         return <LingoFinderForm onSubmit={handleGenerateLingoGuide} isLoading={false} error={error} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} initialData={lingoRequestData} user={user} />;
       case 'lingoFinderResult':
-        if (lingoRecommendations) return <LingoFinderResult recommendations={lingoRecommendations} onRegenerate={() => handleViewChange('lingoFinderForm')} requestData={lingoRequestData} />;
+        if (lingoRecommendations) return <LingoFinderResult recommendations={lingoRecommendations} onRegenerate={() => handleViewChange('lingoFinderForm')} requestData={lingoRequestData} isHistoryView={isHistoryView} />;
         break;
       case 'contact':
         return <ContactUs onBack={handleBackToHome} />;
       case 'editProfile':
         return <EditProfile user={user!} onBack={handleBackToHome} onUpdate={handleProfileUpdate} error={authError} />;
       case 'history':
-        return <History onBack={handleBackToHome} />;
+        return <History onBack={handleBackToHome} onNavigateToResult={handleNavigateToResult} />;
       default:
         return null;
     }

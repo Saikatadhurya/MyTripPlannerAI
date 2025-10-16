@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { FoodRecommendations, FoodItem, FoodItemGroup } from '../types';
 import { useSaveRecommendation } from '../hooks/useSaveRecommendation';
 
@@ -109,22 +109,26 @@ interface FoodFinderResultProps {
     isUnifiedView?: boolean;
     onPrint?: () => void;
     requestData?: any; // Add request data for history saving
+    isHistoryView?: boolean; // Add flag to indicate if this is from history
 }
 
-const FoodFinderResult: React.FC<FoodFinderResultProps> = ({ recommendations, onRegenerate, isUnifiedView = false, onPrint, requestData }) => {
+const FoodFinderResult: React.FC<FoodFinderResultProps> = ({ recommendations, onRegenerate, isUnifiedView = false, onPrint, requestData, isHistoryView = false }) => {
     const iconClass = "h-6 w-6";
+    const [hasBeenSaved, setHasBeenSaved] = useState(false);
     const { saveFoodRecommendation } = useSaveRecommendation();
     
     // Save to history when component mounts (only if not in unified view and request data is available)
     useEffect(() => {
-        console.log('FoodFinderResult useEffect:', { isUnifiedView, requestData, recommendations });
-        if (!isUnifiedView && requestData) {
+        console.log('FoodFinderResult useEffect:', { isUnifiedView, requestData, recommendations, hasBeenSaved, isHistoryView });
+        // Don't save if this is a history view
+        if (!isUnifiedView && requestData && !hasBeenSaved && !isHistoryView) {
             console.log('Saving food recommendation to history...');
             saveFoodRecommendation(requestData, recommendations, recommendations.destination, requestData.language);
+            setHasBeenSaved(true);
         } else {
-            console.log('Not saving food recommendation:', { isUnifiedView, hasRequestData: !!requestData });
+            console.log('Not saving food recommendation:', { isUnifiedView, hasRequestData: !!requestData, hasBeenSaved, isHistoryView });
         }
-    }, [isUnifiedView, requestData, recommendations, saveFoodRecommendation]);
+    }, [isUnifiedView, requestData, recommendations, saveFoodRecommendation, hasBeenSaved, isHistoryView]);
     const categoryDetails = {
         iconicDishes: { title: "Iconic Dishes", icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>, color: "orange"},
         breakfast: { title: "Breakfast", icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M21 3v18H3V3h18zM5 7h14M5 12h14M5 17h14" /></svg>, color: "purple"},

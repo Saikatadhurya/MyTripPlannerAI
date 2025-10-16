@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppRecommendations, MobileApp } from '../types';
 import { useSaveRecommendation } from '../hooks/useSaveRecommendation';
 
@@ -111,22 +111,26 @@ interface AppFinderResultProps {
     isUnifiedView?: boolean;
     onPrint?: () => void;
     requestData?: any; // Add request data for history saving
+    isHistoryView?: boolean; // Add flag to indicate if this is from history
 }
 
-const AppFinderResult: React.FC<AppFinderResultProps> = ({ recommendations, onRegenerate, isUnifiedView = false, onPrint, requestData }) => {
+const AppFinderResult: React.FC<AppFinderResultProps> = ({ recommendations, onRegenerate, isUnifiedView = false, onPrint, requestData, isHistoryView = false }) => {
     const iconClass = "h-6 w-6";
+    const [hasBeenSaved, setHasBeenSaved] = useState(false);
     const { saveAppRecommendation } = useSaveRecommendation();
     
     // Save to history when component mounts (only if not in unified view and request data is available)
     useEffect(() => {
-        console.log('AppFinderResult useEffect:', { isUnifiedView, requestData, recommendations });
-        if (!isUnifiedView && requestData) {
+        console.log('AppFinderResult useEffect:', { isUnifiedView, requestData, recommendations, hasBeenSaved, isHistoryView });
+        // Don't save if this is a history view
+        if (!isUnifiedView && requestData && !hasBeenSaved && !isHistoryView) {
             console.log('Saving app recommendation to history...');
             saveAppRecommendation(requestData, recommendations, recommendations.destination, requestData.language);
+            setHasBeenSaved(true);
         } else {
-            console.log('Not saving app recommendation:', { isUnifiedView, hasRequestData: !!requestData });
+            console.log('Not saving app recommendation:', { isUnifiedView, hasRequestData: !!requestData, hasBeenSaved, isHistoryView });
         }
-    }, [isUnifiedView, requestData, recommendations, saveAppRecommendation]);
+    }, [isUnifiedView, requestData, recommendations, saveAppRecommendation, hasBeenSaved, isHistoryView]);
     
     const categoryDetails = {
         transportAndTravel: { title: "Transport & Travel", icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18.562 6.077C18.238 5.437 17.562 5 16.808 5H3.192c-.754 0-1.43.437-1.754 1.077L.05 9.423A.5.5 0 00.5 10h19a.5.5 0 00.45-.577l-1.388-3.346zM2 11v4a1 1 0 001 1h1a1 1 0 001-1v-4H2zm15 0v4a1 1 0 001 1h1a1 1 0 001-1v-4h-3zM5 11v4a1 1 0 001 1h8a1 1 0 001-1v-4H5z" clipRule="evenodd" /></svg>, color: "blue"},

@@ -2,12 +2,6 @@ import React, { useState } from 'react';
 import { useHistory } from '../hooks/useHistory';
 import { RecommendationHistory } from '../services/historyService';
 import BackToHomeButton from './BackToHomeButton';
-import LingoFinderResult from './LingoFinderResult';
-import AppFinderResult from './AppFinderResult';
-import FoodFinderResult from './FoodFinderResult';
-import MusicFinderResult from './MusicFinderResult';
-import PackingListPreview from './PackingListPreview';
-import ItineraryPreview from './ItineraryPreview';
 
 interface HistoryItemProps {
   item: RecommendationHistory;
@@ -212,137 +206,8 @@ const EditModal: React.FC<EditModalProps> = ({ item, onClose, onSave }) => {
   );
 };
 
-interface ViewModalProps {
-  item: RecommendationHistory | null;
-  onClose: () => void;
-}
 
-const ViewModal: React.FC<ViewModalProps> = ({ item, onClose }) => {
-  if (!item) return null;
-
-  const renderResultContent = () => {
-    const type = item.recommendationType;
-    
-    // Create a mock regenerate function for history view
-    const mockRegenerate = () => {
-      console.log('Regenerate not available in history view');
-    };
-    
-    switch (type) {
-      case 'lingo':
-        return (
-          <LingoFinderResult
-            recommendations={item.responseData}
-            onRegenerate={mockRegenerate}
-            isUnifiedView={true}
-            onPrint={() => window.print()}
-          />
-        );
-      
-      case 'apps':
-        return (
-          <AppFinderResult
-            recommendations={item.responseData}
-            onRegenerate={mockRegenerate}
-            isUnifiedView={true}
-            onPrint={() => window.print()}
-          />
-        );
-      
-      case 'food':
-        return (
-          <FoodFinderResult
-            recommendations={item.responseData}
-            onRegenerate={mockRegenerate}
-            isUnifiedView={true}
-            onPrint={() => window.print()}
-          />
-        );
-      
-      case 'music':
-        return (
-          <MusicFinderResult
-            recommendations={item.responseData}
-            onRegenerate={mockRegenerate}
-            isUnifiedView={true}
-            onPrint={() => window.print()}
-          />
-        );
-      
-      case 'packing':
-        return (
-          <PackingListPreview
-            packingList={item.responseData}
-            onRegenerate={mockRegenerate}
-            isUnifiedView={true}
-            onPrint={() => window.print()}
-          />
-        );
-      
-      case 'itinerary':
-        return (
-          <ItineraryPreview
-            itinerary={item.responseData}
-            onRegenerate={mockRegenerate}
-            isUnifiedView={true}
-            onPrint={() => window.print()}
-          />
-        );
-      
-      default:
-        return (
-          <div className="space-y-6">
-            <h4 className="text-xl font-bold text-slate-800 mb-4">Recommendation Details</h4>
-            <div className="bg-slate-100 p-4 rounded-lg">
-              <pre className="text-sm overflow-x-auto">
-                {JSON.stringify(item.responseData, null, 2)}
-              </pre>
-            </div>
-          </div>
-        );
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl w-full max-w-7xl max-h-[95vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-xl">
-          <div className="flex justify-between items-center">
-            <div>
-              <h3 className="text-xl font-bold text-slate-800">{item.title || 'Recommendation Details'}</h3>
-              <p className="text-sm text-slate-600">{item.destination} • {new Date(item.created_at).toLocaleDateString()}</p>
-            </div>
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={() => window.print()}
-                className="p-2 text-blue-600 hover:text-blue-800 transition-colors"
-                title="Print"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                </svg>
-              </button>
-              <button
-                onClick={onClose}
-                className="p-2 text-slate-600 hover:text-slate-800 transition-colors"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
-        
-        <div className="p-6">
-          {renderResultContent()}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const History: React.FC<{ onBack: () => void }> = ({ onBack }) => {
+const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string, responseData: any, requestData: any, isHistoryView: boolean) => void }> = ({ onBack, onNavigateToResult }) => {
   const {
     history,
     pagination,
@@ -359,7 +224,6 @@ const History: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   } = useHistory();
 
   const [editingItem, setEditingItem] = useState<RecommendationHistory | null>(null);
-  const [viewingItem, setViewingItem] = useState<RecommendationHistory | null>(null);
   const [searchTerm, setSearchTerm] = useState(filters.search || '');
   const [selectedDestination, setSelectedDestination] = useState(filters.destination || '');
   const [selectedTags, setSelectedTags] = useState<string[]>(filters.tags || []);
@@ -406,7 +270,8 @@ const History: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   };
 
   const handleView = (item: RecommendationHistory) => {
-    setViewingItem(item);
+    // Navigate to the appropriate result page based on recommendation type
+    onNavigateToResult(item.recommendationType, item.responseData, item.requestData, true); // true = isHistoryView
   };
 
   const handlePageChange = (page: number) => {
@@ -416,7 +281,7 @@ const History: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   return (
     <div className="bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <div className="max-w-6xl mx-auto px-4 py-8">
-        <BackToHomeButton onBack={onBack} />
+        <BackToHomeButton onClick={onBack} />
         
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-slate-800 mb-2">Your History</h1>
@@ -569,11 +434,6 @@ const History: React.FC<{ onBack: () => void }> = ({ onBack }) => {
           item={editingItem}
           onClose={() => setEditingItem(null)}
           onSave={handleSaveEdit}
-        />
-        
-        <ViewModal
-          item={viewingItem}
-          onClose={() => setViewingItem(null)}
         />
       </div>
     </div>

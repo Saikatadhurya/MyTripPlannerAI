@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MusicRecommendations, MusicItem, MusicGenreCategory } from '../types';
 import { useSaveRecommendation } from '../hooks/useSaveRecommendation';
 
@@ -134,23 +134,27 @@ interface MusicFinderResultProps {
     isUnifiedView?: boolean;
     onPrint?: () => void;
     requestData?: any; // Add request data for history saving
+    isHistoryView?: boolean; // Add flag to indicate if this is from history
 }
 
-const MusicFinderResult: React.FC<MusicFinderResultProps> = ({ recommendations, onRegenerate, isUnifiedView = false, onPrint, requestData }) => {
+const MusicFinderResult: React.FC<MusicFinderResultProps> = ({ recommendations, onRegenerate, isUnifiedView = false, onPrint, requestData, isHistoryView = false }) => {
     const hasMusic = recommendations.musicCategories && recommendations.musicCategories.length > 0;
     const handlePrint = onPrint || (() => window.print());
+    const [hasBeenSaved, setHasBeenSaved] = useState(false);
     const { saveMusicRecommendation } = useSaveRecommendation();
     
     // Save to history when component mounts (only if not in unified view and request data is available)
     useEffect(() => {
-        console.log('MusicFinderResult useEffect:', { isUnifiedView, requestData, recommendations });
-        if (!isUnifiedView && requestData) {
+        console.log('MusicFinderResult useEffect:', { isUnifiedView, requestData, recommendations, hasBeenSaved, isHistoryView });
+        // Don't save if this is a history view
+        if (!isUnifiedView && requestData && !hasBeenSaved && !isHistoryView) {
             console.log('Saving music recommendation to history...');
             saveMusicRecommendation(requestData, recommendations, recommendations.destination, requestData.language);
+            setHasBeenSaved(true);
         } else {
-            console.log('Not saving music recommendation:', { isUnifiedView, hasRequestData: !!requestData });
+            console.log('Not saving music recommendation:', { isUnifiedView, hasRequestData: !!requestData, hasBeenSaved, isHistoryView });
         }
-    }, [isUnifiedView, requestData, recommendations, saveMusicRecommendation]);
+    }, [isUnifiedView, requestData, recommendations, saveMusicRecommendation, hasBeenSaved, isHistoryView]);
 
     return (
         <div className="max-w-5xl mx-auto space-y-12 animated-card" id="music-finder-result-content">

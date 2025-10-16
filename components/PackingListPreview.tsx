@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PackingList } from '../types';
 import { useSaveRecommendation } from '../hooks/useSaveRecommendation';
 
@@ -72,22 +72,26 @@ interface PackingListPreviewProps {
     isUnifiedView?: boolean;
     onPrint?: () => void;
     requestData?: any; // Add request data for history saving
+    isHistoryView?: boolean; // Add flag to indicate if this is from history
 }
 
-const PackingListPreview: React.FC<PackingListPreviewProps> = ({ packingList, onRegenerate, isUnifiedView = false, onPrint, requestData }) => {
+const PackingListPreview: React.FC<PackingListPreviewProps> = ({ packingList, onRegenerate, isUnifiedView = false, onPrint, requestData, isHistoryView = false }) => {
     const iconClass = "h-6 w-6";
+    const [hasBeenSaved, setHasBeenSaved] = useState(false);
     const { savePackingRecommendation } = useSaveRecommendation();
     
     // Save to history when component mounts (only if not in unified view and request data is available)
     useEffect(() => {
-        console.log('PackingListPreview useEffect:', { isUnifiedView, requestData, packingList });
-        if (!isUnifiedView && requestData) {
+        console.log('PackingListPreview useEffect:', { isUnifiedView, requestData, packingList, hasBeenSaved, isHistoryView });
+        // Don't save if this is a history view
+        if (!isUnifiedView && requestData && !hasBeenSaved && !isHistoryView) {
             console.log('Saving packing recommendation to history...');
             savePackingRecommendation(requestData, packingList, packingList.destination, requestData.language);
+            setHasBeenSaved(true);
         } else {
-            console.log('Not saving packing recommendation:', { isUnifiedView, hasRequestData: !!requestData });
+            console.log('Not saving packing recommendation:', { isUnifiedView, hasRequestData: !!requestData, hasBeenSaved, isHistoryView });
         }
-    }, [isUnifiedView, requestData, packingList, savePackingRecommendation]);
+    }, [isUnifiedView, requestData, packingList, savePackingRecommendation, hasBeenSaved, isHistoryView]);
     
     const categoryDetails = {
         clothingAndFootwear: { title: "Clothing & Footwear", items: packingList.clothingAndFootwear, icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>, color: "blue", className: "md:col-span-2" },
