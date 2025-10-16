@@ -569,8 +569,14 @@ const App: React.FC = () => {
         break;
       case 'itinerary':
         setItinerary(responseData);
-        setQuestionnaireDataForUnifiedPlan(requestData);
+        setInitialQuestionnaireData(requestData); // Changed from setQuestionnaireDataForUnifiedPlan
         handleViewChange('itineraryResult');
+        break;
+      case 'unified':
+        // Handle unified trip navigation
+        setUnifiedPlan(responseData);
+        setQuestionnaireDataForUnifiedPlan(requestData);
+        handleViewChange('unifiedResult');
         break;
       default:
         console.warn('Unknown recommendation type:', type);
@@ -1390,6 +1396,7 @@ const App: React.FC = () => {
             onCancelStep={handleCancelUnifiedPlanStep} 
             onTabChangeScrollToTop={scrollToTop} 
             itineraryStreamedText={itineraryStreamedText} 
+            questionnaireData={questionnaireDataForUnifiedPlan}
         />;
     }
 

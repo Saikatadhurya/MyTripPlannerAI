@@ -46,6 +46,16 @@ router.get('/filters/types', historyController.getRecommendationTypes);
 // Get recommendations by trip context
 router.get('/trip/:tripId', historyController.getRecommendationsByTrip);
 
+// Unified trip routes
+// Get unified trips
+router.get('/unified-trips', historyController.getUnifiedTrips);
+
+// Get unified trip with all recommendations
+router.get('/unified-trips/:tripId', historyController.getUnifiedTrip);
+
+// Delete unified trip
+router.delete('/unified-trips/:tripId', historyController.deleteUnifiedTrip);
+
 // Legacy app-specific routes for backward compatibility
 // Save app recommendation to history
 router.post('/save-app', validateSaveAppRecommendation, historyController.saveAppRecommendation);

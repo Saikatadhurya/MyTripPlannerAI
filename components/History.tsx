@@ -1,7 +1,95 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useHistory } from '../hooks/useHistory';
-import { RecommendationHistory } from '../services/historyService';
+import { RecommendationHistory, UnifiedTrip } from '../services/historyService';
 import BackToHomeButton from './BackToHomeButton';
+import { historyService } from '../services/historyService';
+
+interface UnifiedTripItemProps {
+  trip: UnifiedTrip;
+  onView: (trip: UnifiedTrip) => void;
+  onDelete: (tripId: string) => void;
+}
+
+const UnifiedTripItem: React.FC<UnifiedTripItemProps> = ({ trip, onView, onDelete }) => {
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const getTypeIcon = (type: string) => {
+    const icons = {
+      apps: '📱',
+      food: '🍽️',
+      music: '🎵',
+      lingo: '🗣️',
+      packing: '🎒',
+      itinerary: '🗺️',
+      unknown: '📋'
+    };
+    return icons[type as keyof typeof icons] || icons.unknown;
+  };
+
+  return (
+    <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200 hover:shadow-lg transition-shadow">
+      <div className="flex items-start justify-between">
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-2xl">🗺️</span>
+            <h3 className="text-lg font-semibold text-gray-900">
+              {trip.tripName || `${trip.destination} Trip`}
+            </h3>
+            <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
+              Unified Trip
+            </span>
+          </div>
+          
+          <div className="text-sm text-gray-600 mb-3">
+            <p><strong>Destination:</strong> {trip.destination}</p>
+            <p><strong>Language:</strong> {trip.language}</p>
+            <p><strong>Created:</strong> {formatDate(trip.created_at)}</p>
+            <p><strong>Recommendations:</strong> {trip.recommendation_count}</p>
+          </div>
+
+          <div className="flex flex-wrap gap-1 mb-3">
+            {trip.recommendation_types.map((type, index) => (
+              <span key={index} className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">
+                <span>{getTypeIcon(type)}</span>
+                <span className="capitalize">{type}</span>
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex gap-2 ml-4">
+          <button
+            onClick={() => onView(trip)}
+            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+            title="View Trip"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          </button>
+          <button
+            onClick={() => onDelete(trip.tripId)}
+            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            title="Delete Trip"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 interface HistoryItemProps {
   item: RecommendationHistory;
@@ -228,6 +316,11 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
   const [selectedDestination, setSelectedDestination] = useState(filters.destination || '');
   const [selectedTags, setSelectedTags] = useState<string[]>(filters.tags || []);
   const [selectedType, setSelectedType] = useState(filters.recommendationType || '');
+  
+  // Unified trip state
+  const [unifiedTrips, setUnifiedTrips] = useState<UnifiedTrip[]>([]);
+  const [unifiedTripsLoading, setUnifiedTripsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<'individual' | 'unified'>('individual');
 
   const handleSearch = () => {
     setFilters({
@@ -273,6 +366,45 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
     // Navigate to the appropriate result page based on recommendation type
     onNavigateToResult(item.recommendationType, item.responseData, item.requestData, true); // true = isHistoryView
   };
+
+  // Unified trip handlers
+  const loadUnifiedTrips = async () => {
+    setUnifiedTripsLoading(true);
+    try {
+      const trips = await historyService.getUnifiedTrips();
+      setUnifiedTrips(trips);
+    } catch (error) {
+      console.error('Failed to load unified trips:', error);
+    } finally {
+      setUnifiedTripsLoading(false);
+    }
+  };
+
+  const handleViewUnifiedTrip = async (trip: UnifiedTrip) => {
+    try {
+      const fullTrip = await historyService.getUnifiedTrip(trip.tripId);
+      // Navigate to unified result view with all recommendations
+      onNavigateToResult('unified', fullTrip, fullTrip.recommendations?.[0]?.requestData, true);
+    } catch (error) {
+      console.error('Failed to load unified trip:', error);
+    }
+  };
+
+  const handleDeleteUnifiedTrip = async (tripId: string) => {
+    if (window.confirm('Are you sure you want to delete this unified trip? This will delete all associated recommendations.')) {
+      try {
+        await historyService.deleteUnifiedTrip(tripId);
+        setUnifiedTrips(prev => prev.filter(trip => trip.tripId !== tripId));
+      } catch (error) {
+        console.error('Failed to delete unified trip:', error);
+      }
+    }
+  };
+
+  // Load unified trips when component mounts
+  useEffect(() => {
+    loadUnifiedTrips();
+  }, []);
 
   const handlePageChange = (page: number) => {
     loadHistory(page);
@@ -366,6 +498,32 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
           </div>
         </div>
 
+        {/* Tabs */}
+        <div className="bg-white/60 backdrop-blur-lg rounded-xl p-6 shadow-md border border-white/50 mb-8">
+          <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+            <button
+              onClick={() => setActiveTab('individual')}
+              className={`flex-1 py-2 px-4 rounded-md font-medium transition-colors ${
+                activeTab === 'individual'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Individual Recommendations
+            </button>
+            <button
+              onClick={() => setActiveTab('unified')}
+              className={`flex-1 py-2 px-4 rounded-md font-medium transition-colors ${
+                activeTab === 'unified'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Unified Trips
+            </button>
+          </div>
+        </div>
+
         {/* Results */}
         {loading && (
           <div className="text-center py-8">
@@ -380,7 +538,7 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
           </div>
         )}
 
-        {!loading && !error && history.length === 0 && (
+        {!loading && !error && history.length === 0 && activeTab === 'individual' && (
           <div className="text-center py-12">
             <div className="text-6xl mb-4">📋</div>
             <h3 className="text-xl font-semibold text-slate-800 mb-2">No recommendations found</h3>
@@ -388,7 +546,16 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
           </div>
         )}
 
-        {!loading && !error && history.length > 0 && (
+        {!loading && !error && unifiedTrips.length === 0 && activeTab === 'unified' && (
+          <div className="text-center py-12">
+            <div className="text-6xl mb-4">🗺️</div>
+            <h3 className="text-xl font-semibold text-slate-800 mb-2">No unified trips found</h3>
+            <p className="text-slate-600">Create a unified trip plan to see it here!</p>
+          </div>
+        )}
+
+        {/* Individual Recommendations */}
+        {activeTab === 'individual' && !loading && !error && history.length > 0 && (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
               {history.map(item => (
@@ -427,6 +594,27 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
               </div>
             )}
           </>
+        )}
+
+        {/* Unified Trips */}
+        {activeTab === 'unified' && !unifiedTripsLoading && unifiedTrips.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            {unifiedTrips.map(trip => (
+              <UnifiedTripItem
+                key={trip.tripId}
+                trip={trip}
+                onView={handleViewUnifiedTrip}
+                onDelete={handleDeleteUnifiedTrip}
+              />
+            ))}
+          </div>
+        )}
+
+        {unifiedTripsLoading && activeTab === 'unified' && (
+          <div className="text-center py-8">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <p className="mt-2 text-slate-600">Loading unified trips...</p>
+          </div>
         )}
 
         {/* Modals */}

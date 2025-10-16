@@ -2,20 +2,20 @@ const { pool } = require('../config/db');
 
 class HistoryModel {
   // Save a new recommendation to history
-  async saveRecommendation({ userId, recommendationType, destination, language, requestData, responseData, title, tags, notes, tripContext }) {
+  async saveRecommendation({ userId, recommendationType, destination, language, requestData, responseData, title, tags, notes, tripContext, tripId, tripName }) {
     console.log('HistoryModel.saveRecommendation called with:', {
       userId, recommendationType, destination, language, 
       requestDataKeys: Object.keys(requestData || {}), 
       responseDataKeys: Object.keys(responseData || {}),
-      title, tags, notes, tripContext
+      title, tags, notes, tripContext, tripId, tripName
     });
     
     const client = await pool.connect();
     try {
       const query = `
         INSERT INTO planora.recommendations_history 
-        (user_id, recommendation_type, destination, language, request_data, response_data, title, tags, notes, trip_context)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        (user_id, recommendation_type, destination, language, request_data, response_data, title, tags, notes, trip_context, trip_id, trip_name)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         RETURNING id, created_at
       `;
       
@@ -29,7 +29,9 @@ class HistoryModel {
         title || null,
         tags || null,
         notes || null,
-        tripContext ? JSON.stringify(tripContext) : null
+        tripContext ? JSON.stringify(tripContext) : null,
+        tripId || null,
+        tripName || null
       ];
       
       const result = await client.query(query, values);
@@ -88,6 +90,9 @@ class HistoryModel {
         whereConditions.push(`recommendation_type = $${paramCount}`);
         queryParams.push(recommendationType);
       }
+
+      // Exclude unified trip recommendations (those with trip_id)
+      whereConditions.push('trip_id IS NULL');
 
       const whereClause = whereConditions.join(' AND ');
       const offset = (page - 1) * limit;
@@ -319,6 +324,110 @@ class HistoryModel {
       
       const result = await client.query(query, [userId]);
       return result.rows.map(row => row.recommendation_type);
+    } finally {
+      client.release();
+    }
+  }
+
+  // Get unified trips (trips with trip_id)
+  async getUnifiedTrips({ userId, page = 1, limit = 10 }) {
+    const client = await pool.connect();
+    try {
+      const offset = (page - 1) * limit;
+      
+      const query = `
+        SELECT 
+          trip_id as "tripId",
+          trip_name as "tripName",
+          destination,
+          language,
+          created_at as "created_at",
+          COUNT(*) as recommendation_count,
+          ARRAY_AGG(recommendation_type) as recommendation_types
+        FROM planora.recommendations_history
+        WHERE user_id = $1 AND trip_id IS NOT NULL
+        GROUP BY trip_id, trip_name, destination, language, created_at
+        ORDER BY created_at DESC
+        LIMIT $2 OFFSET $3
+      `;
+      
+      const result = await client.query(query, [userId, limit, offset]);
+      return result.rows;
+    } finally {
+      client.release();
+    }
+  }
+
+  // Get unified trip with all its recommendations
+  async getUnifiedTripWithRecommendations({ userId, tripId }) {
+    const client = await pool.connect();
+    try {
+      const query = `
+        SELECT 
+          id,
+          recommendation_type as "recommendationType",
+          destination,
+          language,
+          request_data as "requestData",
+          response_data as "responseData",
+          title,
+          tags,
+          notes,
+          trip_context as "tripContext",
+          trip_id as "tripId",
+          trip_name as "tripName",
+          created_at as "created_at"
+        FROM planora.recommendations_history
+        WHERE trip_id = $1 AND user_id = $2
+        ORDER BY created_at ASC
+      `;
+      
+      const result = await client.query(query, [tripId, userId]);
+      
+      if (result.rows.length === 0) {
+        return null;
+      }
+      
+      // Group by trip and return structured data
+      const trip = {
+        tripId: result.rows[0].tripId,
+        tripName: result.rows[0].tripName,
+        destination: result.rows[0].destination,
+        language: result.rows[0].language,
+        created_at: result.rows[0].created_at,
+        recommendations: result.rows.map(row => ({
+          id: row.id,
+          recommendationType: row.recommendationType,
+          destination: row.destination,
+          language: row.language,
+          requestData: row.requestData,
+          responseData: row.responseData,
+          title: row.title,
+          tags: row.tags,
+          notes: row.notes,
+          tripContext: row.tripContext,
+          created_at: row.created_at
+        }))
+      };
+      
+      return trip;
+    } finally {
+      client.release();
+    }
+  }
+
+  // Delete unified trip (deletes all recommendations with the same trip_id)
+  async deleteUnifiedTrip({ userId, tripId }) {
+    const client = await pool.connect();
+    try {
+      const query = `
+        DELETE FROM planora.recommendations_history
+        WHERE trip_id = $1 AND user_id = $2
+        RETURNING id
+      `;
+      
+      const result = await client.query(query, [tripId, userId]);
+      return result.rows.length;
     } finally {
       client.release();
     }

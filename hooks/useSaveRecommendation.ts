@@ -3,12 +3,13 @@ import { historyService, SaveRecommendationRequest } from '../services/historySe
 
 interface UseSaveRecommendationReturn {
   saveRecommendation: (data: SaveRecommendationRequest) => Promise<void>;
-  saveAppRecommendation: (requestData: any, responseData: any, destination: string, language?: string, tripContext?: any) => Promise<void>;
-  saveLingoRecommendation: (requestData: any, responseData: any, destination: string, language?: string, tripContext?: any) => Promise<void>;
-  saveMusicRecommendation: (requestData: any, responseData: any, destination: string, language?: string, tripContext?: any) => Promise<void>;
-  savePackingRecommendation: (requestData: any, responseData: any, destination: string, language?: string, tripContext?: any) => Promise<void>;
-  saveFoodRecommendation: (requestData: any, responseData: any, destination: string, language?: string, tripContext?: any) => Promise<void>;
-  saveItineraryRecommendation: (requestData: any, responseData: any, destination: string, language?: string, tripContext?: any) => Promise<void>;
+  saveAppRecommendation: (requestData: any, responseData: any, destination: string, language?: string, tripContext?: any, tripId?: string, tripName?: string) => Promise<void>;
+  saveLingoRecommendation: (requestData: any, responseData: any, destination: string, language?: string, tripContext?: any, tripId?: string, tripName?: string) => Promise<void>;
+  saveMusicRecommendation: (requestData: any, responseData: any, destination: string, language?: string, tripContext?: any, tripId?: string, tripName?: string) => Promise<void>;
+  savePackingRecommendation: (requestData: any, responseData: any, destination: string, language?: string, tripContext?: any, tripId?: string, tripName?: string) => Promise<void>;
+  saveFoodRecommendation: (requestData: any, responseData: any, destination: string, language?: string, tripContext?: any, tripId?: string, tripName?: string) => Promise<void>;
+  saveItineraryRecommendation: (requestData: any, responseData: any, destination: string, language?: string, tripContext?: any, tripId?: string, tripName?: string) => Promise<void>;
+  saveUnifiedTripRecommendations: (recommendations: Array<{type: string, requestData: any, responseData: any}>, destination: string, language?: string, tripContext?: any, tripName?: string) => Promise<string>;
 }
 
 export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
@@ -28,9 +29,11 @@ export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
     responseData: any,
     destination: string,
     language: string = 'en',
-    tripContext?: any
+    tripContext?: any,
+    tripId?: string,
+    tripName?: string
   ) => {
-    console.log('saveAppRecommendation called with:', { requestData, responseData, destination, language, tripContext });
+    console.log('saveAppRecommendation called with:', { requestData, responseData, destination, language, tripContext, tripId, tripName });
     const title = historyService.generateDefaultTitle('apps', destination);
     
     await saveRecommendation({
@@ -41,7 +44,9 @@ export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
       responseData,
       title,
       tags: ['apps', 'technology'],
-      tripContext
+      tripContext,
+      tripId,
+      tripName
     });
   }, [saveRecommendation]);
 
@@ -50,7 +55,9 @@ export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
     responseData: any,
     destination: string,
     language: string = 'en',
-    tripContext?: any
+    tripContext?: any,
+    tripId?: string,
+    tripName?: string
   ) => {
     const title = historyService.generateDefaultTitle('lingo', destination);
     
@@ -62,7 +69,9 @@ export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
       responseData,
       title,
       tags: ['lingo', 'language'],
-      tripContext
+      tripContext,
+      tripId,
+      tripName
     });
   }, [saveRecommendation]);
 
@@ -71,7 +80,9 @@ export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
     responseData: any,
     destination: string,
     language: string = 'en',
-    tripContext?: any
+    tripContext?: any,
+    tripId?: string,
+    tripName?: string
   ) => {
     const title = historyService.generateDefaultTitle('music', destination);
     
@@ -83,7 +94,9 @@ export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
       responseData,
       title,
       tags: ['music', 'entertainment'],
-      tripContext
+      tripContext,
+      tripId,
+      tripName
     });
   }, [saveRecommendation]);
 
@@ -92,7 +105,9 @@ export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
     responseData: any,
     destination: string,
     language: string = 'en',
-    tripContext?: any
+    tripContext?: any,
+    tripId?: string,
+    tripName?: string
   ) => {
     const title = historyService.generateDefaultTitle('packing', destination);
     
@@ -104,7 +119,9 @@ export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
       responseData,
       title,
       tags: ['packing', 'travel'],
-      tripContext
+      tripContext,
+      tripId,
+      tripName
     });
   }, [saveRecommendation]);
 
@@ -113,7 +130,9 @@ export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
     responseData: any,
     destination: string,
     language: string = 'en',
-    tripContext?: any
+    tripContext?: any,
+    tripId?: string,
+    tripName?: string
   ) => {
     const title = historyService.generateDefaultTitle('food', destination);
     
@@ -125,7 +144,9 @@ export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
       responseData,
       title,
       tags: ['food', 'dining'],
-      tripContext
+      tripContext,
+      tripId,
+      tripName
     });
   }, [saveRecommendation]);
 
@@ -134,7 +155,9 @@ export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
     responseData: any,
     destination: string,
     language: string = 'en',
-    tripContext?: any
+    tripContext?: any,
+    tripId?: string,
+    tripName?: string
   ) => {
     const title = historyService.generateDefaultTitle('itinerary', destination);
     
@@ -146,9 +169,57 @@ export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
       responseData,
       title,
       tags: ['itinerary', 'planning'],
-      tripContext
+      tripContext,
+      tripId,
+      tripName
     });
   }, [saveRecommendation]);
+
+  const saveUnifiedTripRecommendations = useCallback(async (
+    recommendations: Array<{type: string, requestData: any, responseData: any}>,
+    destination: string,
+    language: string = 'en',
+    tripContext?: any,
+    tripName?: string
+  ): Promise<string> => {
+    // Generate a proper UUID for trip ID
+    const tripId = crypto.randomUUID();
+    
+    console.log('Saving unified trip recommendations:', { tripId, tripName, destination, recommendations });
+    
+    // Save each recommendation with the same trip ID
+    for (const rec of recommendations) {
+      const title = historyService.generateDefaultTitle(rec.type as any, destination);
+      const tags = getTagsForType(rec.type);
+      
+      await saveRecommendation({
+        recommendationType: rec.type as any,
+        destination,
+        language,
+        requestData: rec.requestData,
+        responseData: rec.responseData,
+        title,
+        tags,
+        tripContext,
+        tripId,
+        tripName
+      });
+    }
+    
+    return tripId;
+  }, [saveRecommendation]);
+
+  const getTagsForType = (type: string): string[] => {
+    const tagMap: {[key: string]: string[]} = {
+      'apps': ['apps', 'technology'],
+      'food': ['food', 'dining'],
+      'music': ['music', 'entertainment'],
+      'lingo': ['lingo', 'language'],
+      'packing': ['packing', 'travel'],
+      'itinerary': ['itinerary', 'planning']
+    };
+    return tagMap[type] || ['recommendation'];
+  };
 
   return {
     saveRecommendation,
@@ -157,6 +228,7 @@ export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
     saveMusicRecommendation,
     savePackingRecommendation,
     saveFoodRecommendation,
-    saveItineraryRecommendation
+    saveItineraryRecommendation,
+    saveUnifiedTripRecommendations
   };
 };

@@ -29,11 +29,24 @@ export interface RecommendationHistory {
   tags?: string[];
   notes?: string;
   tripContext?: TripContext;
+  tripId?: string;
+  tripName?: string;
   created_at: string;
   updated_at?: string;
   
   // Summary fields for display (computed from response_data)
   total_items_count?: number;
+}
+
+export interface UnifiedTrip {
+  tripId: string;
+  tripName?: string;
+  destination: string;
+  language: string;
+  created_at: string;
+  recommendation_count: number;
+  recommendation_types: string[];
+  recommendations?: RecommendationHistory[];
 }
 
 export interface SaveRecommendationRequest {
@@ -46,6 +59,8 @@ export interface SaveRecommendationRequest {
   tags?: string[];
   notes?: string;
   tripContext?: TripContext;
+  tripId?: string;
+  tripName?: string;
 }
 
 export interface UpdateRecommendationRequest {
@@ -253,6 +268,54 @@ class HistoryService {
       unknown: 'Recommendation'
     };
     return names[type as keyof typeof names] || names.unknown;
+  }
+
+  // Unified Trip Methods
+  async getUnifiedTrips(page: number = 1, limit: number = 10): Promise<UnifiedTrip[]> {
+    const headers = authService.getAuthHeaders();
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    });
+
+    const response = await fetch(`${API_URL}/unified-trips?${params}`, {
+      method: 'GET',
+      headers,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch unified trips: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    return result.data;
+  }
+
+  async getUnifiedTrip(tripId: string): Promise<UnifiedTrip> {
+    const headers = authService.getAuthHeaders();
+    const response = await fetch(`${API_URL}/unified-trips/${tripId}`, {
+      method: 'GET',
+      headers,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch unified trip: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    return result.data;
+  }
+
+  async deleteUnifiedTrip(tripId: string): Promise<void> {
+    const headers = authService.getAuthHeaders();
+    const response = await fetch(`${API_URL}/unified-trips/${tripId}`, {
+      method: 'DELETE',
+      headers,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to delete unified trip: ${response.statusText}`);
+    }
   }
 }
 

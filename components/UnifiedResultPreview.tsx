@@ -7,6 +7,7 @@ import AppFinderResult from './AppFinderResult';
 import MusicFinderResult from './MusicFinderResult';
 import Guidebook from './Guidebook';
 import LingoFinderResult from './LingoFinderResult';
+import { useSaveRecommendation } from '../hooks/useSaveRecommendation';
 
 type Tab = 'itinerary' | 'packing' | 'food' | 'apps' | 'music' | 'lingo';
 
@@ -30,17 +31,128 @@ interface UnifiedResultPreviewProps {
     onCancelStep: (step: keyof UnifiedPlanLoadingStatus) => void;
     onTabChangeScrollToTop: () => void;
     itineraryStreamedText: string;
+    questionnaireData?: any; // Add questionnaire data for saving
 }
 
-const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ plan, loadingStatus, stepErrors, onPlanNew, onRegenerate, onRegenerateStep, onCancel, onCancelStep, onTabChangeScrollToTop, itineraryStreamedText }) => {
+const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ 
+    plan, 
+    loadingStatus, 
+    stepErrors, 
+    onPlanNew, 
+    onRegenerate, 
+    onRegenerateStep, 
+    onCancel, 
+    onCancelStep, 
+    onTabChangeScrollToTop, 
+    itineraryStreamedText,
+    questionnaireData 
+}) => {
     const [activeTab, setActiveTab] = useState<Tab>('itinerary');
     const [isExportingPdf, setIsExportingPdf] = useState(false);
+    const [hasBeenSaved, setHasBeenSaved] = useState(false);
+    const { saveUnifiedTripRecommendations } = useSaveRecommendation();
     
     const isPlanComplete = Object.values(loadingStatus).every(status => status === 'done');
 
     useEffect(() => {
         onTabChangeScrollToTop();
     }, [activeTab, onTabChangeScrollToTop]);
+
+    // Save unified trip to history when plan is complete
+    useEffect(() => {
+        if (isPlanComplete && questionnaireData && !hasBeenSaved) {
+            console.log('Saving unified trip to history...', { 
+                isPlanComplete, 
+                questionnaireData: questionnaireData ? Object.keys(questionnaireData) : null, 
+                hasBeenSaved,
+                plan: Object.keys(plan).filter(key => plan[key as keyof UnifiedPlan] !== null)
+            });
+            
+            const recommendations = [];
+            
+            // Add itinerary if available
+            if (plan.itinerary) {
+                recommendations.push({
+                    type: 'itinerary',
+                    requestData: questionnaireData,
+                    responseData: plan.itinerary
+                });
+            }
+            
+            // Add packing list if available
+            if (plan.packingList) {
+                recommendations.push({
+                    type: 'packing',
+                    requestData: questionnaireData,
+                    responseData: plan.packingList
+                });
+            }
+            
+            // Add food recommendations if available
+            if (plan.foodRecommendations) {
+                recommendations.push({
+                    type: 'food',
+                    requestData: questionnaireData,
+                    responseData: plan.foodRecommendations
+                });
+            }
+            
+            // Add app recommendations if available
+            if (plan.appRecommendations) {
+                recommendations.push({
+                    type: 'apps',
+                    requestData: questionnaireData,
+                    responseData: plan.appRecommendations
+                });
+            }
+            
+            // Add music recommendations if available
+            if (plan.musicRecommendations) {
+                recommendations.push({
+                    type: 'music',
+                    requestData: questionnaireData,
+                    responseData: plan.musicRecommendations
+                });
+            }
+            
+            // Add lingo recommendations if available
+            if (plan.lingoRecommendations) {
+                recommendations.push({
+                    type: 'lingo',
+                    requestData: questionnaireData,
+                    responseData: plan.lingoRecommendations
+                });
+            }
+            
+            console.log('Recommendations to save:', recommendations.length, recommendations.map(r => r.type));
+            
+            if (recommendations.length > 0) {
+                const tripName = `${questionnaireData.destination} Trip - ${new Date().toLocaleDateString()}`;
+                
+                console.log('Calling saveUnifiedTripRecommendations with:', {
+                    recommendations: recommendations.length,
+                    destination: questionnaireData.destination,
+                    language: questionnaireData.language || 'en',
+                    tripName
+                });
+                
+                saveUnifiedTripRecommendations(
+                    recommendations,
+                    questionnaireData.destination,
+                    questionnaireData.language || 'en',
+                    questionnaireData,
+                    tripName
+                ).then((tripId) => {
+                    console.log('Unified trip saved with ID:', tripId);
+                    setHasBeenSaved(true);
+                }).catch((error) => {
+                    console.error('Failed to save unified trip:', error);
+                });
+            } else {
+                console.log('No recommendations to save');
+            }
+        }
+    }, [isPlanComplete, questionnaireData, hasBeenSaved, plan, saveUnifiedTripRecommendations]);
 
     useEffect(() => {
         if (isExportingPdf) {

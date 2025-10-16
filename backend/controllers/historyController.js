@@ -18,8 +18,15 @@ class HistoryController {
         });
       }
 
-      const { recommendationType, destination, language, requestData, responseData, title, tags, notes, tripContext } = req.body;
+      const { recommendationType, destination, language, requestData, responseData, title, tags, notes, tripContext, tripId, tripName } = req.body;
       const userId = req.user.id;
+
+      console.log('saveRecommendation called with:', {
+        recommendationType, destination, language, 
+        requestDataKeys: Object.keys(requestData || {}), 
+        responseDataKeys: Object.keys(responseData || {}),
+        title, tags, notes, tripContext, tripId, tripName
+      });
 
       const result = await historyModel.saveRecommendation({
         userId,
@@ -31,7 +38,9 @@ class HistoryController {
         title,
         tags,
         notes,
-        tripContext
+        tripContext,
+        tripId,
+        tripName
       });
 
       console.log('Save recommendation result:', result);
@@ -428,6 +437,93 @@ class HistoryController {
       res.status(500).json({
         success: false,
         message: 'Server error while deleting app recommendation'
+      });
+    }
+  }
+
+  // Get unified trips
+  async getUnifiedTrips(req, res) {
+    try {
+      const userId = req.user.id;
+      const { page = 1, limit = 10 } = req.query;
+
+      const result = await historyModel.getUnifiedTrips({
+        userId,
+        page: parseInt(page),
+        limit: parseInt(limit)
+      });
+
+      res.json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      console.error('Error fetching unified trips:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Server error while fetching unified trips'
+      });
+    }
+  }
+
+  // Get unified trip with all recommendations
+  async getUnifiedTrip(req, res) {
+    try {
+      const userId = req.user.id;
+      const { tripId } = req.params;
+
+      const result = await historyModel.getUnifiedTripWithRecommendations({
+        userId,
+        tripId
+      });
+
+      if (!result) {
+        return res.status(404).json({
+          success: false,
+          message: 'Unified trip not found'
+        });
+      }
+
+      res.json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      console.error('Error fetching unified trip:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Server error while fetching unified trip'
+      });
+    }
+  }
+
+  // Delete unified trip
+  async deleteUnifiedTrip(req, res) {
+    try {
+      const userId = req.user.id;
+      const { tripId } = req.params;
+
+      const deletedCount = await historyModel.deleteUnifiedTrip({
+        userId,
+        tripId
+      });
+
+      if (deletedCount === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Unified trip not found'
+        });
+      }
+
+      res.json({
+        success: true,
+        message: `Unified trip deleted successfully (${deletedCount} recommendations removed)`
+      });
+    } catch (error) {
+      console.error('Error deleting unified trip:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Server error while deleting unified trip'
       });
     }
   }
