@@ -44,9 +44,17 @@ export interface UnifiedTrip {
   destination: string;
   language: string;
   created_at: string;
-  recommendation_count: number;
-  recommendation_types: string[];
-  recommendations?: RecommendationHistory[];
+  questionnaireData?: any;
+  // UnifiedPlan structure
+  itinerary?: any;
+  packingList?: any;
+  foodRecommendations?: any;
+  appRecommendations?: any;
+  musicRecommendations?: any;
+  lingoRecommendations?: any;
+  // For list view
+  recommendation_count?: number;
+  recommendation_types?: string[];
 }
 
 export interface SaveRecommendationRequest {

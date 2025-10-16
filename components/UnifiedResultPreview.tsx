@@ -32,6 +32,7 @@ interface UnifiedResultPreviewProps {
     onTabChangeScrollToTop: () => void;
     itineraryStreamedText: string;
     questionnaireData?: any; // Add questionnaire data for saving
+    isHistoryView?: boolean; // Add flag to indicate if this is from history
 }
 
 const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ 
@@ -45,7 +46,8 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
     onCancelStep, 
     onTabChangeScrollToTop, 
     itineraryStreamedText,
-    questionnaireData 
+    questionnaireData,
+    isHistoryView = false
 }) => {
     const [activeTab, setActiveTab] = useState<Tab>('itinerary');
     const [isExportingPdf, setIsExportingPdf] = useState(false);
@@ -60,11 +62,12 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
 
     // Save unified trip to history when plan is complete
     useEffect(() => {
-        if (isPlanComplete && questionnaireData && !hasBeenSaved) {
+        if (isPlanComplete && questionnaireData && !hasBeenSaved && !isHistoryView) {
             console.log('Saving unified trip to history...', { 
                 isPlanComplete, 
                 questionnaireData: questionnaireData ? Object.keys(questionnaireData) : null, 
                 hasBeenSaved,
+                isHistoryView,
                 plan: Object.keys(plan).filter(key => plan[key as keyof UnifiedPlan] !== null)
             });
             
@@ -152,7 +155,7 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
                 console.log('No recommendations to save');
             }
         }
-    }, [isPlanComplete, questionnaireData, hasBeenSaved, plan, saveUnifiedTripRecommendations]);
+    }, [isPlanComplete, questionnaireData, hasBeenSaved, plan, saveUnifiedTripRecommendations, isHistoryView]);
 
     useEffect(() => {
         if (isExportingPdf) {

@@ -384,7 +384,7 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
     try {
       const fullTrip = await historyService.getUnifiedTrip(trip.tripId);
       // Navigate to unified result view with all recommendations
-      onNavigateToResult('unified', fullTrip, fullTrip.recommendations?.[0]?.requestData, true);
+      onNavigateToResult('unified', fullTrip, fullTrip.questionnaireData, true);
     } catch (error) {
       console.error('Failed to load unified trip:', error);
     }

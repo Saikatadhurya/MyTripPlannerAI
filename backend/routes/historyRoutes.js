@@ -24,6 +24,16 @@ router.post('/save', validateSaveRecommendation, historyController.saveRecommend
 // Get user's recommendation history with filters and pagination
 router.get('/history', validateHistoryQuery, historyController.getHistory);
 
+// Unified trip routes (must be before /:id route to avoid conflicts)
+// Get unified trips
+router.get('/unified-trips', historyController.getUnifiedTrips);
+
+// Get unified trip with all recommendations
+router.get('/unified-trips/:tripId', historyController.getUnifiedTrip);
+
+// Delete unified trip
+router.delete('/unified-trips/:tripId', historyController.deleteUnifiedTrip);
+
 // Get specific recommendation by ID
 router.get('/:id', validateGetRecommendation, historyController.getRecommendation);
 
@@ -45,16 +55,6 @@ router.get('/filters/types', historyController.getRecommendationTypes);
 
 // Get recommendations by trip context
 router.get('/trip/:tripId', historyController.getRecommendationsByTrip);
-
-// Unified trip routes
-// Get unified trips
-router.get('/unified-trips', historyController.getUnifiedTrips);
-
-// Get unified trip with all recommendations
-router.get('/unified-trips/:tripId', historyController.getUnifiedTrip);
-
-// Delete unified trip
-router.delete('/unified-trips/:tripId', historyController.deleteUnifiedTrip);
 
 // Legacy app-specific routes for backward compatibility
 // Save app recommendation to history

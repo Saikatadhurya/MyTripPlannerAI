@@ -388,27 +388,46 @@ class HistoryModel {
         return null;
       }
       
-      // Group by trip and return structured data
+      // Group by trip and return structured data in UnifiedPlan format
       const trip = {
         tripId: result.rows[0].tripId,
         tripName: result.rows[0].tripName,
         destination: result.rows[0].destination,
         language: result.rows[0].language,
         created_at: result.rows[0].created_at,
-        recommendations: result.rows.map(row => ({
-          id: row.id,
-          recommendationType: row.recommendationType,
-          destination: row.destination,
-          language: row.language,
-          requestData: row.requestData,
-          responseData: row.responseData,
-          title: row.title,
-          tags: row.tags,
-          notes: row.notes,
-          tripContext: row.tripContext,
-          created_at: row.created_at
-        }))
+        questionnaireData: result.rows[0].requestData, // Use the first recommendation's request data as questionnaire data
+        // Structure the recommendations into UnifiedPlan format
+        itinerary: null,
+        packingList: null,
+        foodRecommendations: null,
+        appRecommendations: null,
+        musicRecommendations: null,
+        lingoRecommendations: null
       };
+
+      // Map each recommendation to its appropriate field
+      result.rows.forEach(row => {
+        switch (row.recommendationType) {
+          case 'itinerary':
+            trip.itinerary = row.responseData;
+            break;
+          case 'packing':
+            trip.packingList = row.responseData;
+            break;
+          case 'food':
+            trip.foodRecommendations = row.responseData;
+            break;
+          case 'apps':
+            trip.appRecommendations = row.responseData;
+            break;
+          case 'music':
+            trip.musicRecommendations = row.responseData;
+            break;
+          case 'lingo':
+            trip.lingoRecommendations = row.responseData;
+            break;
+        }
+      });
       
       return trip;
     } finally {

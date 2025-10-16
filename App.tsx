@@ -576,6 +576,15 @@ const App: React.FC = () => {
         // Handle unified trip navigation
         setUnifiedPlan(responseData);
         setQuestionnaireDataForUnifiedPlan(requestData);
+        // Set loading status to 'done' for all components since we're loading from history
+        setUnifiedPlanLoadingStatus({
+          itinerary: responseData.itinerary ? 'done' : 'pending',
+          packing: responseData.packingList ? 'done' : 'pending',
+          food: responseData.foodRecommendations ? 'done' : 'pending',
+          apps: responseData.appRecommendations ? 'done' : 'pending',
+          music: responseData.musicRecommendations ? 'done' : 'pending',
+          lingo: responseData.lingoRecommendations ? 'done' : 'pending'
+        });
         handleViewChange('unifiedResult');
         break;
       default:
@@ -1397,6 +1406,7 @@ const App: React.FC = () => {
             onTabChangeScrollToTop={scrollToTop} 
             itineraryStreamedText={itineraryStreamedText} 
             questionnaireData={questionnaireDataForUnifiedPlan}
+            isHistoryView={isHistoryView}
         />;
     }
 
