@@ -310,7 +310,7 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
                 <Guidebook plan={plan} />
             </div>
 
-            <div className="max-w-7xl mx-auto space-y-8 animated-card unified-interactive-view">
+            <div className="max-w-7xl mx-auto space-y-8 animated-card unified-interactive-view mb-16">
                 <header className="flex flex-col sm:flex-row justify-between items-center gap-4 py-4 no-print unified-header">
                      <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight text-center sm:text-left">
                         Your Unified Trip Plan to <span className="text-violet-700">{plan.itinerary?.destination || '...'}</span>

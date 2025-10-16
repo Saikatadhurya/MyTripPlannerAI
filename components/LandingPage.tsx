@@ -176,14 +176,26 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
                  }`}
               >
                  {(() => {
-                   const q = quotas.unified;
-                   const suffix = quotasLoading ? ' (loading...)' : (q ? ` (left ${q.remaining}/${q.weekly_limit})` : '');
+                   const suffix = quotasLoading ? ' (⏳ Fetching limit...)' : '';
                    return `✨ Build Your Ultimate Itinerary${suffix}`;
                  })()}
               </button>
               <p className="mt-4 text-sm text-violet-700/80 font-medium tracking-wide">
                 Includes: Itinerary, Packing, Food, Apps & Music
               </p>
+              {quotasLoading ? (
+                <div className="mt-2 text-xs text-blue-600">
+                  <span>⏳ Fetching limit...</span>
+                </div>
+              ) : quotas.unified && (
+                <div className="mt-2 text-xs text-slate-600">
+                  {quotas.unified.remaining > 0 ? (
+                    <span className="text-green-600">✓ {quotas.unified.remaining} unified trips remaining this week</span>
+                  ) : (
+                    <span className="text-red-600">⚠️ Weekly limit reached - try individual tools</span>
+                  )}
+                </div>
+              )}
             </>
           ) : (
             <>
@@ -215,7 +227,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
           {miniApps.map((app, index) => {
             const colors = colorClasses[app.color];
             const quota = user ? quotas[app.id] : undefined;
-            const labelSuffix = quotasLoading ? ' (loading...)' : (quota ? ` (${quota.remaining}/${quota.weekly_limit})` : '');
+            const labelSuffix = quotasLoading ? ' (⏳ Fetching limit...)' : '';
             const isLocked = app.locked || quotasLoading;
             return (
               <div
@@ -250,6 +262,19 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
                     }`}>
                              {isLocked ? `🔒 ${app.buttonText}` : `${app.buttonText}${labelSuffix}`}
                         </span>
+                        {user && (
+                          <div className="mt-2 text-xs text-slate-500">
+                            {quotasLoading ? (
+                              <span className="text-blue-600">⏳ Fetching limit...</span>
+                            ) : quota ? (
+                              quota.remaining > 0 ? (
+                                <span className="text-green-600">✓ {quota.remaining} uses remaining</span>
+                              ) : (
+                                <span className="text-red-600">⚠️ Limit reached</span>
+                              )
+                            ) : null}
+                          </div>
+                        )}
                     </div>
                 </div>
               </div>
@@ -297,10 +322,22 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
               <span className="text-4xl" role="img" aria-label="">{dest.icon}</span>
               <h3 className="text-lg font-semibold mt-3 text-slate-800">{dest.name}</h3>
               <p className="text-slate-600 text-sm">{dest.description}</p>
-              {!user && (
+              {!user ? (
                 <div className="mt-2 flex items-center text-xs text-gray-500">
                   <span className="mr-1">🔒</span>
                   <span>Sign in to plan</span>
+                </div>
+              ) : quotasLoading ? (
+                <div className="mt-2 text-xs text-blue-600">
+                  <span>⏳ Fetching limit...</span>
+                </div>
+              ) : quotas.unified && (
+                <div className="mt-2 text-xs">
+                  {quotas.unified.remaining > 0 ? (
+                    <span className="text-green-600">✓ {quotas.unified.remaining} trips left</span>
+                  ) : (
+                    <span className="text-red-600">⚠️ Limit reached</span>
+                  )}
                 </div>
               )}
             </button>

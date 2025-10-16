@@ -149,7 +149,7 @@ const FoodFinderResult: React.FC<FoodFinderResultProps> = ({ recommendations, on
     const handlePrint = onPrint || (() => window.print());
 
     return (
-        <div className="max-w-6xl mx-auto space-y-12 animated-card" id="food-finder-result-content">
+        <div className="max-w-6xl mx-auto space-y-12 animated-card mb-16" id="food-finder-result-content">
             {!isUnifiedView && (
             <div className="flex justify-start items-center no-print">
                 <button

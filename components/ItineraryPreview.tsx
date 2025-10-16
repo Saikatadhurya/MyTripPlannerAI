@@ -313,7 +313,7 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
 
 
   return (
-    <div className="max-w-4xl mx-auto space-y-12" id="itinerary-preview-content">
+    <div className="max-w-4xl mx-auto space-y-12 mb-16" id="itinerary-preview-content">
        {!isUnifiedView && (
        <div className="flex justify-start items-center no-print animated-card">
         <button

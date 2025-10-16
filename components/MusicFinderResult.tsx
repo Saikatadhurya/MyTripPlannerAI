@@ -157,7 +157,7 @@ const MusicFinderResult: React.FC<MusicFinderResultProps> = ({ recommendations, 
     }, [isUnifiedView, requestData, recommendations, saveMusicRecommendation, hasBeenSaved, isHistoryView]);
 
     return (
-        <div className="max-w-5xl mx-auto space-y-12 animated-card" id="music-finder-result-content">
+        <div className="max-w-5xl mx-auto space-y-12 animated-card mb-16" id="music-finder-result-content">
             {!isUnifiedView && (
             <div className="flex justify-start items-center no-print">
                 <button

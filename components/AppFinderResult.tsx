@@ -147,7 +147,7 @@ const AppFinderResult: React.FC<AppFinderResultProps> = ({ recommendations, onRe
     const handlePrint = onPrint || (() => window.print());
 
     return (
-        <div className="max-w-6xl mx-auto space-y-12 animated-card" id="app-finder-result-content">
+        <div className="max-w-6xl mx-auto space-y-12 animated-card mb-16" id="app-finder-result-content">
             {!isUnifiedView && (
             <div className="flex justify-start items-center no-print">
                 <button

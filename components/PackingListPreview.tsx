@@ -114,7 +114,7 @@ const PackingListPreview: React.FC<PackingListPreviewProps> = ({ packingList, on
     const handlePrint = onPrint || (() => window.print());
 
     return (
-        <div className="max-w-5xl mx-auto space-y-12 animated-card" id="packing-list-preview-content">
+        <div className="max-w-5xl mx-auto space-y-12 animated-card mb-16" id="packing-list-preview-content">
             {!isUnifiedView && (
             <div className="flex justify-start items-center no-print">
                  <button
