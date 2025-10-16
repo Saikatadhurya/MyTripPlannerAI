@@ -341,17 +341,21 @@ class HistoryModel {
           trip_name as "tripName",
           destination,
           language,
-          created_at as "created_at",
+          MIN(created_at) as "created_at",
           COUNT(*) as recommendation_count,
           ARRAY_AGG(recommendation_type) as recommendation_types
         FROM planora.recommendations_history
         WHERE user_id = $1 AND trip_id IS NOT NULL
-        GROUP BY trip_id, trip_name, destination, language, created_at
-        ORDER BY created_at DESC
+        GROUP BY trip_id, trip_name, destination, language
+        ORDER BY MIN(created_at) DESC
         LIMIT $2 OFFSET $3
       `;
       
       const result = await client.query(query, [userId, limit, offset]);
+      console.log('getUnifiedTrips result:', result.rows.length, 'trips found');
+      result.rows.forEach(trip => {
+        console.log(`Trip ${trip.tripId}: ${trip.recommendation_count} recommendations - ${trip.recommendation_types.join(', ')}`);
+      });
       return result.rows;
     } finally {
       client.release();
