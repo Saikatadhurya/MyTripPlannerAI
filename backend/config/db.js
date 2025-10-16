@@ -10,7 +10,7 @@ const pool = new Pool({
 
 pool.on('error', (err) => {
     console.error('Unexpected error on idle client', err);
-    process.exit(-1);
+    // Don't exit the process - let the application handle the error gracefully
 });
 
 module.exports = { 

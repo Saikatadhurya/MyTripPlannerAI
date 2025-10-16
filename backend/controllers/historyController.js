@@ -2,11 +2,15 @@ const historyModel = require('../models/historyModel');
 const { validationResult } = require('express-validator');
 
 class HistoryController {
-  // Save app recommendation to history
-  async saveAppRecommendation(req, res) {
+  // Save recommendation to history
+  async saveRecommendation(req, res) {
     try {
+      console.log('saveRecommendation called with body:', JSON.stringify(req.body, null, 2));
+      console.log('User:', req.user);
+      
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
+        console.log('Validation errors:', errors.array());
         return res.status(400).json({
           success: false,
           message: 'Validation failed',
@@ -14,47 +18,53 @@ class HistoryController {
         });
       }
 
-      const { destination, language, requestData, responseData, title, tags, notes } = req.body;
+      const { recommendationType, destination, language, requestData, responseData, title, tags, notes, tripContext } = req.body;
       const userId = req.user.id;
 
-      const result = await historyModel.saveAppRecommendation({
+      const result = await historyModel.saveRecommendation({
         userId,
+        recommendationType,
         destination,
         language: language || 'en',
         requestData,
         responseData,
         title,
         tags,
-        notes
+        notes,
+        tripContext
       });
+
+      console.log('Save recommendation result:', result);
 
       res.status(201).json({
         success: true,
-        message: 'App recommendation saved successfully',
+        message: 'Recommendation saved successfully',
         data: result
       });
     } catch (error) {
-      console.error('Error saving app recommendation:', error);
+      console.error('Error in saveRecommendation controller:', error);
       res.status(500).json({
         success: false,
-        message: 'Server error while saving app recommendation'
+        message: 'Failed to save recommendation',
+        error: error.message
       });
     }
   }
 
-  // Get user's app recommendation history
-  async getAppHistory(req, res) {
+  // Get user's recommendation history
+  async getHistory(req, res) {
     try {
       const userId = req.user.id;
-      const { page = 1, limit = 10, search, destination, tags } = req.query;
+      const { page = 1, limit = 10, search, destination, tags, recommendationType } = req.query;
 
-      const result = await historyModel.getUserAppHistory({
+      const result = await historyModel.getUserHistory({
         userId,
         page: parseInt(page),
         limit: parseInt(limit),
         search,
         destination,
-        tags: tags ? tags.split(',') : null
+        tags: tags ? tags.split(',') : null,
+        recommendationType
       });
 
       res.json({
@@ -63,26 +73,26 @@ class HistoryController {
         pagination: result.pagination
       });
     } catch (error) {
-      console.error('Error fetching app history:', error);
+      console.error('Error fetching history:', error);
       res.status(500).json({
         success: false,
-        message: 'Server error while fetching app history'
+        message: 'Server error while fetching history'
       });
     }
   }
 
-  // Get specific app recommendation
-  async getAppRecommendation(req, res) {
+  // Get specific recommendation
+  async getRecommendation(req, res) {
     try {
       const { id } = req.params;
       const userId = req.user.id;
 
-      const result = await historyModel.getAppRecommendationById({ userId, id });
+      const result = await historyModel.getRecommendationById({ userId, id });
 
       if (!result) {
         return res.status(404).json({
           success: false,
-          message: 'App recommendation not found'
+          message: 'Recommendation not found'
         });
       }
 
@@ -91,16 +101,16 @@ class HistoryController {
         data: result
       });
     } catch (error) {
-      console.error('Error fetching app recommendation:', error);
+      console.error('Error fetching recommendation:', error);
       res.status(500).json({
         success: false,
-        message: 'Server error while fetching app recommendation'
+        message: 'Server error while fetching recommendation'
       });
     }
   }
 
-  // Update app recommendation
-  async updateAppRecommendation(req, res) {
+  // Update recommendation
+  async updateRecommendation(req, res) {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -115,7 +125,7 @@ class HistoryController {
       const { title, tags, notes } = req.body;
       const userId = req.user.id;
 
-      const result = await historyModel.updateAppRecommendation({
+      const result = await historyModel.updateRecommendation({
         userId,
         id,
         title,
@@ -126,48 +136,48 @@ class HistoryController {
       if (!result) {
         return res.status(404).json({
           success: false,
-          message: 'App recommendation not found'
+          message: 'Recommendation not found'
         });
       }
 
       res.json({
         success: true,
-        message: 'App recommendation updated successfully',
+        message: 'Recommendation updated successfully',
         data: result
       });
     } catch (error) {
-      console.error('Error updating app recommendation:', error);
+      console.error('Error updating recommendation:', error);
       res.status(500).json({
         success: false,
-        message: 'Server error while updating app recommendation'
+        message: 'Server error while updating recommendation'
       });
     }
   }
 
-  // Delete app recommendation
-  async deleteAppRecommendation(req, res) {
+  // Delete recommendation
+  async deleteRecommendation(req, res) {
     try {
       const { id } = req.params;
       const userId = req.user.id;
 
-      const result = await historyModel.deleteAppRecommendation({ userId, id });
+      const result = await historyModel.deleteRecommendation({ userId, id });
 
       if (!result) {
         return res.status(404).json({
           success: false,
-          message: 'App recommendation not found'
+          message: 'Recommendation not found'
         });
       }
 
       res.json({
         success: true,
-        message: 'App recommendation deleted successfully'
+        message: 'Recommendation deleted successfully'
       });
     } catch (error) {
-      console.error('Error deleting app recommendation:', error);
+      console.error('Error deleting recommendation:', error);
       res.status(500).json({
         success: false,
-        message: 'Server error while deleting app recommendation'
+        message: 'Server error while deleting recommendation'
       });
     }
   }
@@ -206,6 +216,218 @@ class HistoryController {
       res.status(500).json({
         success: false,
         message: 'Server error while fetching tags'
+      });
+    }
+  }
+
+  // Get recommendation types for filters
+  async getRecommendationTypes(req, res) {
+    try {
+      const userId = req.user.id;
+      const types = await historyModel.getRecommendationTypes(userId);
+
+      res.json({
+        success: true,
+        data: types
+      });
+    } catch (error) {
+      console.error('Error fetching recommendation types:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Server error while fetching recommendation types'
+      });
+    }
+  }
+
+  // Get recommendations by trip context
+  async getRecommendationsByTrip(req, res) {
+    try {
+      const { tripId } = req.params;
+      const userId = req.user.id;
+
+      const result = await historyModel.getRecommendationsByTripContext({ userId, tripId });
+
+      res.json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      console.error('Error fetching recommendations by trip:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Server error while fetching trip recommendations'
+      });
+    }
+  }
+
+  // Legacy method for backward compatibility - Save app recommendation
+  async saveAppRecommendation(req, res) {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          success: false,
+          message: 'Validation failed',
+          errors: errors.array()
+        });
+      }
+
+      const { destination, language, requestData, responseData, title, tags, notes } = req.body;
+      const userId = req.user.id;
+
+      const result = await historyModel.saveRecommendation({
+        userId,
+        recommendationType: 'apps',
+        destination,
+        language: language || 'en',
+        requestData,
+        responseData,
+        title,
+        tags,
+        notes
+      });
+
+      res.status(201).json({
+        success: true,
+        message: 'App recommendation saved successfully',
+        data: result
+      });
+    } catch (error) {
+      console.error('Error saving app recommendation:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Server error while saving app recommendation'
+      });
+    }
+  }
+
+  // Legacy method for backward compatibility - Get app history
+  async getAppHistory(req, res) {
+    try {
+      const userId = req.user.id;
+      const { page = 1, limit = 10, search, destination, tags } = req.query;
+
+      const result = await historyModel.getUserHistory({
+        userId,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        search,
+        destination,
+        tags: tags ? tags.split(',') : null,
+        recommendationType: 'apps'
+      });
+
+      res.json({
+        success: true,
+        data: result.data,
+        pagination: result.pagination
+      });
+    } catch (error) {
+      console.error('Error fetching app history:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Server error while fetching app history'
+      });
+    }
+  }
+
+  // Legacy method for backward compatibility - Get app recommendation
+  async getAppRecommendation(req, res) {
+    try {
+      const { id } = req.params;
+      const userId = req.user.id;
+
+      const result = await historyModel.getRecommendationById({ userId, id });
+
+      if (!result) {
+        return res.status(404).json({
+          success: false,
+          message: 'App recommendation not found'
+        });
+      }
+
+      res.json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      console.error('Error fetching app recommendation:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Server error while fetching app recommendation'
+      });
+    }
+  }
+
+  // Legacy method for backward compatibility - Update app recommendation
+  async updateAppRecommendation(req, res) {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          success: false,
+          message: 'Validation failed',
+          errors: errors.array()
+        });
+      }
+
+      const { id } = req.params;
+      const { title, tags, notes } = req.body;
+      const userId = req.user.id;
+
+      const result = await historyModel.updateRecommendation({
+        userId,
+        id,
+        title,
+        tags,
+        notes
+      });
+
+      if (!result) {
+        return res.status(404).json({
+          success: false,
+          message: 'App recommendation not found'
+        });
+      }
+
+      res.json({
+        success: true,
+        message: 'App recommendation updated successfully',
+        data: result
+      });
+    } catch (error) {
+      console.error('Error updating app recommendation:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Server error while updating app recommendation'
+      });
+    }
+  }
+
+  // Legacy method for backward compatibility - Delete app recommendation
+  async deleteAppRecommendation(req, res) {
+    try {
+      const { id } = req.params;
+      const userId = req.user.id;
+
+      const result = await historyModel.deleteRecommendation({ userId, id });
+
+      if (!result) {
+        return res.status(404).json({
+          success: false,
+          message: 'App recommendation not found'
+        });
+      }
+
+      res.json({
+        success: true,
+        message: 'App recommendation deleted successfully'
+      });
+    } catch (error) {
+      console.error('Error deleting app recommendation:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Server error while deleting app recommendation'
       });
     }
   }

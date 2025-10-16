@@ -189,8 +189,12 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
 
   // Save to history when component mounts (only if not in unified view and request data is available)
   useEffect(() => {
+    console.log('ItineraryPreview useEffect:', { isUnifiedView, requestData, itinerary });
     if (!isUnifiedView && requestData) {
+      console.log('Saving itinerary recommendation to history...');
       saveItineraryRecommendation(requestData, itinerary, itinerary.destination, requestData.language);
+    } else {
+      console.log('Not saving itinerary recommendation:', { isUnifiedView, hasRequestData: !!requestData });
     }
   }, [isUnifiedView, requestData, itinerary, saveItineraryRecommendation]);
 

@@ -3,8 +3,24 @@ import { authService } from './authService';
 
 const API_URL = '/api/history';
 
-export interface AppRecommendationHistory {
+export interface TripContext {
+  tripId?: string;
+  sharedData: {
+    destination: string;
+    startDate: string;
+    endDate?: string;
+    days: number;
+    persons: number;
+    budget: string;
+    language: string;
+    currency: string;
+    coveredDestinations?: any[];
+  };
+}
+
+export interface RecommendationHistory {
   id: string;
+  recommendationType: 'itinerary' | 'apps' | 'food' | 'music' | 'lingo' | 'packing';
   destination: string;
   language: string;
   requestData: any;
@@ -12,19 +28,16 @@ export interface AppRecommendationHistory {
   title?: string;
   tags?: string[];
   notes?: string;
+  tripContext?: TripContext;
   created_at: string;
-  // Summary counts for display
-  transport_apps_count?: number;
-  food_apps_count?: number;
-  stay_apps_count?: number;
-  entertainment_apps_count?: number;
-  shopping_apps_count?: number;
-  exploration_apps_count?: number;
-  utilities_apps_count?: number;
-  festivals_apps_count?: number;
+  updated_at?: string;
+  
+  // Summary fields for display (computed from response_data)
+  total_items_count?: number;
 }
 
-export interface SaveAppRecommendationRequest {
+export interface SaveRecommendationRequest {
+  recommendationType: 'itinerary' | 'apps' | 'food' | 'music' | 'lingo' | 'packing';
   destination: string;
   language?: string;
   requestData: any;
@@ -32,9 +45,10 @@ export interface SaveAppRecommendationRequest {
   title?: string;
   tags?: string[];
   notes?: string;
+  tripContext?: TripContext;
 }
 
-export interface UpdateAppRecommendationRequest {
+export interface UpdateRecommendationRequest {
   title?: string;
   tags?: string[];
   notes?: string;
@@ -44,6 +58,7 @@ export interface HistoryFilters {
   search?: string;
   destination?: string;
   tags?: string[];
+  recommendationType?: string;
 }
 
 export interface HistoryPagination {
@@ -54,23 +69,23 @@ export interface HistoryPagination {
 }
 
 export interface HistoryResponse {
-  data: AppRecommendationHistory[];
+  data: RecommendationHistory[];
   pagination: HistoryPagination;
 }
 
 class HistoryService {
-  // Save app recommendation to history
-  async saveAppRecommendation(data: SaveAppRecommendationRequest): Promise<AppRecommendationHistory> {
+  // Save recommendation to history
+  async saveRecommendation(data: SaveRecommendationRequest): Promise<RecommendationHistory> {
     const headers = authService.getAuthHeaders();
-    console.log('Saving app recommendation with headers:', headers);
+    console.log('Saving recommendation with headers:', headers);
     console.log('API URL:', `${API_URL}/save`);
     const response = await axios.post(`${API_URL}/save`, data, { headers });
     console.log('Save response:', response.data);
     return response.data.data;
   }
 
-  // Get user's app recommendation history
-  async getAppHistory(
+  // Get user's recommendation history
+  async getHistory(
     page: number = 1,
     limit: number = 10,
     filters: HistoryFilters = {}
@@ -84,30 +99,31 @@ class HistoryService {
     if (filters.search) params.append('search', filters.search);
     if (filters.destination) params.append('destination', filters.destination);
     if (filters.tags && filters.tags.length > 0) params.append('tags', filters.tags.join(','));
+    if (filters.recommendationType) params.append('recommendationType', filters.recommendationType);
 
     const response = await axios.get(`${API_URL}/history?${params.toString()}`, { headers });
     return response.data;
   }
 
-  // Get specific app recommendation by ID
-  async getAppRecommendation(id: string): Promise<AppRecommendationHistory> {
+  // Get specific recommendation by ID
+  async getRecommendation(id: string): Promise<RecommendationHistory> {
     const headers = authService.getAuthHeaders();
     const response = await axios.get(`${API_URL}/${id}`, { headers });
     return response.data.data;
   }
 
-  // Update app recommendation
-  async updateAppRecommendation(
+  // Update recommendation
+  async updateRecommendation(
     id: string,
-    data: UpdateAppRecommendationRequest
-  ): Promise<AppRecommendationHistory> {
+    data: UpdateRecommendationRequest
+  ): Promise<RecommendationHistory> {
     const headers = authService.getAuthHeaders();
     const response = await axios.put(`${API_URL}/${id}`, data, { headers });
     return response.data.data;
   }
 
-  // Delete app recommendation
-  async deleteAppRecommendation(id: string): Promise<void> {
+  // Delete recommendation
+  async deleteRecommendation(id: string): Promise<void> {
     const headers = authService.getAuthHeaders();
     await axios.delete(`${API_URL}/${id}`, { headers });
   }
@@ -123,6 +139,20 @@ class HistoryService {
   async getUserTags(): Promise<string[]> {
     const headers = authService.getAuthHeaders();
     const response = await axios.get(`${API_URL}/filters/tags`, { headers });
+    return response.data.data;
+  }
+
+  // Get recommendation types for filter dropdown
+  async getRecommendationTypes(): Promise<string[]> {
+    const headers = authService.getAuthHeaders();
+    const response = await axios.get(`${API_URL}/filters/types`, { headers });
+    return response.data.data;
+  }
+
+  // Get recommendations by trip context
+  async getRecommendationsByTrip(tripId: string): Promise<RecommendationHistory[]> {
+    const headers = authService.getAuthHeaders();
+    const response = await axios.get(`${API_URL}/trip/${tripId}`, { headers });
     return response.data.data;
   }
 
@@ -155,9 +185,7 @@ class HistoryService {
   }
 
   // Helper method to extract summary from response data
-  getRecommendationSummary(responseData: any): string {
-    const type = this.getRecommendationType(responseData);
-    
+  getRecommendationSummary(responseData: any, type: string): string {
     switch (type) {
       case 'apps':
         const totalApps = Object.values(responseData).reduce((total: number, category: any) => {
@@ -197,6 +225,34 @@ class HistoryService {
       default:
         return 'Recommendation generated';
     }
+  }
+
+  // Helper method to get icon for recommendation type
+  getRecommendationIcon(type: string): string {
+    const icons = {
+      apps: '📱',
+      food: '🍽️',
+      music: '🎵',
+      lingo: '🗣️',
+      packing: '🎒',
+      itinerary: '🗺️',
+      unknown: '📋'
+    };
+    return icons[type as keyof typeof icons] || icons.unknown;
+  }
+
+  // Helper method to get display name for recommendation type
+  getRecommendationTypeName(type: string): string {
+    const names = {
+      apps: 'App Recommendations',
+      food: 'Food Guide',
+      music: 'Music Playlist',
+      lingo: 'Lingo Guide',
+      packing: 'Packing List',
+      itinerary: 'Trip Itinerary',
+      unknown: 'Recommendation'
+    };
+    return names[type as keyof typeof names] || names.unknown;
   }
 }
 

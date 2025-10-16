@@ -1,21 +1,21 @@
 import { useCallback } from 'react';
-import { historyService, SaveAppRecommendationRequest } from '../services/historyService';
+import { historyService, SaveRecommendationRequest } from '../services/historyService';
 
 interface UseSaveRecommendationReturn {
-  saveRecommendation: (data: SaveAppRecommendationRequest) => Promise<void>;
-  saveAppRecommendation: (requestData: any, responseData: any, destination: string, language?: string) => Promise<void>;
-  saveLingoRecommendation: (requestData: any, responseData: any, destination: string, language?: string) => Promise<void>;
-  saveMusicRecommendation: (requestData: any, responseData: any, destination: string, language?: string) => Promise<void>;
-  savePackingRecommendation: (requestData: any, responseData: any, destination: string, language?: string) => Promise<void>;
-  saveFoodRecommendation: (requestData: any, responseData: any, destination: string, language?: string) => Promise<void>;
-  saveItineraryRecommendation: (requestData: any, responseData: any, destination: string, language?: string) => Promise<void>;
+  saveRecommendation: (data: SaveRecommendationRequest) => Promise<void>;
+  saveAppRecommendation: (requestData: any, responseData: any, destination: string, language?: string, tripContext?: any) => Promise<void>;
+  saveLingoRecommendation: (requestData: any, responseData: any, destination: string, language?: string, tripContext?: any) => Promise<void>;
+  saveMusicRecommendation: (requestData: any, responseData: any, destination: string, language?: string, tripContext?: any) => Promise<void>;
+  savePackingRecommendation: (requestData: any, responseData: any, destination: string, language?: string, tripContext?: any) => Promise<void>;
+  saveFoodRecommendation: (requestData: any, responseData: any, destination: string, language?: string, tripContext?: any) => Promise<void>;
+  saveItineraryRecommendation: (requestData: any, responseData: any, destination: string, language?: string, tripContext?: any) => Promise<void>;
 }
 
 export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
-  const saveRecommendation = useCallback(async (data: SaveAppRecommendationRequest) => {
+  const saveRecommendation = useCallback(async (data: SaveRecommendationRequest) => {
     try {
       console.log('Attempting to save recommendation:', data);
-      await historyService.saveAppRecommendation(data);
+      await historyService.saveRecommendation(data);
       console.log('Successfully saved recommendation');
     } catch (error) {
       console.error('Failed to save recommendation:', error);
@@ -27,18 +27,21 @@ export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
     requestData: any,
     responseData: any,
     destination: string,
-    language: string = 'en'
+    language: string = 'en',
+    tripContext?: any
   ) => {
-    const type = historyService.getRecommendationType(responseData);
-    const title = historyService.generateDefaultTitle(type, destination);
+    console.log('saveAppRecommendation called with:', { requestData, responseData, destination, language, tripContext });
+    const title = historyService.generateDefaultTitle('apps', destination);
     
     await saveRecommendation({
+      recommendationType: 'apps',
       destination,
       language,
       requestData,
       responseData,
       title,
-      tags: [type]
+      tags: ['apps', 'technology'],
+      tripContext
     });
   }, [saveRecommendation]);
 
@@ -46,17 +49,20 @@ export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
     requestData: any,
     responseData: any,
     destination: string,
-    language: string = 'en'
+    language: string = 'en',
+    tripContext?: any
   ) => {
     const title = historyService.generateDefaultTitle('lingo', destination);
     
     await saveRecommendation({
+      recommendationType: 'lingo',
       destination,
       language,
       requestData,
       responseData,
       title,
-      tags: ['lingo', 'language']
+      tags: ['lingo', 'language'],
+      tripContext
     });
   }, [saveRecommendation]);
 
@@ -64,17 +70,20 @@ export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
     requestData: any,
     responseData: any,
     destination: string,
-    language: string = 'en'
+    language: string = 'en',
+    tripContext?: any
   ) => {
     const title = historyService.generateDefaultTitle('music', destination);
     
     await saveRecommendation({
+      recommendationType: 'music',
       destination,
       language,
       requestData,
       responseData,
       title,
-      tags: ['music', 'entertainment']
+      tags: ['music', 'entertainment'],
+      tripContext
     });
   }, [saveRecommendation]);
 
@@ -82,17 +91,20 @@ export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
     requestData: any,
     responseData: any,
     destination: string,
-    language: string = 'en'
+    language: string = 'en',
+    tripContext?: any
   ) => {
     const title = historyService.generateDefaultTitle('packing', destination);
     
     await saveRecommendation({
+      recommendationType: 'packing',
       destination,
       language,
       requestData,
       responseData,
       title,
-      tags: ['packing', 'travel']
+      tags: ['packing', 'travel'],
+      tripContext
     });
   }, [saveRecommendation]);
 
@@ -100,17 +112,20 @@ export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
     requestData: any,
     responseData: any,
     destination: string,
-    language: string = 'en'
+    language: string = 'en',
+    tripContext?: any
   ) => {
     const title = historyService.generateDefaultTitle('food', destination);
     
     await saveRecommendation({
+      recommendationType: 'food',
       destination,
       language,
       requestData,
       responseData,
       title,
-      tags: ['food', 'dining']
+      tags: ['food', 'dining'],
+      tripContext
     });
   }, [saveRecommendation]);
 
@@ -118,17 +133,20 @@ export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
     requestData: any,
     responseData: any,
     destination: string,
-    language: string = 'en'
+    language: string = 'en',
+    tripContext?: any
   ) => {
     const title = historyService.generateDefaultTitle('itinerary', destination);
     
     await saveRecommendation({
+      recommendationType: 'itinerary',
       destination,
       language,
       requestData,
       responseData,
       title,
-      tags: ['itinerary', 'planning']
+      tags: ['itinerary', 'planning'],
+      tripContext
     });
   }, [saveRecommendation]);
 

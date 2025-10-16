@@ -1,34 +1,46 @@
 import React, { useState } from 'react';
 import { useHistory } from '../hooks/useHistory';
-import { AppRecommendationHistory } from '../services/historyService';
+import { RecommendationHistory } from '../services/historyService';
 import BackToHomeButton from './BackToHomeButton';
+import LingoFinderResult from './LingoFinderResult';
+import AppFinderResult from './AppFinderResult';
+import FoodFinderResult from './FoodFinderResult';
+import MusicFinderResult from './MusicFinderResult';
+import PackingListPreview from './PackingListPreview';
+import ItineraryPreview from './ItineraryPreview';
 
 interface HistoryItemProps {
-  item: AppRecommendationHistory;
-  onEdit: (item: AppRecommendationHistory) => void;
+  item: RecommendationHistory;
+  onEdit: (item: RecommendationHistory) => void;
   onDelete: (id: string) => void;
-  onView: (item: AppRecommendationHistory) => void;
+  onView: (item: RecommendationHistory) => void;
 }
 
 const HistoryItem: React.FC<HistoryItemProps> = ({ item, onEdit, onDelete, onView }) => {
-  const getTypeIcon = (tags: string[] = []) => {
-    if (tags.includes('apps')) return '📱';
-    if (tags.includes('food')) return '🍽️';
-    if (tags.includes('music')) return '🎵';
-    if (tags.includes('lingo')) return '🗣️';
-    if (tags.includes('packing')) return '🎒';
-    if (tags.includes('itinerary')) return '🗺️';
-    return '📋';
+  const getTypeIcon = (type: string) => {
+    const icons = {
+      apps: '📱',
+      food: '🍽️',
+      music: '🎵',
+      lingo: '🗣️',
+      packing: '🎒',
+      itinerary: '🗺️',
+      unknown: '📋'
+    };
+    return icons[type as keyof typeof icons] || icons.unknown;
   };
 
-  const getTypeName = (tags: string[] = []) => {
-    if (tags.includes('apps')) return 'App Recommendations';
-    if (tags.includes('food')) return 'Food Guide';
-    if (tags.includes('music')) return 'Music Playlist';
-    if (tags.includes('lingo')) return 'Lingo Guide';
-    if (tags.includes('packing')) return 'Packing List';
-    if (tags.includes('itinerary')) return 'Trip Itinerary';
-    return 'Recommendation';
+  const getTypeName = (type: string) => {
+    const names = {
+      apps: 'App Recommendations',
+      food: 'Food Guide',
+      music: 'Music Playlist',
+      lingo: 'Lingo Guide',
+      packing: 'Packing List',
+      itinerary: 'Trip Itinerary',
+      unknown: 'Recommendation'
+    };
+    return names[type as keyof typeof names] || names.unknown;
   };
 
   const formatDate = (dateString: string) => {
@@ -41,13 +53,9 @@ const HistoryItem: React.FC<HistoryItemProps> = ({ item, onEdit, onDelete, onVie
     });
   };
 
-  const getSummary = (item: AppRecommendationHistory) => {
-    if (item.transport_apps_count !== undefined) {
-      const totalApps = (item.transport_apps_count || 0) + (item.food_apps_count || 0) + 
-                       (item.stay_apps_count || 0) + (item.entertainment_apps_count || 0) + 
-                       (item.shopping_apps_count || 0) + (item.exploration_apps_count || 0) + 
-                       (item.utilities_apps_count || 0) + (item.festivals_apps_count || 0);
-      return `${totalApps} apps recommended`;
+  const getSummary = (item: RecommendationHistory) => {
+    if (item.total_items_count !== undefined) {
+      return `${item.total_items_count} items recommended`;
     }
     return 'Recommendation generated';
   };
@@ -56,10 +64,10 @@ const HistoryItem: React.FC<HistoryItemProps> = ({ item, onEdit, onDelete, onVie
     <div className="bg-white/60 backdrop-blur-lg rounded-xl p-6 shadow-md border border-white/50 hover:shadow-lg transition-all duration-300">
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center space-x-3">
-          <span className="text-2xl">{getTypeIcon(item.tags)}</span>
+          <span className="text-2xl">{getTypeIcon(item.recommendationType)}</span>
           <div>
             <h3 className="text-lg font-bold text-slate-800">
-              {item.title || getTypeName(item.tags)}
+              {item.title || getTypeName(item.recommendationType)}
             </h3>
             <p className="text-sm text-slate-600">{item.destination}</p>
           </div>
@@ -111,14 +119,19 @@ const HistoryItem: React.FC<HistoryItemProps> = ({ item, onEdit, onDelete, onVie
       
       <div className="flex items-center justify-between text-sm text-slate-500">
         <span>{formatDate(item.created_at)}</span>
-        <span className="capitalize">{item.language}</span>
+        <div className="flex items-center space-x-2">
+          <span className="capitalize">{item.language}</span>
+          <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+            {item.recommendationType}
+          </span>
+        </div>
       </div>
     </div>
   );
 };
 
 interface EditModalProps {
-  item: AppRecommendationHistory | null;
+  item: RecommendationHistory | null;
   onClose: () => void;
   onSave: (id: string, data: { title: string; tags: string[]; notes: string }) => void;
 }
@@ -200,46 +213,129 @@ const EditModal: React.FC<EditModalProps> = ({ item, onClose, onSave }) => {
 };
 
 interface ViewModalProps {
-  item: AppRecommendationHistory | null;
+  item: RecommendationHistory | null;
   onClose: () => void;
 }
 
 const ViewModal: React.FC<ViewModalProps> = ({ item, onClose }) => {
   if (!item) return null;
 
-  const formatJson = (data: any) => {
-    return JSON.stringify(data, null, 2);
+  const renderResultContent = () => {
+    const type = item.recommendationType;
+    
+    // Create a mock regenerate function for history view
+    const mockRegenerate = () => {
+      console.log('Regenerate not available in history view');
+    };
+    
+    switch (type) {
+      case 'lingo':
+        return (
+          <LingoFinderResult
+            recommendations={item.responseData}
+            onRegenerate={mockRegenerate}
+            isUnifiedView={true}
+            onPrint={() => window.print()}
+          />
+        );
+      
+      case 'apps':
+        return (
+          <AppFinderResult
+            recommendations={item.responseData}
+            onRegenerate={mockRegenerate}
+            isUnifiedView={true}
+            onPrint={() => window.print()}
+          />
+        );
+      
+      case 'food':
+        return (
+          <FoodFinderResult
+            recommendations={item.responseData}
+            onRegenerate={mockRegenerate}
+            isUnifiedView={true}
+            onPrint={() => window.print()}
+          />
+        );
+      
+      case 'music':
+        return (
+          <MusicFinderResult
+            recommendations={item.responseData}
+            onRegenerate={mockRegenerate}
+            isUnifiedView={true}
+            onPrint={() => window.print()}
+          />
+        );
+      
+      case 'packing':
+        return (
+          <PackingListPreview
+            packingList={item.responseData}
+            onRegenerate={mockRegenerate}
+            isUnifiedView={true}
+            onPrint={() => window.print()}
+          />
+        );
+      
+      case 'itinerary':
+        return (
+          <ItineraryPreview
+            itinerary={item.responseData}
+            onRegenerate={mockRegenerate}
+            isUnifiedView={true}
+            onPrint={() => window.print()}
+          />
+        );
+      
+      default:
+        return (
+          <div className="space-y-6">
+            <h4 className="text-xl font-bold text-slate-800 mb-4">Recommendation Details</h4>
+            <div className="bg-slate-100 p-4 rounded-lg">
+              <pre className="text-sm overflow-x-auto">
+                {JSON.stringify(item.responseData, null, 2)}
+              </pre>
+            </div>
+          </div>
+        );
+    }
   };
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-bold text-slate-800">Recommendation Details</h3>
-          <button
-            onClick={onClose}
-            className="p-2 text-slate-600 hover:text-slate-800 transition-colors"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+      <div className="bg-white rounded-xl w-full max-w-7xl max-h-[95vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-xl">
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="text-xl font-bold text-slate-800">{item.title || 'Recommendation Details'}</h3>
+              <p className="text-sm text-slate-600">{item.destination} • {new Date(item.created_at).toLocaleDateString()}</p>
+            </div>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => window.print()}
+                className="p-2 text-blue-600 hover:text-blue-800 transition-colors"
+                title="Print"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                </svg>
+              </button>
+              <button
+                onClick={onClose}
+                className="p-2 text-slate-600 hover:text-slate-800 transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
         </div>
         
-        <div className="space-y-6">
-          <div>
-            <h4 className="font-semibold text-slate-700 mb-2">Request Data</h4>
-            <pre className="bg-slate-100 p-4 rounded-lg text-sm overflow-x-auto">
-              {formatJson(item.requestData)}
-            </pre>
-          </div>
-          
-          <div>
-            <h4 className="font-semibold text-slate-700 mb-2">Response Data</h4>
-            <pre className="bg-slate-100 p-4 rounded-lg text-sm overflow-x-auto">
-              {formatJson(item.responseData)}
-            </pre>
-          </div>
+        <div className="p-6">
+          {renderResultContent()}
         </div>
       </div>
     </div>
@@ -254,6 +350,7 @@ const History: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     error,
     destinations,
     tags,
+    recommendationTypes,
     filters,
     setFilters,
     loadHistory,
@@ -261,17 +358,19 @@ const History: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     deleteRecommendation
   } = useHistory();
 
-  const [editingItem, setEditingItem] = useState<AppRecommendationHistory | null>(null);
-  const [viewingItem, setViewingItem] = useState<AppRecommendationHistory | null>(null);
+  const [editingItem, setEditingItem] = useState<RecommendationHistory | null>(null);
+  const [viewingItem, setViewingItem] = useState<RecommendationHistory | null>(null);
   const [searchTerm, setSearchTerm] = useState(filters.search || '');
   const [selectedDestination, setSelectedDestination] = useState(filters.destination || '');
   const [selectedTags, setSelectedTags] = useState<string[]>(filters.tags || []);
+  const [selectedType, setSelectedType] = useState(filters.recommendationType || '');
 
   const handleSearch = () => {
     setFilters({
       search: searchTerm || undefined,
       destination: selectedDestination || undefined,
-      tags: selectedTags.length > 0 ? selectedTags : undefined
+      tags: selectedTags.length > 0 ? selectedTags : undefined,
+      recommendationType: selectedType || undefined
     });
   };
 
@@ -279,10 +378,11 @@ const History: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     setSearchTerm('');
     setSelectedDestination('');
     setSelectedTags([]);
+    setSelectedType('');
     setFilters({});
   };
 
-  const handleEdit = (item: AppRecommendationHistory) => {
+  const handleEdit = (item: RecommendationHistory) => {
     setEditingItem(item);
   };
 
@@ -305,7 +405,7 @@ const History: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     }
   };
 
-  const handleView = (item: AppRecommendationHistory) => {
+  const handleView = (item: RecommendationHistory) => {
     setViewingItem(item);
   };
 
@@ -327,7 +427,7 @@ const History: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         <div className="bg-white/60 backdrop-blur-lg rounded-xl p-6 shadow-md border border-white/50 mb-8">
           <h3 className="text-lg font-semibold text-slate-800 mb-4">Filters</h3>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">Search</label>
               <input
@@ -349,6 +449,20 @@ const History: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 <option value="">All destinations</option>
                 {destinations.map(dest => (
                   <option key={dest} value={dest}>{dest}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Type</label>
+              <select
+                value={selectedType}
+                onChange={(e) => setSelectedType(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">All types</option>
+                {recommendationTypes.map(type => (
+                  <option key={type} value={type}>{type}</option>
                 ))}
               </select>
             </div>

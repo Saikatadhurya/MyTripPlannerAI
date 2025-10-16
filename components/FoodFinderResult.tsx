@@ -117,8 +117,12 @@ const FoodFinderResult: React.FC<FoodFinderResultProps> = ({ recommendations, on
     
     // Save to history when component mounts (only if not in unified view and request data is available)
     useEffect(() => {
+        console.log('FoodFinderResult useEffect:', { isUnifiedView, requestData, recommendations });
         if (!isUnifiedView && requestData) {
+            console.log('Saving food recommendation to history...');
             saveFoodRecommendation(requestData, recommendations, recommendations.destination, requestData.language);
+        } else {
+            console.log('Not saving food recommendation:', { isUnifiedView, hasRequestData: !!requestData });
         }
     }, [isUnifiedView, requestData, recommendations, saveFoodRecommendation]);
     const categoryDetails = {

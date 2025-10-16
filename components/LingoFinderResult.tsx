@@ -78,8 +78,12 @@ const LingoFinderResult: React.FC<LingoFinderResultProps> = ({ recommendations, 
 
     // Save to history when component mounts (only if not in unified view and request data is available)
     useEffect(() => {
+        console.log('LingoFinderResult useEffect:', { isUnifiedView, requestData, recommendations });
         if (!isUnifiedView && requestData) {
+            console.log('Saving lingo recommendation to history...');
             saveLingoRecommendation(requestData, recommendations, recommendations.destination, requestData.language);
+        } else {
+            console.log('Not saving lingo recommendation:', { isUnifiedView, hasRequestData: !!requestData });
         }
     }, [isUnifiedView, requestData, recommendations, saveLingoRecommendation]);
 
