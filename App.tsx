@@ -625,6 +625,7 @@ const App: React.FC = () => {
       return;
     }
 
+    console.log('handleGenerateItinerary called with data:', data);
     setInitialQuestionnaireData(data);
     setIsLoading(true);
     setError(null);
@@ -1402,7 +1403,13 @@ const App: React.FC = () => {
       case 'questionnaire':
         return <Questionnaire onSubmit={handleGenerateItinerary} isLoading={false} error={error} initialData={initialQuestionnaireData} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} user={user} />;
       case 'itineraryResult':
-        if (itinerary) return <ItineraryPreview itinerary={itinerary} onRegenerate={() => handleViewChange('questionnaire')} requestData={questionnaireDataForUnifiedPlan} isHistoryView={isHistoryView} />;
+        console.log('Rendering itineraryResult with:', { 
+          hasItinerary: !!itinerary, 
+          hasInitialQuestionnaireData: !!initialQuestionnaireData,
+          initialQuestionnaireDataKeys: initialQuestionnaireData ? Object.keys(initialQuestionnaireData) : null,
+          isHistoryView 
+        });
+        if (itinerary) return <ItineraryPreview itinerary={itinerary} onRegenerate={() => handleViewChange('questionnaire')} requestData={initialQuestionnaireData} isHistoryView={isHistoryView} />;
         break;
       case 'packingAssistantForm':
         return <PackingAssistantForm onSubmit={handleGeneratePackingList} isLoading={false} error={error} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} initialData={packingRequestData} user={user} />;
