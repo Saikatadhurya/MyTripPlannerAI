@@ -412,7 +412,6 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
   const [editingItem, setEditingItem] = useState<RecommendationHistory | null>(null);
   const [searchTerm, setSearchTerm] = useState(filters.search || '');
   const [selectedDestination, setSelectedDestination] = useState(filters.destination || '');
-  const [selectedTags, setSelectedTags] = useState<string[]>(filters.tags || []);
   const [selectedType, setSelectedType] = useState(filters.recommendationType || '');
   
   // Unified trip state
@@ -424,7 +423,6 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
     setFilters({
       search: searchTerm || undefined,
       destination: selectedDestination || undefined,
-      tags: selectedTags.length > 0 ? selectedTags : undefined,
       recommendationType: selectedType || undefined
     });
   };
@@ -432,7 +430,6 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
   const handleClearFilters = () => {
     setSearchTerm('');
     setSelectedDestination('');
-    setSelectedTags([]);
     setSelectedType('');
     setFilters({});
   };
@@ -510,36 +507,32 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
 
   return (
     <div className="bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="max-w-6xl mx-auto px-4 py-6">
         <BackToHomeButton onClick={onBack} />
         
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-slate-800 mb-2">Your History</h1>
-          <p className="text-lg text-slate-600">View and manage your past recommendations</p>
+        <div className="text-center mb-4">
+          <h1 className="text-2xl font-bold text-slate-800 mb-1">Your History</h1>
+          <p className="text-sm text-slate-500">Manage your past recommendations</p>
         </div>
 
         {/* Filters */}
-        <div className="bg-white/60 backdrop-blur-lg rounded-xl p-6 shadow-md border border-white/50 mb-8">
-          <h3 className="text-lg font-semibold text-slate-800 mb-4">Filters</h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Search</label>
+        <div className="bg-white/60 backdrop-blur-lg rounded-xl p-4 shadow-md border border-white/50 mb-6">
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex-1 min-w-64">
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search by title, destination, or notes..."
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Search recommendations..."
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
               />
             </div>
             
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Destination</label>
+            <div className="min-w-40">
               <select
                 value={selectedDestination}
                 onChange={(e) => setSelectedDestination(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
               >
                 <option value="">All destinations</option>
                 {destinations.map(dest => (
@@ -548,12 +541,11 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
               </select>
             </div>
             
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Type</label>
+            <div className="min-w-40">
               <select
                 value={selectedType}
                 onChange={(e) => setSelectedType(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
               >
                 <option value="">All types</option>
                 {recommendationTypes.map(type => (
@@ -562,42 +554,25 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
               </select>
             </div>
             
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Tags</label>
-              <select
-                multiple
-                value={selectedTags}
-                onChange={(e) => {
-                  const values = Array.from((e.target as HTMLSelectElement).selectedOptions, option => option.value);
-                  setSelectedTags(values);
-                }}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            <div className="flex gap-2">
+              <button
+                onClick={handleSearch}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
               >
-                {tags.map(tag => (
-                  <option key={tag} value={tag}>{tag}</option>
-                ))}
-              </select>
+                Apply
+              </button>
+              <button
+                onClick={handleClearFilters}
+                className="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors text-sm font-medium"
+              >
+                Clear
+              </button>
             </div>
-          </div>
-          
-          <div className="flex space-x-3">
-            <button
-              onClick={handleSearch}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Apply Filters
-            </button>
-            <button
-              onClick={handleClearFilters}
-              className="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors"
-            >
-              Clear Filters
-            </button>
           </div>
         </div>
 
         {/* Tabs */}
-        <div className="bg-white/60 backdrop-blur-lg rounded-xl p-6 shadow-md border border-white/50 mb-8">
+        <div className="bg-white/60 backdrop-blur-lg rounded-xl p-4 shadow-md border border-white/50 mb-6">
           <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
             <button
               onClick={() => setActiveTab('individual')}
