@@ -176,8 +176,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
                  }`}
               >
                  {(() => {
-                   const suffix = quotasLoading ? ' (⏳ Fetching limit...)' : '';
-                   return `✨ Build Your Ultimate Itinerary${suffix}`;
+                   return `✨ Build Your Ultimate Itinerary`;
                  })()}
               </button>
               <p className="mt-4 text-sm text-violet-700/80 font-medium tracking-wide">
