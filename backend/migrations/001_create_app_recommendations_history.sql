@@ -36,3 +36,4 @@ $$ language 'plpgsql';
 CREATE TRIGGER update_app_recommendations_history_updated_at 
     BEFORE UPDATE ON planora.app_recommendations_history 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+

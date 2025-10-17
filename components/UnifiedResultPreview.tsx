@@ -5,7 +5,6 @@ import PackingListPreview from './PackingListPreview';
 import FoodFinderResult from './FoodFinderResult';
 import AppFinderResult from './AppFinderResult';
 import MusicFinderResult from './MusicFinderResult';
-import Guidebook from './Guidebook';
 import LingoFinderResult from './LingoFinderResult';
 import { useSaveRecommendation } from '../hooks/useSaveRecommendation';
 
@@ -50,7 +49,6 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
     isHistoryView = false
 }) => {
     const [activeTab, setActiveTab] = useState<Tab>('itinerary');
-    const [isExportingPdf, setIsExportingPdf] = useState(false);
     const [hasBeenSaved, setHasBeenSaved] = useState(false);
     const { saveUnifiedTripRecommendations } = useSaveRecommendation();
     
@@ -156,42 +154,6 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
             }
         }
     }, [isPlanComplete, questionnaireData, hasBeenSaved, plan, saveUnifiedTripRecommendations, isHistoryView]);
-
-    useEffect(() => {
-        if (isExportingPdf) {
-            const mediaQueryList = window.matchMedia('print');
-    
-            const handlePrintChange = (mql: MediaQueryListEvent) => {
-                // If the media query no longer matches, the print dialog has been closed.
-                if (!mql.matches) {
-                    document.body.classList.remove('printing-guidebook');
-                    setIsExportingPdf(false);
-                    // Clean up the listener once it has done its job.
-                    mediaQueryList.removeEventListener('change', handlePrintChange);
-                }
-            };
-    
-            mediaQueryList.addEventListener('change', handlePrintChange);
-    
-            document.body.classList.add('printing-guidebook');
-            // A short timeout allows the loader modal to render before the blocking print dialog appears.
-            const printTimeout = setTimeout(() => {
-                window.print();
-            }, 100);
-    
-            // Cleanup function for when the component unmounts or isExportingPdf becomes false.
-            return () => {
-                clearTimeout(printTimeout);
-                document.body.classList.remove('printing-guidebook');
-                mediaQueryList.removeEventListener('change', handlePrintChange);
-            };
-        }
-    }, [isExportingPdf]);
-    
-    const handleExportPdf = () => {
-        if (isExportingPdf || !isPlanComplete) return;
-        setIsExportingPdf(true);
-    };
     
     const getPlanDataForTab = (tab: Tab) => {
         switch (tab) {
@@ -272,67 +234,30 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
     };
     
     return (
-        <>
-            {isExportingPdf && (
-                <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex flex-col items-center justify-center z-[100] no-print fade-in">
-                    <div className="bg-white p-8 rounded-2xl shadow-xl text-center">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-600 mx-auto"></div>
-                        <h3 className="mt-6 text-2xl font-bold text-slate-800">Preparing Guidebook...</h3>
-                        <p className="mt-2 text-slate-600">Please wait while we generate your personalized PDF.</p>
-                        <button
-                            onClick={() => setIsExportingPdf(false)}
-                            className="mt-6 px-6 py-2 bg-slate-200 text-slate-700 font-semibold rounded-full hover:bg-slate-300 transition-colors"
-                        >
-                            Cancel
-                        </button>
-                    </div>
+        <div className="max-w-7xl mx-auto space-y-8 animated-card unified-interactive-view mb-16">
+            <header className="flex flex-col sm:flex-row justify-between items-center gap-4 py-4 no-print unified-header">
+                 <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight text-center sm:text-left">
+                    Your Unified Trip Plan to <span className="text-violet-700">{plan.itinerary?.destination || '...'}</span>
+                </h1>
+                <div className="flex-shrink-0 flex items-center space-x-3">             
+                    <button
+                        onClick={onPlanNew}
+                        className="inline-flex items-center px-4 py-2 bg-violet-600 text-white font-bold rounded-full hover:bg-violet-700 transition-all duration-300 shadow-md text-sm"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                        <span>Home</span>
+                    </button>
+                     <button
+                        onClick={onRegenerate}
+                        className="inline-flex items-center px-4 py-2 bg-white/60 text-slate-800 font-semibold rounded-full hover:bg-white/80 transition-all duration-300 shadow-sm border border-white/50 text-sm"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.898 2.566l-1.581.53a5.002 5.002 0 00-8.917-1.789v.962a1 1 0 01-2 0V3a1 1 0 011-1zm12 15a1 1 0 01-1-1v-2.101a7.002 7.002 0 01-11.898-2.566l1.581-.53a5.002 5.002 0 008.917 1.789v-.962a1 1 0 012 0V17a1 1 0 01-1 1z" clipRule="evenodd" /></svg>
+                        Regenerate
+                    </button>
                 </div>
-            )}
-            
-            <div className="printable-container">
-                <Guidebook plan={plan} />
-            </div>
-
-            <div className="max-w-7xl mx-auto space-y-8 animated-card unified-interactive-view mb-16">
-                <header className="flex flex-col sm:flex-row justify-between items-center gap-4 py-4 no-print unified-header">
-                     <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight text-center sm:text-left">
-                        Your Unified Trip Plan to <span className="text-violet-700">{plan.itinerary?.destination || '...'}</span>
-                    </h1>
-                    <div className="flex-shrink-0 flex items-center space-x-3">             
-                        <button
-                            onClick={onPlanNew}
-                            className="inline-flex items-center px-4 py-2 bg-violet-600 text-white font-bold rounded-full hover:bg-violet-700 transition-all duration-300 shadow-md text-sm"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                                <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                            <span>Home</span>
-                        </button>
-                         <button
-                            onClick={handleExportPdf}
-                            disabled={isExportingPdf || !isPlanComplete}
-                            className="inline-flex items-center px-4 py-2 bg-white/60 text-slate-800 font-semibold rounded-full hover:bg-white/80 transition-all duration-300 shadow-sm border border-white/50 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                            title={!isPlanComplete ? 'Please wait for all sections to finish generating.' : 'Export your plan as a PDF guidebook'}
-                        >
-                            {isExportingPdf ? (
-                                <svg className="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                            ) : (
-                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" /></svg>
-                            )}
-                            <span>{isExportingPdf ? 'Creating...' : 'Export Guidebook'}</span>
-                             {!isPlanComplete && !isExportingPdf && (
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-2 text-slate-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clipRule="evenodd" /></svg>
-                            )}
-                        </button>
-                         <button
-                            onClick={onRegenerate}
-                            className="inline-flex items-center px-4 py-2 bg-white/60 text-slate-800 font-semibold rounded-full hover:bg-white/80 transition-all duration-300 shadow-sm border border-white/50 text-sm"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.898 2.566l-1.581.53a5.002 5.002 0 00-8.917-1.789v.962a1 1 0 01-2 0V3a1 1 0 011-1zm12 15a1 1 0 01-1-1v-2.101a7.002 7.002 0 01-11.898-2.566l1.581-.53a5.002 5.002 0 008.917 1.789v-.962a1 1 0 012 0V17a1 1 0 01-1 1z" clipRule="evenodd" /></svg>
-                            Regenerate
-                        </button>
-                    </div>
-                </header>
+            </header>
                 
                 {/* Responsive Navigation */}
                 <nav className="no-print fixed bottom-0 left-0 right-0 z-50 md:sticky md:top-4 md:z-40 md:mb-6 unified-nav">
@@ -378,7 +303,6 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
                 {/* Spacer for bottom nav on mobile */}
                 <div className="h-20 md:h-0" />
             </div>
-        </>
     );
 };
 
