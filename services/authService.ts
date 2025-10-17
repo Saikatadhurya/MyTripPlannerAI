@@ -1,4 +1,6 @@
 import axios from 'axios';
+import { TokenUtils } from './tokenUtils';
+import { startTokenMonitoring, stopTokenMonitoring } from './axiosInterceptor';
 
 const API_URL = 'http://localhost:5000/auth'; // Backend auth API URL
 
@@ -47,6 +49,13 @@ class AuthService {
       console.log('AuthService: savedToken:', savedToken);
       
       if (savedUser && savedToken) {
+        // Check if token is expired before loading session
+        if (TokenUtils.isTokenExpired(savedToken)) {
+          console.warn('AuthService: Saved token is expired, clearing session');
+          this.clearSession();
+          return;
+        }
+        
         const parsedUser = JSON.parse(savedUser);
         console.log('AuthService: Parsed user from localStorage:', parsedUser);
         console.log('AuthService: User full_name:', parsedUser.full_name);
@@ -64,6 +73,9 @@ class AuthService {
         this.currentUser = parsedUser;
         this.token = savedToken;
         console.log('AuthService: Session loaded successfully:', this.currentUser);
+        
+        // Start token monitoring for auto logout
+        startTokenMonitoring();
       } else {
         console.log('AuthService: No saved session found');
       }
@@ -91,6 +103,9 @@ class AuthService {
     }
     this.currentUser = null;
     this.token = null;
+    
+    // Stop token monitoring when session is cleared
+    stopTokenMonitoring();
   }
 
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
@@ -112,6 +127,9 @@ class AuthService {
       this.token = token;
       this.saveSession(authenticatedUser, token);
       console.log('AuthService: Login successful for:', authenticatedUser.email);
+
+      // Start token monitoring for auto logout
+      startTokenMonitoring();
 
       return { user: authenticatedUser, token };
     } catch (error) {
@@ -150,6 +168,9 @@ class AuthService {
       this.saveSession(newUser, token);
       console.log('AuthService: Signup successful for:', newUser.email);
 
+      // Start token monitoring for auto logout
+      startTokenMonitoring();
+
       return { user: newUser, token };
     } catch (error) {
       console.error('AuthService: Signup failed:', error);
@@ -172,7 +193,18 @@ class AuthService {
   }
 
   isAuthenticated(): boolean {
-    return this.currentUser !== null && this.token !== null;
+    if (!this.currentUser || !this.token) {
+      return false;
+    }
+    
+    // Check if token is expired
+    if (TokenUtils.isTokenExpired(this.token)) {
+      console.warn('Token is expired, clearing session');
+      this.clearSession();
+      return false;
+    }
+    
+    return true;
   }
 
   getToken(): string | null {

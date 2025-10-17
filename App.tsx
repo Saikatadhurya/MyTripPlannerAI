@@ -10,6 +10,7 @@ import { incrementUsage } from './services/usageService';
 
 import { authService, User } from './services/authService';
 import { useQuotas } from './hooks/useQuotas';
+import { setGlobalLogoutHandler } from './services/axiosInterceptor';
 
 import LandingPage from './components/LandingPage';
 import Questionnaire from './components/Questionnaire';
@@ -314,6 +315,25 @@ const App: React.FC = () => {
 
   // Quota management
   const { quotas } = useQuotas(user);
+
+  // Global logout handler for auto logout
+  useEffect(() => {
+    const handleGlobalLogout = () => {
+      console.log('Global logout triggered');
+      setUser(null);
+      setIsAuthModalOpen(false);
+      setView('landing');
+      // Clear any ongoing processes
+      setIsLoading(false);
+      setError(null);
+    };
+
+    setGlobalLogoutHandler(handleGlobalLogout);
+
+    return () => {
+      setGlobalLogoutHandler(() => {});
+    };
+  }, []);
 
   // --- Unified Planner Pipeline State ---
   const cancellationFlags = useRef<Partial<Record<keyof UnifiedPlanLoadingStatus, boolean>>>({});
