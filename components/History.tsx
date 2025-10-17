@@ -34,51 +34,95 @@ const UnifiedTripItem: React.FC<UnifiedTripItemProps> = ({ trip, onView, onDelet
     return icons[type as keyof typeof icons] || icons.unknown;
   };
 
+  const getTypeColor = (type: string) => {
+    const colors = {
+      apps: 'bg-teal-100 text-teal-800 border-teal-200',
+      food: 'bg-orange-100 text-orange-800 border-orange-200',
+      music: 'bg-fuchsia-100 text-fuchsia-800 border-fuchsia-200',
+      lingo: 'bg-sky-100 text-sky-800 border-sky-200',
+      packing: 'bg-violet-100 text-violet-800 border-violet-200',
+      itinerary: 'bg-blue-100 text-blue-800 border-blue-200',
+      unknown: 'bg-gray-100 text-gray-800 border-gray-200'
+    };
+    return colors[type as keyof typeof colors] || colors.unknown;
+  };
+
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200 hover:shadow-lg transition-shadow">
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-2xl">🗺️</span>
-            <h3 className="text-lg font-semibold text-gray-900">
-              {trip.tripName || `${trip.destination} Trip`}
-            </h3>
-            <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
+    <div className="bg-gradient-to-br from-white via-blue-50/30 to-violet-50/30 rounded-2xl shadow-lg border border-white/60 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 overflow-hidden group">
+      {/* Header with gradient background */}
+      <div className="bg-gradient-to-r from-blue-600 to-violet-600 p-6 text-white relative overflow-hidden">
+        <div className="absolute inset-0 bg-black/10"></div>
+        <div className="relative z-10">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                <span className="text-2xl">🗺️</span>
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-white">
+                  {trip.tripName || `${trip.destination} Trip`}
+                </h3>
+                <p className="text-blue-100 text-sm">{trip.destination}</p>
+              </div>
+            </div>
+            <span className="px-3 py-1 bg-white/20 backdrop-blur-sm text-white text-sm font-medium rounded-full border border-white/30">
               Unified Trip
             </span>
           </div>
           
-          <div className="text-sm text-gray-600 mb-3">
-            <p><strong>Destination:</strong> {trip.destination}</p>
-            <p><strong>Language:</strong> {trip.language}</p>
-            <p><strong>Created:</strong> {formatDate(trip.created_at)}</p>
-            <p><strong>Recommendations:</strong> {trip.recommendation_count}</p>
+          <div className="flex items-center gap-4 text-blue-100 text-sm">
+            <div className="flex items-center gap-1">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>{formatDate(trip.created_at)}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+              </svg>
+              <span>{trip.language}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span>{trip.recommendation_count} recommendations</span>
+            </div>
           </div>
+        </div>
+      </div>
 
-          <div className="flex flex-wrap gap-1 mb-3">
+      {/* Content */}
+      <div className="p-6">
+        {/* Recommendation types */}
+        <div className="mb-6">
+          <h4 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">Included Features</h4>
+          <div className="flex flex-wrap gap-2">
             {trip.recommendation_types.map((type, index) => (
-              <span key={index} className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">
-                <span>{getTypeIcon(type)}</span>
+              <span key={index} className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium border ${getTypeColor(type)}`}>
+                <span className="text-base">{getTypeIcon(type)}</span>
                 <span className="capitalize">{type}</span>
               </span>
             ))}
           </div>
         </div>
 
-        <div className="flex gap-2 ml-4">
+        {/* Action buttons */}
+        <div className="flex gap-3">
           <button
             onClick={() => onView(trip)}
-            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-            title="View Trip"
+            className="flex-1 bg-gradient-to-r from-blue-600 to-violet-600 text-white px-4 py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-violet-700 transition-all duration-300 shadow-md hover:shadow-lg flex items-center justify-center gap-2 group-hover:scale-105"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
             </svg>
+            View Complete Trip
           </button>
           <button
             onClick={() => onDelete(trip.tripId)}
-            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            className="px-4 py-3 bg-red-50 text-red-600 rounded-xl font-semibold hover:bg-red-100 transition-all duration-300 border border-red-200 hover:border-red-300 flex items-center justify-center"
             title="Delete Trip"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -125,6 +169,32 @@ const HistoryItem: React.FC<HistoryItemProps> = ({ item, onEdit, onDelete, onVie
     return names[type as keyof typeof names] || names.unknown;
   };
 
+  const getTypeColor = (type: string) => {
+    const colors = {
+      apps: 'from-teal-500 to-teal-600',
+      food: 'from-orange-500 to-orange-600',
+      music: 'from-fuchsia-500 to-fuchsia-600',
+      lingo: 'from-sky-500 to-sky-600',
+      packing: 'from-violet-500 to-violet-600',
+      itinerary: 'from-blue-500 to-blue-600',
+      unknown: 'from-gray-500 to-gray-600'
+    };
+    return colors[type as keyof typeof colors] || colors.unknown;
+  };
+
+  const getTypeAccentColor = (type: string) => {
+    const colors = {
+      apps: 'bg-teal-100 text-teal-800 border-teal-200',
+      food: 'bg-orange-100 text-orange-800 border-orange-200',
+      music: 'bg-fuchsia-100 text-fuchsia-800 border-fuchsia-200',
+      lingo: 'bg-sky-100 text-sky-800 border-sky-200',
+      packing: 'bg-violet-100 text-violet-800 border-violet-200',
+      itinerary: 'bg-blue-100 text-blue-800 border-blue-200',
+      unknown: 'bg-gray-100 text-gray-800 border-gray-200'
+    };
+    return colors[type as keyof typeof colors] || colors.unknown;
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -143,69 +213,97 @@ const HistoryItem: React.FC<HistoryItemProps> = ({ item, onEdit, onDelete, onVie
   };
 
   return (
-    <div className="bg-white/60 backdrop-blur-lg rounded-xl p-6 shadow-md border border-white/50 hover:shadow-lg transition-all duration-300">
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center space-x-3">
-          <span className="text-2xl">{getTypeIcon(item.recommendationType)}</span>
-          <div>
-            <h3 className="text-lg font-bold text-slate-800">
-              {item.title || getTypeName(item.recommendationType)}
-            </h3>
-            <p className="text-sm text-slate-600">{item.destination}</p>
+    <div className="bg-gradient-to-br from-white via-blue-50/20 to-violet-50/20 rounded-2xl shadow-lg border border-white/60 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 overflow-hidden group">
+      {/* Header with gradient background */}
+      <div className={`bg-gradient-to-r ${getTypeColor(item.recommendationType)} p-6 text-white relative overflow-hidden`}>
+        <div className="absolute inset-0 bg-black/10"></div>
+        <div className="relative z-10">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                <span className="text-2xl">{getTypeIcon(item.recommendationType)}</span>
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-white">
+                  {item.title || getTypeName(item.recommendationType)}
+                </h3>
+                <p className="text-white/80 text-sm">{item.destination}</p>
+              </div>
+            </div>
+            <span className={`px-3 py-1 bg-white/20 backdrop-blur-sm text-white text-sm font-medium rounded-full border border-white/30 ${getTypeAccentColor(item.recommendationType)}`}>
+              {item.recommendationType}
+            </span>
+          </div>
+          
+          <div className="flex items-center gap-4 text-white/80 text-sm">
+            <div className="flex items-center gap-1">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>{formatDate(item.created_at)}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+              </svg>
+              <span>{item.language}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span>{getSummary(item)}</span>
+            </div>
           </div>
         </div>
-        <div className="flex items-center space-x-2">
+      </div>
+
+      {/* Content */}
+      <div className="p-6">
+        {/* Tags */}
+        {item.tags && item.tags.length > 0 && (
+          <div className="mb-6">
+            <h4 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">Tags</h4>
+            <div className="flex flex-wrap gap-2">
+              {item.tags.map((tag, index) => (
+                <span key={index} className="inline-flex items-center px-3 py-1 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg border border-gray-200">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Action buttons */}
+        <div className="flex gap-3">
           <button
             onClick={() => onView(item)}
-            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-            title="View Details"
+            className={`flex-1 bg-gradient-to-r ${getTypeColor(item.recommendationType)} text-white px-4 py-3 rounded-xl font-semibold hover:opacity-90 transition-all duration-300 shadow-md hover:shadow-lg flex items-center justify-center gap-2 group-hover:scale-105`}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
             </svg>
+            View Details
           </button>
           <button
             onClick={() => onEdit(item)}
-            className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+            className="px-4 py-3 bg-green-50 text-green-600 rounded-xl font-semibold hover:bg-green-100 transition-all duration-300 border border-green-200 hover:border-green-300 flex items-center justify-center"
             title="Edit"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
             </svg>
           </button>
           <button
             onClick={() => onDelete(item.id)}
-            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            className="px-4 py-3 bg-red-50 text-red-600 rounded-xl font-semibold hover:bg-red-100 transition-all duration-300 border border-red-200 hover:border-red-300 flex items-center justify-center"
             title="Delete"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
           </button>
-        </div>
-      </div>
-      
-      <div className="mb-4">
-        <p className="text-sm text-slate-600 mb-2">{getSummary(item)}</p>
-        {item.tags && item.tags.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {item.tags.map((tag, index) => (
-              <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
-      
-      <div className="flex items-center justify-between text-sm text-slate-500">
-        <span>{formatDate(item.created_at)}</span>
-        <div className="flex items-center space-x-2">
-          <span className="capitalize">{item.language}</span>
-          <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
-            {item.recommendationType}
-          </span>
         </div>
       </div>
     </div>
