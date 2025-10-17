@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { Itinerary } from '../types';
-import ExportOptions from './ExportOptions';
 import { getReferenceBlogs } from '../services/geminiService';
 import { useSaveRecommendation } from '../hooks/useSaveRecommendation';
 
@@ -90,7 +89,6 @@ interface ItineraryPreviewProps {
   itinerary: Itinerary;
   onRegenerate: () => void;
   isUnifiedView?: boolean;
-  onPrint?: () => void;
   requestData?: any; // Add request data for history saving
   isHistoryView?: boolean; // Add flag to indicate if this is from history
 }
@@ -173,7 +171,7 @@ const DestinationInfoTabs: React.FC<{ destinationDetails: Itinerary['coveredDest
 };
 
 
-const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegenerate, isUnifiedView = false, onPrint, requestData, isHistoryView = false }) => {
+const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegenerate, isUnifiedView = false, requestData, isHistoryView = false }) => {
   console.log('ItineraryPreview rendered with props:', { 
     itinerary: !!itinerary, 
     isUnifiedView, 
@@ -628,7 +626,6 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
       </section>
 
       <div className="pt-8 text-center no-print">
-        <ExportOptions itinerary={itinerary} onPrint={onPrint} isUnifiedView={isUnifiedView} />
         {!isUnifiedView && (
         <button
             onClick={onRegenerate}

@@ -62,12 +62,11 @@ interface LingoFinderResultProps {
     recommendations: LingoRecommendations;
     onRegenerate: () => void;
     isUnifiedView?: boolean;
-    onPrint?: () => void;
     requestData?: any; // Add request data for history saving
     isHistoryView?: boolean; // Add flag to indicate if this is from history
 }
 
-const LingoFinderResult: React.FC<LingoFinderResultProps> = ({ recommendations, onRegenerate, isUnifiedView = false, onPrint, requestData, isHistoryView = false }) => {
+const LingoFinderResult: React.FC<LingoFinderResultProps> = ({ recommendations, onRegenerate, isUnifiedView = false, requestData, isHistoryView = false }) => {
     const [openCategory, setOpenCategory] = useState<string | null>(recommendations.categories[0]?.categoryName || null);
     const [hasBeenSaved, setHasBeenSaved] = useState(false);
     const { saveLingoRecommendation } = useSaveRecommendation();
@@ -75,8 +74,6 @@ const LingoFinderResult: React.FC<LingoFinderResultProps> = ({ recommendations, 
     const toggleCategory = (categoryName: string) => {
         setOpenCategory(prev => (prev === categoryName ? null : categoryName));
     };
-
-    const handlePrint = onPrint || (() => window.print());
 
     // Save to history when component mounts (only if not in unified view and request data is available)
     useEffect(() => {
@@ -136,15 +133,6 @@ const LingoFinderResult: React.FC<LingoFinderResultProps> = ({ recommendations, 
                         <span>Create Another Guide</span>
                     </button>
                     )}
-                    <button
-                        onClick={handlePrint}
-                        className="inline-flex items-center justify-center w-full sm:w-auto px-8 py-3 bg-white/60 text-slate-800 font-bold rounded-full hover:bg-white/80 transition-all duration-300 shadow-md border border-white/50"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v-1a1 1 0 011-1h10a1 1 0 011 1v1h1a2 2 0 002-2v-3a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clipRule="evenodd" />
-                        </svg>
-                        <span>{isUnifiedView ? 'Print This Section' : 'Print Guide'}</span>
-                    </button>
                 </div>
             </div>
         </div>
