@@ -416,8 +416,13 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
   
   // Unified trip state
   const [unifiedTrips, setUnifiedTrips] = useState<UnifiedTrip[]>([]);
+  const [allUnifiedTrips, setAllUnifiedTrips] = useState<UnifiedTrip[]>([]); // Store all trips for filtering
   const [unifiedTripsLoading, setUnifiedTripsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'individual' | 'unified'>('individual');
+  
+  // Count state
+  const [totalIndividualCount, setTotalIndividualCount] = useState<number>(0);
+  const [totalUnifiedCount, setTotalUnifiedCount] = useState<number>(0);
 
   const handleSearch = () => {
     setFilters({
@@ -425,6 +430,10 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
       destination: selectedDestination || undefined,
       recommendationType: selectedType || undefined
     });
+    
+    // Apply filters to unified trips immediately
+    const filteredTrips = filterUnifiedTrips(allUnifiedTrips, searchTerm, selectedDestination);
+    setUnifiedTrips(filteredTrips);
   };
 
   const handleClearFilters = () => {
@@ -432,6 +441,9 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
     setSelectedDestination('');
     setSelectedType('');
     setFilters({});
+    
+    // Clear unified trip filters
+    setUnifiedTrips(allUnifiedTrips);
   };
 
   const handleEdit = (item: RecommendationHistory) => {
@@ -462,12 +474,56 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
     onNavigateToResult(item.recommendationType, item.responseData, item.requestData, true); // true = isHistoryView
   };
 
+  // Count handlers
+  const loadTotalCounts = async () => {
+    try {
+      // Load total individual count (without filters)
+      const individualResponse = await historyService.getHistory(1, 1, {});
+      setTotalIndividualCount(individualResponse.pagination.total);
+      
+      // For unified trips, we'll load all trips to get accurate count
+      // This is not ideal for performance, but the API doesn't provide total count
+      const allUnifiedTrips = await historyService.getUnifiedTrips(1, 1000); // Load up to 1000 trips
+      setTotalUnifiedCount(allUnifiedTrips.length);
+    } catch (error) {
+      console.error('Failed to load total counts:', error);
+    }
+  };
+
+  // Unified trip filtering function
+  const filterUnifiedTrips = (trips: UnifiedTrip[], searchTerm: string, destination: string) => {
+    return trips.filter(trip => {
+      // Search filter
+      if (searchTerm) {
+        const searchLower = searchTerm.toLowerCase();
+        const matchesSearch = 
+          trip.tripName?.toLowerCase().includes(searchLower) ||
+          trip.destination.toLowerCase().includes(searchLower) ||
+          trip.language.toLowerCase().includes(searchLower);
+        if (!matchesSearch) return false;
+      }
+      
+      // Destination filter
+      if (destination) {
+        if (trip.destination.toLowerCase() !== destination.toLowerCase()) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
+  };
+
   // Unified trip handlers
   const loadUnifiedTrips = async () => {
     setUnifiedTripsLoading(true);
     try {
       const trips = await historyService.getUnifiedTrips();
-      setUnifiedTrips(trips);
+      setAllUnifiedTrips(trips); // Store all trips
+      
+      // Apply current filters
+      const filteredTrips = filterUnifiedTrips(trips, searchTerm, selectedDestination);
+      setUnifiedTrips(filteredTrips);
     } catch (error) {
       console.error('Failed to load unified trips:', error);
     } finally {
@@ -490,16 +546,34 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
       try {
         await historyService.deleteUnifiedTrip(tripId);
         setUnifiedTrips(prev => prev.filter(trip => trip.tripId !== tripId));
+        setAllUnifiedTrips(prev => prev.filter(trip => trip.tripId !== tripId));
+        setTotalUnifiedCount(prev => prev - 1);
       } catch (error) {
         console.error('Failed to delete unified trip:', error);
       }
     }
   };
 
-  // Load unified trips when component mounts
+  // Load unified trips and total counts when component mounts
   useEffect(() => {
     loadUnifiedTrips();
+    loadTotalCounts();
   }, []);
+
+  // Update counts when filters change
+  useEffect(() => {
+    if (pagination) {
+      setTotalIndividualCount(pagination.total);
+    }
+  }, [pagination]);
+
+  // Apply filters to unified trips when filter values change
+  useEffect(() => {
+    if (allUnifiedTrips.length > 0) {
+      const filteredTrips = filterUnifiedTrips(allUnifiedTrips, searchTerm, selectedDestination);
+      setUnifiedTrips(filteredTrips);
+    }
+  }, [searchTerm, selectedDestination, allUnifiedTrips]);
 
   const handlePageChange = (page: number) => {
     loadHistory(page);
@@ -594,6 +668,62 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
             >
               Unified Trips
             </button>
+          </div>
+        </div>
+
+        {/* Count Display */}
+        <div className="bg-white/60 backdrop-blur-lg rounded-xl p-4 shadow-md border border-white/50 mb-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                <span className="text-sm font-medium text-slate-700">Individual Recommendations:</span>
+                <span className="text-sm font-semibold text-blue-600">
+                  {loading ? '...' : `${history.length}${pagination ? ` of ${pagination.total}` : ''}`}
+                </span>
+                {(searchTerm || selectedDestination || selectedType) && pagination && (
+                  <span className="text-xs text-slate-500">
+                    (filtered from {totalIndividualCount})
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-violet-500 rounded-full"></div>
+                <span className="text-sm font-medium text-slate-700">Unified Trips:</span>
+                <span className="text-sm font-semibold text-violet-600">
+                  {unifiedTripsLoading ? '...' : `${unifiedTrips.length}${allUnifiedTrips.length > 0 ? ` of ${allUnifiedTrips.length}` : ''}`}
+                </span>
+                {(searchTerm || selectedDestination) && allUnifiedTrips.length > 0 && (
+                  <span className="text-xs text-slate-500">
+                    (filtered from {totalUnifiedCount})
+                  </span>
+                )}
+              </div>
+            </div>
+            
+            {/* Filter Status */}
+            {(searchTerm || selectedDestination || selectedType) && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-500">Filters applied:</span>
+                <div className="flex gap-1">
+                  {searchTerm && (
+                    <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
+                      Search: "{searchTerm}"
+                    </span>
+                  )}
+                  {selectedDestination && (
+                    <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
+                      Destination: {selectedDestination}
+                    </span>
+                  )}
+                  {selectedType && (
+                    <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full">
+                      Type: {selectedType}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
