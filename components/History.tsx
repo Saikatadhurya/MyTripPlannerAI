@@ -418,22 +418,51 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
   const [unifiedTrips, setUnifiedTrips] = useState<UnifiedTrip[]>([]);
   const [allUnifiedTrips, setAllUnifiedTrips] = useState<UnifiedTrip[]>([]); // Store all trips for filtering
   const [unifiedTripsLoading, setUnifiedTripsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'individual' | 'unified'>('individual');
+  
+  // Trip type visibility state
+  const [showIndividual, setShowIndividual] = useState<boolean>(true);
+  const [showUnified, setShowUnified] = useState<boolean>(true);
   
   // Count state
   const [totalIndividualCount, setTotalIndividualCount] = useState<number>(0);
   const [totalUnifiedCount, setTotalUnifiedCount] = useState<number>(0);
 
-  const handleSearch = () => {
+  const handleSearchTermChange = (value: string) => {
+    setSearchTerm(value);
+    // Apply filters immediately
     setFilters({
-      search: searchTerm || undefined,
+      search: value || undefined,
       destination: selectedDestination || undefined,
       recommendationType: selectedType || undefined
     });
     
     // Apply filters to unified trips immediately
-    const filteredTrips = filterUnifiedTrips(allUnifiedTrips, searchTerm, selectedDestination);
+    const filteredTrips = filterUnifiedTrips(allUnifiedTrips, value, selectedDestination);
     setUnifiedTrips(filteredTrips);
+  };
+
+  const handleDestinationChange = (value: string) => {
+    setSelectedDestination(value);
+    // Apply filters immediately
+    setFilters({
+      search: searchTerm || undefined,
+      destination: value || undefined,
+      recommendationType: selectedType || undefined
+    });
+    
+    // Apply filters to unified trips immediately
+    const filteredTrips = filterUnifiedTrips(allUnifiedTrips, searchTerm, value);
+    setUnifiedTrips(filteredTrips);
+  };
+
+  const handleTypeChange = (value: string) => {
+    setSelectedType(value);
+    // Apply filters immediately
+    setFilters({
+      search: searchTerm || undefined,
+      destination: selectedDestination || undefined,
+      recommendationType: value || undefined
+    });
   };
 
   const handleClearFilters = () => {
@@ -567,160 +596,186 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
     }
   }, [pagination]);
 
-  // Apply filters to unified trips when filter values change
-  useEffect(() => {
-    if (allUnifiedTrips.length > 0) {
-      const filteredTrips = filterUnifiedTrips(allUnifiedTrips, searchTerm, selectedDestination);
-      setUnifiedTrips(filteredTrips);
-    }
-  }, [searchTerm, selectedDestination, allUnifiedTrips]);
 
   const handlePageChange = (page: number) => {
     loadHistory(page);
   };
 
   return (
-    <div className="bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <div className="max-w-6xl mx-auto px-4 py-6">
+    <div className="bg-gradient-to-br from-blue-50 via-white to-purple-50 min-h-screen">
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
         <BackToHomeButton onClick={onBack} />
         
-        <div className="text-center mb-4">
-          <h1 className="text-2xl font-bold text-slate-800 mb-1">Your History</h1>
-          <p className="text-sm text-slate-500">Manage your past recommendations</p>
+        <div className="text-center mb-8">
+          <h1 className="text-3xl sm:text-4xl font-bold text-slate-800 mb-2">Your History</h1>
+          <p className="text-slate-600">Manage and explore your past recommendations</p>
         </div>
 
         {/* Filters */}
         <div className="bg-white/60 backdrop-blur-lg rounded-xl p-4 shadow-md border border-white/50 mb-6">
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex-1 min-w-64">
+          <div className="space-y-4">
+            {/* Search Bar - Full Width */}
+            <div className="w-full">
               <input
                 type="text"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => handleSearchTermChange(e.target.value)}
                 placeholder="Search recommendations..."
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
               />
             </div>
             
-            <div className="min-w-40">
-              <select
-                value={selectedDestination}
-                onChange={(e) => setSelectedDestination(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-              >
-                <option value="">All destinations</option>
-                {destinations.map(dest => (
-                  <option key={dest} value={dest}>{dest}</option>
-                ))}
-              </select>
+            {/* Filters Row - Responsive */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex-1">
+                <select
+                  value={selectedDestination}
+                  onChange={(e) => handleDestinationChange(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                >
+                  <option value="">All destinations</option>
+                  {destinations.map(dest => (
+                    <option key={dest} value={dest}>{dest}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className="flex-1">
+                <select
+                  value={selectedType}
+                  onChange={(e) => handleTypeChange(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                >
+                  <option value="">All types</option>
+                  {recommendationTypes.map(type => (
+                    <option key={type} value={type}>{type}</option>
+                  ))}
+                </select>
+              </div>
             </div>
             
-            <div className="min-w-40">
-              <select
-                value={selectedType}
-                onChange={(e) => setSelectedType(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-              >
-                <option value="">All types</option>
-                {recommendationTypes.map(type => (
-                  <option key={type} value={type}>{type}</option>
-                ))}
-              </select>
-            </div>
-            
-            <div className="flex gap-2">
-              <button
-                onClick={handleSearch}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-              >
-                Apply
-              </button>
+            {/* Clear Button Only */}
+            <div className="flex justify-end">
               <button
                 onClick={handleClearFilters}
                 className="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors text-sm font-medium"
               >
-                Clear
+                Clear Filters
               </button>
             </div>
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="bg-white/60 backdrop-blur-lg rounded-xl p-4 shadow-md border border-white/50 mb-6">
-          <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
-            <button
-              onClick={() => setActiveTab('individual')}
-              className={`flex-1 py-2 px-4 rounded-md font-medium transition-colors ${
-                activeTab === 'individual'
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Individual Recommendations
-            </button>
-            <button
-              onClick={() => setActiveTab('unified')}
-              className={`flex-1 py-2 px-4 rounded-md font-medium transition-colors ${
-                activeTab === 'unified'
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Unified Trips
-            </button>
+        {/* Trip Type Filter Chips */}
+        <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-lg border border-white/60 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <span className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Filter by Type</span>
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={() => setShowIndividual(!showIndividual)}
+                className={`group relative px-4 py-2.5 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 ${
+                  showIndividual
+                    ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200'
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <div className={`w-2.5 h-2.5 rounded-full transition-colors ${
+                    showIndividual ? 'bg-white' : 'bg-slate-400'
+                  }`}></div>
+                  <span className="text-sm font-semibold">Individual</span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${
+                    showIndividual ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'
+                  }`}>
+                    {history.length}
+                  </span>
+                </span>
+              </button>
+              <button
+                onClick={() => setShowUnified(!showUnified)}
+                className={`group relative px-4 py-2.5 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 ${
+                  showUnified
+                    ? 'bg-gradient-to-r from-violet-500 to-violet-600 text-white shadow-lg shadow-violet-500/25'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200'
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <div className={`w-2.5 h-2.5 rounded-full transition-colors ${
+                    showUnified ? 'bg-white' : 'bg-slate-400'
+                  }`}></div>
+                  <span className="text-sm font-semibold">Unified Trips</span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${
+                    showUnified ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'
+                  }`}>
+                    {unifiedTrips.length}
+                  </span>
+                </span>
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Count Display */}
-        <div className="bg-white/60 backdrop-blur-lg rounded-xl p-4 shadow-md border border-white/50 mb-6">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                <span className="text-sm font-medium text-slate-700">Individual Recommendations:</span>
-                <span className="text-sm font-semibold text-blue-600">
-                  {loading ? '...' : `${history.length}${pagination ? ` of ${pagination.total}` : ''}`}
-                </span>
-                {(searchTerm || selectedDestination || selectedType) && pagination && (
-                  <span className="text-xs text-slate-500">
-                    (filtered from {totalIndividualCount})
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-violet-500 rounded-full"></div>
-                <span className="text-sm font-medium text-slate-700">Unified Trips:</span>
-                <span className="text-sm font-semibold text-violet-600">
-                  {unifiedTripsLoading ? '...' : `${unifiedTrips.length}${allUnifiedTrips.length > 0 ? ` of ${allUnifiedTrips.length}` : ''}`}
-                </span>
-                {(searchTerm || selectedDestination) && allUnifiedTrips.length > 0 && (
-                  <span className="text-xs text-slate-500">
-                    (filtered from {totalUnifiedCount})
-                  </span>
-                )}
-              </div>
+        <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-lg border border-white/60 mb-6">
+          <div className="space-y-4">
+            {/* Count Items - Stack on Mobile */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8">
+              {showIndividual && (
+                <div className="flex items-center gap-3">
+                  <div className="w-4 h-4 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex-shrink-0 shadow-sm"></div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-slate-700">Individual Recommendations</span>
+                    <span className="text-sm font-bold text-blue-600">
+                      {loading ? '...' : `${history.length}${pagination ? ` of ${pagination.total}` : ''}`}
+                    </span>
+                    {(searchTerm || selectedDestination || selectedType) && pagination && (
+                      <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-full">
+                        filtered from {totalIndividualCount}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+              {showUnified && (
+                <div className="flex items-center gap-3">
+                  <div className="w-4 h-4 bg-gradient-to-r from-violet-500 to-violet-600 rounded-full flex-shrink-0 shadow-sm"></div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-slate-700">Unified Trips</span>
+                    <span className="text-sm font-bold text-violet-600">
+                      {unifiedTripsLoading ? '...' : `${unifiedTrips.length}${allUnifiedTrips.length > 0 ? ` of ${allUnifiedTrips.length}` : ''}`}
+                    </span>
+                    {(searchTerm || selectedDestination) && allUnifiedTrips.length > 0 && (
+                      <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-full">
+                        filtered from {totalUnifiedCount}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
             
-            {/* Filter Status */}
+            {/* Filter Status - Stack on Mobile */}
             {(searchTerm || selectedDestination || selectedType) && (
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-500">Filters applied:</span>
-                <div className="flex gap-1">
-                  {searchTerm && (
-                    <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
-                      Search: "{searchTerm}"
-                    </span>
-                  )}
-                  {selectedDestination && (
-                    <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
-                      Destination: {selectedDestination}
-                    </span>
-                  )}
-                  {selectedType && (
-                    <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full">
-                      Type: {selectedType}
-                    </span>
-                  )}
+              <div className="pt-4 border-t border-slate-200">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Active Filters</span>
+                  <div className="flex flex-wrap gap-2">
+                    {searchTerm && (
+                      <span className="px-3 py-1.5 bg-blue-100 text-blue-700 text-xs rounded-full font-medium border border-blue-200">
+                        🔍 Search: "{searchTerm}"
+                      </span>
+                    )}
+                    {selectedDestination && (
+                      <span className="px-3 py-1.5 bg-green-100 text-green-700 text-xs rounded-full font-medium border border-green-200">
+                        📍 Destination: {selectedDestination}
+                      </span>
+                    )}
+                    {selectedType && (
+                      <span className="px-3 py-1.5 bg-purple-100 text-purple-700 text-xs rounded-full font-medium border border-purple-200">
+                        🏷️ Type: {selectedType}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
@@ -729,39 +784,66 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
 
         {/* Results */}
         {loading && (
-          <div className="text-center py-8">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <p className="mt-2 text-slate-600">Loading history...</p>
+          <div className="text-center py-16">
+            <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-blue-100 to-blue-200 rounded-2xl flex items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+            <h3 className="text-lg font-semibold text-slate-800 mb-2">Loading History</h3>
+            <p className="text-slate-600">Fetching your recommendations...</p>
           </div>
         )}
 
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-6">
-            {error}
+          <div className="bg-gradient-to-r from-red-50 to-red-100 border border-red-200 text-red-800 px-6 py-4 rounded-2xl mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-red-200 rounded-full flex items-center justify-center">
+                <span className="text-red-600">⚠️</span>
+              </div>
+              <div>
+                <h4 className="font-semibold">Error Loading History</h4>
+                <p className="text-sm">{error}</p>
+              </div>
+            </div>
           </div>
         )}
 
-        {!loading && !error && history.length === 0 && activeTab === 'individual' && (
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">📋</div>
-            <h3 className="text-xl font-semibold text-slate-800 mb-2">No recommendations found</h3>
-            <p className="text-slate-600">Start generating recommendations to see them here!</p>
+        {/* Empty State */}
+        {!loading && !error && !showIndividual && !showUnified && (
+          <div className="text-center py-16">
+            <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl flex items-center justify-center">
+              <span className="text-3xl">👆</span>
+            </div>
+            <h3 className="text-xl font-bold text-slate-800 mb-2">Select Trip Types to View</h3>
+            <p className="text-slate-600 max-w-md mx-auto">Click on the filter chips above to show individual recommendations or unified trips. You can view both types simultaneously!</p>
           </div>
         )}
 
-        {!loading && !error && unifiedTrips.length === 0 && activeTab === 'unified' && (
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">🗺️</div>
-            <h3 className="text-xl font-semibold text-slate-800 mb-2">No unified trips found</h3>
-            <p className="text-slate-600">Create a unified trip plan to see it here!</p>
+        {!loading && !error && showIndividual && history.length === 0 && (
+          <div className="text-center py-16">
+            <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-blue-100 to-blue-200 rounded-2xl flex items-center justify-center">
+              <span className="text-3xl">📋</span>
+            </div>
+            <h3 className="text-xl font-bold text-slate-800 mb-2">No Individual Recommendations Found</h3>
+            <p className="text-slate-600 max-w-md mx-auto">Start generating recommendations to see them here! Try creating an itinerary, packing list, or food guide.</p>
           </div>
         )}
 
-        {/* Individual Recommendations */}
-        {activeTab === 'individual' && !loading && !error && history.length > 0 && (
+        {!loading && !error && showUnified && unifiedTrips.length === 0 && (
+          <div className="text-center py-16">
+            <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-violet-100 to-violet-200 rounded-2xl flex items-center justify-center">
+              <span className="text-3xl">🗺️</span>
+            </div>
+            <h3 className="text-xl font-bold text-slate-800 mb-2">No Unified Trips Found</h3>
+            <p className="text-slate-600 max-w-md mx-auto">Create a comprehensive trip plan to see it here! Unified trips include itinerary, packing, food, apps, music, and language guides all in one.</p>
+          </div>
+        )}
+
+        {/* Combined Results */}
+        {!loading && !error && (showIndividual || showUnified) && (history.length > 0 || unifiedTrips.length > 0) && (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-              {history.map(item => (
+              {/* Individual Recommendations */}
+              {showIndividual && history.map(item => (
                 <HistoryItem
                   key={item.id}
                   item={item}
@@ -770,10 +852,20 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
                   onView={handleView}
                 />
               ))}
+              
+              {/* Unified Trips */}
+              {showUnified && unifiedTrips.map(trip => (
+                <UnifiedTripItem
+                  key={trip.tripId}
+                  trip={trip}
+                  onView={handleViewUnifiedTrip}
+                  onDelete={handleDeleteUnifiedTrip}
+                />
+              ))}
             </div>
 
-            {/* Pagination */}
-            {pagination && pagination.totalPages > 1 && (
+            {/* Pagination - Only show for individual recommendations */}
+            {showIndividual && pagination && pagination.totalPages > 1 && (
               <div className="flex justify-center items-center space-x-2">
                 <button
                   onClick={() => handlePageChange(pagination.page - 1)}
@@ -799,24 +891,14 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
           </>
         )}
 
-        {/* Unified Trips */}
-        {activeTab === 'unified' && !unifiedTripsLoading && unifiedTrips.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            {unifiedTrips.map(trip => (
-              <UnifiedTripItem
-                key={trip.tripId}
-                trip={trip}
-                onView={handleViewUnifiedTrip}
-                onDelete={handleDeleteUnifiedTrip}
-              />
-            ))}
-          </div>
-        )}
-
-        {unifiedTripsLoading && activeTab === 'unified' && (
-          <div className="text-center py-8">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <p className="mt-2 text-slate-600">Loading unified trips...</p>
+        {/* Loading State for Unified Trips */}
+        {unifiedTripsLoading && showUnified && (
+          <div className="text-center py-16">
+            <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-violet-100 to-violet-200 rounded-2xl flex items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600"></div>
+            </div>
+            <h3 className="text-lg font-semibold text-slate-800 mb-2">Loading Unified Trips</h3>
+            <p className="text-slate-600">Fetching your comprehensive trip plans...</p>
           </div>
         )}
 
