@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { BrowserRouter as Router, useNavigate, useLocation } from 'react-router-dom';
 import { QuestionnaireData, PackingListRequestData, PackingList, FoodFinderRequestData, FoodRecommendations, AppFinderRequestData, AppRecommendations, MusicFinderRequestData, MusicRecommendations, LingoFinderRequestData, LingoRecommendations, QuestionnaireData as InitialQuestionnaireData, UnifiedPlan, UnifiedPlanLoadingStatus, Itinerary } from './types';
 import { generateItinerary } from './services/geminiService';
 import { generatePackingList } from './services/packingService';
@@ -12,187 +13,14 @@ import { authService, User } from './services/authService';
 import { useQuotas } from './hooks/useQuotas';
 import { setGlobalLogoutHandler } from './services/axiosInterceptor';
 
-import LandingPage from './components/LandingPage';
-import Questionnaire from './components/Questionnaire';
-import PackingAssistantForm from './components/PackingAssistantForm';
-import PackingListPreview from './components/PackingListPreview';
-import FoodFinderForm from './components/FoodFinderForm';
-import FoodFinderResult from './components/FoodFinderResult';
-import AppFinderForm from './components/AppFinderForm';
-import AppFinderResult from './components/AppFinderResult';
-import MusicFinderForm from './components/MusicFinderForm';
-import MusicFinderResult from './components/MusicFinderResult';
-import LingoFinderForm from './components/LingoFinderForm';
-import LingoFinderResult from './components/LingoFinderResult';
 import LoadingIndicator from './components/LoadingIndicator';
-import UnifiedResultPreview from './components/UnifiedResultPreview';
-import ContactUs from './components/ContactUs';
 import Header from './components/Header';
 import ScrollToTopButton from './components/ScrollToTopButton';
-import UnifiedPlannerForm from './components/UnifiedPlannerForm';
-import ItineraryPreview from './components/ItineraryPreview';
-import EditProfile from './components/EditProfile';
 import QuickNavButton from './components/QuickNavButton';
-import History from './components/History';
+import AppRouter from './components/AppRouter';
+import BottomNavBar from './components/BottomNavBar';
+import UnifiedResultPreview from './components/UnifiedResultPreview';
 
-// --- Bottom Nav Bar Component ---
-interface BottomNavBarProps {
-  onGoHome: () => void;
-  onPlanTrip: () => void;
-  onStartPacking: () => void;
-  onStartFoodFinder: () => void;
-  onStartAppFinder: () => void;
-  onStartMusicFinder: () => void;
-  onGoToContact: () => void;
-  onGoToHistory: () => void;
-  onOpenAuthModal: () => void;
-  activeView: string;
-  user: User | null;
-}
-
-const NavItem: React.FC<{
-  icon: React.ReactNode;
-  locked?: boolean;
-  label: string;
-  onClick: () => void;
-  isActive?: boolean;
-  tooltip?: string;
-}> = ({ icon, label, onClick, isActive, locked, tooltip }) => (
-  <button
-    onClick={onClick}
-    title={tooltip || label}
-    className={`flex flex-1 flex-col items-center justify-center pt-2 pb-1 transition-colors duration-200 ${isActive ? 'text-violet-600' : (locked ? 'text-gray-500' : 'text-slate-500 hover:text-violet-600')}`}
-  >
-    {icon}
-    <span className="text-xs font-semibold mt-1 text-center">{label}</span>
-  </button>
-);
-
-const MoreMenu: React.FC<{
-    onStartAppFinder: () => void;
-    onStartMusicFinder: () => void;
-    onGoToContact: () => void;
-    onClose: () => void;
-    onOpenAuthModal: () => void;
-    user: User | null;
-}> = ({ onStartAppFinder, onStartMusicFinder, onGoToContact, onClose, onOpenAuthModal, user }) => {
-    const handleAction = (action: () => void) => {
-        action();
-        onClose();
-    };
-
-    const lockedAction = user ? undefined : onOpenAuthModal;
-
-    return (
-        <div className="absolute bottom-full right-0 mb-2 w-56 bg-white/95 backdrop-blur-xl border border-slate-200/70 rounded-xl shadow-lg p-2 flex flex-col z-40">
-            <button onClick={() => handleAction(user ? onStartAppFinder : onOpenAuthModal)} className="w-full flex items-center text-left px-3 py-2.5 rounded-lg text-slate-800 font-semibold transition-colors duration-200 hover:bg-violet-100/80">
-                <span className="text-xl w-8 text-center">{user ? '📱' : '🔒'}</span>
-                <span>App Finder</span>
-                {!user && <span className="ml-auto text-xs text-gray-400">Sign in</span>}
-            </button>
-            <button onClick={() => handleAction(user ? onStartMusicFinder : onOpenAuthModal)} className="w-full flex items-center text-left px-3 py-2.5 rounded-lg text-slate-800 font-semibold transition-colors duration-200 hover:bg-violet-100/80">
-                <span className="text-xl w-8 text-center">{user ? '🎶' : '🔒'}</span>
-                <span>Music Finder</span>
-                {!user && <span className="ml-auto text-xs text-gray-400">Sign in</span>}
-            </button>
-            <hr className="border-slate-200/80 mx-2 my-1" />
-            <button onClick={() => handleAction(onGoToContact)} className="w-full flex items-center text-left px-3 py-2.5 rounded-lg text-slate-800 font-semibold transition-colors duration-200 hover:bg-violet-100/80">
-                <span className="text-xl w-8 text-center">✉️</span>
-                <span>Contact Us</span>
-            </button>
-        </div>
-    );
-};
-
-const BottomNavBar: React.FC<BottomNavBarProps> = ({
-  onGoHome,
-  onPlanTrip,
-  onStartPacking,
-  onStartFoodFinder,
-  onStartAppFinder,
-  onStartMusicFinder,
-  onGoToContact,
-  onGoToHistory,
-  onOpenAuthModal,
-  activeView,
-  user,
-}) => {
-  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
-  const moreMenuRef = useRef<HTMLDivElement>(null);
-  
-  const iconClass = "h-6 w-6";
-  const lockedIcon = <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 1a4 4 0 00-4 4v2a2 2 0 00-2 2v5a2 2 0 002 2h8a2 2 0 002-2v-5a2 2 0 00-2-2V5a4 4 0 00-4-4zm-2 6V5a2 2 0 114 0v2H8zm-3 5v2h8v-2H5z" clipRule="evenodd" /></svg>;
-
-  const handleAction = useCallback((action: () => void, isLocked: boolean) => {
-    if (isLocked) {
-      onOpenAuthModal();
-    } else {
-      action();
-    }
-    setIsMoreMenuOpen(false); // Close menu on any action
-  }, [onOpenAuthModal]);
-
-  const navItems = [
-    { ids: ['landing'], label: 'Home', icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" /></svg>, action: onGoHome, locked: false },
-    { ids: ['unifiedPlannerForm', 'questionnaire'], label: 'Plan Trip', icon: user ? <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456L18 13.5l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 18l-1.035.259a3.375 3.375 0 00-2.456 2.456L18 21.75l-.259-1.035a3.375 3.375 0 00-2.456-2.456L14.25 18l1.035-.259a3.375 3.375 0 002.456-2.456L18 13.5z" /></svg> : lockedIcon, action: onPlanTrip, locked: !user, tooltip: user ? undefined : 'Sign in to unlock' },
-    { ids: ['packingAssistantForm'], label: 'Packing', icon: user ? <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 2a3 3 0 00-3 3v1H5a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V8a2 2 0 00-2-2h-2V5a3 3 0 00-3-3zm-1 4a1 1 0 10-2 0v1h2V6z" clipRule="evenodd" /></svg> : lockedIcon, action: onStartPacking, locked: !user, tooltip: user ? undefined : 'Sign in to unlock' },
-    { ids: ['foodFinderForm'], label: 'Food', icon: user ? <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path d="M11 3a1 1 0 10-2 0v1.088A7 7 0 004.53 10.756.5.5 0 005 11h10a.5.5 0 00.47-.244A7 7 0 0011 4.088V3z" /><path fillRule="evenodd" d="M15 13a.5.5 0 01.5.5v2a.5.5 0 01-.5.5H5a.5.5 0 01-.5-.5v-2a.5.5 0 01.5-.5h10z" clipRule="evenodd" /></svg> : lockedIcon, action: onStartFoodFinder, locked: !user, tooltip: user ? undefined : 'Sign in to unlock' },
-    { ids: ['history'], label: 'History', icon: user ? <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" /></svg> : lockedIcon, action: onGoToHistory, locked: !user, tooltip: user ? undefined : 'Sign in to view your history' },
-  ];
-  
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-        if (moreMenuRef.current && !moreMenuRef.current.contains(event.target as Node)) {
-            setIsMoreMenuOpen(false);
-        }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const isMoreSectionActive = ['contact', 'appFinderForm', 'musicFinderForm', 'lingoFinderForm'].includes(activeView);
-
-  return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 sm:hidden no-print">
-      <div className="w-full bg-white/80 backdrop-blur-xl border-t border-white/50 shadow-[0_-5px_15px_-5px_rgba(0,0,0,0.1)]">
-        <div className="flex items-stretch h-16">
-          {navItems.map(item => (
-            <NavItem
-              key={item.label}
-              icon={item.icon}
-              label={item.label}
-              onClick={() => handleAction(item.action, item.locked)}
-              isActive={item.ids.includes(activeView)}
-              locked={item.locked}
-              tooltip={item.tooltip}
-            />
-          ))}
-          <div ref={moreMenuRef} className="relative flex-1">
-            {isMoreMenuOpen && (
-                <MoreMenu
-                    onStartAppFinder={onStartAppFinder}
-                    onStartMusicFinder={onStartMusicFinder}
-                    onGoToContact={onGoToContact}
-                    onClose={() => setIsMoreMenuOpen(false)}
-                    onOpenAuthModal={onOpenAuthModal}
-                    user={user}
-                />
-            )}
-            <button
-                onClick={() => setIsMoreMenuOpen(prev => !prev)}
-                className={`flex flex-col items-center justify-center w-full h-full pt-2 pb-1 transition-colors duration-200 ${isMoreMenuOpen || isMoreSectionActive ? 'text-violet-600' : 'text-slate-500 hover:text-violet-600'}`}
-            >
-                <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
-                </svg>
-                <span className="text-xs font-semibold mt-1">More</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 
 type View = 'landing' | 'questionnaire' | 'itineraryResult' | 'packingAssistantForm' | 'packingAssistantResult' | 'foodFinderForm' | 'foodFinderResult' | 'appFinderForm' | 'appFinderResult' | 'musicFinderForm' | 'musicFinderResult' | 'lingoFinderForm' | 'lingoFinderResult' | 'contact' | 'unifiedPlannerForm' | 'unifiedResult' | 'editProfile' | 'history';
@@ -272,8 +100,9 @@ const lingoFunFacts = [
 ];
 
 
-const App: React.FC = () => {
-  const [view, setView] = useState<View>('landing');
+const AppContent: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
   
   // State for individual mini-apps
   const [itinerary, setItinerary] = useState<Itinerary | null>(null);
@@ -322,7 +151,7 @@ const App: React.FC = () => {
       console.log('Global logout triggered');
       setUser(null);
       setIsAuthModalOpen(false);
-      setView('landing');
+      navigate('/');
       // Clear any ongoing processes
       setIsLoading(false);
       setError(null);
@@ -333,7 +162,7 @@ const App: React.FC = () => {
     return () => {
       setGlobalLogoutHandler(() => {});
     };
-  }, []);
+  }, [navigate]);
 
   // --- Unified Planner Pipeline State ---
   const cancellationFlags = useRef<Partial<Record<keyof UnifiedPlanLoadingStatus, boolean>>>({});
@@ -348,7 +177,7 @@ const App: React.FC = () => {
     'lingoFinderForm',
     'unifiedPlannerForm',
   ];
-  const isFormView = formViews.includes(view);
+  const isFormView = formViews.includes(location.pathname as View);
 
   // Initialize authentication state
   useEffect(() => {
@@ -376,7 +205,7 @@ const App: React.FC = () => {
       console.log('App: Setting user state...');
       setUser(response.user);
       setIsAuthModalOpen(false); // Close modal on successful login
-      handleViewChange('landing'); // Redirect to landing page
+      navigate('/'); // Redirect to landing page
       
       // Simple refresh after login to ensure token is available
       console.log('App: Refreshing page to ensure token is available...');
@@ -403,7 +232,7 @@ const App: React.FC = () => {
       
       setUser(response.user);
       setIsAuthModalOpen(false); // Close modal on successful signup
-      handleViewChange('landing'); // Redirect to landing page
+      navigate('/'); // Redirect to landing page
       
       // Simple refresh after signup to ensure token is available
       setTimeout(() => {
@@ -421,7 +250,7 @@ const App: React.FC = () => {
     authService.logout();
     setUser(null);
     setAuthError(null);
-    handleViewChange('landing'); // Redirect to landing page on logout
+    navigate('/'); // Redirect to landing page on logout
   };
 
   const scrollToTop = useCallback(() => {
@@ -432,9 +261,46 @@ const App: React.FC = () => {
   const handleViewChange = useCallback((newView: View) => {
     setError(null);
     setStreamedText('');
-    setView(newView);
+    // Navigate to appropriate route based on view
+    switch (newView) {
+      case 'landing':
+        navigate('/');
+        break;
+      case 'questionnaire':
+        navigate('/itinerary');
+        break;
+      case 'unifiedPlannerForm':
+        navigate('/plan');
+        break;
+      case 'packingAssistantForm':
+        navigate('/packing');
+        break;
+      case 'foodFinderForm':
+        navigate('/food');
+        break;
+      case 'appFinderForm':
+        navigate('/apps');
+        break;
+      case 'musicFinderForm':
+        navigate('/music');
+        break;
+      case 'lingoFinderForm':
+        navigate('/lingo');
+        break;
+      case 'contact':
+        navigate('/contact');
+        break;
+      case 'editProfile':
+        navigate('/profile');
+        break;
+      case 'history':
+        navigate('/history');
+        break;
+      default:
+        navigate('/');
+    }
     scrollToTop();
-  }, [scrollToTop]);
+  }, [navigate, scrollToTop]);
 
   // Handle Google OAuth callback
   useEffect(() => {
@@ -460,7 +326,7 @@ const App: React.FC = () => {
         window.history.replaceState({}, document.title, window.location.pathname);
         
         // Redirect to landing page
-        handleViewChange('landing');
+        navigate('/');
         
         // Simple refresh after Google OAuth login to ensure token is available
         console.log('App: Refreshing page after Google OAuth login...');
@@ -476,7 +342,7 @@ const App: React.FC = () => {
       // Clear URL parameters
       window.history.replaceState({}, document.title, window.location.pathname);
     }
-  }, [handleViewChange, user, quotas]);
+  }, [navigate, user, quotas]);
 
   const createInitialData = (destination?: string) => {
     const data: QuestionnaireData = {
@@ -505,38 +371,38 @@ const App: React.FC = () => {
       // Check if the argument is a string. If it's a mouse event or undefined, treat it as no destination.
       const dest = typeof destination === 'string' ? destination : undefined;
       setInitialQuestionnaireData(createInitialData(dest));
-      handleViewChange('unifiedPlannerForm');
-    }, [handleViewChange, user, quotas]);
+      navigate('/plan');
+    }, [navigate, user, quotas]);
   
   const handleStartItineraryPlanner = useCallback(() => {
     setInitialQuestionnaireData(createInitialData());
-    handleViewChange('questionnaire');
-  }, [handleViewChange, user, quotas]);
+    navigate('/itinerary');
+  }, [navigate, user, quotas]);
 
   const handleStartPackingAssistant = useCallback(() => {
     setPackingRequestData(null);
-    handleViewChange('packingAssistantForm');
-  }, [handleViewChange, user, quotas]);
+    navigate('/packing');
+  }, [navigate, user, quotas]);
 
   const handleStartFoodFinder = useCallback(() => {
     setFoodRequestData(null);
-    handleViewChange('foodFinderForm');
-  }, [handleViewChange, user, quotas]);
+    navigate('/food');
+  }, [navigate, user, quotas]);
 
   const handleStartAppFinder = useCallback(() => {
     setAppRequestData(null);
-    handleViewChange('appFinderForm');
-  }, [handleViewChange, user, quotas]);
+    navigate('/apps');
+  }, [navigate, user, quotas]);
 
   const handleStartMusicFinder = useCallback(() => {
     setMusicRequestData(null);
-    handleViewChange('musicFinderForm');
-  }, [handleViewChange, user, quotas]);
+    navigate('/music');
+  }, [navigate, user, quotas]);
 
   const handleStartLingoFinder = useCallback(() => {
     setLingoRequestData(null);
-    handleViewChange('lingoFinderForm');
-  }, [handleViewChange, user, quotas]);
+    navigate('/lingo');
+  }, [navigate, user, quotas]);
 
   const handleBackToHome = useCallback(() => {
     setItinerary(null);
@@ -554,8 +420,8 @@ const App: React.FC = () => {
     setUnifiedPlan({ itinerary: null, packingList: null, foodRecommendations: null, appRecommendations: null, musicRecommendations: null, lingoRecommendations: null });
     setQuestionnaireDataForUnifiedPlan(null);
     setIsHistoryView(false); // Reset history view flag
-    handleViewChange('landing');
-  }, [handleViewChange, user, quotas]);
+    navigate('/');
+  }, [navigate, user, quotas]);
 
   const handleNavigateToResult = useCallback((type: string, responseData: any, requestData: any, isHistoryView: boolean = false) => {
     setIsHistoryView(isHistoryView);
@@ -564,38 +430,38 @@ const App: React.FC = () => {
     switch (type) {
       case 'lingo':
         setLingoRecommendations(responseData);
-        setLingoRequestData(requestData);
-        handleViewChange('lingoFinderResult');
+        setLingoRequestData(requestData || { destination: responseData?.destination || 'Unknown', language: 'English (en)' });
+        navigate('/results/lingo');
         break;
       case 'apps':
         setAppRecommendations(responseData);
-        setAppRequestData(requestData);
-        handleViewChange('appFinderResult');
+        setAppRequestData(requestData || { destination: responseData?.destination || 'Unknown', language: 'English (en)' });
+        navigate('/results/apps');
         break;
       case 'food':
         setFoodRecommendations(responseData);
-        setFoodRequestData(requestData);
-        handleViewChange('foodFinderResult');
+        setFoodRequestData(requestData || { destination: responseData?.destination || 'Unknown', startDate: new Date().toISOString().split('T')[0], foodPreference: 'Non-Veg', includeAlcoholicDrinks: false, language: 'English (en)' });
+        navigate('/results/food');
         break;
       case 'music':
         setMusicRecommendations(responseData);
-        setMusicRequestData(requestData);
-        handleViewChange('musicFinderResult');
+        setMusicRequestData(requestData || { destination: responseData?.destination || 'Unknown', language: 'English (en)' });
+        navigate('/results/music');
         break;
       case 'packing':
         setPackingList(responseData);
-        setPackingRequestData(requestData);
-        handleViewChange('packingAssistantResult');
+        setPackingRequestData(requestData || { destination: responseData?.destination || 'Unknown', startDate: new Date().toISOString().split('T')[0], days: 3, language: 'English (en)' });
+        navigate('/results/packing');
         break;
       case 'itinerary':
         setItinerary(responseData);
-        setInitialQuestionnaireData(requestData); // Changed from setQuestionnaireDataForUnifiedPlan
-        handleViewChange('itineraryResult');
+        setInitialQuestionnaireData(requestData || { destination: responseData?.destination || 'Unknown', startPoint: '', tripType: 'Standard', days: 3, budget: 'Midrange', vibe: ['Adventure & Thrill'], persons: 1, foodPreference: 'Non-Veg', startDate: new Date().toISOString().split('T')[0], includeMedical: false, language: 'English (en)', currency: 'India (INR) – ₹', isRoundTrip: false, includeAlcoholicDrinks: false });
+        navigate('/results/itinerary');
         break;
       case 'unified':
         // Handle unified trip navigation
         setUnifiedPlan(responseData);
-        setQuestionnaireDataForUnifiedPlan(requestData);
+        setQuestionnaireDataForUnifiedPlan(requestData || { destination: responseData?.destination || 'Unknown', startPoint: '', tripType: 'Standard', days: 3, budget: 'Midrange', vibe: ['Adventure & Thrill'], persons: 1, foodPreference: 'Non-Veg', startDate: new Date().toISOString().split('T')[0], includeMedical: false, language: 'English (en)', currency: 'India (INR) – ₹', isRoundTrip: false, includeAlcoholicDrinks: false });
         // Set loading status to 'done' for all components since we're loading from history
         setUnifiedPlanLoadingStatus({
           itinerary: responseData.itinerary ? 'done' : 'pending',
@@ -605,16 +471,16 @@ const App: React.FC = () => {
           music: responseData.musicRecommendations ? 'done' : 'pending',
           lingo: responseData.lingoRecommendations ? 'done' : 'pending'
         });
-        handleViewChange('unifiedResult');
+        navigate('/results/unified');
         break;
       default:
         console.warn('Unknown recommendation type:', type);
     }
-  }, [handleViewChange]);
+  }, [navigate]);
 
   const handleEditProfile = useCallback(() => {
-    handleViewChange('editProfile');
-  }, [handleViewChange, user, quotas]);
+    navigate('/profile');
+  }, [navigate, user, quotas]);
 
   const handleProfileUpdate = useCallback((updatedUser: User) => {
     setUser(updatedUser);
@@ -627,31 +493,31 @@ const App: React.FC = () => {
     setError("Generation was cancelled.");
     
     // For unified plan, handle cancellation via its own logic
-    if (view === 'unifiedResult') {
+    if (location.pathname === '/results/unified') {
         Object.keys(cancellationFlags.current).forEach(key => {
             cancellationFlags.current[key as keyof UnifiedPlanLoadingStatus] = true;
         });
-        handleViewChange('unifiedPlannerForm');
+        navigate('/plan');
         return;
     }
 
-    if (view === 'itineraryResult' || view === 'packingAssistantResult' || view === 'foodFinderResult' || view === 'appFinderResult' || view === 'musicFinderResult' || view === 'lingoFinderResult') {
+    if (location.pathname.includes('/results/')) {
         simplePlanCancellationFlag.current = true;
     }
 
-    const formViews: Partial<Record<View, View>> = {
-      'itineraryResult': 'questionnaire',
-      'packingAssistantResult': 'packingAssistantForm',
-      'foodFinderResult': 'foodFinderForm',
-      'appFinderResult': 'appFinderForm',
-      'musicFinderResult': 'musicFinderForm',
-      'lingoFinderResult': 'lingoFinderForm',
+    const formViews: Partial<Record<string, string>> = {
+      '/results/itinerary': '/itinerary',
+      '/results/packing': '/packing',
+      '/results/food': '/food',
+      '/results/apps': '/apps',
+      '/results/music': '/music',
+      '/results/lingo': '/lingo',
     };
     
-    const targetView = formViews[view] || 'landing';
-    handleViewChange(targetView as View);
+    const targetRoute = formViews[location.pathname] || '/';
+    navigate(targetRoute);
 
-  }, [view, handleViewChange]);
+  }, [location.pathname, navigate]);
 
   const handleGenerateItinerary = useCallback(async (data: QuestionnaireData) => {
     // Check quota limits before starting generation
@@ -665,7 +531,7 @@ const App: React.FC = () => {
     setIsLoading(true);
     setError(null);
     setItinerary(null);
-    handleViewChange('itineraryResult');
+    navigate('/results/itinerary');
     
     simplePlanCancellationFlag.current = false;
     const maxRetries = 3;
@@ -715,12 +581,12 @@ const App: React.FC = () => {
     
     if (!simplePlanCancellationFlag.current && lastError) {
         setError(lastError.message);
-        handleViewChange('questionnaire');
+        navigate('/itinerary');
     }
     
     setIsLoading(false);
     setItineraryAttemptCount(0);
-  }, [handleViewChange, user, quotas]);
+  }, [navigate, user, quotas]);
   
     // Helper to run each non-streaming generation step with retry/cancellation
     const generateStep = useCallback(async <T,>(
@@ -778,7 +644,7 @@ const App: React.FC = () => {
     // Effect for the first step of the pipeline: Itinerary Generation (Streaming)
     useEffect(() => {
         const runItineraryStep = async () => {
-            if (view !== 'unifiedResult' || !questionnaireDataForUnifiedPlan) return;
+            if (location.pathname !== '/results/unified' || !questionnaireDataForUnifiedPlan) return;
             if (unifiedPlanLoadingStatus.itinerary !== 'pending') return;
 
             const data = questionnaireDataForUnifiedPlan;
@@ -855,7 +721,7 @@ const App: React.FC = () => {
             setItineraryAttemptCount(0);
         };
         runItineraryStep();
-    }, [view, questionnaireDataForUnifiedPlan, unifiedPlanLoadingStatus.itinerary]);
+    }, [location.pathname, questionnaireDataForUnifiedPlan, unifiedPlanLoadingStatus.itinerary]);
 
     const handleGeneratePackingList = useCallback(async (data: PackingListRequestData, isUnified = false): Promise<PackingList | null> => {
       // Check quota limits before starting generation (only for standalone usage)
@@ -869,7 +735,7 @@ const App: React.FC = () => {
         setIsLoading(true);
         setError(null);
         setPackingList(null);
-        handleViewChange('packingAssistantResult');
+        navigate('/results/packing');
       }
   
       simplePlanCancellationFlag.current = false;
@@ -919,7 +785,7 @@ const App: React.FC = () => {
       if (!simplePlanCancellationFlag.current && lastError) {
           if (!isUnified) {
             setError(lastError.message);
-            handleViewChange('packingAssistantForm');
+            navigate('/packing');
           } else {
             throw lastError;
           }
@@ -930,7 +796,7 @@ const App: React.FC = () => {
         setMiniAppAttemptCount(0);
       }
       return null;
-  }, [handleViewChange, user, quotas]);
+  }, [navigate, user, quotas]);
   
     const handleGenerateFoodRecommendations = useCallback(async (data: FoodFinderRequestData, isUnified = false): Promise<FoodRecommendations | null> => {
       // Check quota limits before starting generation (only for standalone usage)
@@ -944,7 +810,7 @@ const App: React.FC = () => {
         setIsLoading(true);
         setError(null);
         setFoodRecommendations(null);
-        handleViewChange('foodFinderResult');
+        navigate('/results/food');
       }
       
       simplePlanCancellationFlag.current = false;
@@ -994,7 +860,7 @@ const App: React.FC = () => {
       if (!simplePlanCancellationFlag.current && lastError) {
         if (!isUnified) {
           setError(lastError.message);
-          handleViewChange('foodFinderForm');
+          navigate('/food');
         } else {
           throw lastError;
         }
@@ -1005,7 +871,7 @@ const App: React.FC = () => {
         setMiniAppAttemptCount(0);
       }
       return null;
-  }, [handleViewChange, user, quotas]);
+  }, [navigate, user, quotas]);
     
     const handleGenerateAppRecommendations = useCallback(async (data: AppFinderRequestData, isUnified = false): Promise<AppRecommendations | null> => {
       // Check quota limits before starting generation (only for standalone usage)
@@ -1019,7 +885,7 @@ const App: React.FC = () => {
         setIsLoading(true);
         setError(null);
         setAppRecommendations(null);
-        handleViewChange('appFinderResult');
+        navigate('/results/apps');
       }
       
       simplePlanCancellationFlag.current = false;
@@ -1069,7 +935,7 @@ const App: React.FC = () => {
       if (!simplePlanCancellationFlag.current && lastError) {
         if (!isUnified) {
           setError(lastError.message);
-          handleViewChange('appFinderForm');
+          navigate('/apps');
         } else {
           throw lastError;
         }
@@ -1080,7 +946,7 @@ const App: React.FC = () => {
         setMiniAppAttemptCount(0);
       }
       return null;
-  }, [handleViewChange, user, quotas]);
+  }, [navigate, user, quotas]);
     
     const handleGenerateMusicRecommendations = useCallback(async (data: MusicFinderRequestData, isUnified = false): Promise<MusicRecommendations | null> => {
       // Check quota limits before starting generation (only for standalone usage)
@@ -1094,7 +960,7 @@ const App: React.FC = () => {
         setIsLoading(true);
         setError(null);
         setMusicRecommendations(null);
-        handleViewChange('musicFinderResult');
+        navigate('/results/music');
       }
       
       simplePlanCancellationFlag.current = false;
@@ -1144,7 +1010,7 @@ const App: React.FC = () => {
       if (!simplePlanCancellationFlag.current && lastError) {
         if (!isUnified) {
           setError(lastError.message);
-          handleViewChange('musicFinderForm');
+          navigate('/music');
         } else {
           throw lastError;
         }
@@ -1155,7 +1021,7 @@ const App: React.FC = () => {
         setMiniAppAttemptCount(0);
       }
       return null;
-  }, [handleViewChange, user, quotas]);
+  }, [navigate, user, quotas]);
     
     const handleGenerateLingoGuide = useCallback(async (data: LingoFinderRequestData, isUnified = false): Promise<LingoRecommendations | null> => {
       // Check quota limits before starting generation (only for standalone usage)
@@ -1169,7 +1035,7 @@ const App: React.FC = () => {
         setIsLoading(true);
         setError(null);
         setLingoRecommendations(null);
-        handleViewChange('lingoFinderResult');
+        navigate('/results/lingo');
       }
       
       simplePlanCancellationFlag.current = false;
@@ -1219,7 +1085,7 @@ const App: React.FC = () => {
       if (!simplePlanCancellationFlag.current && lastError) {
         if (!isUnified) {
           setError(lastError.message);
-          handleViewChange('lingoFinderForm');
+          navigate('/lingo');
         } else {
           throw lastError;
         }
@@ -1230,7 +1096,7 @@ const App: React.FC = () => {
         setMiniAppAttemptCount(0);
       }
       return null;
-  }, [handleViewChange, user, quotas]);
+  }, [navigate, user, quotas]);
 
     // Effect for parallel generation of other steps, dependent on itinerary completion
     useEffect(() => {
@@ -1290,10 +1156,10 @@ const App: React.FC = () => {
             }
         };
 
-        if (view === 'unifiedResult' && unifiedPlan.itinerary && unifiedPlanLoadingStatus.itinerary === 'done') {
+        if (location.pathname === '/results/unified' && unifiedPlan.itinerary && unifiedPlanLoadingStatus.itinerary === 'done') {
             runParallelSteps();
         }
-    }, [view, unifiedPlan.itinerary, unifiedPlanLoadingStatus.itinerary, questionnaireDataForUnifiedPlan, generateStep, handleGeneratePackingList, handleGenerateFoodRecommendations, handleGenerateAppRecommendations, handleGenerateMusicRecommendations, handleGenerateLingoGuide]);
+    }, [location.pathname, unifiedPlan.itinerary, unifiedPlanLoadingStatus.itinerary, questionnaireDataForUnifiedPlan, generateStep, handleGeneratePackingList, handleGenerateFoodRecommendations, handleGenerateAppRecommendations, handleGenerateMusicRecommendations, handleGenerateLingoGuide]);
 
 
   const handleGenerateUnifiedPlan = useCallback(async (data: QuestionnaireData) => {
@@ -1311,10 +1177,10 @@ const App: React.FC = () => {
     setItineraryAttemptCount(0);
     setUnifiedStepErrors({});
     cancellationFlags.current = {};
-    handleViewChange('unifiedResult');
+    navigate('/results/unified');
     // This state change will trigger the pipeline `useEffect`
     setUnifiedPlanLoadingStatus({ itinerary: 'pending', packing: 'pending', food: 'pending', apps: 'pending', music: 'pending', lingo: 'pending' });
-  }, [handleViewChange, user, quotas]);
+  }, [navigate, user, quotas]);
 
   const handleRegenerateUnifiedPlanStep = useCallback((step: keyof UnifiedPlanLoadingStatus) => {
     if (!questionnaireDataForUnifiedPlan) return;
@@ -1357,12 +1223,56 @@ const App: React.FC = () => {
       cancellationFlags.current[step] = true;
   }, []);
 
+  // Get current view from location
+  const getCurrentView = (): View => {
+    switch (location.pathname) {
+      case '/':
+        return 'landing';
+      case '/plan':
+        return 'unifiedPlannerForm';
+      case '/itinerary':
+        return 'questionnaire';
+      case '/packing':
+        return 'packingAssistantForm';
+      case '/food':
+        return 'foodFinderForm';
+      case '/apps':
+        return 'appFinderForm';
+      case '/music':
+        return 'musicFinderForm';
+      case '/lingo':
+        return 'lingoFinderForm';
+      case '/contact':
+        return 'contact';
+      case '/profile':
+        return 'editProfile';
+      case '/history':
+        return 'history';
+      case '/results/itinerary':
+        return 'itineraryResult';
+      case '/results/packing':
+        return 'packingAssistantResult';
+      case '/results/food':
+        return 'foodFinderResult';
+      case '/results/apps':
+        return 'appFinderResult';
+      case '/results/music':
+        return 'musicFinderResult';
+      case '/results/lingo':
+        return 'lingoFinderResult';
+      case '/results/unified':
+        return 'unifiedResult';
+      default:
+        return 'landing';
+    }
+  };
 
+  const currentView = getCurrentView();
 
   const renderContent = () => {
     if (isLoading) {
       let loadingProps;
-      switch (view) {
+      switch (currentView) {
         case 'itineraryResult':
           loadingProps = { 
             title: "Crafting Your Itinerary...", 
@@ -1396,7 +1306,7 @@ const App: React.FC = () => {
       }
     }
 
-    if (view === 'unifiedResult') {
+    if (currentView === 'unifiedResult') {
         if (unifiedPlanLoadingStatus.itinerary === 'pending' || unifiedPlanLoadingStatus.itinerary === 'loading') {
             return (
                 <LoadingIndicator
@@ -1430,106 +1340,94 @@ const App: React.FC = () => {
         />;
     }
 
-    switch (view) {
-      case 'landing':
-        return (
-            <LandingPage user={user} onPlanUnifiedTrip={handleStartUnifiedPlanner} onPlanItinerary={handleStartItineraryPlanner} onStartPacking={handleStartPackingAssistant} onStartFoodFinder={handleStartFoodFinder} onStartAppFinder={handleStartAppFinder} onStartMusicFinder={handleStartMusicFinder} onStartLingoFinder={handleStartLingoFinder} onOpenAuthModal={() => setIsAuthModalOpen(true)} />
-        );
-      case 'unifiedPlannerForm':
-        return <UnifiedPlannerForm onSubmit={handleGenerateUnifiedPlan} initialData={initialQuestionnaireData} onBack={handleBackToHome} error={error} user={user} />;
-      case 'questionnaire':
-        return <Questionnaire onSubmit={handleGenerateItinerary} isLoading={false} error={error} initialData={initialQuestionnaireData} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} user={user} />;
-      case 'itineraryResult':
-        console.log('Rendering itineraryResult with:', { 
-          hasItinerary: !!itinerary, 
-          hasInitialQuestionnaireData: !!initialQuestionnaireData,
-          initialQuestionnaireDataKeys: initialQuestionnaireData ? Object.keys(initialQuestionnaireData) : null,
-          isHistoryView 
-        });
-        if (itinerary) return <ItineraryPreview itinerary={itinerary} onRegenerate={() => handleViewChange('questionnaire')} requestData={initialQuestionnaireData} isHistoryView={isHistoryView} />;
-        break;
-      case 'packingAssistantForm':
-        return <PackingAssistantForm onSubmit={handleGeneratePackingList} isLoading={false} error={error} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} initialData={packingRequestData} user={user} />;
-      case 'packingAssistantResult':
-        if (packingList) return <PackingListPreview packingList={packingList} onRegenerate={() => handleViewChange('packingAssistantForm')} requestData={packingRequestData} isHistoryView={isHistoryView} />;
-        break;
-      case 'foodFinderForm':
-        return <FoodFinderForm onSubmit={handleGenerateFoodRecommendations} isLoading={false} error={error} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} initialData={foodRequestData} user={user} />;
-      case 'foodFinderResult':
-        if (foodRecommendations) return <FoodFinderResult recommendations={foodRecommendations} onRegenerate={() => handleViewChange('foodFinderForm')} requestData={foodRequestData} isHistoryView={isHistoryView} />;
-        break;
-      case 'appFinderForm':
-        return <AppFinderForm onSubmit={handleGenerateAppRecommendations} isLoading={false} error={error} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} initialData={appRequestData} user={user} />;
-      case 'appFinderResult':
-        if (appRecommendations) return <AppFinderResult recommendations={appRecommendations} onRegenerate={() => handleViewChange('appFinderForm')} requestData={appRequestData} isHistoryView={isHistoryView} />;
-        break;
-      case 'musicFinderForm':
-        return <MusicFinderForm onSubmit={handleGenerateMusicRecommendations} isLoading={false} error={error} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} initialData={musicRequestData} user={user} />;
-      case 'musicFinderResult':
-        if (musicRecommendations) return <MusicFinderResult recommendations={musicRecommendations} onRegenerate={() => handleViewChange('musicFinderForm')} requestData={musicRequestData} isHistoryView={isHistoryView} />;
-        break;
-      case 'lingoFinderForm':
-        return <LingoFinderForm onSubmit={handleGenerateLingoGuide} isLoading={false} error={error} onBack={handleBackToHome} onCancel={handleCancelGeneration} streamedText={streamedText} initialData={lingoRequestData} user={user} />;
-      case 'lingoFinderResult':
-        if (lingoRecommendations) return <LingoFinderResult recommendations={lingoRecommendations} onRegenerate={() => handleViewChange('lingoFinderForm')} requestData={lingoRequestData} isHistoryView={isHistoryView} />;
-        break;
-      case 'contact':
-        return <ContactUs onBack={handleBackToHome} />;
-      case 'editProfile':
-        return <EditProfile user={user!} onBack={handleBackToHome} onUpdate={handleProfileUpdate} error={authError} />;
-      case 'history':
-        return <History onBack={handleBackToHome} onNavigateToResult={handleNavigateToResult} />;
-      default:
-        return null;
-    }
+    // For other views, use the router
+    return <AppRouter
+      user={user}
+      onLogin={handleLogin}
+      onSignup={handleSignup}
+      onLogout={handleLogout}
+      onEditProfile={handleEditProfile}
+      isLoading={isAuthLoading}
+      authError={authError}
+      isAuthModalOpen={isAuthModalOpen}
+      onOpenAuthModal={() => setIsAuthModalOpen(true)}
+      onCloseAuthModal={() => setIsAuthModalOpen(false)}
+      onPlanUnifiedTrip={handleStartUnifiedPlanner}
+      onPlanItinerary={handleStartItineraryPlanner}
+      onStartPacking={handleStartPackingAssistant}
+      onStartFoodFinder={handleStartFoodFinder}
+      onStartAppFinder={handleStartAppFinder}
+      onStartMusicFinder={handleStartMusicFinder}
+      onStartLingoFinder={handleStartLingoFinder}
+      onBackToHome={handleBackToHome}
+      onNavigateToResult={handleNavigateToResult}
+      onProfileUpdate={handleProfileUpdate}
+      onGenerateItinerary={handleGenerateItinerary}
+      onGeneratePackingList={handleGeneratePackingList}
+      onGenerateFoodRecommendations={handleGenerateFoodRecommendations}
+      onGenerateAppRecommendations={handleGenerateAppRecommendations}
+      onGenerateMusicRecommendations={handleGenerateMusicRecommendations}
+      onGenerateLingoGuide={handleGenerateLingoGuide}
+      onGenerateUnifiedPlan={handleGenerateUnifiedPlan}
+      initialQuestionnaireData={initialQuestionnaireData}
+      packingRequestData={packingRequestData}
+      foodRequestData={foodRequestData}
+      appRequestData={appRequestData}
+      musicRequestData={musicRequestData}
+      lingoRequestData={lingoRequestData}
+      isFormLoading={isLoading}
+      formError={error}
+      streamedText={streamedText}
+      itinerary={itinerary}
+      packingList={packingList}
+      foodRecommendations={foodRecommendations}
+      appRecommendations={appRecommendations}
+      musicRecommendations={musicRecommendations}
+      lingoRecommendations={lingoRecommendations}
+      unifiedPlan={unifiedPlan}
+      unifiedPlanLoadingStatus={unifiedPlanLoadingStatus}
+      unifiedStepErrors={unifiedStepErrors}
+      questionnaireDataForUnifiedPlan={questionnaireDataForUnifiedPlan}
+      itineraryStreamedText={itineraryStreamedText}
+      isHistoryView={isHistoryView}
+    />;
   };
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
-  <Header user={user} onLogout={handleLogout} onEditProfile={handleEditProfile} onLogin={handleLogin} onSignup={handleSignup} isLoading={isAuthLoading} error={authError} isAuthModalOpen={isAuthModalOpen} onOpenAuthModal={() => setIsAuthModalOpen(true)} onCloseAuthModal={() => setIsAuthModalOpen(false)} />
-  {/* Spacer to offset the fixed header so content isn't hidden behind it */}
-  <div className="h-20 md:h-24" />
-  <div ref={mainContentRef} className="flex-1 overflow-y-auto">
-        {renderContent()}
-      </div>
-      <BottomNavBar
-        onGoHome={() => handleViewChange('landing')}
-        onPlanTrip={() => handleViewChange('unifiedPlannerForm')}
-        onStartPacking={() => handleStartPackingAssistant()}
-        onStartFoodFinder={() => handleStartFoodFinder()}
-        onStartAppFinder={() => handleStartAppFinder()}
-        onStartMusicFinder={() => handleStartMusicFinder()}
-        onGoToContact={() => handleViewChange('contact')}
-        onGoToHistory={() => handleViewChange('history')}
-        onOpenAuthModal={() => setIsAuthModalOpen(true)}
-        activeView={view}
-        user={user}
-      />
-      
-      {/* Quick Navigation Button (Menu Toggler) - Desktop only */}
-      <QuickNavButton
-        user={user}
-        onPlanTrip={() => handleViewChange('unifiedPlannerForm')}
-        onStartPacking={() => handleStartPackingAssistant()}
-        onStartFoodFinder={() => handleStartFoodFinder()}
-        onStartAppFinder={() => handleStartAppFinder()}
-        onStartMusicFinder={() => handleStartMusicFinder()}
-        onStartLingoFinder={() => handleStartLingoFinder()}
-        onGoHome={() => handleViewChange('landing')}
-        onGoToContact={() => handleViewChange('contact')}
-        onGoToHistory={() => handleViewChange('history')}
-        onOpenAuthModal={() => setIsAuthModalOpen(true)}
-        activeView={view}
-      />
-      
-      {/* Scroll to Top Button */}
-      <ScrollToTopButton scrollContainerRef={mainContentRef} />
-      {/* Auth modal is handled by Header via the AuthModal component */}
-      <div className="hidden">
-        {/* Debugging information */}
-        <pre>{JSON.stringify({ view, user, itinerary, packingList, foodRecommendations, appRecommendations, musicRecommendations, lingoRecommendations, unifiedPlan, unifiedPlanLoadingStatus, error }, null, 2)}</pre>
-      </div>
-    </div>
+      <Header user={user} onLogout={handleLogout} onEditProfile={handleEditProfile} onLogin={handleLogin} onSignup={handleSignup} isLoading={isAuthLoading} error={authError} isAuthModalOpen={isAuthModalOpen} onOpenAuthModal={() => setIsAuthModalOpen(true)} onCloseAuthModal={() => setIsAuthModalOpen(false)} />
+      {/* Spacer to offset the fixed header so content isn't hidden behind it */}
+      <div className="h-20 md:h-24" />
+      <div ref={mainContentRef} className="flex-1 overflow-y-auto">
+            {renderContent()}
+          </div>
+          <BottomNavBar
+            onOpenAuthModal={() => setIsAuthModalOpen(true)}
+            user={user}
+          />
+          
+          {/* Quick Navigation Button (Menu Toggler) - Desktop only */}
+          <QuickNavButton
+            user={user}
+            onOpenAuthModal={() => setIsAuthModalOpen(true)}
+          />
+          
+          {/* Scroll to Top Button */}
+          <ScrollToTopButton scrollContainerRef={mainContentRef} />
+          {/* Auth modal is handled by Header via the AuthModal component */}
+          <div className="hidden">
+            {/* Debugging information */}
+            <pre>{JSON.stringify({ currentView, user, itinerary, packingList, foodRecommendations, appRecommendations, musicRecommendations, lingoRecommendations, unifiedPlan, unifiedPlanLoadingStatus, error }, null, 2)}</pre>
+          </div>
+        </div>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <Router>
+      <AppContent />
+    </Router>
   );
 };
 

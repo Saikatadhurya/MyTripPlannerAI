@@ -1,37 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { User } from '../services/authService';
 
 interface QuickNavButtonProps {
   user: User | null;
-  onPlanTrip: () => void;
-  // FIX: Renamed prop to be consistent with BottomNavBarProps
-  onStartItineraryPlanner: () => void;
-  onStartPacking: () => void;
-  onStartFoodFinder: () => void;
-  onStartAppFinder: () => void;
-  onStartMusicFinder: () => void;
-  onStartLingoFinder: () => void;
-  onGoHome: () => void;
-  onGoToContact: () => void;
-  onGoToHistory: () => void;
   onOpenAuthModal: () => void;
 }
 
 const QuickNavButton: React.FC<QuickNavButtonProps> = ({
   user,
-  onPlanTrip,
-  // FIX: Renamed prop to be consistent with BottomNavBarProps
-  onStartItineraryPlanner,
-  onStartPacking,
-  onStartFoodFinder,
-  onStartAppFinder,
-  onStartMusicFinder,
-  onStartLingoFinder,
-  onGoHome,
-  onGoToContact,
-  onGoToHistory,
   onOpenAuthModal,
 }) => {
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const navRef = useRef<HTMLDivElement>(null);
 
@@ -58,7 +38,7 @@ const QuickNavButton: React.FC<QuickNavButtonProps> = ({
         items: [
             { 
                 label: 'Complete Adventure Plan', 
-                action: user ? onPlanTrip : onOpenAuthModal, 
+                action: user ? () => navigate('/plan') : onOpenAuthModal, 
                 icon: user ? '✨' : '🔒',
                 locked: !user,
                 tooltip: user ? undefined : 'Sign in to unlock'
@@ -68,57 +48,56 @@ const QuickNavButton: React.FC<QuickNavButtonProps> = ({
     {
         title: 'Quick Tools',
         items: [
-            // FIX: Renamed prop to be consistent with BottomNavBarProps
             { 
                 label: 'Day-by-Day Itinerary', 
-                action: user ? onStartItineraryPlanner : onOpenAuthModal, 
+                action: user ? () => navigate('/itinerary') : onOpenAuthModal, 
                 icon: user ? '🗓️' : '🔒',
                 locked: !user,
                 tooltip: user ? undefined : 'Sign in to unlock'
             },
             { 
                 label: 'Smart Bag Packing', 
-                action: user ? onStartPacking : onOpenAuthModal, 
+                action: user ? () => navigate('/packing') : onOpenAuthModal, 
                 icon: user ? '🧳' : '🔒',
                 locked: !user,
                 tooltip: user ? undefined : 'Sign in to unlock'
             },
             { 
                 label: 'Local Food Finder', 
-                action: user ? onStartFoodFinder : onOpenAuthModal, 
+                action: user ? () => navigate('/food') : onOpenAuthModal, 
                 icon: user ? '🍲' : '🔒',
                 locked: !user,
                 tooltip: user ? undefined : 'Sign in to unlock'
             },
             { 
                 label: 'Mobile App Finder', 
-                action: user ? onStartAppFinder : onOpenAuthModal, 
+                action: user ? () => navigate('/apps') : onOpenAuthModal, 
                 icon: user ? '📱' : '🔒',
                 locked: !user,
                 tooltip: user ? undefined : 'Sign in to unlock'
             },
             { 
                 label: 'Local Music Finder', 
-                action: user ? onStartMusicFinder : onOpenAuthModal, 
+                action: user ? () => navigate('/music') : onOpenAuthModal, 
                 icon: user ? '🎶' : '🔒',
                 locked: !user,
                 tooltip: user ? undefined : 'Sign in to unlock'
             },
-            { label: 'Local Lingo Guide', action: onStartLingoFinder, icon: '🗣️' },
+            { label: 'Local Lingo Guide', action: () => navigate('/lingo'), icon: '🗣️' },
         ]
     },
     {
         title: 'General',
         items: [
-            { label: 'Go Home', action: onGoHome, icon: '🏠', locked: false },
+            { label: 'Go Home', action: () => navigate('/'), icon: '🏠', locked: false },
             { 
                 label: 'My History', 
-                action: user ? onGoToHistory : onOpenAuthModal, 
+                action: user ? () => navigate('/history') : onOpenAuthModal, 
                 icon: user ? '📋' : '🔒',
                 locked: !user,
                 tooltip: user ? undefined : 'Sign in to view your history'
             },
-            { label: 'Contact Us', action: onGoToContact, icon: '✉️', locked: false },
+            { label: 'Contact Us', action: () => navigate('/contact'), icon: '✉️', locked: false },
         ]
     }
   ];
