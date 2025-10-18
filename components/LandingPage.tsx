@@ -14,9 +14,10 @@ interface LandingPageProps {
   onStartMusicFinder: () => void;
   onStartLingoFinder: () => void;
   onOpenAuthModal: () => void;
+  onViewHistory: () => void;
 }
 
-const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPlanItinerary, onStartPacking, onStartFoodFinder, onStartAppFinder, onStartMusicFinder, onStartLingoFinder, onOpenAuthModal }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPlanItinerary, onStartPacking, onStartFoodFinder, onStartAppFinder, onStartMusicFinder, onStartLingoFinder, onOpenAuthModal, onViewHistory }) => {
   const [destinations, setDestinations] = useState<PopularDestination[]>([]);
   const { quotas, quotasLoading } = useQuotas(user);
 
@@ -217,6 +218,38 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
           )}
         </div>
       </div>
+
+      {/* History Section - Only show for authenticated users */}
+      {user && (
+        <div className="animated-card text-center max-w-3xl mx-auto p-6 md:p-8 rounded-3xl bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 backdrop-blur-lg border border-indigo-200/70 shadow-xl" style={{ animationDelay: '150ms' }}>
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+              <span className="text-2xl text-white">📚</span>
+            </div>
+            <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+              Your Travel Archive
+            </h2>
+          </div>
+          <p className="text-lg text-slate-600 mb-6 max-w-2xl mx-auto">
+            Revisit your past adventures, rediscover old recommendations, and relive your favorite travel memories.
+          </p>
+          <button
+            onClick={onViewHistory}
+            className="group relative inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-2xl text-lg shadow-lg transition-all duration-300 transform hover:scale-105 hover:shadow-xl hover:shadow-indigo-500/40 focus:outline-none focus:ring-4 focus:ring-indigo-300"
+          >
+            <div className="flex items-center gap-2">
+              <svg className="w-6 h-6 group-hover:rotate-12 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
+              <span>📖 Journey Down Memory Lane</span>
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-r from-indigo-700 to-purple-700 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10"></div>
+          </button>
+          <p className="mt-4 text-sm text-indigo-600/80 font-medium">
+            ✨ Browse your saved itineraries, packing lists, and travel discoveries
+          </p>
+        </div>
+      )}
       
       {/* Mini Apps Section */}
       <div className="text-center">

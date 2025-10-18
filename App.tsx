@@ -1360,6 +1360,7 @@ const AppContent: React.FC = () => {
       onStartMusicFinder={handleStartMusicFinder}
       onStartLingoFinder={handleStartLingoFinder}
       onBackToHome={handleBackToHome}
+      onViewHistory={() => navigate('/history')}
       onNavigateToResult={handleNavigateToResult}
       onProfileUpdate={handleProfileUpdate}
       onGenerateItinerary={handleGenerateItinerary}
@@ -1395,31 +1396,31 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
-      <Header user={user} onLogout={handleLogout} onEditProfile={handleEditProfile} onLogin={handleLogin} onSignup={handleSignup} isLoading={isAuthLoading} error={authError} isAuthModalOpen={isAuthModalOpen} onOpenAuthModal={() => setIsAuthModalOpen(true)} onCloseAuthModal={() => setIsAuthModalOpen(false)} />
-      {/* Spacer to offset the fixed header so content isn't hidden behind it */}
-      <div className="h-20 md:h-24" />
-      <div ref={mainContentRef} className="flex-1 overflow-y-auto">
-            {renderContent()}
-          </div>
-          <BottomNavBar
-            onOpenAuthModal={() => setIsAuthModalOpen(true)}
-            user={user}
-          />
-          
-          {/* Quick Navigation Button (Menu Toggler) - Desktop only */}
-          <QuickNavButton
-            user={user}
-            onOpenAuthModal={() => setIsAuthModalOpen(true)}
-          />
-          
-          {/* Scroll to Top Button */}
-          <ScrollToTopButton scrollContainerRef={mainContentRef} />
-          {/* Auth modal is handled by Header via the AuthModal component */}
-          <div className="hidden">
-            {/* Debugging information */}
+  <Header user={user} onLogout={handleLogout} onEditProfile={handleEditProfile} onLogin={handleLogin} onSignup={handleSignup} isLoading={isAuthLoading} error={authError} isAuthModalOpen={isAuthModalOpen} onOpenAuthModal={() => setIsAuthModalOpen(true)} onCloseAuthModal={() => setIsAuthModalOpen(false)} />
+  {/* Spacer to offset the fixed header so content isn't hidden behind it */}
+  <div className="h-20 md:h-24" />
+  <div ref={mainContentRef} className="flex-1 overflow-y-auto">
+        {renderContent()}
+      </div>
+      <BottomNavBar
+        onOpenAuthModal={() => setIsAuthModalOpen(true)}
+        user={user}
+      />
+      
+      {/* Quick Navigation Button (Menu Toggler) - Desktop only */}
+      <QuickNavButton
+        user={user}
+        onOpenAuthModal={() => setIsAuthModalOpen(true)}
+      />
+      
+      {/* Scroll to Top Button */}
+      <ScrollToTopButton scrollContainerRef={mainContentRef} />
+      {/* Auth modal is handled by Header via the AuthModal component */}
+      <div className="hidden">
+        {/* Debugging information */}
             <pre>{JSON.stringify({ currentView, user, itinerary, packingList, foodRecommendations, appRecommendations, musicRecommendations, lingoRecommendations, unifiedPlan, unifiedPlanLoadingStatus, error }, null, 2)}</pre>
-          </div>
-        </div>
+      </div>
+    </div>
   );
 };
 

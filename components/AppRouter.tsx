@@ -48,6 +48,7 @@ interface AppRouterProps {
   onStartMusicFinder: () => void;
   onStartLingoFinder: () => void;
   onBackToHome: () => void;
+  onViewHistory: () => void;
   onNavigateToResult: (type: string, responseData: any, requestData: any, isHistoryView?: boolean) => void;
   onProfileUpdate: (updatedUser: User) => void;
   // Form submission handlers
@@ -103,6 +104,7 @@ const AppRouter: React.FC<AppRouterProps> = ({
   onStartMusicFinder,
   onStartLingoFinder,
   onBackToHome,
+  onViewHistory,
   onNavigateToResult,
   onProfileUpdate,
   onGenerateItinerary,
@@ -151,6 +153,7 @@ const AppRouter: React.FC<AppRouterProps> = ({
               onStartMusicFinder={onStartMusicFinder}
               onStartLingoFinder={onStartLingoFinder}
               onOpenAuthModal={onOpenAuthModal}
+              onViewHistory={onViewHistory}
             />
           </PublicRoute>
         } 
