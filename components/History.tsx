@@ -632,12 +632,12 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
         </div>
 
         {/* Filters */}
-        <div className="bg-white/90 backdrop-blur-xl rounded-3xl p-6 shadow-xl border border-white/60 mb-8">
-          <div className="space-y-6">
-            {/* Search Bar - Full Width */}
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <svg className="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="bg-white/90 backdrop-blur-xl rounded-2xl p-4 shadow-lg border border-white/60 mb-6">
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Search Bar */}
+            <div className="relative flex-1">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg className="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </div>
@@ -645,76 +645,73 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
                 type="text"
                 value={searchTerm}
                 onChange={(e) => handleSearchTermChange(e.target.value)}
-                placeholder="Search recommendations..."
-                className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm transition-all duration-200"
+                placeholder="Search..."
+                className="w-full pl-10 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm transition-all duration-200"
               />
             </div>
             
-            {/* Filters Row - Responsive */}
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1">
-                <select
-                  value={selectedDestination}
-                  onChange={(e) => handleDestinationChange(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm transition-all duration-200"
-                >
-                  <option value="">All destinations</option>
-                  {destinations.map(dest => (
-                    <option key={dest} value={dest}>{dest}</option>
-                  ))}
-                </select>
-              </div>
-              
-              <div className="flex-1">
-                <select
-                  value={selectedType}
-                  onChange={(e) => handleTypeChange(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm transition-all duration-200"
-                >
-                  <option value="">All types</option>
-                  {recommendationTypes.map(type => (
-                    <option key={type} value={type}>{type}</option>
-                  ))}
-                </select>
-              </div>
+            {/* Destination Filter */}
+            <div className="sm:w-48">
+              <select
+                value={selectedDestination}
+                onChange={(e) => handleDestinationChange(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm transition-all duration-200"
+              >
+                <option value="">All destinations</option>
+                {destinations.map(dest => (
+                  <option key={dest} value={dest}>{dest}</option>
+                ))}
+              </select>
             </div>
             
-            {/* Clear Button Only */}
-            <div className="flex justify-end">
-              <button
-                onClick={handleClearFilters}
-                className="px-6 py-2.5 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 transition-all duration-200 text-sm font-medium border border-slate-200"
+            {/* Type Filter */}
+            <div className="sm:w-40">
+              <select
+                value={selectedType}
+                onChange={(e) => handleTypeChange(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm transition-all duration-200"
               >
-                Clear Filters
-              </button>
+                <option value="">All types</option>
+                {recommendationTypes.map(type => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
+              </select>
             </div>
+            
+            {/* Clear Button */}
+            <button
+              onClick={handleClearFilters}
+              className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 transition-all duration-200 text-sm font-medium border border-slate-200 whitespace-nowrap"
+            >
+              Clear
+            </button>
           </div>
         </div>
 
         {/* Trip Type Filter Chips */}
-        <div className="bg-white/90 backdrop-blur-xl rounded-3xl p-8 shadow-xl border border-white/60 mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-6">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-slate-100 to-slate-200 rounded-xl flex items-center justify-center">
-                <span className="text-slate-600 text-sm">🎯</span>
+        <div className="bg-white/90 backdrop-blur-xl rounded-2xl p-4 shadow-lg border border-white/60 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 bg-gradient-to-br from-slate-100 to-slate-200 rounded-lg flex items-center justify-center">
+                <span className="text-slate-600 text-xs">🎯</span>
               </div>
-              <span className="text-lg font-bold text-slate-800">Filter by Type</span>
+              <span className="text-sm font-semibold text-slate-700">Filter by Type</span>
             </div>
-            <div className="flex flex-wrap gap-4">
+            <div className="flex gap-3">
               <button
                 onClick={() => setShowIndividual(!showIndividual)}
-                className={`group relative px-6 py-3 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg ${
+                className={`group relative px-4 py-2 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 shadow-md ${
                   showIndividual
                     ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-blue-500/30'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200'
                 }`}
               >
-                <span className="flex items-center gap-3">
-                  <div className={`w-3 h-3 rounded-full transition-colors ${
+                <span className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full transition-colors ${
                     showIndividual ? 'bg-white' : 'bg-slate-400'
                   }`}></div>
-                  <span className="text-sm font-bold">Individual</span>
-                  <span className={`text-xs px-3 py-1 rounded-full font-semibold ${
+                  <span className="text-sm font-semibold">Individual</span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                     showIndividual ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'
                   }`}>
                     {sortedHistory.length}
@@ -723,18 +720,18 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
               </button>
               <button
                 onClick={() => setShowUnified(!showUnified)}
-                className={`group relative px-6 py-3 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg ${
+                className={`group relative px-4 py-2 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 shadow-md ${
                   showUnified
                     ? 'bg-gradient-to-r from-violet-500 to-violet-600 text-white shadow-violet-500/30'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200'
                 }`}
               >
-                <span className="flex items-center gap-3">
-                  <div className={`w-3 h-3 rounded-full transition-colors ${
+                <span className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full transition-colors ${
                     showUnified ? 'bg-white' : 'bg-slate-400'
                   }`}></div>
-                  <span className="text-sm font-bold">Unified Trips</span>
-                  <span className={`text-xs px-3 py-1 rounded-full font-semibold ${
+                  <span className="text-sm font-semibold">Unified Trips</span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                     showUnified ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'
                   }`}>
                     {sortedUnifiedTrips.length}
@@ -747,82 +744,71 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
 
         {/* Count Display */}
         {(showIndividual || showUnified) && (
-          <div className="bg-white/90 backdrop-blur-xl rounded-3xl p-8 shadow-xl border border-white/60 mb-8">
-            <div className="space-y-6">
-              {/* Count Items - Stack on Mobile */}
-              <div className="flex flex-col sm:flex-row sm:items-center gap-6 sm:gap-8">
-                {showIndividual && (
-                  <div className="flex items-center gap-4">
-                    <div className="w-6 h-6 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex-shrink-0 shadow-lg"></div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-base font-bold text-slate-800">Individual Recommendations</span>
-                      <span className="text-lg font-bold text-blue-600">
-                        {loading ? '...' : `${sortedHistory.length}${pagination ? ` of ${pagination.total}` : ''}`}
-                      </span>
-                      {(searchTerm || selectedDestination || selectedType) && pagination && (
-                        <span className="text-sm text-slate-500 bg-slate-100 px-3 py-1 rounded-full font-medium">
-                        </span>
-                      )}
-                    </div>
+          <div className="bg-white/90 backdrop-blur-xl rounded-2xl p-4 shadow-lg border border-white/60 mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
+              {showIndividual && (
+                <div className="flex items-center gap-3">
+                  <div className="w-4 h-4 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex-shrink-0 shadow-sm"></div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-slate-700">Individual Recommendations</span>
+                    <span className="text-sm font-bold text-blue-600">
+                      {loading ? '...' : `${sortedHistory.length}${pagination ? ` of ${pagination.total}` : ''}`}
+                    </span>
                   </div>
-                )}
-                
-                {showUnified && (
-                  <div className="flex items-center gap-4">
-                    <div className="w-6 h-6 bg-gradient-to-r from-violet-500 to-violet-600 rounded-full flex-shrink-0 shadow-lg"></div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-base font-bold text-slate-800">Unified Trips</span>
-                      <span className="text-lg font-bold text-violet-600">
-                        {unifiedTripsLoading ? '...' : `${sortedUnifiedTrips.length}${allUnifiedTrips.length > 0 ? ` of ${allUnifiedTrips.length}` : ''}`}
-                      </span>
-                      {(searchTerm || selectedDestination) && allUnifiedTrips.length > 0 && (
-                        <span className="text-sm text-slate-500 bg-slate-100 px-3 py-1 rounded-full font-medium">
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
               
-              {/* Filter Status */}
-              {(searchTerm || selectedDestination || selectedType) && (
-                <div className="pt-6 border-t border-slate-200">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-6 h-6 bg-gradient-to-br from-amber-100 to-amber-200 rounded-xl flex items-center justify-center">
-                      <span className="text-amber-600 text-sm">🔍</span>
-                    </div>
-                    <span className="text-lg font-bold text-slate-800">Active Filters</span>
-                  </div>
-                  <div className="flex flex-wrap gap-3">
-                    {searchTerm && (
-                      <span className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-800 text-sm font-semibold rounded-xl border border-blue-200 shadow-sm">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
-                        Search: "{searchTerm}"
-                      </span>
-                    )}
-                    {selectedDestination && (
-                      <span className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 text-green-800 text-sm font-semibold rounded-xl border border-green-200 shadow-sm">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        Destination: {selectedDestination}
-                      </span>
-                    )}
-                    {selectedType && (
-                      <span className="inline-flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-800 text-sm font-semibold rounded-xl border border-purple-200 shadow-sm">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                        </svg>
-                        Type: {selectedType}
-                      </span>
-                    )}
+              {showUnified && (
+                <div className="flex items-center gap-3">
+                  <div className="w-4 h-4 bg-gradient-to-r from-violet-500 to-violet-600 rounded-full flex-shrink-0 shadow-sm"></div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-slate-700">Unified Trips</span>
+                    <span className="text-sm font-bold text-violet-600">
+                      {unifiedTripsLoading ? '...' : `${sortedUnifiedTrips.length}${allUnifiedTrips.length > 0 ? ` of ${allUnifiedTrips.length}` : ''}`}
+                    </span>
                   </div>
                 </div>
               )}
             </div>
+            
+            {/* Filter Status */}
+            {(searchTerm || selectedDestination || selectedType) && (
+              <div className="pt-4 border-t border-slate-200 mt-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-4 h-4 bg-gradient-to-br from-amber-100 to-amber-200 rounded-lg flex items-center justify-center">
+                    <span className="text-amber-600 text-xs">🔍</span>
+                  </div>
+                  <span className="text-sm font-semibold text-slate-700">Active Filters</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {searchTerm && (
+                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-lg border border-blue-200">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                      Search: "{searchTerm}"
+                    </span>
+                  )}
+                  {selectedDestination && (
+                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-lg border border-green-200">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      Destination: {selectedDestination}
+                    </span>
+                  )}
+                  {selectedType && (
+                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-purple-100 text-purple-800 text-xs font-medium rounded-lg border border-purple-200">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                      </svg>
+                      Type: {selectedType}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
