@@ -448,30 +448,43 @@ const ShareableRecommendation: React.FC = () => {
 
     // Create a properly structured unified plan from the API response
     const unifiedPlan = {
-      tripId: trip.tripId,
-      tripName: trip.tripName,
-      destination: trip.destination,
-      language: trip.language,
-      created_at: trip.created_at,
-      
-      // Individual recommendation components
       itinerary: trip.itinerary || null,
       packingList: trip.packingList || null,
       foodRecommendations: trip.foodRecommendations || null,
       appRecommendations: trip.appRecommendations || null,
       musicRecommendations: trip.musicRecommendations || null,
-      lingoRecommendations: trip.lingoRecommendations || null,
-      
-      // Metadata
-      recommendation_types: trip.recommendation_types || [],
-      recommendation_count: trip.recommendation_count || 0
+      lingoRecommendations: trip.lingoRecommendations || null
     };
+
+    // Create loading status - all done since this is from history
+    const loadingStatus = {
+      itinerary: 'done' as const,
+      packing: 'done' as const,
+      apps: 'done' as const,
+      food: 'done' as const,
+      music: 'done' as const,
+      lingo: 'done' as const
+    };
+
+    // No errors since this is from history
+    const stepErrors = {};
+
+    console.log('🗺️ Unified plan structure:', {
+      hasItinerary: !!unifiedPlan.itinerary,
+      hasPackingList: !!unifiedPlan.packingList,
+      hasFoodRecommendations: !!unifiedPlan.foodRecommendations,
+      hasAppRecommendations: !!unifiedPlan.appRecommendations,
+      hasMusicRecommendations: !!unifiedPlan.musicRecommendations,
+      hasLingoRecommendations: !!unifiedPlan.lingoRecommendations,
+      loadingStatus,
+      stepErrors
+    });
 
     return (
       <UnifiedResultPreview
         plan={unifiedPlan}
-        loadingStatus={null}
-        stepErrors={null}
+        loadingStatus={loadingStatus}
+        stepErrors={stepErrors}
         onPlanNew={handleBackToHome}
         onRegenerate={() => {}}
         onRegenerateStep={() => {}}
