@@ -23,6 +23,7 @@ import ContactUs from './ContactUs';
 import EditProfile from './EditProfile';
 import History from './History';
 import AuthModal from './AuthModal';
+import ShareableRecommendation from './ShareableRecommendation';
 
 // Import route protection components
 import ProtectedRoute from './ProtectedRoute';
@@ -434,6 +435,26 @@ const AppRouter: React.FC<AppRouterProps> = ({
             />
           </ProtectedRoute>
         } 
+      />
+
+      {/* Shareable recommendation routes - Public access */}
+      <Route 
+        path="/share/:id" 
+        element={<ShareableRecommendation />}
+      />
+
+      {/* Test route to verify React Router is working */}
+      <Route 
+        path="/test-router" 
+        element={
+          <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-violet-50/30 flex items-center justify-center">
+            <div className="bg-white rounded-2xl p-8 shadow-xl border border-white/60 max-w-md mx-4">
+              <h1 className="text-2xl font-bold text-slate-800 mb-4">React Router Test</h1>
+              <p className="text-slate-600">If you can see this, React Router is working!</p>
+              <p className="text-sm text-slate-500 mt-2">URL: {window.location.href}</p>
+            </div>
+          </div>
+        }
       />
 
       {/* Catch all route */}

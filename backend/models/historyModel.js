@@ -185,30 +185,201 @@ class HistoryModel {
     }
   }
 
+  // Get available recommendation IDs for debugging
+  async getAvailableRecommendationIds() {
+    const client = await pool.connect();
+    try {
+      const query = `
+        SELECT id, recommendation_type, destination, created_at
+        FROM planora.recommendations_history
+        ORDER BY created_at DESC
+        LIMIT 10
+      `;
+      const result = await client.query(query);
+      return result.rows;
+    } finally {
+      client.release();
+    }
+  }
+
+  // Get available unified trip IDs for debugging
+  async getAvailableUnifiedTripIds() {
+    const client = await pool.connect();
+    try {
+      const query = `
+        SELECT DISTINCT trip_id, trip_name, destination, created_at
+        FROM planora.recommendations_history
+        WHERE trip_id IS NOT NULL
+        ORDER BY created_at DESC
+        LIMIT 10
+      `;
+      const result = await client.query(query);
+      return result.rows;
+    } finally {
+      client.release();
+    }
+  }
+
   // Get specific recommendation by ID
   async getRecommendationById({ userId, id }) {
     const client = await pool.connect();
     try {
-      const query = `
-        SELECT 
-          id,
-          recommendation_type as "recommendationType",
-          destination,
-          language,
-          request_data as "requestData",
-          response_data as "responseData",
-          title,
-          tags,
-          notes,
-          trip_context as "tripContext",
-          created_at as "created_at",
-          updated_at as "updated_at"
-        FROM planora.recommendations_history
-        WHERE id = $1 AND user_id = $2
-      `;
+      let query, params;
       
-      const result = await client.query(query, [id, userId]);
+      if (userId) {
+        // Authenticated request - check user ownership
+        query = `
+          SELECT 
+            id,
+            recommendation_type as "recommendationType",
+            destination,
+            language,
+            request_data as "requestData",
+            response_data as "responseData",
+            title,
+            tags,
+            notes,
+            trip_context as "tripContext",
+            created_at as "created_at",
+            updated_at as "updated_at"
+          FROM planora.recommendations_history
+          WHERE id = $1 AND user_id = $2
+        `;
+        params = [id, userId];
+      } else {
+        // Public request - no user check
+        query = `
+          SELECT 
+            id,
+            recommendation_type as "recommendationType",
+            destination,
+            language,
+            request_data as "requestData",
+            response_data as "responseData",
+            title,
+            tags,
+            notes,
+            trip_context as "tripContext",
+            trip_id as "tripId",
+            trip_name as "tripName",
+            created_at as "created_at",
+            updated_at as "updated_at"
+          FROM planora.recommendations_history
+          WHERE id = $1
+        `;
+        params = [id];
+      }
+      
+      const result = await client.query(query, params);
       return result.rows[0] || null;
+    } finally {
+      client.release();
+    }
+  }
+
+  // Get unified trip by ID (can be either trip_id or regular id)
+  async getUnifiedTripById({ userId, tripId }) {
+    const client = await pool.connect();
+    try {
+      let query, params;
+      
+      if (userId) {
+        // Authenticated request - check user ownership
+        // First try to find by trip_id, if not found, try to find by id and get its trip_id
+        query = `
+          WITH trip_lookup AS (
+            SELECT DISTINCT trip_id
+            FROM planora.recommendations_history
+            WHERE (trip_id = $1 OR id = $1) AND user_id = $2
+            LIMIT 1
+          )
+          SELECT 
+            id,
+            trip_id as "tripId",
+            trip_name as "tripName",
+            destination,
+            language,
+            recommendation_type as "recommendationType",
+            request_data as "requestData",
+            response_data as "responseData",
+            title,
+            tags,
+            notes,
+            trip_context as "tripContext",
+            created_at as "created_at",
+            updated_at as "updated_at"
+          FROM planora.recommendations_history
+          WHERE trip_id = (SELECT trip_id FROM trip_lookup) AND user_id = $2
+          ORDER BY created_at ASC
+        `;
+        params = [tripId, userId];
+      } else {
+        // Public request - no user check
+        // First try to find by trip_id, if not found, try to find by id and get its trip_id
+        query = `
+          WITH trip_lookup AS (
+            SELECT DISTINCT trip_id
+            FROM planora.recommendations_history
+            WHERE trip_id = $1 OR id = $1
+            LIMIT 1
+          )
+          SELECT 
+            id,
+            trip_id as "tripId",
+            trip_name as "tripName",
+            destination,
+            language,
+            recommendation_type as "recommendationType",
+            request_data as "requestData",
+            response_data as "responseData",
+            title,
+            tags,
+            notes,
+            trip_context as "tripContext",
+            created_at as "created_at",
+            updated_at as "updated_at"
+          FROM planora.recommendations_history
+          WHERE trip_id = (SELECT trip_id FROM trip_lookup)
+          ORDER BY created_at ASC
+        `;
+        params = [tripId];
+      }
+      
+      const result = await client.query(query, params);
+      
+      if (result.rows.length === 0) {
+        return null;
+      }
+      
+      // Group recommendations by type and create unified trip structure
+      const recommendations = result.rows;
+      const firstRec = recommendations[0];
+      
+      const unifiedTrip = {
+        tripId: firstRec.tripId,
+        tripName: firstRec.tripName,
+        destination: firstRec.destination,
+        language: firstRec.language,
+        created_at: firstRec.created_at,
+        
+        // Group recommendations by type
+        recommendations: recommendations,
+        itinerary: recommendations.find(r => r.recommendationType === 'itinerary')?.responseData || null,
+        packingList: recommendations.find(r => r.recommendationType === 'packing')?.responseData || null,
+        foodRecommendations: recommendations.find(r => r.recommendationType === 'food')?.responseData || null,
+        appRecommendations: recommendations.find(r => r.recommendationType === 'apps')?.responseData || null,
+        musicRecommendations: recommendations.find(r => r.recommendationType === 'music')?.responseData || null,
+        lingoRecommendations: recommendations.find(r => r.recommendationType === 'lingo')?.responseData || null,
+        
+        // Metadata
+        recommendation_types: [...new Set(recommendations.map(r => r.recommendationType))],
+        recommendation_count: recommendations.length,
+        
+        // Use the first recommendation's request data as questionnaire data
+        questionnaireData: firstRec.requestData
+      };
+      
+      return unifiedTrip;
     } finally {
       client.release();
     }

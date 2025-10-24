@@ -20,7 +20,7 @@ export interface TripContext {
 
 export interface RecommendationHistory {
   id: string;
-  recommendationType: 'itinerary' | 'apps' | 'food' | 'music' | 'lingo' | 'packing';
+  recommendationType: 'itinerary' | 'apps' | 'food' | 'music' | 'lingo' | 'packing' | 'unified';
   destination: string;
   language: string;
   requestData: any;
@@ -132,6 +132,42 @@ class HistoryService {
   async getRecommendation(id: string): Promise<RecommendationHistory> {
     const headers = authService.getAuthHeaders();
     const response = await axios.get(`${API_URL}/${id}`, { headers });
+    console.log('API response for recommendation:', response.data);
+    return response.data.data;
+  }
+
+  // Get specific recommendation by ID (alias for consistency)
+  async getRecommendationById(id: string): Promise<RecommendationHistory> {
+    return this.getRecommendation(id);
+  }
+
+  // Get specific recommendation by ID (public - for sharing)
+  async getPublicRecommendationById(id: string): Promise<RecommendationHistory> {
+    console.log('🌐 Fetching public recommendation from API:', `/api/history/share/${id}`);
+    const response = await axios.get(`${API_URL}/share/${id}`);
+    console.log('📡 Public recommendation API response:', {
+      status: response.status,
+      statusText: response.statusText,
+      hasData: !!response.data,
+      success: response.data?.success,
+      dataKeys: response.data?.data ? Object.keys(response.data.data) : 'none',
+      fullResponse: response.data
+    });
+    return response.data.data;
+  }
+
+  // Get unified trip by ID (public - for sharing)
+  async getPublicUnifiedTripById(tripId: string): Promise<UnifiedTrip> {
+    console.log('🌐 Fetching public unified trip from API:', `/api/history/share/unified-trips/${tripId}`);
+    const response = await axios.get(`${API_URL}/share/unified-trips/${tripId}`);
+    console.log('📡 Public unified trip API response:', {
+      status: response.status,
+      statusText: response.statusText,
+      hasData: !!response.data,
+      success: response.data?.success,
+      dataKeys: response.data?.data ? Object.keys(response.data.data) : 'none',
+      fullResponse: response.data
+    });
     return response.data.data;
   }
 
@@ -311,6 +347,7 @@ class HistoryService {
     }
 
     const result = await response.json();
+    console.log('API response for unified trip:', result);
     return result.data;
   }
 

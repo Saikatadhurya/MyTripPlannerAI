@@ -118,6 +118,32 @@ const AppFinderResult: React.FC<AppFinderResultProps> = ({ recommendations, onRe
     const [hasBeenSaved, setHasBeenSaved] = useState(false);
     const { saveAppRecommendation } = useSaveRecommendation();
     
+    // Log the incoming recommendations data
+    console.log('📱 AppFinderResult received data:', {
+        isUnifiedView,
+        isHistoryView,
+        hasRecommendations: !!recommendations,
+        recommendationsType: typeof recommendations,
+        recommendationsKeys: recommendations ? Object.keys(recommendations) : 'none',
+        destination: recommendations?.destination,
+        transportAndTravel: recommendations?.transportAndTravel?.length || 0,
+        foodAndDining: recommendations?.foodAndDining?.length || 0,
+        fullRecommendations: recommendations
+    });
+    
+    // Safety check for recommendations object
+    if (!recommendations || typeof recommendations !== 'object') {
+        console.log('❌ AppFinderResult: Invalid recommendations data');
+        return (
+            <div className="max-w-6xl mx-auto text-center py-12">
+                <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+                    <h2 className="text-xl font-semibold text-red-800 mb-2">Invalid Data</h2>
+                    <p className="text-red-600">The app recommendations data is missing or corrupted.</p>
+                </div>
+            </div>
+        );
+    }
+    
     // Save to history when component mounts (only if not in unified view and request data is available)
     useEffect(() => {
         console.log('AppFinderResult useEffect:', { isUnifiedView, requestData, recommendations, hasBeenSaved, isHistoryView });
@@ -170,7 +196,18 @@ const AppFinderResult: React.FC<AppFinderResultProps> = ({ recommendations, onRe
             <div className="space-y-10">
                 {displayOrder.map(key => {
                     const details = categoryDetails[key];
-                    const items = recommendations[key];
+                    // Ensure items is always an array to prevent mapping errors
+                    const items = Array.isArray(recommendations[key]) ? recommendations[key] : [];
+                    
+                    console.log(`🔍 Processing category "${key}":`, {
+                        key,
+                        title: details.title,
+                        rawData: recommendations[key],
+                        isArray: Array.isArray(recommendations[key]),
+                        itemsCount: items.length,
+                        items: items
+                    });
+                    
                     return (
                         <CategorySection
                             key={key}

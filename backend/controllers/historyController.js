@@ -90,6 +90,142 @@ class HistoryController {
     }
   }
 
+  // Get specific recommendation (public version for sharing)
+  async getPublicRecommendation(req, res) {
+    try {
+      const { id } = req.params;
+      console.log('🔍 getPublicRecommendation called with ID:', id);
+      console.log('📊 Request params:', req.params);
+      console.log('📊 Request query:', req.query);
+      console.log('📊 Request method:', req.method);
+
+      const result = await historyModel.getRecommendationById({ userId: null, id });
+      console.log('📊 Database result:', result ? 'Found' : 'Not found');
+      if (result) {
+        console.log('📊 Result details:', {
+          id: result.id,
+          type: result.recommendationType,
+          destination: result.destination
+        });
+      }
+
+      if (!result) {
+        console.log('❌ Recommendation not found for ID:', id);
+        return res.status(404).json({
+          success: false,
+          message: 'Recommendation not found'
+        });
+      }
+
+      console.log('✅ Recommendation found:', {
+        id: result.id,
+        type: result.recommendationType,
+        destination: result.destination
+      });
+
+      res.json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      console.error('❌ Error fetching public recommendation:', error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
+      res.status(500).json({
+        success: false,
+        message: 'Server error while fetching recommendation',
+        error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      });
+    }
+  }
+
+  // Get unified trip (public version for sharing)
+  async getPublicUnifiedTrip(req, res) {
+    try {
+      const { tripId } = req.params;
+      console.log('🔍 getPublicUnifiedTrip called with tripId:', tripId);
+      console.log('📊 Request params:', req.params);
+      console.log('📊 Request query:', req.query);
+      console.log('📊 Request method:', req.method);
+
+      const result = await historyModel.getUnifiedTripById({ userId: null, tripId });
+      console.log('📊 Database result:', result ? 'Found' : 'Not found');
+      if (result) {
+        console.log('📊 Unified trip details:', {
+          tripId: result.tripId,
+          tripName: result.tripName,
+          destination: result.destination
+        });
+      }
+
+      if (!result) {
+        console.log('❌ Unified trip not found for tripId:', tripId);
+        return res.status(404).json({
+          success: false,
+          message: 'Unified trip not found'
+        });
+      }
+
+      console.log('✅ Unified trip found:', {
+        tripId: result.tripId,
+        tripName: result.tripName,
+        destination: result.destination
+      });
+
+      res.json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      console.error('❌ Error fetching public unified trip:', error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
+      res.status(500).json({
+        success: false,
+        message: 'Server error while fetching unified trip',
+        error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      });
+    }
+  }
+
+  // Debug method to check available IDs
+  async getAvailableIds(req, res) {
+    try {
+      console.log('🔍 Getting available IDs for debugging...');
+      
+      // Get individual recommendation IDs
+      const individualIds = await historyModel.getAvailableRecommendationIds();
+      console.log('📊 Individual recommendation IDs:', individualIds);
+      
+      // Get unified trip IDs
+      const unifiedIds = await historyModel.getAvailableUnifiedTripIds();
+      console.log('📊 Unified trip IDs:', unifiedIds);
+      
+      res.json({
+        success: true,
+        data: {
+          individualRecommendations: individualIds,
+          unifiedTrips: unifiedIds,
+          totalIndividual: individualIds.length,
+          totalUnified: unifiedIds.length
+        }
+      });
+    } catch (error) {
+      console.error('❌ Error getting available IDs:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error getting available IDs',
+        error: error.message
+      });
+    }
+  }
+
   // Get specific recommendation
   async getRecommendation(req, res) {
     try {

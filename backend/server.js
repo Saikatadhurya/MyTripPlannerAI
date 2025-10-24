@@ -38,9 +38,6 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Serve static files from dist (absolute path)
-app.use(express.static(path.join(__dirname, '../dist')));
-
 // Routes
 app.use('/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
@@ -50,6 +47,9 @@ app.use('/api/history', historyRoutes);
 app.get('/protected', protect, (req, res) => {
     res.json({ message: `Welcome ${req.user.email}, you have access to protected data!` });
 });
+
+// Serve static files from dist (absolute path) - AFTER API routes
+app.use(express.static(path.join(__dirname, '../dist')));
 
 // Catch-all route for frontend (React/Angular/Vue SPA)
 app.use((req, res) => {

@@ -3,14 +3,16 @@ import { useHistory } from '../hooks/useHistory';
 import { RecommendationHistory, UnifiedTrip } from '../services/historyService';
 import BackToHomeButton from './BackToHomeButton';
 import { historyService } from '../services/historyService';
+import Toast from './Toast';
 
 interface UnifiedTripItemProps {
   trip: UnifiedTrip;
   onView: (trip: UnifiedTrip) => void;
   onDelete: (tripId: string) => void;
+  onShareTrip: (trip: UnifiedTrip) => void;
 }
 
-const UnifiedTripItem: React.FC<UnifiedTripItemProps> = ({ trip, onView, onDelete }) => {
+const UnifiedTripItem: React.FC<UnifiedTripItemProps> = ({ trip, onView, onDelete, onShareTrip }) => {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -118,7 +120,16 @@ const UnifiedTripItem: React.FC<UnifiedTripItemProps> = ({ trip, onView, onDelet
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
             </svg>
-            View Complete Trip
+            View & Share Trip
+          </button>
+          <button
+            onClick={() => onShareTrip(trip)}
+            className="px-4 py-3 bg-blue-50 text-blue-600 rounded-xl font-semibold hover:bg-blue-100 transition-all duration-300 border border-blue-200 hover:border-blue-300 flex items-center justify-center"
+            title="Share Trip"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
+            </svg>
           </button>
           <button
             onClick={() => onDelete(trip.tripId)}
@@ -140,9 +151,10 @@ interface HistoryItemProps {
   onEdit: (item: RecommendationHistory) => void;
   onDelete: (id: string) => void;
   onView: (item: RecommendationHistory) => void;
+  onShare: (item: RecommendationHistory) => void;
 }
 
-const HistoryItem: React.FC<HistoryItemProps> = ({ item, onEdit, onDelete, onView }) => {
+const HistoryItem: React.FC<HistoryItemProps> = ({ item, onEdit, onDelete, onView, onShare }) => {
   const getTypeIcon = (type: string) => {
     const icons = {
       apps: '📱',
@@ -284,7 +296,16 @@ const HistoryItem: React.FC<HistoryItemProps> = ({ item, onEdit, onDelete, onVie
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
             </svg>
-            View Details
+            View & Share
+          </button>
+          <button
+            onClick={() => onShare(item)}
+            className="px-4 py-3 bg-blue-50 text-blue-600 rounded-xl font-semibold hover:bg-blue-100 transition-all duration-300 border border-blue-200 hover:border-blue-300 flex items-center justify-center"
+            title="Share"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
+            </svg>
           </button>
           <button
             onClick={() => onEdit(item)}
@@ -426,6 +447,9 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
   // Count state
   const [totalIndividualCount, setTotalIndividualCount] = useState<number>(0);
   const [totalUnifiedCount, setTotalUnifiedCount] = useState<number>(0);
+  
+  // Toast state
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
   const handleSearchTermChange = (value: string) => {
     setSearchTerm(value);
@@ -499,8 +523,33 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
   };
 
   const handleView = (item: RecommendationHistory) => {
-    // Navigate to the appropriate result page based on recommendation type
-    onNavigateToResult(item.recommendationType, item.responseData, item.requestData, true); // true = isHistoryView
+    // Navigate to the shareable link for this recommendation
+    const shareUrl = `${window.location.origin}/share/${item.id}`;
+    window.open(shareUrl, '_blank');
+  };
+
+  const handleShare = async (item: RecommendationHistory) => {
+    try {
+      const shareUrl = `${window.location.origin}/share/${item.id}`;
+      await navigator.clipboard.writeText(shareUrl);
+      
+      setToast({ message: 'Shareable link copied to clipboard!', type: 'success' });
+    } catch (error) {
+      console.error('Failed to copy link:', error);
+      setToast({ message: 'Failed to copy link. Please try again.', type: 'error' });
+    }
+  };
+
+  const handleShareTrip = async (trip: UnifiedTrip) => {
+    try {
+      const shareUrl = `${window.location.origin}/share/${trip.tripId}`;
+      await navigator.clipboard.writeText(shareUrl);
+      
+      setToast({ message: 'Shareable link copied to clipboard!', type: 'success' });
+    } catch (error) {
+      console.error('Failed to copy link:', error);
+      setToast({ message: 'Failed to copy link. Please try again.', type: 'error' });
+    }
   };
 
   // Count handlers
@@ -561,13 +610,9 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
   };
 
   const handleViewUnifiedTrip = async (trip: UnifiedTrip) => {
-    try {
-      const fullTrip = await historyService.getUnifiedTrip(trip.tripId);
-      // Navigate to unified result view with all recommendations
-      onNavigateToResult('unified', fullTrip, fullTrip.questionnaireData, true);
-    } catch (error) {
-      console.error('Failed to load unified trip:', error);
-    }
+    // Navigate to the shareable link for this unified trip
+    const shareUrl = `${window.location.origin}/share/${trip.tripId}`;
+    window.open(shareUrl, '_blank');
   };
 
   const handleDeleteUnifiedTrip = async (tripId: string) => {
@@ -849,6 +894,7 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
                   onEdit={handleEdit}
                   onDelete={handleDelete}
                   onView={handleView}
+                  onShare={handleShare}
                 />
               ))}
               
@@ -859,6 +905,7 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
                   trip={trip}
                   onView={handleViewUnifiedTrip}
                   onDelete={handleDeleteUnifiedTrip}
+                  onShareTrip={handleShareTrip}
                 />
               ))}
             </div>
@@ -951,6 +998,15 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
           onClose={() => setEditingItem(null)}
           onSave={handleSaveEdit}
         />
+        
+        {/* Toast */}
+        {toast && (
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            onClose={() => setToast(null)}
+          />
+        )}
       </div>
     </div>
   );
