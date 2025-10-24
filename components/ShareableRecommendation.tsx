@@ -340,12 +340,42 @@ const ShareableRecommendation: React.FC = () => {
         // Ensure the itinerary data has the expected structure with proper fallbacks
         const itineraryData = {
           destination: recommendationData.destination || rec.destination || 'Unknown Destination',
-          startDate: recommendationData.startDate || requestData.startDate || '',
-          days: recommendationData.days || requestData.days || 0,
+          startPoint: recommendationData.startPoint || requestData.startPoint || 'Unknown',
+          tripType: recommendationData.tripType || requestData.tripType || 'leisure',
+          isRoundTrip: recommendationData.isRoundTrip || requestData.isRoundTrip || false,
+          days: recommendationData.days || requestData.days || 7,
+          persons: recommendationData.persons || requestData.persons || 1,
+          budget: recommendationData.budget || requestData.budget || { min: 1000, max: 5000, currency: 'USD' },
+          vibe: Array.isArray(recommendationData.vibe) ? recommendationData.vibe : (Array.isArray(requestData.vibe) ? requestData.vibe : ['relaxed']),
+          foodPreference: recommendationData.foodPreference || requestData.foodPreference || 'any',
+          startDate: recommendationData.startDate || requestData.startDate || new Date().toISOString().split('T')[0],
+          language: recommendationData.language || requestData.language || 'en',
+          currency: recommendationData.currency || requestData.currency || 'USD',
+          planNote: recommendationData.planNote || '',
+          currencyConversion: recommendationData.currencyConversion || null,
+          budgetSummary: {
+            stay: recommendationData.budgetSummary?.stay || '500',
+            food: recommendationData.budgetSummary?.food || '300',
+            fuel: recommendationData.budgetSummary?.fuel || '200',
+            miscellaneous: recommendationData.budgetSummary?.miscellaneous || '100',
+            total: recommendationData.budgetSummary?.total || '1100'
+          },
           coveredDestinations: Array.isArray(recommendationData.coveredDestinations) ? recommendationData.coveredDestinations : [],
-          dailyItinerary: Array.isArray(recommendationData.dailyItinerary) ? recommendationData.dailyItinerary : [],
+          plan: Array.isArray(recommendationData.plan) ? recommendationData.plan : (Array.isArray(recommendationData.dailyItinerary) ? recommendationData.dailyItinerary : []),
           referenceBlogs: Array.isArray(recommendationData.referenceBlogs) ? recommendationData.referenceBlogs : []
         };
+        
+        console.log('🗺️ Itinerary data structure:', {
+          destination: itineraryData.destination,
+          days: itineraryData.days,
+          persons: itineraryData.persons,
+          budgetSummary: itineraryData.budgetSummary,
+          coveredDestinations: itineraryData.coveredDestinations.length,
+          plan: itineraryData.plan.length,
+          referenceBlogs: itineraryData.referenceBlogs.length,
+          rawRecommendationData: recommendationData
+        });
+        
         return (
           <ItineraryPreview
             itinerary={itineraryData}
