@@ -5,12 +5,8 @@ class HistoryController {
   // Save recommendation to history
   async saveRecommendation(req, res) {
     try {
-      console.log('saveRecommendation called with body:', JSON.stringify(req.body, null, 2));
-      console.log('User:', req.user);
-      
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        console.log('Validation errors:', errors.array());
         return res.status(400).json({
           success: false,
           message: 'Validation failed',
@@ -20,13 +16,6 @@ class HistoryController {
 
       const { recommendationType, destination, language, requestData, responseData, title, tags, notes, tripContext, tripId, tripName } = req.body;
       const userId = req.user.id;
-
-      console.log('saveRecommendation called with:', {
-        recommendationType, destination, language, 
-        requestDataKeys: Object.keys(requestData || {}), 
-        responseDataKeys: Object.keys(responseData || {}),
-        title, tags, notes, tripContext, tripId, tripName
-      });
 
       const result = await historyModel.saveRecommendation({
         userId,
@@ -43,15 +32,12 @@ class HistoryController {
         tripName
       });
 
-      console.log('Save recommendation result:', result);
-
       res.status(201).json({
         success: true,
         message: 'Recommendation saved successfully',
         data: result
       });
     } catch (error) {
-      console.error('Error in saveRecommendation controller:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to save recommendation',
@@ -82,7 +68,6 @@ class HistoryController {
         pagination: result.pagination
       });
     } catch (error) {
-      console.error('Error fetching history:', error);
       res.status(500).json({
         success: false,
         message: 'Server error while fetching history'
@@ -94,46 +79,21 @@ class HistoryController {
   async getPublicRecommendation(req, res) {
     try {
       const { id } = req.params;
-      console.log('🔍 getPublicRecommendation called with ID:', id);
-      console.log('📊 Request params:', req.params);
-      console.log('📊 Request query:', req.query);
-      console.log('📊 Request method:', req.method);
 
       const result = await historyModel.getRecommendationById({ userId: null, id });
-      console.log('📊 Database result:', result ? 'Found' : 'Not found');
-      if (result) {
-        console.log('📊 Result details:', {
-          id: result.id,
-          type: result.recommendationType,
-          destination: result.destination
-        });
-      }
 
       if (!result) {
-        console.log('❌ Recommendation not found for ID:', id);
         return res.status(404).json({
           success: false,
           message: 'Recommendation not found'
         });
       }
 
-      console.log('✅ Recommendation found:', {
-        id: result.id,
-        type: result.recommendationType,
-        destination: result.destination
-      });
-
       res.json({
         success: true,
         data: result
       });
     } catch (error) {
-      console.error('❌ Error fetching public recommendation:', error);
-      console.error('❌ Error details:', {
-        message: error.message,
-        stack: error.stack,
-        name: error.name
-      });
       res.status(500).json({
         success: false,
         message: 'Server error while fetching recommendation',
@@ -146,82 +106,25 @@ class HistoryController {
   async getPublicUnifiedTrip(req, res) {
     try {
       const { tripId } = req.params;
-      console.log('🔍 getPublicUnifiedTrip called with tripId:', tripId);
-      console.log('📊 Request params:', req.params);
-      console.log('📊 Request query:', req.query);
-      console.log('📊 Request method:', req.method);
 
       const result = await historyModel.getUnifiedTripById({ userId: null, tripId });
-      console.log('📊 Database result:', result ? 'Found' : 'Not found');
-      if (result) {
-        console.log('📊 Unified trip details:', {
-          tripId: result.tripId,
-          tripName: result.tripName,
-          destination: result.destination
-        });
-      }
 
       if (!result) {
-        console.log('❌ Unified trip not found for tripId:', tripId);
         return res.status(404).json({
           success: false,
           message: 'Unified trip not found'
         });
       }
 
-      console.log('✅ Unified trip found:', {
-        tripId: result.tripId,
-        tripName: result.tripName,
-        destination: result.destination
-      });
-
       res.json({
         success: true,
         data: result
       });
     } catch (error) {
-      console.error('❌ Error fetching public unified trip:', error);
-      console.error('❌ Error details:', {
-        message: error.message,
-        stack: error.stack,
-        name: error.name
-      });
       res.status(500).json({
         success: false,
         message: 'Server error while fetching unified trip',
         error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
-      });
-    }
-  }
-
-  // Debug method to check available IDs
-  async getAvailableIds(req, res) {
-    try {
-      console.log('🔍 Getting available IDs for debugging...');
-      
-      // Get individual recommendation IDs
-      const individualIds = await historyModel.getAvailableRecommendationIds();
-      console.log('📊 Individual recommendation IDs:', individualIds);
-      
-      // Get unified trip IDs
-      const unifiedIds = await historyModel.getAvailableUnifiedTripIds();
-      console.log('📊 Unified trip IDs:', unifiedIds);
-      
-      res.json({
-        success: true,
-        data: {
-          individualRecommendations: individualIds,
-          unifiedTrips: unifiedIds,
-          totalIndividual: individualIds.length,
-          totalUnified: unifiedIds.length
-        }
-      });
-    } catch (error) {
-      console.error('❌ Error getting available IDs:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Error getting available IDs',
-        error: error.message
       });
     }
   }
@@ -246,7 +149,6 @@ class HistoryController {
         data: result
       });
     } catch (error) {
-      console.error('Error fetching recommendation:', error);
       res.status(500).json({
         success: false,
         message: 'Server error while fetching recommendation'
@@ -291,7 +193,6 @@ class HistoryController {
         data: result
       });
     } catch (error) {
-      console.error('Error updating recommendation:', error);
       res.status(500).json({
         success: false,
         message: 'Server error while updating recommendation'
@@ -319,7 +220,6 @@ class HistoryController {
         message: 'Recommendation deleted successfully'
       });
     } catch (error) {
-      console.error('Error deleting recommendation:', error);
       res.status(500).json({
         success: false,
         message: 'Server error while deleting recommendation'
@@ -338,7 +238,6 @@ class HistoryController {
         data: destinations
       });
     } catch (error) {
-      console.error('Error fetching user destinations:', error);
       res.status(500).json({
         success: false,
         message: 'Server error while fetching destinations'
@@ -357,7 +256,6 @@ class HistoryController {
         data: tags
       });
     } catch (error) {
-      console.error('Error fetching user tags:', error);
       res.status(500).json({
         success: false,
         message: 'Server error while fetching tags'
@@ -376,7 +274,6 @@ class HistoryController {
         data: types
       });
     } catch (error) {
-      console.error('Error fetching recommendation types:', error);
       res.status(500).json({
         success: false,
         message: 'Server error while fetching recommendation types'
@@ -397,7 +294,6 @@ class HistoryController {
         data: result
       });
     } catch (error) {
-      console.error('Error fetching recommendations by trip:', error);
       res.status(500).json({
         success: false,
         message: 'Server error while fetching trip recommendations'
@@ -438,7 +334,6 @@ class HistoryController {
         data: result
       });
     } catch (error) {
-      console.error('Error saving app recommendation:', error);
       res.status(500).json({
         success: false,
         message: 'Server error while saving app recommendation'
@@ -468,7 +363,6 @@ class HistoryController {
         pagination: result.pagination
       });
     } catch (error) {
-      console.error('Error fetching app history:', error);
       res.status(500).json({
         success: false,
         message: 'Server error while fetching app history'
@@ -496,7 +390,6 @@ class HistoryController {
         data: result
       });
     } catch (error) {
-      console.error('Error fetching app recommendation:', error);
       res.status(500).json({
         success: false,
         message: 'Server error while fetching app recommendation'
@@ -541,7 +434,6 @@ class HistoryController {
         data: result
       });
     } catch (error) {
-      console.error('Error updating app recommendation:', error);
       res.status(500).json({
         success: false,
         message: 'Server error while updating app recommendation'
@@ -569,7 +461,6 @@ class HistoryController {
         message: 'App recommendation deleted successfully'
       });
     } catch (error) {
-      console.error('Error deleting app recommendation:', error);
       res.status(500).json({
         success: false,
         message: 'Server error while deleting app recommendation'
@@ -594,7 +485,6 @@ class HistoryController {
         data: result
       });
     } catch (error) {
-      console.error('Error fetching unified trips:', error);
       res.status(500).json({
         success: false,
         message: 'Server error while fetching unified trips'
@@ -625,7 +515,6 @@ class HistoryController {
         data: result
       });
     } catch (error) {
-      console.error('Error fetching unified trip:', error);
       res.status(500).json({
         success: false,
         message: 'Server error while fetching unified trip'
@@ -656,7 +545,6 @@ class HistoryController {
         message: `Unified trip deleted successfully (${deletedCount} recommendations removed)`
       });
     } catch (error) {
-      console.error('Error deleting unified trip:', error);
       res.status(500).json({
         success: false,
         message: 'Server error while deleting unified trip'

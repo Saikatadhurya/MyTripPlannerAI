@@ -19,86 +19,47 @@ const ShareableRecommendation: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  console.log('🎯 ShareableRecommendation component mounted');
-  console.log('🔍 URL params:', { id });
-  console.log('🌐 Current URL:', window.location.href);
-  console.log('📍 Current pathname:', window.location.pathname);
-
   useEffect(() => {
     const loadRecommendation = async () => {
-      console.log('🚀 Starting loadRecommendation with ID:', id);
-      
       if (!id) {
-        console.log('❌ No ID provided');
         setError('Invalid recommendation ID');
         setLoading(false);
         return;
       }
 
       try {
-        console.log('⏳ Setting loading to true');
         setLoading(true);
         setError(null);
         
         // Try to load as individual recommendation first
         try {
-          console.log('🔍 Attempting to fetch individual recommendation with ID:', id);
           const individualRec = await historyService.getPublicRecommendationById(id);
-          console.log('📊 Individual recommendation API response:', {
-            success: !!individualRec,
-            hasData: !!individualRec,
-            type: individualRec?.recommendationType,
-            destination: individualRec?.destination,
-            hasResponseData: !!individualRec?.responseData,
-            responseDataKeys: individualRec?.responseData ? Object.keys(individualRec.responseData) : 'none',
-            responseDataStructure: individualRec?.responseData
-          });
           
           if (individualRec) {
-            console.log('✅ Individual recommendation found, setting state');
             setRecommendation(individualRec);
             setLoading(false);
             return;
           }
         } catch (individualError) {
-          console.log('❌ Individual recommendation fetch failed:', individualError);
+          // Individual recommendation not found, continue to unified trip
         }
 
         // If not found as individual, try as unified trip
         try {
-          console.log('🔍 Attempting to fetch unified trip with tripId:', id);
           const trip = await historyService.getPublicUnifiedTripById(id);
-          console.log('📊 Unified trip API response:', {
-            success: !!trip,
-            hasData: !!trip,
-            tripId: trip?.tripId,
-            tripName: trip?.tripName,
-            destination: trip?.destination,
-            hasItinerary: !!trip?.itinerary,
-            hasPackingList: !!trip?.packingList,
-            hasFoodRecommendations: !!trip?.foodRecommendations,
-            hasAppRecommendations: !!trip?.appRecommendations,
-            hasMusicRecommendations: !!trip?.musicRecommendations,
-            hasLingoRecommendations: !!trip?.lingoRecommendations,
-            recommendationTypes: trip?.recommendation_types,
-            recommendationCount: trip?.recommendation_count,
-            fullTripData: trip
-          });
           
           if (trip) {
-            console.log('✅ Unified trip found, setting state');
             setUnifiedTrip(trip);
             setLoading(false);
             return;
           }
         } catch (unifiedError) {
-          console.log('❌ Unified trip fetch failed:', unifiedError);
+          // Unified trip not found
         }
 
         setError('Recommendation not found');
         setLoading(false);
       } catch (err) {
-        console.error('Error loading recommendation:', err);
         setError('Failed to load recommendation');
         setLoading(false);
       }
@@ -112,7 +73,6 @@ const ShareableRecommendation: React.FC = () => {
   };
 
   if (loading) {
-    console.log('⏳ ShareableRecommendation: Loading state');
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-violet-50/30 flex items-center justify-center">
         <div className="text-center">
@@ -149,12 +109,6 @@ const ShareableRecommendation: React.FC = () => {
   }
 
   function renderIndividualRecommendation(rec: RecommendationHistory) {
-    console.log('Rendering individual recommendation:', {
-      type: rec.recommendationType,
-      hasResponseData: !!rec.responseData,
-      responseDataKeys: rec.responseData ? Object.keys(rec.responseData) : 'null/undefined',
-      responseData: rec.responseData
-    });
 
     if (!rec.responseData) {
       return (
@@ -184,14 +138,6 @@ const ShareableRecommendation: React.FC = () => {
     const recommendationData = rec.responseData || {};
     const requestData = rec.requestData || {};
 
-    console.log('🔍 Processing individual recommendation data:', {
-      recommendationType: rec.recommendationType,
-      hasResponseData: !!rec.responseData,
-      responseDataType: typeof rec.responseData,
-      responseDataKeys: rec.responseData ? Object.keys(rec.responseData) : 'none',
-      recommendationData,
-      requestData
-    });
 
     switch (rec.recommendationType) {
       case 'apps':
@@ -208,17 +154,6 @@ const ShareableRecommendation: React.FC = () => {
           festivalsAndSeasonal: Array.isArray(recommendationData.festivalsAndSeasonal) ? recommendationData.festivalsAndSeasonal : []
         };
         
-        console.log('📱 Apps data structure:', {
-          destination: appsData.destination,
-          transportAndTravel: appsData.transportAndTravel.length,
-          stayAndLiving: appsData.stayAndLiving.length,
-          foodAndDining: appsData.foodAndDining.length,
-          entertainmentAndLeisure: appsData.entertainmentAndLeisure.length,
-          shoppingAndEssentials: appsData.shoppingAndEssentials.length,
-          explorationAndTours: appsData.explorationAndTours.length,
-          utilitiesAndSafety: appsData.utilitiesAndSafety.length,
-          festivalsAndSeasonal: appsData.festivalsAndSeasonal.length
-        });
         return (
           <AppFinderResult
             recommendations={appsData}
@@ -260,12 +195,6 @@ const ShareableRecommendation: React.FC = () => {
           destination: recommendationData.destination || rec.destination || 'Unknown Destination',
           musicCategories: Array.isArray(recommendationData.musicCategories) ? recommendationData.musicCategories : []
         };
-        
-        console.log('🎵 Music data structure:', {
-          destination: musicData.destination,
-          musicCategories: musicData.musicCategories.length,
-          rawRecommendationData: recommendationData
-        });
         
         return (
           <MusicFinderResult
@@ -310,23 +239,6 @@ const ShareableRecommendation: React.FC = () => {
           startDate: recommendationData.startDate || new Date().toISOString().split('T')[0]
         };
         
-        console.log('🎒 Packing data structure:', {
-          destination: packingData.destination,
-          clothingAndFootwear: packingData.clothingAndFootwear.length,
-          toiletriesAndPersonalCare: packingData.toiletriesAndPersonalCare.length,
-          medicinesAndHealth: packingData.medicinesAndHealth.length,
-          electronicsAndGear: packingData.electronicsAndGear.length,
-          documentsAndMoney: packingData.documentsAndMoney.length,
-          optionalComfortItems: packingData.optionalComfortItems.length,
-          adventureClothing: packingData.adventureClothing.length,
-          bagSuggestion: packingData.bagSuggestion,
-          locallyAvailableItems: packingData.locallyAvailableItems.length,
-          days: packingData.days,
-          approximateTemperature: packingData.approximateTemperature,
-          startDate: packingData.startDate,
-          rawRecommendationData: recommendationData
-        });
-        
         return (
           <PackingListPreview
             packingList={packingData}
@@ -365,17 +277,6 @@ const ShareableRecommendation: React.FC = () => {
           referenceBlogs: Array.isArray(recommendationData.referenceBlogs) ? recommendationData.referenceBlogs : []
         };
         
-        console.log('🗺️ Itinerary data structure:', {
-          destination: itineraryData.destination,
-          days: itineraryData.days,
-          persons: itineraryData.persons,
-          budgetSummary: itineraryData.budgetSummary,
-          coveredDestinations: itineraryData.coveredDestinations.length,
-          plan: itineraryData.plan.length,
-          referenceBlogs: itineraryData.referenceBlogs.length,
-          rawRecommendationData: recommendationData
-        });
-        
         return (
           <ItineraryPreview
             itinerary={itineraryData}
@@ -386,15 +287,6 @@ const ShareableRecommendation: React.FC = () => {
         );
       
       default:
-        console.log('❌ Unsupported recommendation type:', rec.recommendationType);
-        console.log('📊 Raw recommendation data for debugging:', {
-          recommendationType: rec.recommendationType,
-          destination: rec.destination,
-          hasResponseData: !!rec.responseData,
-          responseDataKeys: rec.responseData ? Object.keys(rec.responseData) : 'none',
-          responseDataStructure: rec.responseData
-        });
-        
         return (
           <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-violet-50/30 flex items-center justify-center">
             <div className="bg-white rounded-2xl p-8 shadow-xl border border-white/60 max-w-md mx-4">
@@ -434,18 +326,6 @@ const ShareableRecommendation: React.FC = () => {
   }
 
   function renderUnifiedTrip(trip: UnifiedTrip) {
-    console.log('Rendering unified trip:', {
-      tripId: trip.tripId,
-      hasQuestionnaireData: !!trip.questionnaireData,
-      questionnaireDataKeys: trip.questionnaireData ? Object.keys(trip.questionnaireData) : 'null/undefined',
-      hasItinerary: !!trip.itinerary,
-      hasPackingList: !!trip.packingList,
-      hasFoodRecommendations: !!trip.foodRecommendations,
-      hasAppRecommendations: !!trip.appRecommendations,
-      hasMusicRecommendations: !!trip.musicRecommendations,
-      hasLingoRecommendations: !!trip.lingoRecommendations
-    });
-
     // Create a properly structured unified plan from the API response
     const unifiedPlan = {
       itinerary: trip.itinerary || null,
@@ -469,17 +349,6 @@ const ShareableRecommendation: React.FC = () => {
     // No errors since this is from history
     const stepErrors = {};
 
-    console.log('🗺️ Unified plan structure:', {
-      hasItinerary: !!unifiedPlan.itinerary,
-      hasPackingList: !!unifiedPlan.packingList,
-      hasFoodRecommendations: !!unifiedPlan.foodRecommendations,
-      hasAppRecommendations: !!unifiedPlan.appRecommendations,
-      hasMusicRecommendations: !!unifiedPlan.musicRecommendations,
-      hasLingoRecommendations: !!unifiedPlan.lingoRecommendations,
-      loadingStatus,
-      stepErrors
-    });
-
     return (
       <UnifiedResultPreview
         plan={unifiedPlan}
@@ -500,20 +369,9 @@ const ShareableRecommendation: React.FC = () => {
 
 
   // Main component return
-  console.log('🎨 Rendering ShareableRecommendation component');
-  console.log('📊 Current state:', { 
-    loading, 
-    error, 
-    hasRecommendation: !!recommendation, 
-    hasUnifiedTrip: !!unifiedTrip,
-    recommendationType: recommendation?.recommendationType,
-    tripId: unifiedTrip?.tripId,
-    tripName: unifiedTrip?.tripName
-  });
 
   // Render individual recommendation
   if (recommendation) {
-    console.log('🔄 Rendering individual recommendation');
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-violet-50/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
@@ -531,7 +389,6 @@ const ShareableRecommendation: React.FC = () => {
 
   // Render unified trip
   if (unifiedTrip) {
-    console.log('🔄 Rendering unified trip');
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-violet-50/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
@@ -547,7 +404,6 @@ const ShareableRecommendation: React.FC = () => {
     );
   }
 
-  console.log('❌ No recommendation or unified trip to render');
   return null;
 };
 

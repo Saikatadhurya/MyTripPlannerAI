@@ -7,12 +7,6 @@ const router = express.Router();
 router.post('/signup', authController.signup);
 router.post('/signin', authController.signin);
 
-// DB Test Route
-router.get('/db-test', authController.testDbConnection);
-
-// Social Accounts Test Route
-router.get('/test-social-accounts', authController.testSocialAccounts);
-
 // Google Auth
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 router.get('/google/callback', 

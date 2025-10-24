@@ -508,7 +508,7 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
       await updateRecommendation(id, data);
       setEditingItem(null);
     } catch (error) {
-      console.error('Failed to update recommendation:', error);
+      // Failed to update recommendation
     }
   };
 
@@ -517,7 +517,7 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
       try {
         await deleteRecommendation(id);
       } catch (error) {
-        console.error('Failed to delete recommendation:', error);
+        // Failed to delete recommendation
       }
     }
   };
@@ -535,7 +535,6 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
       
       setToast({ message: 'Shareable link copied to clipboard!', type: 'success' });
     } catch (error) {
-      console.error('Failed to copy link:', error);
       setToast({ message: 'Failed to copy link. Please try again.', type: 'error' });
     }
   };
@@ -547,7 +546,6 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
       
       setToast({ message: 'Shareable link copied to clipboard!', type: 'success' });
     } catch (error) {
-      console.error('Failed to copy link:', error);
       setToast({ message: 'Failed to copy link. Please try again.', type: 'error' });
     }
   };
@@ -564,7 +562,7 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
       const allUnifiedTrips = await historyService.getUnifiedTrips(1, 1000); // Load up to 1000 trips
       setTotalUnifiedCount(allUnifiedTrips.length);
     } catch (error) {
-      console.error('Failed to load total counts:', error);
+      // Failed to load total counts
     }
   };
 
@@ -603,7 +601,7 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
       const filteredTrips = filterUnifiedTrips(trips, searchTerm, selectedDestination);
       setUnifiedTrips(filteredTrips);
     } catch (error) {
-      console.error('Failed to load unified trips:', error);
+      // Failed to load unified trips
     } finally {
       setUnifiedTripsLoading(false);
     }
@@ -623,7 +621,7 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
         setAllUnifiedTrips(prev => prev.filter(trip => trip.tripId !== tripId));
         setTotalUnifiedCount(prev => prev - 1);
       } catch (error) {
-        console.error('Failed to delete unified trip:', error);
+        // Failed to delete unified trip
       }
     }
   };

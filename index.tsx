@@ -3,7 +3,6 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import './services/axiosInterceptor'; // Initialize axios interceptors
-import './services/autoLogoutTester'; // Initialize auto logout tester for development
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {

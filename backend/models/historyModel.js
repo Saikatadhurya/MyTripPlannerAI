@@ -3,13 +3,6 @@ const { pool } = require('../config/db');
 class HistoryModel {
   // Save a new recommendation to history
   async saveRecommendation({ userId, recommendationType, destination, language, requestData, responseData, title, tags, notes, tripContext, tripId, tripName }) {
-    console.log('HistoryModel.saveRecommendation called with:', {
-      userId, recommendationType, destination, language, 
-      requestDataKeys: Object.keys(requestData || {}), 
-      responseDataKeys: Object.keys(responseData || {}),
-      title, tags, notes, tripContext, tripId, tripName
-    });
-    
     const client = await pool.connect();
     try {
       const query = `
@@ -35,16 +28,8 @@ class HistoryModel {
       ];
       
       const result = await client.query(query, values);
-      console.log('Database insert successful:', result.rows[0]);
       return result.rows[0];
     } catch (error) {
-      console.error('Database error in saveRecommendation:', error);
-      console.error('Error details:', {
-        message: error.message,
-        code: error.code,
-        detail: error.detail,
-        hint: error.hint
-      });
       throw error;
     } finally {
       client.release();
@@ -180,41 +165,6 @@ class HistoryModel {
           totalPages: Math.ceil(total / limit)
         }
       };
-    } finally {
-      client.release();
-    }
-  }
-
-  // Get available recommendation IDs for debugging
-  async getAvailableRecommendationIds() {
-    const client = await pool.connect();
-    try {
-      const query = `
-        SELECT id, recommendation_type, destination, created_at
-        FROM planora.recommendations_history
-        ORDER BY created_at DESC
-        LIMIT 10
-      `;
-      const result = await client.query(query);
-      return result.rows;
-    } finally {
-      client.release();
-    }
-  }
-
-  // Get available unified trip IDs for debugging
-  async getAvailableUnifiedTripIds() {
-    const client = await pool.connect();
-    try {
-      const query = `
-        SELECT DISTINCT trip_id, trip_name, destination, created_at
-        FROM planora.recommendations_history
-        WHERE trip_id IS NOT NULL
-        ORDER BY created_at DESC
-        LIMIT 10
-      `;
-      const result = await client.query(query);
-      return result.rows;
     } finally {
       client.release();
     }
@@ -523,10 +473,6 @@ class HistoryModel {
       `;
       
       const result = await client.query(query, [userId, limit, offset]);
-      console.log('getUnifiedTrips result:', result.rows.length, 'trips found');
-      result.rows.forEach(trip => {
-        console.log(`Trip ${trip.tripId}: ${trip.recommendation_count} recommendations - ${trip.recommendation_types.join(', ')}`);
-      });
       return result.rows;
     } finally {
       client.release();

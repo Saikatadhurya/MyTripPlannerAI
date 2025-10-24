@@ -105,17 +105,11 @@ class ProfileService {
       throw new Error('Not authenticated. Please sign in to change your password.');
     }
 
-    console.log('ProfileService: Changing password with data:', { ...data, currentPassword: '[HIDDEN]', newPassword: '[HIDDEN]' });
-    console.log('ProfileService: Headers:', this.getHeaders());
-
     const response = await fetch(`${this.baseUrl}/change-password`, {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify(data),
     });
-
-    console.log('ProfileService: Response status:', response.status);
-    console.log('ProfileService: Response headers:', Object.fromEntries(response.headers.entries()));
 
     return this.handleResponse<ProfileResponse>(response);
   }
@@ -140,7 +134,6 @@ class ProfileService {
       if (!Array.isArray(list)) return false;
       return list.some((account: any) => account?.provider === 'google');
     } catch (error) {
-      console.error('Error checking Google account:', error);
       return false;
     }
   }
@@ -156,7 +149,7 @@ class ProfileService {
         const user = JSON.parse(userStr);
         userId = user.id;
       } catch (error) {
-        console.error('Error parsing user data:', error);
+        // Error parsing user data
       }
     }
     
@@ -167,7 +160,7 @@ class ProfileService {
     // Redirect to Google OAuth with returnUrl and state parameters
     const currentUrl = window.location.href;
     const state = encodeURIComponent(JSON.stringify({ userId }));
-    const linkingUrl = `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/auth/google/link?returnUrl=${encodeURIComponent(currentUrl)}&state=${state}`;
+    const linkingUrl = `${process.env.REACT_APP_API_URL || process.env.VITE_API_URL || 'http://localhost:5000'}/auth/google/link?returnUrl=${encodeURIComponent(currentUrl)}&state=${state}`;
     window.location.href = linkingUrl;
   }
 

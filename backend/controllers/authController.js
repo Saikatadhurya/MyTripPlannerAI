@@ -25,7 +25,6 @@ exports.signup = async (req, res) => {
         const token = jwt.generateToken({ id: newUser.id, email: newUser.email });
         res.status(201).json({ message: 'User registered successfully', user: newUser, token });
     } catch (error) {
-        console.error('Signup error:', error);
         res.status(500).json({ message: 'Server error during signup' });
     }
 };
@@ -51,7 +50,6 @@ exports.signin = async (req, res) => {
         const token = jwt.generateToken({ id: user.id, email: user.email });
         res.status(200).json({ message: 'Logged in successfully', user, token });
     } catch (error) {
-        console.error('Signin error:', error);
         res.status(500).json({ message: 'Server error during signin' });
     }
 };
@@ -59,7 +57,7 @@ exports.signin = async (req, res) => {
 exports.socialAuthCallback = async (req, res) => {
     // Passport will attach user to req.user (minimal info)
     if (!req.user || !req.user.id) {
-        return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5000'}?error=${encodeURIComponent('Social authentication failed: user not found in request')}`);
+        return res.redirect(`${process.env.FRONTEND_URL || process.env.BASE_URL || 'http://localhost:5000'}?error=${encodeURIComponent('Social authentication failed: user not found in request')}`);
     }
 
     try {
@@ -67,30 +65,18 @@ exports.socialAuthCallback = async (req, res) => {
         const user = await userModel.findUserById(req.user.id);
 
         if (!user) {
-            return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5000'}?error=${encodeURIComponent('Social authentication failed: user not found in database')}`);
+            return res.redirect(`${process.env.FRONTEND_URL || process.env.BASE_URL || 'http://localhost:5000'}?error=${encodeURIComponent('Social authentication failed: user not found in database')}`);
         }
 
         const token = jwt.generateToken({ id: user.id, email: user.email });
         
         // Redirect to frontend with token and user data
         const userData = encodeURIComponent(JSON.stringify(user));
-        const redirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:5000'}?token=${token}&user=${userData}`;
+        const redirectUrl = `${process.env.FRONTEND_URL || process.env.BASE_URL || 'http://localhost:5000'}?token=${token}&user=${userData}`;
         
         res.redirect(redirectUrl);
     } catch (error) {
-        console.error('Social auth callback error:', error);
-        res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5000'}?error=${encodeURIComponent('Server error during social authentication')}`);
-    }
-};
-
-// New function to test DB connection
-exports.testDbConnection = async (req, res) => {
-    try {
-        await userModel.findUserByEmail('nonexistent@example.com'); // A simple, non-disruptive query
-        res.status(200).json({ message: 'Database connection successful!' });
-    } catch (error) {
-        console.error('Database test connection error:', error);
-        res.status(500).json({ message: 'Database connection failed', error: error.message });
+        res.redirect(`${process.env.FRONTEND_URL || process.env.BASE_URL || 'http://localhost:5000'}?error=${encodeURIComponent('Server error during social authentication')}`);
     }
 };
 
@@ -100,11 +86,11 @@ exports.googleLinkingCallback = async (req, res) => {
         // Get profile info from authInfo (third parameter from Passport)
         const profileInfo = req.authInfo?.profile;
         if (!profileInfo || !profileInfo.id) {
-            return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5000'}?error=${encodeURIComponent('Google linking failed: profile not found in request')}`);
+            return res.redirect(`${process.env.FRONTEND_URL || process.env.BASE_URL || 'http://localhost:5000'}?error=${encodeURIComponent('Google linking failed: profile not found in request')}`);
         }
 
         // Get the return URL and state from query parameters
-        const returnUrl = req.query.returnUrl || `${process.env.FRONTEND_URL || 'http://localhost:5000'}`;
+        const returnUrl = req.query.returnUrl || `${process.env.FRONTEND_URL || process.env.BASE_URL || 'http://localhost:5000'}`;
         const stateParam = req.query.state;
         let currentUserId = null;
         
@@ -115,7 +101,7 @@ exports.googleLinkingCallback = async (req, res) => {
                     currentUserId = decodedState.userId;
                 }
             } catch (parseError) {
-                console.error('Error parsing state parameter:', parseError);
+                // Error parsing state parameter
             }
         }
         
@@ -138,80 +124,20 @@ exports.googleLinkingCallback = async (req, res) => {
 
         // Create the social account link
         try {
-            console.log('Creating social account link:', {
-                user_id: currentUserId,
-                provider: 'google',
-                provider_id: profileInfo.id
-            });
-            
             const result = await userModel.createSocialAccount({
                 user_id: currentUserId,
                 provider: 'google',
                 provider_id: profileInfo.id
             });
-            
-            console.log('Social account created successfully:', result);
             
             const successUrl = `${returnUrl}?message=${encodeURIComponent('Google account linked successfully!')}`;
             res.redirect(successUrl);
         } catch (linkError) {
-            console.error('Error linking Google account:', linkError);
             const errorUrl = `${returnUrl}?error=${encodeURIComponent('Failed to link Google account. Please try again.')}`;
             res.redirect(errorUrl);
         }
     } catch (error) {
-        console.error('Google linking callback error:', error);
-        const returnUrl = req.query.returnUrl || `${process.env.FRONTEND_URL || 'http://localhost:5000'}`;
+        const returnUrl = req.query.returnUrl || `${process.env.FRONTEND_URL || process.env.BASE_URL || 'http://localhost:5000'}`;
         res.redirect(`${returnUrl}?error=${encodeURIComponent('Server error during Google account linking')}`);
-    }
-};
-
-// Test database connection and social accounts table
-exports.testSocialAccounts = async (req, res) => {
-    try {
-        console.log('Testing social accounts functionality...');
-        
-        // Test database connection
-        const testUser = await userModel.findUserByEmail('test@example.com');
-        console.log('Database connection test:', testUser ? 'Connected' : 'Connected (no test user found)');
-        
-        // Test social accounts table structure
-        try {
-            const result = await userModel.createSocialAccount({
-                user_id: '00000000-0000-0000-0000-000000000000', // Test UUID
-                provider: 'test',
-                provider_id: 'test123'
-            });
-            console.log('Social accounts table test - INSERT:', result);
-            
-            // Clean up test data
-            await userModel.deleteSocialAccount('test', 'test123');
-            console.log('Social accounts table test - DELETE: Success');
-            
-            res.json({ 
-                success: true, 
-                message: 'Database and social accounts table working correctly',
-                details: {
-                    database: 'Connected',
-                    social_accounts_table: 'Working',
-                    insert_test: 'Passed',
-                    delete_test: 'Passed'
-                }
-            });
-        } catch (tableError) {
-            console.error('Social accounts table test failed:', tableError);
-            res.status(500).json({ 
-                success: false, 
-                message: 'Social accounts table test failed',
-                error: tableError.message
-            });
-        }
-    } catch (error) {
-        console.error('Database test error:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Database test failed',
-            error: error.message
-        });
     }
 };

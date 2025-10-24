@@ -37,7 +37,7 @@ passport.use('google', new GoogleStrategy(
     {
         clientID: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        callbackURL: `${process.env.BACKEND_URL || 'http://localhost:5000'}/auth/google/callback`
+        callbackURL: `${process.env.BACKEND_URL || process.env.BASE_URL || 'http://localhost:5000'}/auth/google/callback`
     },
     async (accessToken, refreshToken, profile, done) => {
         try {
@@ -79,7 +79,6 @@ passport.use('google', new GoogleStrategy(
 
             return done(null, { id: user.id, email: user.email });
         } catch (error) {
-            console.error('Google OAuth error:', error);
             done(error, null);
         }
     }
@@ -93,7 +92,7 @@ passport.use('google-link', new GoogleStrategy(
     {
         clientID: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        callbackURL: `${process.env.BACKEND_URL || 'http://localhost:5000'}/auth/google/link/callback`
+        callbackURL: `${process.env.BACKEND_URL || process.env.BASE_URL || 'http://localhost:5000'}/auth/google/link/callback`
     },
     async (accessToken, refreshToken, profile, done) => {
         try {
@@ -108,7 +107,6 @@ passport.use('google-link', new GoogleStrategy(
                 }
             });
         } catch (error) {
-            console.error('Google linking OAuth error:', error);
             done(error, null);
         }
     }

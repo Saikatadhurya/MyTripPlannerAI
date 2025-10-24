@@ -18,9 +18,6 @@ const {
 router.get('/share/:id', historyController.getPublicRecommendation);
 router.get('/share/unified-trips/:tripId', historyController.getPublicUnifiedTrip);
 
-// Debug route to check available IDs
-router.get('/debug/ids', historyController.getAvailableIds);
-
 // All other routes require authentication
 router.use(authMiddleware);
 

@@ -2,7 +2,7 @@ import axios from 'axios';
 import { TokenUtils } from './tokenUtils';
 import { startTokenMonitoring, stopTokenMonitoring } from './axiosInterceptor';
 
-const API_URL = 'http://localhost:5000/auth'; // Backend auth API URL
+const API_URL = process.env.REACT_APP_API_URL || process.env.VITE_API_URL || 'http://localhost:5000/auth'; // Backend auth API URL
 
 export interface User {
   id: string;
@@ -44,26 +44,17 @@ class AuthService {
       const savedUser = localStorage.getItem('planora_user');
       const savedToken = localStorage.getItem('planora_token');
       
-      console.log('AuthService: Loading session from localStorage');
-      console.log('AuthService: savedUser:', savedUser);
-      console.log('AuthService: savedToken:', savedToken);
-      
       if (savedUser && savedToken) {
         // Check if token is expired before loading session
         if (TokenUtils.isTokenExpired(savedToken)) {
-          console.warn('AuthService: Saved token is expired, clearing session');
           this.clearSession();
           return;
         }
         
         const parsedUser = JSON.parse(savedUser);
-        console.log('AuthService: Parsed user from localStorage:', parsedUser);
-        console.log('AuthService: User full_name:', parsedUser.full_name);
-        console.log('AuthService: User name (if exists):', parsedUser.name);
         
         // Check if the stored user has the old structure (name instead of full_name)
         if (parsedUser.name && !parsedUser.full_name) {
-          console.warn('AuthService: Found user with old structure (name instead of full_name), migrating...');
           parsedUser.full_name = parsedUser.name;
           delete parsedUser.name;
           // Update localStorage with the corrected structure
@@ -72,15 +63,11 @@ class AuthService {
         
         this.currentUser = parsedUser;
         this.token = savedToken;
-        console.log('AuthService: Session loaded successfully:', this.currentUser);
         
         // Start token monitoring for auto logout
         startTokenMonitoring();
-      } else {
-        console.log('AuthService: No saved session found');
       }
     } catch (error) {
-      console.error('Error loading session:', error);
       this.clearSession();
     }
   }
@@ -90,7 +77,7 @@ class AuthService {
       localStorage.setItem('planora_user', JSON.stringify(user));
       localStorage.setItem('planora_token', token);
     } catch (error) {
-      console.error('Error saving session:', error);
+      // Error saving session
     }
   }
 
@@ -99,7 +86,7 @@ class AuthService {
       localStorage.removeItem('planora_user');
       localStorage.removeItem('planora_token');
     } catch (error) {
-      console.error('Error clearing session:', error);
+      // Error clearing session
     }
     this.currentUser = null;
     this.token = null;
@@ -110,9 +97,7 @@ class AuthService {
 
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     try {
-      console.log('AuthService: Attempting login for:', credentials.email);
       const response = await axios.post(`${API_URL}/signin`, credentials);
-      console.log('AuthService: Login response received');
       
       const { user, token } = response.data;
       
@@ -126,16 +111,13 @@ class AuthService {
       this.currentUser = authenticatedUser;
       this.token = token;
       this.saveSession(authenticatedUser, token);
-      console.log('AuthService: Login successful for:', authenticatedUser.email);
 
       // Start token monitoring for auto logout
       startTokenMonitoring();
 
       return { user: authenticatedUser, token };
     } catch (error) {
-      console.error('AuthService: Login failed:', error);
       if (axios.isAxiosError(error) && error.response) {
-        console.error('AuthService: API error:', error.response.data);
         throw new Error(error.response.data.message || 'Login failed');
       } else if (error instanceof Error) {
         throw error;
@@ -146,13 +128,11 @@ class AuthService {
 
   async signup(credentials: SignupCredentials): Promise<AuthResponse> {
     try {
-      console.log('AuthService: Attempting signup for:', credentials.email);
       const response = await axios.post(`${API_URL}/signup`, { 
         full_name: credentials.full_name, 
         email: credentials.email, 
         password: credentials.password 
       });
-      console.log('AuthService: Signup response received');
       
       const { user, token } = response.data;
 
@@ -166,16 +146,13 @@ class AuthService {
       this.currentUser = newUser;
       this.token = token;
       this.saveSession(newUser, token);
-      console.log('AuthService: Signup successful for:', newUser.email);
 
       // Start token monitoring for auto logout
       startTokenMonitoring();
 
       return { user: newUser, token };
     } catch (error) {
-      console.error('AuthService: Signup failed:', error);
       if (axios.isAxiosError(error) && error.response) {
-        console.error('AuthService: API error:', error.response.data);
         throw new Error(error.response.data.message || 'Signup failed');
       } else if (error instanceof Error) {
         throw error;
@@ -199,7 +176,6 @@ class AuthService {
     
     // Check if token is expired
     if (TokenUtils.isTokenExpired(this.token)) {
-      console.warn('Token is expired, clearing session');
       this.clearSession();
       return false;
     }
