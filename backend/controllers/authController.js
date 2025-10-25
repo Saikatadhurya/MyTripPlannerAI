@@ -69,7 +69,7 @@ exports.signin = async (req, res) => {
 exports.socialAuthCallback = async (req, res) => {
     // Passport will attach user to req.user (minimal info)
     if (!req.user || !req.user.id) {
-        return res.redirect(`${process.env.FRONTEND_URL || process.env.BASE_URL || 'http://localhost:5000'}?error=${encodeURIComponent('Social authentication failed: user not found in request')}`);
+        return res.redirect(`${process.env.FRONTEND_URL || process.env.BASE_URL}?error=${encodeURIComponent('Social authentication failed: user not found in request')}`);
     }
 
     try {
@@ -77,7 +77,7 @@ exports.socialAuthCallback = async (req, res) => {
         const user = await userModel.findUserById(req.user.id);
 
         if (!user) {
-            return res.redirect(`${process.env.FRONTEND_URL || process.env.BASE_URL || 'http://localhost:5000'}?error=${encodeURIComponent('Social authentication failed: user not found in database')}`);
+            return res.redirect(`${process.env.FRONTEND_URL || process.env.BASE_URL}?error=${encodeURIComponent('Social authentication failed: user not found in database')}`);
         }
 
         const token = jwt.generateToken({ id: user.id, email: user.email });
@@ -95,11 +95,11 @@ exports.socialAuthCallback = async (req, res) => {
         
         // Redirect to frontend with token and user data
         const userData = encodeURIComponent(JSON.stringify(user));
-        const redirectUrl = `${process.env.FRONTEND_URL || process.env.BASE_URL || 'http://localhost:5000'}?token=${token}&user=${userData}`;
+        const redirectUrl = `${process.env.FRONTEND_URL || process.env.BASE_URL}?token=${token}&user=${userData}`;
         
         res.redirect(redirectUrl);
     } catch (error) {
-        res.redirect(`${process.env.FRONTEND_URL || process.env.BASE_URL || 'http://localhost:5000'}?error=${encodeURIComponent('Server error during social authentication')}`);
+        res.redirect(`${process.env.FRONTEND_URL || process.env.BASE_URL}?error=${encodeURIComponent('Server error during social authentication')}`);
     }
 };
 
@@ -109,11 +109,11 @@ exports.googleLinkingCallback = async (req, res) => {
         // Get profile info from authInfo (third parameter from Passport)
         const profileInfo = req.authInfo?.profile;
         if (!profileInfo || !profileInfo.id) {
-            return res.redirect(`${process.env.FRONTEND_URL || process.env.BASE_URL || 'http://localhost:5000'}?error=${encodeURIComponent('Google linking failed: profile not found in request')}`);
+            return res.redirect(`${process.env.FRONTEND_URL || process.env.BASE_URL}?error=${encodeURIComponent('Google linking failed: profile not found in request')}`);
         }
 
         // Get the return URL and state from query parameters
-        const returnUrl = req.query.returnUrl || `${process.env.FRONTEND_URL || process.env.BASE_URL || 'http://localhost:5000'}`;
+        const returnUrl = req.query.returnUrl || `${process.env.FRONTEND_URL || process.env.BASE_URL}`;
         const stateParam = req.query.state;
         let currentUserId = null;
         
@@ -160,7 +160,7 @@ exports.googleLinkingCallback = async (req, res) => {
             res.redirect(errorUrl);
         }
     } catch (error) {
-        const returnUrl = req.query.returnUrl || `${process.env.FRONTEND_URL || process.env.BASE_URL || 'http://localhost:5000'}`;
+        const returnUrl = req.query.returnUrl || `${process.env.FRONTEND_URL || process.env.BASE_URL}`;
         res.redirect(`${returnUrl}?error=${encodeURIComponent('Server error during Google account linking')}`);
     }
 };

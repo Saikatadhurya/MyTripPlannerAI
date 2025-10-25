@@ -3,7 +3,7 @@ import { TokenUtils } from './tokenUtils';
 import { startTokenMonitoring, stopTokenMonitoring } from './axiosInterceptor';
 import { CookieUtils } from './cookieUtils';
 
-const API_URL = process.env.REACT_APP_API_URL || process.env.VITE_API_URL || 'http://localhost:5000/auth'; // Backend auth API URL
+const API_URL = process.env.REACT_APP_API_URL || process.env.VITE_API_URL; // Backend auth API URL
 
 export interface User {
   id: string;

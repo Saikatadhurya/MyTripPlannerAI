@@ -37,7 +37,7 @@ passport.use('google', new GoogleStrategy(
     {
         clientID: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        callbackURL: `${process.env.BACKEND_URL || process.env.BASE_URL || 'http://localhost:5000'}/auth/google/callback`
+        callbackURL: `${process.env.BACKEND_URL || process.env.BASE_URL}/auth/google/callback`
     },
     async (accessToken, refreshToken, profile, done) => {
         try {
@@ -92,7 +92,7 @@ passport.use('google-link', new GoogleStrategy(
     {
         clientID: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        callbackURL: `${process.env.BACKEND_URL || process.env.BASE_URL || 'http://localhost:5000'}/auth/google/link/callback`
+        callbackURL: `${process.env.BACKEND_URL || process.env.BASE_URL}/auth/google/link/callback`
     },
     async (accessToken, refreshToken, profile, done) => {
         try {
