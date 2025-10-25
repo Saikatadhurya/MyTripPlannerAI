@@ -99,9 +99,12 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate
   }, []);
 
   // Load profile meta (has_password) for conditional password UI
+  const [isLoadingGeminiKey, setIsLoadingGeminiKey] = useState(true);
+  
   useEffect(() => {
     const loadProfileMeta = async () => {
       try {
+        setIsLoadingGeminiKey(true);
         const resp = await profileService.getProfile();
         const hp = (resp as any)?.data?.user?.has_password;
         const socials = (resp as any)?.data?.user?.social_accounts || [];
@@ -119,6 +122,8 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate
         }
       } catch (e) {
         console.warn('EditProfile: Failed to load profile meta');
+      } finally {
+        setIsLoadingGeminiKey(false);
       }
     };
     loadProfileMeta();
@@ -517,23 +522,32 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate
                     </label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                      <input
-                        type={showPasswords.gemini ? 'text' : 'password'}
-                        value={formData.gemini_api_key}
-                        onChange={(e) => handleInputChange('gemini_api_key', e.target.value)}
-                        className={`w-full pl-10 pr-12 py-3 border rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-colors ${
-                          errors.gemini_api_key ? 'border-red-300' : 'border-gray-300'
-                        }`}
-                        placeholder="Enter your Gemini API key (optional)"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPasswords(prev => ({ ...prev, gemini: !prev.gemini }))}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                        title={showPasswords.gemini ? 'Hide API key' : 'Show API key'}
-                      >
-                        {showPasswords.gemini ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                      </button>
+                      {isLoadingGeminiKey ? (
+                        <div className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl bg-gray-50 flex items-center">
+                          <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin mr-3"></div>
+                          <span className="text-gray-500 text-sm">Loading API key...</span>
+                        </div>
+                      ) : (
+                        <>
+                          <input
+                            type={showPasswords.gemini ? 'text' : 'password'}
+                            value={formData.gemini_api_key}
+                            onChange={(e) => handleInputChange('gemini_api_key', e.target.value)}
+                            className={`w-full pl-10 pr-12 py-3 border rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-colors ${
+                              errors.gemini_api_key ? 'border-red-300' : 'border-gray-300'
+                            }`}
+                            placeholder="Enter your Gemini API key (optional)"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPasswords(prev => ({ ...prev, gemini: !prev.gemini }))}
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                            title={showPasswords.gemini ? 'Hide API key' : 'Show API key'}
+                          >
+                            {showPasswords.gemini ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                          </button>
+                        </>
+                      )}
                     </div>
                     {errors.gemini_api_key && (
                       <p className="mt-1 text-sm text-red-600">{errors.gemini_api_key}</p>
@@ -542,7 +556,7 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate
                       <p className="text-sm text-gray-500">
                         Add your Gemini API key to use your own quota. Leave empty to use the default service.
                       </p>
-                      {formData.gemini_api_key && formData.gemini_api_key.trim().length > 0 && (
+                      {!isLoadingGeminiKey && formData.gemini_api_key && formData.gemini_api_key.trim().length > 0 && (
                         <button
                           type="button"
                           onClick={handleDeleteGeminiKey}
