@@ -2,23 +2,24 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { Budget, Itinerary, Vibe, FoodPreference, BlogReference, TripType, LocationSuggestion } from '../types';
 import { extractJson, cleanCitations } from './jsonUtils';
 import { incrementUsage } from './usageService';
+import { CookieUtils } from './cookieUtils';
 
 // Cache for destination suggestions to avoid redundant API calls
 const suggestionsCache = new Map<string, LocationSuggestion[]>();
 
-export const getDestinationSuggestions = async (query: string): Promise<LocationSuggestion[]> => {
+export const getDestinationSuggestions = async (query: string, userApiKey?: string): Promise<LocationSuggestion[]> => {
   const cacheKey = query.trim().toLowerCase();
   if (suggestionsCache.has(cacheKey)) {
     return suggestionsCache.get(cacheKey)!;
   }
 
-  if (!process.env.API_KEY) {
-    console.error("API key is missing.");
-    return [];
+  const apiKey = userApiKey || CookieUtils.getGeminiApiKey() || process.env.VITE_GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("Gemini key not set. Please provide your Gemini API key in your profile settings.");
   }
 
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = new GoogleGenAI({ apiKey });
 
     const prompt = query.trim()
         ? `You are a master geographer AI. Based on the user input "${query}", provide up to 5 location suggestions.
@@ -69,13 +70,13 @@ export const getDestinationSuggestions = async (query: string): Promise<Location
   }
 };
 
-export const getReferenceBlogs = async (destination: string, language: string): Promise<BlogReference[]> => {
-  if (!process.env.API_KEY) {
-    console.error("API key is missing.");
-    return [];
+export const getReferenceBlogs = async (destination: string, language: string, userApiKey?: string): Promise<BlogReference[]> => {
+  const apiKey = userApiKey || CookieUtils.getGeminiApiKey() || process.env.VITE_GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("Gemini key not set. Please provide your Gemini API key in your profile settings.");
   }
 
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey });
 
   try {
     // --- Find blogs using Google Search ---
@@ -141,14 +142,16 @@ export const generateItinerary = async (
   language: string,
   isRoundTrip: boolean | undefined,
   currency: string,
-  onChunk?: (chunk: string) => void
+  onChunk?: (chunk: string) => void,
+  userApiKey?: string
 ): Promise<Itinerary> => {
 
-  if (!process.env.API_KEY) {
-    throw new Error("API key is missing. Please set it in your environment variables.");
+  const apiKey = userApiKey || CookieUtils.getGeminiApiKey() || process.env.VITE_GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("Gemini key not set. Please provide your Gemini API key in your profile settings.");
   }
 
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey });
   
   const regionalTripInstructions = `
   REGIONAL TRAVEL INSTRUCTION:

@@ -102,7 +102,8 @@ class UserModel {
   async updateProfile(userId, updates) {
     const client = await pool.connect();
     try {
-      const { full_name, email } = updates;
+      const { full_name, email, gemini_api_key } = updates;
+      
       const updateFields = [];
       const values = [];
       let paramCount = 1;
@@ -125,6 +126,11 @@ class UserModel {
         updateFields.push(`email = $${paramCount++}`);
         values.push(email);
       }
+
+      if (gemini_api_key !== undefined) {
+        updateFields.push(`gemini_api_key = $${paramCount++}`);
+        values.push(gemini_api_key);
+      }
   
       if (updateFields.length === 0) {
         throw new Error('No valid fields to update');
@@ -138,9 +144,9 @@ class UserModel {
         UPDATE planora.users 
         SET ${updateFields.join(', ')}
         WHERE id = $${paramCount}
-        RETURNING id, full_name, email, created_at, updated_at
+        RETURNING id, full_name, email, created_at, updated_at, gemini_api_key
       `;
-  
+
       const result = await client.query(query, values);
   
       if (result.rows.length === 0) {
@@ -301,7 +307,7 @@ class UserModel {
     const client = await pool.connect();
     try {
       const result = await client.query(
-        'SELECT id, full_name, email, created_at, updated_at, (password_hash IS NOT NULL) AS has_password FROM planora.users WHERE id = $1',
+        'SELECT id, full_name, email, created_at, updated_at, gemini_api_key, (password_hash IS NOT NULL) AS has_password FROM planora.users WHERE id = $1',
         [userId]
       );
 
@@ -316,6 +322,24 @@ class UserModel {
       user.social_accounts = socialAccounts;
 
       return user;
+    } finally {
+      client.release();
+    }
+  }
+
+  async updateGeminiApiKey(userId, apiKey) {
+    const client = await pool.connect();
+    try {
+      const result = await client.query(
+        'UPDATE planora.users SET gemini_api_key = $1, updated_at = NOW() WHERE id = $2 RETURNING id, gemini_api_key',
+        [apiKey, userId]
+      );
+
+      if (result.rows.length === 0) {
+        throw new Error('User not found');
+      }
+
+      return result.rows[0];
     } finally {
       client.release();
     }

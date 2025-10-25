@@ -31,6 +31,7 @@ const MusicFinderForm: React.FC<MusicFinderFormProps> = ({ onSubmit, isLoading, 
 
   const [suggestions, setSuggestions] = useState<LocationSuggestion[]>([]);
   const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false);
+  const [apiKeyError, setApiKeyError] = useState<string | null>(null);
   const [isDestinationSelected, setIsDestinationSelected] = useState(!!initialData?.destination);
   const [destinationError, setDestinationError] = useState<string | null>(null);
   const [popularDestinations, setPopularDestinations] = useState<PopularDestination[]>([]);
@@ -78,9 +79,20 @@ const MusicFinderForm: React.FC<MusicFinderFormProps> = ({ onSubmit, isLoading, 
       setIsSuggestionsLoading(true);
       debounceTimeout.current = setTimeout(() => {
         if (!isSelectingSuggestion.current) {
-          getDestinationSuggestions(value).then(results => {
+          getDestinationSuggestions(value, user?.gemini_api_key).then(results => {
             setSuggestions(results);
             setIsSuggestionsLoading(false);
+            setApiKeyError(null); // Clear any previous API key errors
+          }).catch(error => {
+            setSuggestions([]);
+            setIsSuggestionsLoading(false);
+            
+            // Check if it's a Gemini API key error
+            if (error.message && error.message.includes('Gemini key not set')) {
+              setApiKeyError('Gemini API key not set. Please add your API key in profile settings to search for destinations.');
+            } else {
+              setApiKeyError('Failed to fetch destination suggestions. Please try again.');
+            }
           });
         }
       }, 500);
@@ -160,9 +172,20 @@ const MusicFinderForm: React.FC<MusicFinderFormProps> = ({ onSubmit, isLoading, 
       if (value.trim().length > 1) {
         setIsSuggestionsLoading(true);
         debounceTimeout.current = setTimeout(() => {
-          getDestinationSuggestions(value).then(results => {
+          getDestinationSuggestions(value, user?.gemini_api_key).then(results => {
             setSuggestions(results);
             setIsSuggestionsLoading(false);
+            setApiKeyError(null); // Clear any previous API key errors
+          }).catch(error => {
+            setSuggestions([]);
+            setIsSuggestionsLoading(false);
+            
+            // Check if it's a Gemini API key error
+            if (error.message && error.message.includes('Gemini key not set')) {
+              setApiKeyError('Gemini API key not set. Please add your API key in profile settings to search for destinations.');
+            } else {
+              setApiKeyError('Failed to fetch destination suggestions. Please try again.');
+            }
           });
         }, 500);
       } else {
@@ -301,6 +324,12 @@ const MusicFinderForm: React.FC<MusicFinderFormProps> = ({ onSubmit, isLoading, 
             <div style={{ animation: 'validation-fade-in 0.3s ease' }} className="mt-2 text-sm text-rose-700 bg-rose-100/60 p-2 rounded-md flex items-center space-x-2">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
                 <span>{destinationError}</span>
+            </div>
+          )}
+          {apiKeyError && (
+            <div style={{ animation: 'validation-fade-in 0.3s ease' }} className="mt-2 text-sm text-amber-700 bg-amber-100/60 p-2 rounded-md flex items-center space-x-2">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+                <span>{apiKeyError}</span>
             </div>
           )}
         </div>

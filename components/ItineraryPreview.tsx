@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Itinerary } from '../types';
 import { getReferenceBlogs } from '../services/geminiService';
 import { useSaveRecommendation } from '../hooks/useSaveRecommendation';
+import { User } from '../services/authService';
 
 // Helper to parse simple markdown bolding
 const parseBold = (text: string | undefined) => {
@@ -91,6 +92,7 @@ interface ItineraryPreviewProps {
   isUnifiedView?: boolean;
   requestData?: any; // Add request data for history saving
   isHistoryView?: boolean; // Add flag to indicate if this is from history
+  user?: User | null;
 }
 
 const getAboutSectionsForDestination = (destinationDetails: Itinerary['coveredDestinations'][0]) => {
@@ -171,7 +173,7 @@ const DestinationInfoTabs: React.FC<{ destinationDetails: Itinerary['coveredDest
 };
 
 
-const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegenerate, isUnifiedView = false, requestData, isHistoryView = false }) => {
+const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegenerate, isUnifiedView = false, requestData, isHistoryView = false, user }) => {
   console.log('ItineraryPreview rendered with props:', { 
     itinerary: !!itinerary, 
     isUnifiedView, 
@@ -188,12 +190,17 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
   useEffect(() => {
     const fetchBlogs = async () => {
       setIsLoadingBlogs(true);
-      const fetchedBlogs = await getReferenceBlogs(itinerary.destination, itinerary.language);
-      setBlogs(fetchedBlogs);
+      try {
+        const fetchedBlogs = await getReferenceBlogs(itinerary.destination, itinerary.language, user?.gemini_api_key);
+        setBlogs(fetchedBlogs);
+      } catch (error) {
+        console.error('Failed to fetch reference blogs:', error);
+        setBlogs([]);
+      }
       setIsLoadingBlogs(false);
     };
     fetchBlogs();
-  }, [itinerary.destination, itinerary.language]);
+  }, [itinerary.destination, itinerary.language, user?.gemini_api_key]);
 
   // Save to history when component mounts (only if not in unified view and request data is available)
   useEffect(() => {

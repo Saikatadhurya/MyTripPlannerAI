@@ -1,14 +1,16 @@
 import { GoogleGenAI } from "@google/genai";
 import { LingoFinderRequestData, LingoRecommendations } from '../types';
 import { extractJson, cleanCitations } from './jsonUtils';
+import { CookieUtils } from './cookieUtils';
 
-export const generateLingoGuide = async (data: LingoFinderRequestData, onChunk?: (chunk: string) => void): Promise<LingoRecommendations> => {
-  if (!process.env.API_KEY) {
-    throw new Error("API key is missing. Please set it in your environment variables.");
+export const generateLingoGuide = async (data: LingoFinderRequestData, onChunk?: (chunk: string) => void, userApiKey?: string): Promise<LingoRecommendations> => {
+  const apiKey = userApiKey || CookieUtils.getGeminiApiKey() || process.env.VITE_GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("Gemini key not set. Please provide your Gemini API key in your profile settings.");
   }
 
   const { destination, language } = data;
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey });
 
   const prompt = `
     You are an expert Linguist and Local Guide AI. Your mission is to create a practical, helpful, and culturally aware phrasebook for a traveler visiting "${destination}".

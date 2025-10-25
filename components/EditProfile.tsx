@@ -9,6 +9,7 @@ interface User {
   avatar?: string;
   created_at?: string;
   updated_at?: string;
+  gemini_api_key?: string;
 }
 
 interface EditProfileProps {
@@ -20,6 +21,7 @@ interface EditProfileProps {
 interface FormData {
   full_name: string;
   email: string;
+  gemini_api_key?: string;
   current_password: string;
   new_password: string;
   confirm_password: string;
@@ -27,6 +29,7 @@ interface FormData {
 
 interface FormErrors {
   full_name?: string;
+  gemini_api_key?: string;
   current_password?: string;
   new_password?: string;
   confirm_password?: string;
@@ -38,6 +41,7 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate
   const [formData, setFormData] = useState<FormData>({
     full_name: user?.full_name || '',
     email: user?.email || '',
+    gemini_api_key: user?.gemini_api_key || '',
     current_password: '',
     new_password: '',
     confirm_password: ''
@@ -48,7 +52,8 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate
   const [showPasswords, setShowPasswords] = useState({
     current: false,
     new: false,
-    confirm: false
+    confirm: false,
+    gemini: false
   });
   const [successMessage, setSuccessMessage] = useState('');
   const [activeTab, setActiveTab] = useState<'profile' | 'password' | 'security'>('profile');
@@ -66,6 +71,7 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate
       setFormData({
         full_name: user.full_name || '',
         email: user.email || '',
+        gemini_api_key: user.gemini_api_key || '',
         current_password: '',
         new_password: '',
         confirm_password: ''
@@ -99,8 +105,18 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate
         const resp = await profileService.getProfile();
         const hp = (resp as any)?.data?.user?.has_password;
         const socials = (resp as any)?.data?.user?.social_accounts || [];
+        const geminiApiKey = (resp as any)?.data?.user?.gemini_api_key;
+        
         if (typeof hp === 'boolean') setHasPassword(hp);
         setHasAnySocialLinked(Array.isArray(socials) && socials.length > 0);
+        
+        // Update form data with the fetched Gemini API key
+        if (geminiApiKey) {
+          setFormData(prev => ({
+            ...prev,
+            gemini_api_key: geminiApiKey
+          }));
+        }
       } catch (e) {
         console.warn('EditProfile: Failed to load profile meta');
       }
@@ -165,6 +181,11 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate
       } else if (formData.full_name.trim().length < 2) {
         newErrors.full_name = 'Full name must be at least 2 characters';
       }
+      
+      // Gemini API key validation
+      if (formData.gemini_api_key && typeof formData.gemini_api_key === 'string' && formData.gemini_api_key.trim().length > 0 && formData.gemini_api_key.trim().length < 10) {
+        newErrors.gemini_api_key = 'Gemini API key must be at least 10 characters';
+      }
       // Email validation removed since email field is read-only
     }
 
@@ -190,7 +211,7 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate
   };
 
   const handleInputChange = (field: keyof FormData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => ({ ...prev, [field]: value || '' }));
     // Clear field-specific error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: undefined }));
@@ -206,7 +227,8 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate
     try {
       const data = await profileService.updateProfile({
         full_name: formData.full_name.trim(),
-        email: formData.email.trim()
+        email: formData.email.trim(),
+        gemini_api_key: formData.gemini_api_key?.trim() || undefined
       });
 
       if (data.success) {
@@ -214,6 +236,7 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate
         const updatedUser = {
           ...user,
           full_name: formData.full_name.trim(),
+          gemini_api_key: formData.gemini_api_key?.trim() || undefined,
           updated_at: new Date().toISOString()
         };
         
@@ -279,6 +302,52 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate
           onBack();
         }, 2000);
       }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteGeminiKey = async () => {
+    if (!window.confirm('Are you sure you want to delete your Gemini API key? This will disable your personal API quota usage.')) {
+      return;
+    }
+
+    setIsLoading(true);
+    setErrors({});
+
+    try {
+      const data = await profileService.updateProfile({
+        full_name: formData.full_name.trim(),
+        email: formData.email.trim(),
+        gemini_api_key: null
+      });
+
+      if (data.success) {
+        // Create updated user object with cleared API key
+        const updatedUser = {
+          ...user,
+          full_name: formData.full_name.trim(),
+          gemini_api_key: undefined,
+          updated_at: new Date().toISOString()
+        };
+        
+        // Update form data
+        setFormData(prev => ({
+          ...prev,
+          gemini_api_key: ''
+        }));
+        
+        // Call the callback to update parent component state
+        onProfileUpdate(updatedUser);
+        
+        setSuccessMessage('Gemini API key deleted successfully!');
+        setTimeout(() => setSuccessMessage(''), 3000);
+      } else {
+        setErrors({ general: data.message || 'Failed to delete Gemini API key' });
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Network error. Please try again.';
+      setErrors({ general: errorMessage });
     } finally {
       setIsLoading(false);
     }
@@ -439,6 +508,51 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate
                       />
                     </div>
                     <p className="mt-1 text-sm text-gray-500">Email address cannot be changed</p>
+                  </div>
+
+                  {/* Gemini API Key */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Gemini API Key
+                    </label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        type={showPasswords.gemini ? 'text' : 'password'}
+                        value={formData.gemini_api_key}
+                        onChange={(e) => handleInputChange('gemini_api_key', e.target.value)}
+                        className={`w-full pl-10 pr-12 py-3 border rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-colors ${
+                          errors.gemini_api_key ? 'border-red-300' : 'border-gray-300'
+                        }`}
+                        placeholder="Enter your Gemini API key (optional)"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPasswords(prev => ({ ...prev, gemini: !prev.gemini }))}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        title={showPasswords.gemini ? 'Hide API key' : 'Show API key'}
+                      >
+                        {showPasswords.gemini ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    </div>
+                    {errors.gemini_api_key && (
+                      <p className="mt-1 text-sm text-red-600">{errors.gemini_api_key}</p>
+                    )}
+                    <div className="mt-2 flex items-center justify-between">
+                      <p className="text-sm text-gray-500">
+                        Add your Gemini API key to use your own quota. Leave empty to use the default service.
+                      </p>
+                      {formData.gemini_api_key && formData.gemini_api_key.trim().length > 0 && (
+                        <button
+                          type="button"
+                          onClick={handleDeleteGeminiKey}
+                          disabled={isLoading}
+                          className="ml-4 px-3 py-1 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Delete Key
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {/* Account Info */}

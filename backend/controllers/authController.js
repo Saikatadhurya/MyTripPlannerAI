@@ -48,6 +48,18 @@ exports.signin = async (req, res) => {
         }
 
         const token = jwt.generateToken({ id: user.id, email: user.email });
+        
+        // Set Gemini API key cookie if it exists
+        if (user.gemini_api_key) {
+            res.cookie('gemini_api_key', user.gemini_api_key, {
+                maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+                path: '/',
+                httpOnly: false, // Allow frontend to read it
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'strict'
+            });
+        }
+        
         res.status(200).json({ message: 'Logged in successfully', user, token });
     } catch (error) {
         res.status(500).json({ message: 'Server error during signin' });
@@ -69,6 +81,17 @@ exports.socialAuthCallback = async (req, res) => {
         }
 
         const token = jwt.generateToken({ id: user.id, email: user.email });
+        
+        // Set Gemini API key cookie if it exists
+        if (user.gemini_api_key) {
+            res.cookie('gemini_api_key', user.gemini_api_key, {
+                maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+                path: '/',
+                httpOnly: false, // Allow frontend to read it
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'strict'
+            });
+        }
         
         // Redirect to frontend with token and user data
         const userData = encodeURIComponent(JSON.stringify(user));

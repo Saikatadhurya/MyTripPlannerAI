@@ -2,14 +2,16 @@
 import { GoogleGenAI } from "@google/genai";
 import { FoodFinderRequestData, FoodRecommendations } from '../types';
 import { extractJson, cleanCitations } from './jsonUtils';
+import { CookieUtils } from './cookieUtils';
 import { incrementUsage } from './usageService';
 
-export const generateFoodRecommendations = async (data: FoodFinderRequestData, onChunk?: (chunk: string) => void): Promise<FoodRecommendations> => {
-  if (!process.env.API_KEY) {
-    throw new Error("API key is missing. Please set it in your environment variables.");
+export const generateFoodRecommendations = async (data: FoodFinderRequestData, onChunk?: (chunk: string) => void, userApiKey?: string): Promise<FoodRecommendations> => {
+  const apiKey = userApiKey || CookieUtils.getGeminiApiKey() || process.env.VITE_GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("Gemini key not set. Please provide your Gemini API key in your profile settings.");
   }
 
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey });
   const { destination, startDate, foodPreference, includeAlcoholicDrinks, language, coveredDestinations } = data;
 
   const isMultiStop = coveredDestinations && coveredDestinations.length > 1;

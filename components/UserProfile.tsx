@@ -131,17 +131,6 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onEditProfile
               </svg>
               Edit Profile
             </button>
-            
-            <button
-              onClick={() => {/* Handle settings */}}
-              className="w-full flex items-center px-3 py-2 text-sm text-slate-700 rounded-lg hover:bg-violet-50 transition-colors duration-200"
-            >
-              <svg className="w-4 h-4 mr-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.343 3.94c.09-.542.56-1.007 1.11-1.11a12.003 12.003 0 015.655 5.655c.103.55.568 1.02 1.11 1.11a11.97 11.97 0 010 2.828c-.542.09-1.007.56-1.11 1.11a12.003 12.003 0 01-5.655 5.655c-.55.103-1.02.568-1.11 1.11a11.97 11.97 0 01-2.828 0c-.09-.542-.56-1.007-1.11-1.11a12.003 12.003 0 01-5.655-5.655c-.103-.55-.568-1.02-1.11-1.11a11.97 11.97 0 010-2.828c.542-.09 1.007.56 1.11-1.11a12.003 12.003 0 015.655-5.655z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 16.5a4.5 4.5 0 100-9 4.5 4.5 0 000 9z" />
-              </svg>
-              Settings
-            </button>
 
             <button
               onClick={() => { setIsDropdownOpen(false); onGoToContact(); }}

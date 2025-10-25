@@ -10,6 +10,7 @@ import { generateLingoGuide } from './services/lingoService';
 import { incrementUsage } from './services/usageService';
 
 import { authService, User } from './services/authService';
+import profileService from './services/profileService';
 import { useQuotas } from './hooks/useQuotas';
 import { setGlobalLogoutHandler } from './services/axiosInterceptor';
 
@@ -181,41 +182,52 @@ const AppContent: React.FC = () => {
 
   // Initialize authentication state
   useEffect(() => {
-    console.log('App: useEffect for user initialization called');
     const currentUser = authService.getCurrentUser();
-    console.log('App: Retrieved currentUser from authService:', currentUser);
-    setUser(currentUser);
-    console.log('App: User state set to:', currentUser);
+    
+    if (currentUser) {
+      // Use the user data from localStorage (which includes gemini_api_key if it was previously saved)
+      setUser(currentUser);
+    } else {
+      setUser(null);
+    }
   }, []);
 
   // Authentication handlers
   const handleLogin = async (email: string, password: string) => {
-    console.log('App: Starting login process for:', email);
     setIsAuthLoading(true);
     setAuthError(null);
     try {
-      console.log('App: Calling authService.login...');
       const response = await authService.login({ email, password });
-      console.log('App: Login successful, response:', response);
       
       // Wait a bit to ensure the token is properly set in authService
-      console.log('App: Waiting 50ms for token to be set...');
       await new Promise(resolve => setTimeout(resolve, 50));
       
-      console.log('App: Setting user state...');
-      setUser(response.user);
-      setIsAuthModalOpen(false); // Close modal on successful login
-      navigate('/'); // Redirect to landing page
+      // Check if we already have complete user data in localStorage
+      const existingUser = authService.getCurrentUser();
+      if (existingUser && existingUser.gemini_api_key !== undefined) {
+        // We already have complete user data, use it
+        setUser(existingUser);
+      } else {
+        // Fetch complete user profile including Gemini API key
+        const profileResponse = await profileService.getProfile();
+        if (profileResponse.success && profileResponse.data?.user) {
+          const completeUser = {
+            ...response.user,
+            ...profileResponse.data.user
+          };
+          setUser(completeUser);
+          localStorage.setItem('planora_user', JSON.stringify(completeUser));
+        } else {
+          setUser(response.user);
+          localStorage.setItem('planora_user', JSON.stringify(response.user));
+        }
+      }
       
-      // Simple refresh after login to ensure token is available
-      console.log('App: Refreshing page to ensure token is available...');
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
+      setIsAuthModalOpen(false);
+      navigate('/');
     } catch (error) {
-      console.error('App: Login failed:', error);
-      setAuthError(error instanceof Error ? error.message : 'Login failed');
-      setIsAuthModalOpen(true); // Keep modal open to display error
+      const errorMessage = error instanceof Error ? error.message : 'Login failed. Please try again.';
+      setAuthError(errorMessage);
     } finally {
       setIsAuthLoading(false);
     }
@@ -230,17 +242,25 @@ const AppContent: React.FC = () => {
       // Wait a bit to ensure the token is properly set in authService
       await new Promise(resolve => setTimeout(resolve, 50));
       
-      setUser(response.user);
-      setIsAuthModalOpen(false); // Close modal on successful signup
-      navigate('/'); // Redirect to landing page
+      // For new users, always fetch complete profile to get initial data
+      const profileResponse = await profileService.getProfile();
+      if (profileResponse.success && profileResponse.data?.user) {
+        const completeUser = {
+          ...response.user,
+          ...profileResponse.data.user
+        };
+        setUser(completeUser);
+        localStorage.setItem('planora_user', JSON.stringify(completeUser));
+      } else {
+        setUser(response.user);
+        localStorage.setItem('planora_user', JSON.stringify(response.user));
+      }
       
-      // Simple refresh after signup to ensure token is available
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
+      setIsAuthModalOpen(false);
+      navigate('/');
     } catch (error) {
-      setAuthError(error instanceof Error ? error.message : 'Signup failed');
-      setIsAuthModalOpen(true); // Keep modal open to display error
+      const errorMessage = error instanceof Error ? error.message : 'Signup failed. Please try again.';
+      setAuthError(errorMessage);
     } finally {
       setIsAuthLoading(false);
     }
@@ -486,6 +506,8 @@ const AppContent: React.FC = () => {
     setUser(updatedUser);
     // Update localStorage with new user data
     localStorage.setItem('planora_user', JSON.stringify(updatedUser));
+    // Update authService current user
+    authService.updateCurrentUser(updatedUser);
   }, []);
   
   const handleCancelGeneration = useCallback(() => {
@@ -549,7 +571,8 @@ const AppContent: React.FC = () => {
                 (chunk) => {
                     if (simplePlanCancellationFlag.current) throw new Error("Cancelled");
                     setStreamedText(prev => prev + chunk);
-                }
+                },
+                user?.gemini_api_key
             );
             
             if (simplePlanCancellationFlag.current) break;
@@ -677,7 +700,8 @@ const AppContent: React.FC = () => {
                                 throw new Error("Cancelled");
                             }
                             setItineraryStreamedText(prev => prev + chunk);
-                        }
+                        },
+                        user?.gemini_api_key
                     );
                     
                     if (cancellationFlags.current.itinerary) {
@@ -752,7 +776,7 @@ const AppContent: React.FC = () => {
               const result = await generatePackingList(data, (chunk) => {
                   if (simplePlanCancellationFlag.current) throw new Error("Cancelled");
                   if (!isUnified) setStreamedText(prev => prev + chunk);
-              });
+              }, user?.gemini_api_key);
               
               if (simplePlanCancellationFlag.current) break;
   
@@ -827,7 +851,7 @@ const AppContent: React.FC = () => {
               const result = await generateFoodRecommendations(data, (chunk) => {
                   if (simplePlanCancellationFlag.current) throw new Error("Cancelled");
                   if (!isUnified) setStreamedText(prev => prev + chunk)
-              });
+              }, user?.gemini_api_key);
               
               if (simplePlanCancellationFlag.current) break;
   
@@ -902,7 +926,7 @@ const AppContent: React.FC = () => {
               const result = await generateAppRecommendations(data, (chunk) => {
                   if (simplePlanCancellationFlag.current) throw new Error("Cancelled");
                   if (!isUnified) setStreamedText(prev => prev + chunk)
-              });
+              }, user?.gemini_api_key);
               
               if (simplePlanCancellationFlag.current) break;
   
@@ -977,7 +1001,7 @@ const AppContent: React.FC = () => {
               const result = await generateMusicRecommendations(data, (chunk) => {
                   if (simplePlanCancellationFlag.current) throw new Error("Cancelled");
                   if (!isUnified) setStreamedText(prev => prev + chunk)
-              });
+              }, user?.gemini_api_key);
               
               if (simplePlanCancellationFlag.current) break;
   
@@ -1052,7 +1076,7 @@ const AppContent: React.FC = () => {
               const result = await generateLingoGuide(data, (chunk) => {
                   if (simplePlanCancellationFlag.current) throw new Error("Cancelled");
                   if (!isUnified) setStreamedText(prev => prev + chunk)
-              });
+              }, user?.gemini_api_key);
               
               if (simplePlanCancellationFlag.current) break;
   

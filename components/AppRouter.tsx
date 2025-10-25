@@ -190,6 +190,7 @@ const AppRouter: React.FC<AppRouterProps> = ({
         element={
           <ProtectedRoute user={user}>
             <UnifiedPlannerForm 
+              key={`unified-${user?.id}-${user?.gemini_api_key ? 'has-key' : 'no-key'}`}
               onSubmit={onGenerateUnifiedPlan}
               initialData={initialQuestionnaireData}
               onBack={onBackToHome}
@@ -205,6 +206,7 @@ const AppRouter: React.FC<AppRouterProps> = ({
         element={
           <ProtectedRoute user={user}>
             <Questionnaire 
+              key={`questionnaire-${user?.id}-${user?.gemini_api_key ? 'has-key' : 'no-key'}`}
               onSubmit={onGenerateItinerary}
               isLoading={isFormLoading}
               error={formError}
@@ -223,6 +225,7 @@ const AppRouter: React.FC<AppRouterProps> = ({
         element={
           <ProtectedRoute user={user}>
             <PackingAssistantForm 
+              key={`packing-${user?.id}-${user?.gemini_api_key ? 'has-key' : 'no-key'}`}
               onSubmit={onGeneratePackingList}
               isLoading={isFormLoading}
               error={formError}
@@ -241,6 +244,7 @@ const AppRouter: React.FC<AppRouterProps> = ({
         element={
           <ProtectedRoute user={user}>
             <FoodFinderForm 
+              key={`food-${user?.id}-${user?.gemini_api_key ? 'has-key' : 'no-key'}`}
               onSubmit={onGenerateFoodRecommendations}
               isLoading={isFormLoading}
               error={formError}
@@ -259,6 +263,7 @@ const AppRouter: React.FC<AppRouterProps> = ({
         element={
           <ProtectedRoute user={user}>
             <AppFinderForm 
+              key={`app-${user?.id}-${user?.gemini_api_key ? 'has-key' : 'no-key'}`}
               onSubmit={onGenerateAppRecommendations}
               isLoading={isFormLoading}
               error={formError}
@@ -277,6 +282,7 @@ const AppRouter: React.FC<AppRouterProps> = ({
         element={
           <ProtectedRoute user={user}>
             <MusicFinderForm 
+              key={`music-${user?.id}-${user?.gemini_api_key ? 'has-key' : 'no-key'}`}
               onSubmit={onGenerateMusicRecommendations}
               isLoading={isFormLoading}
               error={formError}
@@ -294,6 +300,7 @@ const AppRouter: React.FC<AppRouterProps> = ({
         path="/lingo" 
         element={
           <LingoFinderForm 
+            key={`lingo-${user?.id}-${user?.gemini_api_key ? 'has-key' : 'no-key'}`}
             onSubmit={onGenerateLingoGuide}
             isLoading={isFormLoading}
             error={formError}
@@ -311,6 +318,7 @@ const AppRouter: React.FC<AppRouterProps> = ({
         element={
           <ProtectedRoute user={user}>
             <EditProfile 
+              key={`profile-${user?.id}-${user?.gemini_api_key ? 'has-key' : 'no-key'}`}
               user={user!}
               onBack={onBackToHome}
               onUpdate={onProfileUpdate}
@@ -342,6 +350,7 @@ const AppRouter: React.FC<AppRouterProps> = ({
               onRegenerate={() => {}}
               requestData={initialQuestionnaireData}
               isHistoryView={isHistoryView}
+              user={user}
             />
           </ProtectedRoute>
         } 
@@ -356,6 +365,7 @@ const AppRouter: React.FC<AppRouterProps> = ({
               onRegenerate={() => {}}
               requestData={packingRequestData}
               isHistoryView={isHistoryView}
+              user={user}
             />
           </ProtectedRoute>
         } 
@@ -370,6 +380,7 @@ const AppRouter: React.FC<AppRouterProps> = ({
               onRegenerate={() => {}}
               requestData={foodRequestData}
               isHistoryView={isHistoryView}
+              user={user}
             />
           </ProtectedRoute>
         } 
@@ -384,6 +395,7 @@ const AppRouter: React.FC<AppRouterProps> = ({
               onRegenerate={() => {}}
               requestData={appRequestData}
               isHistoryView={isHistoryView}
+              user={user}
             />
           </ProtectedRoute>
         } 
@@ -398,6 +410,7 @@ const AppRouter: React.FC<AppRouterProps> = ({
               onRegenerate={() => {}}
               requestData={musicRequestData}
               isHistoryView={isHistoryView}
+              user={user}
             />
           </ProtectedRoute>
         } 
@@ -411,6 +424,7 @@ const AppRouter: React.FC<AppRouterProps> = ({
             onRegenerate={() => {}}
             requestData={lingoRequestData}
             isHistoryView={isHistoryView}
+            user={user}
           />
         } 
       />

@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { TokenUtils } from './tokenUtils';
 import { startTokenMonitoring, stopTokenMonitoring } from './axiosInterceptor';
+import { CookieUtils } from './cookieUtils';
 
 const API_URL = process.env.REACT_APP_API_URL || process.env.VITE_API_URL || 'http://localhost:5000/auth'; // Backend auth API URL
 
@@ -10,6 +11,7 @@ export interface User {
   email: string;
   avatar?: string;
   createdAt?: string; // Made optional as it's not always returned on login
+  gemini_api_key?: string;
 }
 
 export interface AuthResponse {
@@ -61,6 +63,12 @@ class AuthService {
           localStorage.setItem('planora_user', JSON.stringify(parsedUser));
         }
         
+        // Load Gemini API key from cookie if it exists
+        const geminiApiKey = CookieUtils.getGeminiApiKey();
+        if (geminiApiKey) {
+          parsedUser.gemini_api_key = geminiApiKey;
+        }
+        
         this.currentUser = parsedUser;
         this.token = savedToken;
         
@@ -85,6 +93,8 @@ class AuthService {
     try {
       localStorage.removeItem('planora_user');
       localStorage.removeItem('planora_token');
+      // Clear Gemini API key cookie
+      CookieUtils.deleteGeminiApiKey();
     } catch (error) {
       // Error clearing session
     }
@@ -106,11 +116,17 @@ class AuthService {
         full_name: user.full_name,
         email: user.email,
         createdAt: user.created_at, // Assuming backend returns created_at
+        gemini_api_key: user.gemini_api_key, // Include Gemini API key from backend
       };
 
       this.currentUser = authenticatedUser;
       this.token = token;
       this.saveSession(authenticatedUser, token);
+
+      // Handle Gemini API key cookie
+      if (user.gemini_api_key) {
+        CookieUtils.setGeminiApiKey(user.gemini_api_key);
+      }
 
       // Start token monitoring for auto logout
       startTokenMonitoring();
@@ -141,11 +157,17 @@ class AuthService {
         full_name: user.full_name,
         email: user.email,
         createdAt: user.created_at,
+        gemini_api_key: user.gemini_api_key, // Include Gemini API key from backend
       };
 
       this.currentUser = newUser;
       this.token = token;
       this.saveSession(newUser, token);
+
+      // Handle Gemini API key cookie
+      if (user.gemini_api_key) {
+        CookieUtils.setGeminiApiKey(user.gemini_api_key);
+      }
 
       // Start token monitoring for auto logout
       startTokenMonitoring();
@@ -189,6 +211,20 @@ class AuthService {
 
   getAuthHeaders(): { Authorization: string } | {} {
     return this.token ? { Authorization: `Bearer ${this.token}` } : {};
+  }
+
+  // Update current user data (for profile updates)
+  updateCurrentUser(updatedUser: User): void {
+    this.currentUser = updatedUser;
+    // Update localStorage with new user data
+    localStorage.setItem('planora_user', JSON.stringify(updatedUser));
+    
+    // Handle Gemini API key cookie
+    if (updatedUser.gemini_api_key) {
+      CookieUtils.setGeminiApiKey(updatedUser.gemini_api_key);
+    } else {
+      CookieUtils.deleteGeminiApiKey();
+    }
   }
 
   // Social Login Redirects

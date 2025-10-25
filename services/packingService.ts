@@ -2,14 +2,16 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { PackingList, PackingListRequestData } from '../types';
 import { extractJson, cleanCitations } from './jsonUtils';
+import { CookieUtils } from './cookieUtils';
 import { incrementUsage } from './usageService';
 
-export const generatePackingList = async (data: PackingListRequestData, onChunk?: (chunk: string) => void): Promise<PackingList> => {
-  if (!process.env.API_KEY) {
-    throw new Error("API key is missing. Please set it in your environment variables.");
+export const generatePackingList = async (data: PackingListRequestData, onChunk?: (chunk: string) => void, userApiKey?: string): Promise<PackingList> => {
+  const apiKey = userApiKey || CookieUtils.getGeminiApiKey() || process.env.VITE_GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("Gemini key not set. Please provide your Gemini API key in your profile settings.");
   }
 
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey });
 
   const { destination, startDate, days, language, coveredDestinations } = data;
 
