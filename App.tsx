@@ -19,6 +19,7 @@ import QuickNavButton from './components/QuickNavButton';
 import AppRouter from './components/AppRouter';
 import BottomNavBar from './components/BottomNavBar';
 import UnifiedResultPreview from './components/UnifiedResultPreview';
+import Footer from './components/Footer';
 
 
 
@@ -1337,6 +1338,7 @@ const AppContent: React.FC = () => {
   <div className="h-20 md:h-24" />
   <div ref={mainContentRef} className="flex-1 overflow-y-auto">
         {renderContent()}
+        <Footer />
       </div>
       <BottomNavBar
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
