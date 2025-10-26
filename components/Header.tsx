@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User } from '../services/authService';
 import AuthModal from './AuthModal';
@@ -34,18 +34,6 @@ const Header: React.FC<HeaderProps> = ({
   onGoToContact,
 }) => {
   const navigate = useNavigate();
-  const [isScrolled, setIsScrolled] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }, []);
 
   const handleLogin = async (email: string, password: string) => {
     try {
@@ -72,12 +60,8 @@ const Header: React.FC<HeaderProps> = ({
   const containerBaseClasses = "flex items-center container mx-auto h-full";
 
   // Classes for the initial, transparent, centered state
-  const headerInitialClasses = ""; // height is controlled by headerBaseClasses
+  const headerInitialClasses = "bg-white/90 backdrop-blur-xl"; // Always use glassmorphic style
   const containerInitialClasses = "justify-between px-4 sm:px-6 lg:px-8";
-  
-  // Classes for the scrolled, glassmorphic state
-  const headerScrolledClasses = "bg-white/90 backdrop-blur-xl shadow-lg";
-  const containerScrolledClasses = "justify-between px-4 sm:px-6 lg:px-8";
   
   // Logo scaling effect
   const logoContainerBaseClasses = "flex items-center space-x-3 text-slate-800";
@@ -85,10 +69,10 @@ const Header: React.FC<HeaderProps> = ({
   return (
     <>
       <header
-        className={`${headerBaseClasses} ${isScrolled ? headerScrolledClasses : headerInitialClasses}`}
+        className={`${headerBaseClasses} ${headerInitialClasses}`}
         aria-label="Application Header"
       >
-        <div className={`${containerBaseClasses} ${isScrolled ? containerScrolledClasses : containerInitialClasses}`}>
+        <div className={`${containerBaseClasses} ${containerInitialClasses}`}>
           <button 
             onClick={() => navigate('/')}
             className={`${logoContainerBaseClasses} hover:opacity-80 transition-opacity cursor-pointer`}
