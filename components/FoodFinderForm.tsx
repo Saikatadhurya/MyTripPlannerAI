@@ -286,6 +286,7 @@ const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, er
             popularItems={popularItems}
             renderPopularItem={renderPopularItem}
             accentColor="amber"
+            error={apiKeyError && selectionView?.field === 'destination' ? apiKeyError : null}
         />
     );
   };

@@ -293,6 +293,7 @@ const PackingAssistantForm: React.FC<PackingAssistantFormProps> = ({ onSubmit, i
             popularItems={popularItems}
             renderPopularItem={renderPopularItem}
             accentColor="violet"
+            error={apiKeyError && selectionView?.field === 'destination' ? apiKeyError : null}
         />
     );
   };

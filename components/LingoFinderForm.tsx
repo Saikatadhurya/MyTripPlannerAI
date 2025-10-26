@@ -261,6 +261,7 @@ const LingoFinderForm: React.FC<LingoFinderFormProps> = ({ onSubmit, isLoading, 
             popularItems={popularItems}
             renderPopularItem={renderPopularItem}
             accentColor="sky"
+            error={apiKeyError && selectionView?.field === 'destination' ? apiKeyError : null}
         />
     );
   };

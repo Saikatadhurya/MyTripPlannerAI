@@ -260,6 +260,7 @@ const MusicFinderForm: React.FC<MusicFinderFormProps> = ({ onSubmit, isLoading, 
             popularItems={popularItems}
             renderPopularItem={renderPopularItem}
             accentColor="fuchsia"
+            error={apiKeyError && selectionView?.field === 'destination' ? apiKeyError : null}
         />
     );
   };

@@ -355,6 +355,17 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                 getDestinationSuggestions(value, user?.gemini_api_key).then(results => {
                     setSuggestions(results);
                     setLoading(false);
+                    setApiKeyError(null); // Clear any previous API key errors
+                }).catch(error => {
+                    setSuggestions([]);
+                    setLoading(false);
+                    
+                    // Check if it's a Gemini API key error
+                    if (error.message && error.message.includes('Gemini key not set')) {
+                        setApiKeyError('Gemini API key not set. Please add your API key in profile settings to search for destinations.');
+                    } else {
+                        setApiKeyError('Failed to fetch destination suggestions. Please try again.');
+                    }
                 });
             }, 500);
         } else {
@@ -457,6 +468,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
             popularItems={popularItems}
             renderPopularItem={renderPopularItem}
             accentColor="violet"
+            error={apiKeyError && (selectionView?.field === 'destination' || selectionView?.field === 'startPoint') ? apiKeyError : null}
         />
     );
   };

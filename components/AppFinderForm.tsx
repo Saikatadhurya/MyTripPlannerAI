@@ -260,6 +260,7 @@ const AppFinderForm: React.FC<AppFinderFormProps> = ({ onSubmit, isLoading, erro
             popularItems={popularItems}
             renderPopularItem={renderPopularItem}
             accentColor="teal"
+            error={apiKeyError && selectionView?.field === 'destination' ? apiKeyError : null}
         />
     );
   };
