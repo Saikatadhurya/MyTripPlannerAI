@@ -3,7 +3,18 @@ import { TokenUtils } from './tokenUtils';
 import { startTokenMonitoring, stopTokenMonitoring } from './axiosInterceptor';
 import { CookieUtils } from './cookieUtils';
 
-const API_URL = process.env.REACT_APP_API_URL || process.env.VITE_API_URL || 'http://localhost:5000/auth'; // Backend auth API URL
+// Determine API URL based on environment
+const getApiUrl = () => {
+  // Check if we're in production (Render deployment)
+  if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    // In production, API is on the same domain
+    return '/auth';
+  }
+  // In development
+  return process.env.REACT_APP_API_URL || process.env.VITE_API_URL || 'http://localhost:5000/auth';
+};
+
+const API_URL = getApiUrl();
 
 export interface User {
   id: string;

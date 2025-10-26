@@ -4,6 +4,11 @@ const userModel = require('../models/userModel');
 const { initUserLimits, ensureFeaturesSeeded } = require('../models/usageModel');
 require('dotenv').config();
 
+// Get the backend URL, with fallback logic for production
+const backendUrl = process.env.BACKEND_URL || 
+                    process.env.BASE_URL || 
+                    (process.env.NODE_ENV === 'production' ? process.env.RENDER_URL : 'http://localhost:5000');
+
 /**
  * Serialize only the database user ID into the session
  */
@@ -37,7 +42,7 @@ passport.use('google', new GoogleStrategy(
     {
         clientID: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        callbackURL: `${process.env.BACKEND_URL || process.env.BASE_URL || 'http://localhost:5000'}/auth/google/callback`
+        callbackURL: `${backendUrl}/auth/google/callback`
     },
     async (accessToken, refreshToken, profile, done) => {
         try {
@@ -92,7 +97,7 @@ passport.use('google-link', new GoogleStrategy(
     {
         clientID: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        callbackURL: `${process.env.BACKEND_URL || process.env.BASE_URL || 'http://localhost:5000'}/auth/google/link/callback`
+        callbackURL: `${backendUrl}/auth/google/link/callback`
     },
     async (accessToken, refreshToken, profile, done) => {
         try {

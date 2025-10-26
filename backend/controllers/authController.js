@@ -2,6 +2,11 @@ const userModel = require('../models/userModel');
 const jwt = require('../utils/jwt');
 const { initUserLimits, ensureFeaturesSeeded } = require('../models/usageModel');
 
+// Get the frontend URL, with fallback logic for production
+const frontendUrl = process.env.FRONTEND_URL || 
+                     process.env.BASE_URL || 
+                     (process.env.NODE_ENV === 'production' ? process.env.RENDER_URL : 'http://localhost:5000');
+
 exports.signup = async (req, res) => {
     const { full_name, email, password } = req.body;
 
@@ -56,7 +61,7 @@ exports.signin = async (req, res) => {
                 path: '/',
                 httpOnly: false, // Allow frontend to read it
                 secure: process.env.NODE_ENV === 'production',
-                sameSite: 'strict'
+                sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict'
             });
         }
         
@@ -69,7 +74,7 @@ exports.signin = async (req, res) => {
 exports.socialAuthCallback = async (req, res) => {
     // Passport will attach user to req.user (minimal info)
     if (!req.user || !req.user.id) {
-        return res.redirect(`${process.env.FRONTEND_URL || process.env.BASE_URL || 'http://localhost:5000'}?error=${encodeURIComponent('Social authentication failed: user not found in request')}`);
+        return res.redirect(`${frontendUrl}?error=${encodeURIComponent('Social authentication failed: user not found in request')}`);
     }
 
     try {
@@ -77,7 +82,7 @@ exports.socialAuthCallback = async (req, res) => {
         const user = await userModel.findUserById(req.user.id);
 
         if (!user) {
-            return res.redirect(`${process.env.FRONTEND_URL || process.env.BASE_URL || 'http://localhost:5000'}?error=${encodeURIComponent('Social authentication failed: user not found in database')}`);
+            return res.redirect(`${frontendUrl}?error=${encodeURIComponent('Social authentication failed: user not found in database')}`);
         }
 
         const token = jwt.generateToken({ id: user.id, email: user.email });
@@ -89,17 +94,17 @@ exports.socialAuthCallback = async (req, res) => {
                 path: '/',
                 httpOnly: false, // Allow frontend to read it
                 secure: process.env.NODE_ENV === 'production',
-                sameSite: 'strict'
+                sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict'
             });
         }
         
         // Redirect to frontend with token and user data
         const userData = encodeURIComponent(JSON.stringify(user));
-        const redirectUrl = `${process.env.FRONTEND_URL || process.env.BASE_URL || 'http://localhost:5000'}?token=${token}&user=${userData}`;
+        const redirectUrl = `${frontendUrl}?token=${token}&user=${userData}`;
         
         res.redirect(redirectUrl);
     } catch (error) {
-        res.redirect(`${process.env.FRONTEND_URL || process.env.BASE_URL || 'http://localhost:5000'}?error=${encodeURIComponent('Server error during social authentication')}`);
+        res.redirect(`${frontendUrl}?error=${encodeURIComponent('Server error during social authentication')}`);
     }
 };
 
@@ -109,11 +114,11 @@ exports.googleLinkingCallback = async (req, res) => {
         // Get profile info from authInfo (third parameter from Passport)
         const profileInfo = req.authInfo?.profile;
         if (!profileInfo || !profileInfo.id) {
-            return res.redirect(`${process.env.FRONTEND_URL || process.env.BASE_URL || 'http://localhost:5000'}?error=${encodeURIComponent('Google linking failed: profile not found in request')}`);
+            return res.redirect(`${frontendUrl}?error=${encodeURIComponent('Google linking failed: profile not found in request')}`);
         }
 
         // Get the return URL and state from query parameters
-        const returnUrl = req.query.returnUrl || `${process.env.FRONTEND_URL || process.env.BASE_URL || 'http://localhost:5000'}`;
+        const returnUrl = req.query.returnUrl || frontendUrl;
         const stateParam = req.query.state;
         let currentUserId = null;
         
@@ -129,20 +134,20 @@ exports.googleLinkingCallback = async (req, res) => {
         }
         
         if (!currentUserId) {
-            return res.redirect(`${returnUrl}?error=${encodeURIComponent('Please sign in to link your Google account')}`);
+            return res.redirect(`${frontendUrl}?error=${encodeURIComponent('Please sign in to link your Google account')}`);
         }
         
         // Check if this Google account is already linked to another user
         const existingSocialAccount = await userModel.findSocialAccount('google', profileInfo.id);
         if (existingSocialAccount && existingSocialAccount.user_id !== currentUserId) {
-            return res.redirect(`${returnUrl}?error=${encodeURIComponent('This Google account is already linked to another user')}`);
+            return res.redirect(`${frontendUrl}?error=${encodeURIComponent('This Google account is already linked to another user')}`);
         }
         
         // Check if current user already has a Google account linked
         const userSocialAccounts = await userModel.getSocialAccounts(currentUserId);
         const hasGoogleLinked = userSocialAccounts.data?.some(account => account.provider === 'google') || false;
         if (hasGoogleLinked) {
-            return res.redirect(`${returnUrl}?error=${encodeURIComponent('You already have a Google account linked')}`);
+            return res.redirect(`${frontendUrl}?error=${encodeURIComponent('You already have a Google account linked')}`);
         }
 
         // Create the social account link
@@ -153,14 +158,13 @@ exports.googleLinkingCallback = async (req, res) => {
                 provider_id: profileInfo.id
             });
             
-            const successUrl = `${returnUrl}?message=${encodeURIComponent('Google account linked successfully!')}`;
+            const successUrl = `${frontendUrl}?message=${encodeURIComponent('Google account linked successfully!')}`;
             res.redirect(successUrl);
         } catch (linkError) {
-            const errorUrl = `${returnUrl}?error=${encodeURIComponent('Failed to link Google account. Please try again.')}`;
+            const errorUrl = `${frontendUrl}?error=${encodeURIComponent('Failed to link Google account. Please try again.')}`;
             res.redirect(errorUrl);
         }
     } catch (error) {
-        const returnUrl = req.query.returnUrl || `${process.env.FRONTEND_URL || process.env.BASE_URL || 'http://localhost:5000'}`;
-        res.redirect(`${returnUrl}?error=${encodeURIComponent('Server error during Google account linking')}`);
+        res.redirect(`${frontendUrl}?error=${encodeURIComponent('Server error during Google account linking')}`);
     }
 };
