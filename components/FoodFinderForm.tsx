@@ -418,7 +418,7 @@ const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, er
             />
         </div>
 
-        <div className="text-center pt-4 mb-32 pb-12">
+        <div className="text-center pt-4 mb-24 pb-24">
           <button
             type="submit"
             className="w-full sm:w-auto px-10 py-4 bg-amber-600 text-white font-bold rounded-full hover:bg-amber-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:bg-amber-400/80 disabled:cursor-not-allowed disabled:shadow-md disabled:scale-100"
