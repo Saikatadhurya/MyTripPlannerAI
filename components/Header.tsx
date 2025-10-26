@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { User } from '../services/authService';
 import AuthModal from './AuthModal';
 import UserProfile from './UserProfile';
@@ -28,6 +29,7 @@ const Header: React.FC<HeaderProps> = ({
   onOpenAuthModal,
   onCloseAuthModal,
 }) => {
+  const navigate = useNavigate();
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
@@ -83,7 +85,10 @@ const Header: React.FC<HeaderProps> = ({
         aria-label="Application Header"
       >
         <div className={`${containerBaseClasses} ${isScrolled ? containerScrolledClasses : containerInitialClasses}`}>
-          <div className={`${logoContainerBaseClasses} ${isScrolled ? 'scale-90' : 'scale-100'}`}>
+          <button 
+            onClick={() => navigate('/')}
+            className={`${logoContainerBaseClasses} ${isScrolled ? 'scale-90' : 'scale-100'} hover:opacity-80 transition-opacity cursor-pointer`}
+          >
             {/* Simplified SVG Icon inspired by the Planora logo image */}
             <svg width="32" height="32" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="50" cy="50" r="45" />
@@ -105,7 +110,7 @@ const Header: React.FC<HeaderProps> = ({
             >
               PLANORA
             </span>
-          </div>
+          </button>
 
           {/* Authentication Section */}
           <div className="flex items-center space-x-4">
