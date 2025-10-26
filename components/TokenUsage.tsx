@@ -216,9 +216,9 @@ const TokenUsage: React.FC<TokenUsageProps> = ({ onBack }) => {
             <div className="divide-y divide-slate-100">
               {stats.breakdown.map((item, index) => (
                 <div key={index} className="p-6 hover:bg-slate-50/50 transition-colors">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-gradient-to-br from-violet-100 to-purple-100 rounded-xl flex items-center justify-center text-2xl">
+                      <div className="w-12 h-12 bg-gradient-to-br from-violet-100 to-purple-100 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">
                         {getTypeIcon(item.recommendation_type)}
                       </div>
                       <div>
@@ -226,18 +226,18 @@ const TokenUsage: React.FC<TokenUsageProps> = ({ onBack }) => {
                         <p className="text-sm text-slate-600">{item.count} plan{item.count !== 1 ? 's' : ''}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-6">
-                      <div className="text-center">
+                    <div className="flex items-center gap-2 md:gap-6 flex-shrink-0 overflow-x-auto">
+                      <div className="text-center min-w-[60px]">
                         <p className="text-xs text-slate-600 mb-1">Input</p>
-                        <p className="font-bold text-purple-600">{formatNumber(item.input_tokens)}</p>
+                        <p className="font-bold text-purple-600 text-sm">{formatNumber(item.input_tokens)}</p>
                       </div>
-                      <div className="text-center">
+                      <div className="text-center min-w-[60px]">
                         <p className="text-xs text-slate-600 mb-1">Output</p>
-                        <p className="font-bold text-pink-600">{formatNumber(item.output_tokens)}</p>
+                        <p className="font-bold text-pink-600 text-sm">{formatNumber(item.output_tokens)}</p>
                       </div>
-                      <div className="text-center">
+                      <div className="text-center min-w-[60px]">
                         <p className="text-xs text-slate-600 mb-1">Total</p>
-                        <p className="font-bold text-violet-600">{formatNumber(item.total_tokens)}</p>
+                        <p className="font-bold text-violet-600 text-sm">{formatNumber(item.total_tokens)}</p>
                       </div>
                     </div>
                   </div>
@@ -257,8 +257,8 @@ const TokenUsage: React.FC<TokenUsageProps> = ({ onBack }) => {
             <div className="divide-y divide-slate-100">
               {stats.recentPlans.map((plan, index) => (
                 <div key={index} className="p-6 hover:bg-slate-50/50 transition-colors">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-start gap-4 flex-1">
+                  <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                    <div className="flex items-start gap-4 flex-1 min-w-0">
                       <div className="w-10 h-10 bg-gradient-to-br from-violet-100 to-purple-100 rounded-lg flex items-center justify-center text-lg flex-shrink-0">
                         {getTypeIcon(plan.recommendation_type)}
                       </div>
@@ -275,18 +275,18 @@ const TokenUsage: React.FC<TokenUsageProps> = ({ onBack }) => {
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4 flex-shrink-0">
-                      <div className="text-center">
+                    <div className="flex items-center gap-2 md:gap-4 flex-shrink-0 overflow-x-auto">
+                      <div className="text-center min-w-[60px]">
                         <p className="text-xs text-slate-600 mb-1">Input</p>
-                        <p className="font-bold text-purple-600">{formatNumber(plan.input_token)}</p>
+                        <p className="font-bold text-purple-600 text-sm">{formatNumber(plan.input_token)}</p>
                       </div>
-                      <div className="text-center">
+                      <div className="text-center min-w-[60px]">
                         <p className="text-xs text-slate-600 mb-1">Output</p>
-                        <p className="font-bold text-pink-600">{formatNumber(plan.output_token)}</p>
+                        <p className="font-bold text-pink-600 text-sm">{formatNumber(plan.output_token)}</p>
                       </div>
-                      <div className="text-center">
+                      <div className="text-center min-w-[60px]">
                         <p className="text-xs text-slate-600 mb-1">Total</p>
-                        <p className="font-bold text-violet-600">{formatNumber(plan.total_token)}</p>
+                        <p className="font-bold text-violet-600 text-sm">{formatNumber(plan.total_token)}</p>
                       </div>
                     </div>
                   </div>
