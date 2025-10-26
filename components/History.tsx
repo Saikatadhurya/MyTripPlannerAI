@@ -120,7 +120,7 @@ const UnifiedTripItem: React.FC<UnifiedTripItemProps> = ({ trip, onView, onDelet
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
             </svg>
-            View & Share Trip
+            View Trip
           </button>
           <button
             onClick={() => onShareTrip(trip)}
@@ -296,7 +296,7 @@ const HistoryItem: React.FC<HistoryItemProps> = ({ item, onEdit, onDelete, onVie
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
             </svg>
-            View & Share
+            View
           </button>
           <button
             onClick={() => onShare(item)}
@@ -440,6 +440,14 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
   const [allUnifiedTrips, setAllUnifiedTrips] = useState<UnifiedTrip[]>([]); // Store all trips for filtering
   const [unifiedTripsLoading, setUnifiedTripsLoading] = useState(false);
   
+  // Combined items state
+  type CombinedItem = { type: 'individual'; data: RecommendationHistory } | { type: 'unified'; data: UnifiedTrip };
+  const [combinedItems, setCombinedItems] = useState<CombinedItem[]>([]);
+  const [allCombinedItems, setAllCombinedItems] = useState<CombinedItem[]>([]); // All loaded items
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  
   // Trip type visibility state
   const [showIndividual, setShowIndividual] = useState<boolean>(true);
   const [showUnified, setShowUnified] = useState<boolean>(true);
@@ -453,6 +461,8 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
 
   const handleSearchTermChange = (value: string) => {
     setSearchTerm(value);
+    setCurrentPage(1);
+    setHasMore(true);
     // Apply filters immediately
     setFilters({
       search: value || undefined,
@@ -467,6 +477,8 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
 
   const handleDestinationChange = (value: string) => {
     setSelectedDestination(value);
+    setCurrentPage(1);
+    setHasMore(true);
     // Apply filters immediately
     setFilters({
       search: searchTerm || undefined,
@@ -481,6 +493,8 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
 
   const handleTypeChange = (value: string) => {
     setSelectedType(value);
+    setCurrentPage(1);
+    setHasMore(true);
     // Apply filters immediately
     setFilters({
       search: searchTerm || undefined,
@@ -493,6 +507,8 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
     setSearchTerm('');
     setSelectedDestination('');
     setSelectedType('');
+    setCurrentPage(1);
+    setHasMore(true);
     setFilters({});
     
     // Clear unified trip filters
@@ -626,10 +642,48 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
     }
   };
 
+  // Load more individual recommendations
+  const loadMoreHistory = async (page: number, append: boolean = false) => {
+    if (loading || loadingMore) return;
+    
+    setLoadingMore(true);
+    try {
+      await loadHistory(page);
+      setCurrentPage(page);
+      
+      // Check if there are more pages
+      if (pagination && page >= pagination.totalPages) {
+        setHasMore(false);
+      }
+    } catch (error) {
+      console.error('Failed to load more history:', error);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  // Load both individual recommendations and unified trips at once
+  const loadAllData = async () => {
+    setUnifiedTripsLoading(true);
+    setCurrentPage(1);
+    setHasMore(true);
+    try {
+      // Fetch both in parallel
+      await Promise.all([
+        loadHistory(1),
+        loadUnifiedTrips(),
+        loadTotalCounts()
+      ]);
+    } catch (error) {
+      console.error('Failed to load history data:', error);
+    } finally {
+      setUnifiedTripsLoading(false);
+    }
+  };
+
   // Load unified trips and total counts when component mounts
   useEffect(() => {
-    loadUnifiedTrips();
-    loadTotalCounts();
+    loadAllData();
   }, []);
 
   // Update counts when filters change
@@ -653,9 +707,68 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
   const sortedHistory = sortByTime(history);
   const sortedUnifiedTrips = sortByTime(unifiedTrips);
 
-  const handlePageChange = (page: number) => {
-    loadHistory(page);
-  };
+  // Combine and sort all items by creation date
+  useEffect(() => {
+    const combineAndSort = () => {
+      const combined: CombinedItem[] = [];
+      
+      // Add individual recommendations
+      if (showIndividual) {
+        sortedHistory.forEach(item => {
+          combined.push({ type: 'individual', data: item });
+        });
+      }
+      
+      // Add unified trips
+      if (showUnified) {
+        sortedUnifiedTrips.forEach(trip => {
+          combined.push({ type: 'unified', data: trip });
+        });
+      }
+      
+      // Sort by creation date (most recent first)
+      combined.sort((a, b) => {
+        const dateA = new Date(a.data.created_at).getTime();
+        const dateB = new Date(b.data.created_at).getTime();
+        return dateB - dateA;
+      });
+      
+      setCombinedItems(combined);
+      setAllCombinedItems(combined);
+    };
+    
+    combineAndSort();
+  }, [sortedHistory, sortedUnifiedTrips, showIndividual, showUnified]);
+
+  // Scroll detection for infinite scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      // Check if user is near bottom of page
+      const scrollHeight = document.documentElement.scrollHeight;
+      const scrollTop = document.documentElement.scrollTop;
+      const clientHeight = document.documentElement.clientHeight;
+      
+      // Load more when user is within 200px of bottom
+      if (scrollHeight - scrollTop - clientHeight < 200 && hasMore && !loadingMore && !loading) {
+        if (pagination && currentPage < pagination.totalPages) {
+          const nextPage = currentPage + 1;
+          setCurrentPage(nextPage);
+          loadMoreHistory(nextPage, true);
+        } else {
+          setHasMore(false);
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [currentPage, hasMore, loadingMore, loading, pagination]);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+    setHasMore(true);
+  }, [searchTerm, selectedDestination, selectedType]);
 
   return (
     <div className="bg-gradient-to-br from-slate-50 via-blue-50/30 to-violet-50/30 min-h-screen">
@@ -757,7 +870,7 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
                   <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                     showIndividual ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'
                   }`}>
-                    {sortedHistory.length}
+                    {combinedItems.filter(item => item.type === 'individual').length}
                   </span>
                 </span>
               </button>
@@ -777,7 +890,7 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
                   <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                     showUnified ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'
                   }`}>
-                    {sortedUnifiedTrips.length}
+                    {combinedItems.filter(item => item.type === 'unified').length}
                   </span>
                 </span>
               </button>
@@ -795,7 +908,7 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold text-slate-700">Individual Recommendations</span>
                     <span className="text-sm font-bold text-blue-600">
-                      {loading ? '...' : `${sortedHistory.length}${pagination ? ` of ${pagination.total}` : ''}`}
+                      {loading ? '...' : `${combinedItems.filter(item => item.type === 'individual').length}${pagination ? ` of ${pagination.total}` : ''}`}
                     </span>
                   </div>
                 </div>
@@ -807,7 +920,7 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold text-slate-700">Unified Trips</span>
                     <span className="text-sm font-bold text-violet-600">
-                      {unifiedTripsLoading ? '...' : `${sortedUnifiedTrips.length}${allUnifiedTrips.length > 0 ? ` of ${allUnifiedTrips.length}` : ''}`}
+                      {unifiedTripsLoading ? '...' : `${combinedItems.filter(item => item.type === 'unified').length}${allUnifiedTrips.length > 0 ? ` of ${allUnifiedTrips.length}` : ''}`}
                     </span>
                   </div>
                 </div>
@@ -880,55 +993,55 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
           </div>
         )}
 
-        {/* Combined Results - Show first if any content is available */}
-        {!loading && !error && (showIndividual || showUnified) && (sortedHistory.length > 0 || sortedUnifiedTrips.length > 0) && (
+        {/* Combined Results - Show items sorted by creation date (most recent first) */}
+        {!loading && !error && (showIndividual || showUnified) && combinedItems.length > 0 && (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 mb-12">
-              {/* Individual Recommendations */}
-              {showIndividual && sortedHistory.map(item => (
-                <HistoryItem
-                  key={item.id}
-                  item={item}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                  onView={handleView}
-                  onShare={handleShare}
-                />
-              ))}
-              
-              {/* Unified Trips */}
-              {showUnified && sortedUnifiedTrips.map(trip => (
-                <UnifiedTripItem
-                  key={trip.tripId}
-                  trip={trip}
-                  onView={handleViewUnifiedTrip}
-                  onDelete={handleDeleteUnifiedTrip}
-                  onShareTrip={handleShareTrip}
-                />
-              ))}
+              {combinedItems.map((combinedItem, index) => {
+                if (combinedItem.type === 'individual') {
+                  return (
+                    <HistoryItem
+                      key={`individual-${combinedItem.data.id}`}
+                      item={combinedItem.data}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                      onView={handleView}
+                      onShare={handleShare}
+                    />
+                  );
+                } else {
+                  return (
+                    <UnifiedTripItem
+                      key={`unified-${combinedItem.data.tripId}`}
+                      trip={combinedItem.data}
+                      onView={handleViewUnifiedTrip}
+                      onDelete={handleDeleteUnifiedTrip}
+                      onShareTrip={handleShareTrip}
+                    />
+                  );
+                }
+              })}
             </div>
 
-            {/* Pagination - Only show for individual recommendations */}
-            {showIndividual && pagination && pagination.totalPages > 1 && (
-              <div className="bg-white/90 backdrop-blur-xl rounded-3xl p-6 shadow-xl border border-white/60">
-                <div className="flex justify-center items-center gap-4">
-                  <button
-                    onClick={() => handlePageChange(pagination.page - 1)}
-                    disabled={pagination.page === 1}
-                    className="px-6 py-3 bg-gradient-to-r from-slate-100 to-slate-200 text-slate-700 rounded-2xl hover:from-slate-200 hover:to-slate-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold transition-all duration-200 shadow-md hover:shadow-lg disabled:shadow-none"
-                  >
-                    ← Previous
-                  </button>
-                  <div className="px-6 py-3 bg-gradient-to-r from-blue-500 to-violet-600 text-white rounded-2xl text-sm font-bold shadow-lg">
-                    Page {pagination.page} of {pagination.totalPages}
+            {/* Loading More Indicator */}
+            {loadingMore && (
+              <div className="flex justify-center items-center py-8">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-100 via-blue-200 to-blue-300 rounded-2xl flex items-center justify-center shadow-lg">
+                  <div className="w-6 h-6 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+                <span className="ml-4 text-blue-600 font-medium">Loading more...</span>
+              </div>
+            )}
+
+            {/* End of Results Indicator */}
+            {!loadingMore && !hasMore && combinedItems.length > 0 && (
+              <div className="flex justify-center items-center py-8">
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-gradient-to-br from-green-100 via-green-200 to-green-300 rounded-2xl flex items-center justify-center shadow-lg mx-auto mb-3">
+                    <span className="text-2xl">✨</span>
                   </div>
-                  <button
-                    onClick={() => handlePageChange(pagination.page + 1)}
-                    disabled={pagination.page === pagination.totalPages}
-                    className="px-6 py-3 bg-gradient-to-r from-slate-100 to-slate-200 text-slate-700 rounded-2xl hover:from-slate-200 hover:to-slate-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold transition-all duration-200 shadow-md hover:shadow-lg disabled:shadow-none"
-                  >
-                    Next →
-                  </button>
+                  <p className="text-green-600 font-medium">You've reached the end!</p>
+                  <p className="text-sm text-slate-600 mt-1">All your recommendations are loaded</p>
                 </div>
               </div>
             )}
@@ -947,7 +1060,7 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
         )}
 
         {/* Individual Empty State - Only show if individual is selected but no results */}
-        {!loading && !error && showIndividual && sortedHistory.length === 0 && !showUnified && (
+        {!loading && !error && showIndividual && combinedItems.filter(item => item.type === 'individual').length === 0 && !showUnified && (
           <div className="text-center py-20">
             <div className="w-24 h-24 mx-auto mb-8 bg-gradient-to-br from-blue-100 via-blue-200 to-blue-300 rounded-3xl flex items-center justify-center shadow-lg">
               <span className="text-4xl">📋</span>
@@ -958,7 +1071,7 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
         )}
 
         {/* Unified Empty State - Only show if unified is selected but no results */}
-        {!loading && !error && showUnified && sortedUnifiedTrips.length === 0 && !showIndividual && (
+        {!loading && !error && showUnified && combinedItems.filter(item => item.type === 'unified').length === 0 && !showIndividual && (
           <div className="text-center py-20">
             <div className="w-24 h-24 mx-auto mb-8 bg-gradient-to-br from-violet-100 via-violet-200 to-violet-300 rounded-3xl flex items-center justify-center shadow-lg">
               <span className="text-4xl">🗺️</span>
@@ -969,24 +1082,13 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
         )}
 
         {/* Both Empty State - Only show if both are selected but no results */}
-        {!loading && !error && showIndividual && showUnified && sortedHistory.length === 0 && sortedUnifiedTrips.length === 0 && (
+        {!loading && !error && showIndividual && showUnified && combinedItems.length === 0 && (
           <div className="text-center py-20">
             <div className="w-24 h-24 mx-auto mb-8 bg-gradient-to-br from-slate-100 via-slate-200 to-slate-300 rounded-3xl flex items-center justify-center shadow-lg">
               <span className="text-4xl">📭</span>
             </div>
             <h3 className="text-2xl font-bold text-slate-800 mb-4">No Recommendations Found</h3>
             <p className="text-lg text-slate-600 max-w-lg mx-auto leading-relaxed">Start creating recommendations to see them here! Try generating an itinerary, packing list, food guide, or create a comprehensive unified trip plan.</p>
-          </div>
-        )}
-
-        {/* Loading State for Unified Trips */}
-        {unifiedTripsLoading && showUnified && (
-          <div className="text-center py-16">
-            <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-violet-100 to-violet-200 rounded-2xl flex items-center justify-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600"></div>
-            </div>
-            <h3 className="text-lg font-semibold text-slate-800 mb-2">Loading Unified Trips</h3>
-            <p className="text-slate-600">Fetching your comprehensive trip plans...</p>
           </div>
         )}
 
