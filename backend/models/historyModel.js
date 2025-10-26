@@ -1,14 +1,30 @@
 const { pool } = require('../config/db');
 
 class HistoryModel {
+  // Helper function to estimate token count from content
+  // Approximate: 1 token ≈ 4 characters for English text
+  estimateTokenCount(content) {
+    if (!content) return 0;
+    
+    // Convert to JSON string if it's an object
+    const jsonString = typeof content === 'string' ? content : JSON.stringify(content);
+    
+    // Rough estimation: 1 token per 4 characters
+    return Math.ceil(jsonString.length / 4);
+  }
+
   // Save a new recommendation to history
   async saveRecommendation({ userId, recommendationType, destination, language, requestData, responseData, title, tags, notes, tripContext, tripId, tripName }) {
     const client = await pool.connect();
     try {
+      // Calculate token counts
+      const inputTokenCount = this.estimateTokenCount(requestData);
+      const outputTokenCount = this.estimateTokenCount(responseData);
+      
       const query = `
         INSERT INTO planora.recommendations_history 
-        (user_id, recommendation_type, destination, language, request_data, response_data, title, tags, notes, trip_context, trip_id, trip_name)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        (user_id, recommendation_type, destination, language, request_data, response_data, title, tags, notes, trip_context, trip_id, trip_name, input_token, output_token)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
         RETURNING id, created_at
       `;
       
@@ -24,7 +40,9 @@ class HistoryModel {
         notes || null,
         tripContext ? JSON.stringify(tripContext) : null,
         tripId || null,
-        tripName || null
+        tripName || null,
+        inputTokenCount,
+        outputTokenCount
       ];
       
       const result = await client.query(query, values);
@@ -104,6 +122,8 @@ class HistoryModel {
           tags,
           notes,
           trip_context as "tripContext",
+          input_token as "inputToken",
+          output_token as "outputToken",
           created_at as "created_at",
           updated_at as "updated_at",
           -- Extract summary info from JSON based on recommendation type
@@ -190,6 +210,8 @@ class HistoryModel {
             tags,
             notes,
             trip_context as "tripContext",
+            input_token as "inputToken",
+            output_token as "outputToken",
             created_at as "created_at",
             updated_at as "updated_at"
           FROM planora.recommendations_history
@@ -212,6 +234,8 @@ class HistoryModel {
             trip_context as "tripContext",
             trip_id as "tripId",
             trip_name as "tripName",
+            input_token as "inputToken",
+            output_token as "outputToken",
             created_at as "created_at",
             updated_at as "updated_at"
           FROM planora.recommendations_history
@@ -256,6 +280,8 @@ class HistoryModel {
             tags,
             notes,
             trip_context as "tripContext",
+            input_token as "inputToken",
+            output_token as "outputToken",
             created_at as "created_at",
             updated_at as "updated_at"
           FROM planora.recommendations_history
@@ -286,6 +312,8 @@ class HistoryModel {
             tags,
             notes,
             trip_context as "tripContext",
+            input_token as "inputToken",
+            output_token as "outputToken",
             created_at as "created_at",
             updated_at as "updated_at"
           FROM planora.recommendations_history
@@ -497,6 +525,8 @@ class HistoryModel {
           trip_context as "tripContext",
           trip_id as "tripId",
           trip_name as "tripName",
+          input_token as "inputToken",
+          output_token as "outputToken",
           created_at as "created_at"
         FROM planora.recommendations_history
         WHERE trip_id = $1 AND user_id = $2
