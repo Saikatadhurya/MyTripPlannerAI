@@ -33,9 +33,10 @@ const ContactUs: React.FC<ContactUsProps> = ({ onBack }) => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
                 <InfoCard title="Get in Touch" icon={<svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>}>
-                    <p className="flex items-center space-x-3"><strong className="w-16">Email:</strong> <a href="mailto:contact@planora.ai" className="text-violet-700 hover:underline">contact@planora.ai</a></p>
-                    <p className="flex items-center space-x-3"><strong className="w-16">Phone:</strong> <span>+1 (555) 123-4567</span></p>
-                    <p className="flex items-start space-x-3"><strong className="w-16 flex-shrink-0">Address:</strong> <span>123 Travel Lane, Wanderlust City, World</span></p>
+                    <p className="flex items-center space-x-3"><strong className="w-24">Developer:</strong> <span>Saikat Adhurya</span></p>
+                    <p className="flex items-center space-x-3"><strong className="w-24">Email:</strong> <a href="mailto:sakatadhuryabirds@gmail.com" className="text-violet-700 hover:underline">sakatadhuryabirds@gmail.com</a></p>
+                    <p className="flex items-center space-x-3"><strong className="w-24">Phone:</strong> <a href="tel:+917908278983" className="text-violet-700 hover:underline">+91 7908278983</a></p>
+                    <p className="flex items-center space-x-3"><strong className="w-24">LinkedIn:</strong> <a href="https://www.linkedin.com/in/saikat-adhurya/" target="_blank" rel="noopener noreferrer" className="text-violet-700 hover:underline">@saikat-adhurya</a></p>
                 </InfoCard>
 
                 <InfoCard title="About Planora" icon={<svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}>
@@ -55,6 +56,10 @@ const ContactUs: React.FC<ContactUsProps> = ({ onBack }) => {
                 </h2>
                 <TestimonialsCarousel />
             </section>
+            
+            <div className="text-center mt-12">
+                <p className="text-xl font-bold text-violet-700">Made in India 🇮🇳</p>
+            </div>
         </div>
     );
 };

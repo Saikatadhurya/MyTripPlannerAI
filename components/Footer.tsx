@@ -17,6 +17,9 @@ const Footer: React.FC<FooterProps> = ({ className = '' }) => {
             <p className="text-xs text-slate-500">
               © {new Date().getFullYear()} Planora. Your AI-powered travel companion.
             </p>
+            <div className="flex items-center gap-2 text-slate-600">
+              <span className="text-sm">Made with ❤️ in India</span>
+            </div>
           </div>
         </div>
       </div>
