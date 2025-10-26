@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useHistory } from '../hooks/useHistory';
 import { RecommendationHistory, UnifiedTrip } from '../services/historyService';
 import BackToHomeButton from './BackToHomeButton';
@@ -120,7 +120,7 @@ const UnifiedTripItem: React.FC<UnifiedTripItemProps> = ({ trip, onView, onDelet
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
             </svg>
-            View Trip
+            View & Share Trip
           </button>
           <button
             onClick={() => onShareTrip(trip)}
@@ -148,13 +148,12 @@ const UnifiedTripItem: React.FC<UnifiedTripItemProps> = ({ trip, onView, onDelet
 
 interface HistoryItemProps {
   item: RecommendationHistory;
-  onEdit: (item: RecommendationHistory) => void;
   onDelete: (id: string) => void;
   onView: (item: RecommendationHistory) => void;
   onShare: (item: RecommendationHistory) => void;
 }
 
-const HistoryItem: React.FC<HistoryItemProps> = ({ item, onEdit, onDelete, onView, onShare }) => {
+const HistoryItem: React.FC<HistoryItemProps> = ({ item, onDelete, onView, onShare }) => {
   const getTypeIcon = (type: string) => {
     const icons = {
       apps: '📱',
@@ -296,7 +295,7 @@ const HistoryItem: React.FC<HistoryItemProps> = ({ item, onEdit, onDelete, onVie
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
             </svg>
-            View
+            View & Share
           </button>
           <button
             onClick={() => onShare(item)}
@@ -305,15 +304,6 @@ const HistoryItem: React.FC<HistoryItemProps> = ({ item, onEdit, onDelete, onVie
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
-            </svg>
-          </button>
-          <button
-            onClick={() => onEdit(item)}
-            className="px-4 py-3 bg-green-50 text-green-600 rounded-xl font-semibold hover:bg-green-100 transition-all duration-300 border border-green-200 hover:border-green-300 flex items-center justify-center"
-            title="Edit"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
             </svg>
           </button>
           <button
@@ -331,89 +321,6 @@ const HistoryItem: React.FC<HistoryItemProps> = ({ item, onEdit, onDelete, onVie
   );
 };
 
-interface EditModalProps {
-  item: RecommendationHistory | null;
-  onClose: () => void;
-  onSave: (id: string, data: { title: string; tags: string[]; notes: string }) => void;
-}
-
-const EditModal: React.FC<EditModalProps> = ({ item, onClose, onSave }) => {
-  const [title, setTitle] = useState(item?.title || '');
-  const [tags, setTags] = useState(item?.tags?.join(', ') || '');
-  const [notes, setNotes] = useState(item?.notes || '');
-
-  const handleSave = () => {
-    if (item) {
-      onSave(item.id, {
-        title,
-        tags: tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0),
-        notes
-      });
-    }
-  };
-
-  if (!item) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl p-6 w-full max-w-md">
-        <h3 className="text-lg font-bold text-slate-800 mb-4">Edit Recommendation</h3>
-        
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Title</label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Enter a title..."
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Tags (comma-separated)</label>
-            <input
-              type="text"
-              value={tags}
-              onChange={(e) => setTags(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="e.g., apps, travel, food"
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Notes</label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={3}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Add any notes..."
-            />
-          </div>
-        </div>
-        
-        <div className="flex justify-end space-x-3 mt-6">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-slate-600 hover:text-slate-800 transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Save Changes
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-
 const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string, responseData: any, requestData: any, isHistoryView: boolean) => void }> = ({ onBack, onNavigateToResult }) => {
   const {
     history,
@@ -430,7 +337,6 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
     deleteRecommendation
   } = useHistory();
 
-  const [editingItem, setEditingItem] = useState<RecommendationHistory | null>(null);
   const [searchTerm, setSearchTerm] = useState(filters.search || '');
   const [selectedDestination, setSelectedDestination] = useState(filters.destination || '');
   const [selectedType, setSelectedType] = useState(filters.recommendationType || '');
@@ -443,10 +349,6 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
   // Combined items state
   type CombinedItem = { type: 'individual'; data: RecommendationHistory } | { type: 'unified'; data: UnifiedTrip };
   const [combinedItems, setCombinedItems] = useState<CombinedItem[]>([]);
-  const [allCombinedItems, setAllCombinedItems] = useState<CombinedItem[]>([]); // All loaded items
-  const [currentPage, setCurrentPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
   
   // Trip type visibility state
   const [showIndividual, setShowIndividual] = useState<boolean>(true);
@@ -461,8 +363,6 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
 
   const handleSearchTermChange = (value: string) => {
     setSearchTerm(value);
-    setCurrentPage(1);
-    setHasMore(true);
     // Apply filters immediately
     setFilters({
       search: value || undefined,
@@ -477,8 +377,6 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
 
   const handleDestinationChange = (value: string) => {
     setSelectedDestination(value);
-    setCurrentPage(1);
-    setHasMore(true);
     // Apply filters immediately
     setFilters({
       search: searchTerm || undefined,
@@ -493,8 +391,6 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
 
   const handleTypeChange = (value: string) => {
     setSelectedType(value);
-    setCurrentPage(1);
-    setHasMore(true);
     // Apply filters immediately
     setFilters({
       search: searchTerm || undefined,
@@ -507,25 +403,10 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
     setSearchTerm('');
     setSelectedDestination('');
     setSelectedType('');
-    setCurrentPage(1);
-    setHasMore(true);
     setFilters({});
     
     // Clear unified trip filters
     setUnifiedTrips(allUnifiedTrips);
-  };
-
-  const handleEdit = (item: RecommendationHistory) => {
-    setEditingItem(item);
-  };
-
-  const handleSaveEdit = async (id: string, data: { title: string; tags: string[]; notes: string }) => {
-    try {
-      await updateRecommendation(id, data);
-      setEditingItem(null);
-    } catch (error) {
-      // Failed to update recommendation
-    }
   };
 
   const handleDelete = async (id: string) => {
@@ -642,48 +523,10 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
     }
   };
 
-  // Load more individual recommendations
-  const loadMoreHistory = async (page: number, append: boolean = false) => {
-    if (loading || loadingMore) return;
-    
-    setLoadingMore(true);
-    try {
-      await loadHistory(page);
-      setCurrentPage(page);
-      
-      // Check if there are more pages
-      if (pagination && page >= pagination.totalPages) {
-        setHasMore(false);
-      }
-    } catch (error) {
-      console.error('Failed to load more history:', error);
-    } finally {
-      setLoadingMore(false);
-    }
-  };
-
-  // Load both individual recommendations and unified trips at once
-  const loadAllData = async () => {
-    setUnifiedTripsLoading(true);
-    setCurrentPage(1);
-    setHasMore(true);
-    try {
-      // Fetch both in parallel
-      await Promise.all([
-        loadHistory(1),
-        loadUnifiedTrips(),
-        loadTotalCounts()
-      ]);
-    } catch (error) {
-      console.error('Failed to load history data:', error);
-    } finally {
-      setUnifiedTripsLoading(false);
-    }
-  };
-
   // Load unified trips and total counts when component mounts
   useEffect(() => {
-    loadAllData();
+    loadUnifiedTrips();
+    loadTotalCounts();
   }, []);
 
   // Update counts when filters change
@@ -703,72 +546,41 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
     });
   };
 
-  // Get sorted items
-  const sortedHistory = sortByTime(history);
-  const sortedUnifiedTrips = sortByTime(unifiedTrips);
+  // Use useMemo to stabilize sorted arrays
+  const sortedHistory = useMemo(() => sortByTime(history), [history]);
+  const sortedUnifiedTrips = useMemo(() => sortByTime(unifiedTrips), [unifiedTrips]);
 
-  // Combine and sort all items by creation date
+  // Combine and sort all items by creation date (most recent first)
   useEffect(() => {
-    const combineAndSort = () => {
-      const combined: CombinedItem[] = [];
-      
-      // Add individual recommendations
-      if (showIndividual) {
-        sortedHistory.forEach(item => {
-          combined.push({ type: 'individual', data: item });
-        });
-      }
-      
-      // Add unified trips
-      if (showUnified) {
-        sortedUnifiedTrips.forEach(trip => {
-          combined.push({ type: 'unified', data: trip });
-        });
-      }
-      
-      // Sort by creation date (most recent first)
-      combined.sort((a, b) => {
-        const dateA = new Date(a.data.created_at).getTime();
-        const dateB = new Date(b.data.created_at).getTime();
-        return dateB - dateA;
-      });
-      
-      setCombinedItems(combined);
-      setAllCombinedItems(combined);
-    };
+    const combined: CombinedItem[] = [];
     
-    combineAndSort();
+    // Add individual recommendations
+    if (showIndividual) {
+      sortedHistory.forEach(item => {
+        combined.push({ type: 'individual', data: item });
+      });
+    }
+    
+    // Add unified trips
+    if (showUnified) {
+      sortedUnifiedTrips.forEach(trip => {
+        combined.push({ type: 'unified', data: trip });
+      });
+    }
+    
+    // Sort by creation date (most recent first)
+    combined.sort((a, b) => {
+      const dateA = new Date(a.data.created_at).getTime();
+      const dateB = new Date(b.data.created_at).getTime();
+      return dateB - dateA;
+    });
+    
+    setCombinedItems(combined);
   }, [sortedHistory, sortedUnifiedTrips, showIndividual, showUnified]);
 
-  // Scroll detection for infinite scroll
-  useEffect(() => {
-    const handleScroll = () => {
-      // Check if user is near bottom of page
-      const scrollHeight = document.documentElement.scrollHeight;
-      const scrollTop = document.documentElement.scrollTop;
-      const clientHeight = document.documentElement.clientHeight;
-      
-      // Load more when user is within 200px of bottom
-      if (scrollHeight - scrollTop - clientHeight < 200 && hasMore && !loadingMore && !loading) {
-        if (pagination && currentPage < pagination.totalPages) {
-          const nextPage = currentPage + 1;
-          setCurrentPage(nextPage);
-          loadMoreHistory(nextPage, true);
-        } else {
-          setHasMore(false);
-        }
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [currentPage, hasMore, loadingMore, loading, pagination]);
-
-  // Reset pagination when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-    setHasMore(true);
-  }, [searchTerm, selectedDestination, selectedType]);
+  const handlePageChange = (page: number) => {
+    loadHistory(page);
+  };
 
   return (
     <div className="bg-gradient-to-br from-slate-50 via-blue-50/30 to-violet-50/30 min-h-screen">
@@ -1003,7 +815,6 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
                     <HistoryItem
                       key={`individual-${combinedItem.data.id}`}
                       item={combinedItem.data}
-                      onEdit={handleEdit}
                       onDelete={handleDelete}
                       onView={handleView}
                       onShare={handleShare}
@@ -1023,40 +834,31 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
               })}
             </div>
 
-            {/* Loading More Indicator */}
-            {loadingMore && (
-              <div className="flex justify-center items-center py-8">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-100 via-blue-200 to-blue-300 rounded-2xl flex items-center justify-center shadow-lg">
-                  <div className="w-6 h-6 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                </div>
-                <span className="ml-4 text-blue-600 font-medium">Loading more...</span>
-              </div>
-            )}
-
-            {/* End of Results Indicator */}
-            {!loadingMore && !hasMore && combinedItems.length > 0 && (
-              <div className="flex justify-center items-center py-8">
-                <div className="text-center">
-                  <div className="w-16 h-16 bg-gradient-to-br from-green-100 via-green-200 to-green-300 rounded-2xl flex items-center justify-center shadow-lg mx-auto mb-3">
-                    <span className="text-2xl">✨</span>
+            {/* Pagination - Only show for individual recommendations */}
+            {showIndividual && pagination && pagination.totalPages > 1 && (
+              <div className="bg-white/90 backdrop-blur-xl rounded-3xl p-6 shadow-xl border border-white/60">
+                <div className="flex justify-center items-center gap-4">
+                  <button
+                    onClick={() => handlePageChange(pagination.page - 1)}
+                    disabled={pagination.page === 1}
+                    className="px-6 py-3 bg-gradient-to-r from-slate-100 to-slate-200 text-slate-700 rounded-2xl hover:from-slate-200 hover:to-slate-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold transition-all duration-200 shadow-md hover:shadow-lg disabled:shadow-none"
+                  >
+                    ← Previous
+                  </button>
+                  <div className="px-6 py-3 bg-gradient-to-r from-blue-500 to-violet-600 text-white rounded-2xl text-sm font-bold shadow-lg">
+                    Page {pagination.page} of {pagination.totalPages}
                   </div>
-                  <p className="text-green-600 font-medium">You've reached the end!</p>
-                  <p className="text-sm text-slate-600 mt-1">All your recommendations are loaded</p>
+                  <button
+                    onClick={() => handlePageChange(pagination.page + 1)}
+                    disabled={pagination.page === pagination.totalPages}
+                    className="px-6 py-3 bg-gradient-to-r from-slate-100 to-slate-200 text-slate-700 rounded-2xl hover:from-slate-200 hover:to-slate-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold transition-all duration-200 shadow-md hover:shadow-lg disabled:shadow-none"
+                  >
+                    Next →
+                  </button>
                 </div>
               </div>
             )}
           </>
-        )}
-
-        {/* Empty States - Only show when no content is available */}
-        {!loading && !error && !showIndividual && !showUnified && (
-          <div className="text-center py-20">
-            <div className="w-24 h-24 mx-auto mb-8 bg-gradient-to-br from-slate-100 via-slate-200 to-slate-300 rounded-3xl flex items-center justify-center shadow-lg">
-              <span className="text-4xl">🎯</span>
-            </div>
-            <h3 className="text-2xl font-bold text-slate-800 mb-4">Select Trip Types to View</h3>
-            <p className="text-lg text-slate-600 max-w-lg mx-auto leading-relaxed">Click on the filter chips above to show individual recommendations or unified trips. You can view both types simultaneously!</p>
-          </div>
         )}
 
         {/* Individual Empty State - Only show if individual is selected but no results */}
@@ -1092,13 +894,6 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
           </div>
         )}
 
-        {/* Modals */}
-        <EditModal
-          item={editingItem}
-          onClose={() => setEditingItem(null)}
-          onSave={handleSaveEdit}
-        />
-        
         {/* Toast */}
         {toast && (
           <Toast
