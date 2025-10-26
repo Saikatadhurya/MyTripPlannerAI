@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useHistory } from '../hooks/useHistory';
 import { RecommendationHistory, UnifiedTrip } from '../services/historyService';
 import BackToHomeButton from './BackToHomeButton';
@@ -350,6 +350,12 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
   type CombinedItem = { type: 'individual'; data: RecommendationHistory } | { type: 'unified'; data: UnifiedTrip };
   const [combinedItems, setCombinedItems] = useState<CombinedItem[]>([]);
   
+  // Infinite scroll state - accumulate all loaded items
+  const [allLoadedHistory, setAllLoadedHistory] = useState<RecommendationHistory[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  
   // Trip type visibility state
   const [showIndividual, setShowIndividual] = useState<boolean>(true);
   const [showUnified, setShowUnified] = useState<boolean>(true);
@@ -363,6 +369,8 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
 
   const handleSearchTermChange = (value: string) => {
     setSearchTerm(value);
+    setCurrentPage(1);
+    setHasMore(true);
     // Apply filters immediately
     setFilters({
       search: value || undefined,
@@ -377,6 +385,8 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
 
   const handleDestinationChange = (value: string) => {
     setSelectedDestination(value);
+    setCurrentPage(1);
+    setHasMore(true);
     // Apply filters immediately
     setFilters({
       search: searchTerm || undefined,
@@ -391,6 +401,8 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
 
   const handleTypeChange = (value: string) => {
     setSelectedType(value);
+    setCurrentPage(1);
+    setHasMore(true);
     // Apply filters immediately
     setFilters({
       search: searchTerm || undefined,
@@ -403,11 +415,93 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
     setSearchTerm('');
     setSelectedDestination('');
     setSelectedType('');
+    setCurrentPage(1);
+    setHasMore(true);
     setFilters({});
     
     // Clear unified trip filters
     setUnifiedTrips(allUnifiedTrips);
   };
+  
+  // Update allLoadedHistory when history changes from the hook
+  useEffect(() => {
+    if (history.length > 0) {
+      setAllLoadedHistory(history);
+      // Set hasMore based on pagination
+      if (pagination) {
+        const moreAvailable = pagination.page < pagination.totalPages;
+        setHasMore(moreAvailable);
+      }
+    }
+  }, [history, pagination]);
+  
+  // Load more individual recommendations
+  const loadMoreHistory = useCallback(async () => {
+    if (loading || loadingMore || !hasMore) return;
+    
+    setLoadingMore(true);
+    try {
+      const nextPage = currentPage + 1;
+      const response = await historyService.getHistory(nextPage, 10, filters);
+      
+      // Append the new data
+      setAllLoadedHistory(prev => [...prev, ...response.data]);
+      setCurrentPage(nextPage);
+      
+      // Check if there are more pages
+      if (nextPage >= response.pagination.totalPages) {
+        setHasMore(false);
+      }
+    } catch (error) {
+      console.error('Failed to load more history:', error);
+      setHasMore(false);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [loading, loadingMore, hasMore, currentPage, filters]);
+  
+  // Scroll detection for infinite scroll using IntersectionObserver
+  useEffect(() => {
+    if (!hasMore || loading || loadingMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry.isIntersecting && hasMore && !loading && !loadingMore) {
+          loadMoreHistory();
+        }
+      },
+      { rootMargin: '300px' }
+    );
+
+    // Create a sentinel element to observe
+    const sentinel = document.createElement('div');
+    sentinel.id = 'infinite-scroll-sentinel';
+    sentinel.style.height = '1px';
+    
+    // Find the last item container
+    const observerTarget = document.querySelector('.grid');
+    if (observerTarget && observerTarget.parentNode) {
+      observerTarget.parentNode.insertBefore(sentinel, observerTarget.nextSibling);
+      observer.observe(sentinel);
+    }
+
+    return () => {
+      observer.disconnect();
+      const existingSentinel = document.getElementById('infinite-scroll-sentinel');
+      if (existingSentinel) {
+        existingSentinel.remove();
+      }
+    };
+  }, [hasMore, loading, loadingMore, loadMoreHistory, combinedItems]);
+  
+  // Reset pagination when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+    setHasMore(true);
+    setAllLoadedHistory([]); // Clear accumulated history when filters change
+    setLoadingMore(false);
+  }, [searchTerm, selectedDestination, selectedType]);
 
   const handleDelete = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this recommendation?')) {
@@ -546,8 +640,11 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
     });
   };
 
-  // Use useMemo to stabilize sorted arrays
-  const sortedHistory = useMemo(() => sortByTime(history), [history]);
+  // Use allLoadedHistory for display instead of history
+  const sortedHistory = useMemo(() => {
+    const dataToSort = allLoadedHistory.length > 0 ? allLoadedHistory : history;
+    return sortByTime(dataToSort);
+  }, [allLoadedHistory, history]);
   const sortedUnifiedTrips = useMemo(() => sortByTime(unifiedTrips), [unifiedTrips]);
 
   // Combine and sort all items by creation date (most recent first)
@@ -577,10 +674,6 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
     
     setCombinedItems(combined);
   }, [sortedHistory, sortedUnifiedTrips, showIndividual, showUnified]);
-
-  const handlePageChange = (page: number) => {
-    loadHistory(page);
-  };
 
   return (
     <div className="bg-gradient-to-br from-slate-50 via-blue-50/30 to-violet-50/30 min-h-screen">
@@ -834,27 +927,25 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
               })}
             </div>
 
-            {/* Pagination - Only show for individual recommendations */}
-            {showIndividual && pagination && pagination.totalPages > 1 && (
-              <div className="bg-white/90 backdrop-blur-xl rounded-3xl p-6 shadow-xl border border-white/60">
-                <div className="flex justify-center items-center gap-4">
-                  <button
-                    onClick={() => handlePageChange(pagination.page - 1)}
-                    disabled={pagination.page === 1}
-                    className="px-6 py-3 bg-gradient-to-r from-slate-100 to-slate-200 text-slate-700 rounded-2xl hover:from-slate-200 hover:to-slate-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold transition-all duration-200 shadow-md hover:shadow-lg disabled:shadow-none"
-                  >
-                    ← Previous
-                  </button>
-                  <div className="px-6 py-3 bg-gradient-to-r from-blue-500 to-violet-600 text-white rounded-2xl text-sm font-bold shadow-lg">
-                    Page {pagination.page} of {pagination.totalPages}
+            {/* Loading More Indicator */}
+            {loadingMore && (
+              <div className="flex justify-center items-center py-8">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-100 via-blue-200 to-blue-300 rounded-2xl flex items-center justify-center shadow-lg">
+                  <div className="w-6 h-6 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+                <span className="ml-4 text-blue-600 font-medium">Loading more...</span>
+              </div>
+            )}
+
+            {/* End of Results Indicator */}
+            {!loadingMore && !hasMore && combinedItems.length > 0 && showIndividual && (
+              <div className="flex justify-center items-center py-8">
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-gradient-to-br from-green-100 via-green-200 to-green-300 rounded-2xl flex items-center justify-center shadow-lg mx-auto mb-3">
+                    <span className="text-2xl">✨</span>
                   </div>
-                  <button
-                    onClick={() => handlePageChange(pagination.page + 1)}
-                    disabled={pagination.page === pagination.totalPages}
-                    className="px-6 py-3 bg-gradient-to-r from-slate-100 to-slate-200 text-slate-700 rounded-2xl hover:from-slate-200 hover:to-slate-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold transition-all duration-200 shadow-md hover:shadow-lg disabled:shadow-none"
-                  >
-                    Next →
-                  </button>
+                  <p className="text-green-600 font-medium">You've reached the end!</p>
+                  <p className="text-sm text-slate-600 mt-1">All your recommendations are loaded</p>
                 </div>
               </div>
             )}
