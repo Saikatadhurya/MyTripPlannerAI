@@ -15,6 +15,8 @@ interface HeaderProps {
   isAuthModalOpen: boolean;
   onOpenAuthModal: () => void;
   onCloseAuthModal: () => void;
+  onViewTokenUsage: () => void;
+  onGoToContact: () => void;
 }
 
 const Header: React.FC<HeaderProps> = ({ 
@@ -28,6 +30,8 @@ const Header: React.FC<HeaderProps> = ({
   isAuthModalOpen,
   onOpenAuthModal,
   onCloseAuthModal,
+  onViewTokenUsage,
+  onGoToContact,
 }) => {
   const navigate = useNavigate();
   const [isScrolled, setIsScrolled] = useState(false);
@@ -120,6 +124,8 @@ const Header: React.FC<HeaderProps> = ({
                   user={user} 
                   onLogout={onLogout}
                   onEditProfile={onEditProfile}
+                  onViewTokenUsage={onViewTokenUsage}
+                  onGoToContact={onGoToContact}
                 />
               ) : (
                 <div className="flex items-center space-x-3 p-2">

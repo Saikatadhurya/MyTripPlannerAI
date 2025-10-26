@@ -551,6 +551,24 @@ class HistoryController {
       });
     }
   }
+
+  // Get token usage statistics
+  async getTokenUsageStats(req, res) {
+    try {
+      const userId = req.user.id;
+      const result = await historyModel.getTokenUsageStats({ userId });
+      
+      res.json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Server error while fetching token usage statistics'
+      });
+    }
+  }
 }
 
 module.exports = new HistoryController();

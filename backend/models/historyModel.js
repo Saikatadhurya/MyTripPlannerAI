@@ -602,6 +602,70 @@ class HistoryModel {
       client.release();
     }
   }
+
+  // Get token usage statistics for the user
+  async getTokenUsageStats({ userId }) {
+    const client = await pool.connect();
+    try {
+      // Get overall statistics
+      const overallQuery = `
+        SELECT 
+          COUNT(*) as total_plans,
+          COALESCE(SUM(input_token), 0) as total_input_tokens,
+          COALESCE(SUM(output_token), 0) as total_output_tokens,
+          COALESCE(SUM(input_token + output_token), 0) as total_tokens
+        FROM planora.recommendations_history
+        WHERE user_id = $1
+      `;
+      
+      const overallResult = await client.query(overallQuery, [userId]);
+      
+      // Get breakdown by recommendation type
+      const breakdownQuery = `
+        SELECT 
+          recommendation_type,
+          COUNT(*) as count,
+          COALESCE(SUM(input_token), 0) as input_tokens,
+          COALESCE(SUM(output_token), 0) as output_tokens,
+          COALESCE(SUM(input_token + output_token), 0) as total_tokens
+        FROM planora.recommendations_history
+        WHERE user_id = $1
+        GROUP BY recommendation_type
+        ORDER BY recommendation_type
+      `;
+      
+      const breakdownResult = await client.query(breakdownQuery, [userId]);
+      
+      // Get recent plans with details
+      const recentPlansQuery = `
+        SELECT 
+          id,
+          recommendation_type,
+          destination,
+          title,
+          input_token,
+          output_token,
+          (input_token + output_token) as total_token,
+          created_at,
+          trip_id,
+          trip_name
+        FROM planora.recommendations_history
+        WHERE user_id = $1
+        ORDER BY created_at DESC
+        LIMIT 20
+      `;
+      
+      const recentPlansResult = await client.query(recentPlansQuery, [userId]);
+      
+      return {
+        overall: overallResult.rows[0],
+        breakdown: breakdownResult.rows,
+        recentPlans: recentPlansResult.rows
+      };
+    } finally {
+      client.release();
+    }
+  }
 }
 
 module.exports = new HistoryModel();

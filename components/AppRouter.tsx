@@ -24,6 +24,7 @@ import EditProfile from './EditProfile';
 import History from './History';
 import AuthModal from './AuthModal';
 import ShareableRecommendation from './ShareableRecommendation';
+import TokenUsage from './TokenUsage';
 
 // Import route protection components
 import ProtectedRoute from './ProtectedRoute';
@@ -335,6 +336,17 @@ const AppRouter: React.FC<AppRouterProps> = ({
             <History 
               onBack={onBackToHome}
               onNavigateToResult={onNavigateToResult}
+            />
+          </ProtectedRoute>
+        } 
+      />
+
+      <Route 
+        path="/token-usage" 
+        element={
+          <ProtectedRoute user={user}>
+            <TokenUsage 
+              onBack={onBackToHome}
             />
           </ProtectedRoute>
         } 

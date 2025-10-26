@@ -38,6 +38,9 @@ router.get('/unified-trips/:tripId', historyController.getUnifiedTrip);
 // Delete unified trip
 router.delete('/unified-trips/:tripId', historyController.deleteUnifiedTrip);
 
+// Get token usage statistics
+router.get('/token-usage', historyController.getTokenUsageStats);
+
 // Get specific recommendation by ID
 router.get('/:id', validateGetRecommendation, historyController.getRecommendation);
 

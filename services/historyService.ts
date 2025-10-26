@@ -339,6 +339,13 @@ class HistoryService {
       throw new Error(`Failed to delete unified trip: ${response.statusText}`);
     }
   }
+
+  // Get token usage statistics
+  async getTokenUsageStats(): Promise<any> {
+    const headers = authService.getAuthHeaders();
+    const response = await axios.get(`${API_URL}/token-usage`, { headers });
+    return response.data.data;
+  }
 }
 
 export const historyService = new HistoryService();
