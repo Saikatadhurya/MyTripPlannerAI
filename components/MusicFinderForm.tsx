@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MusicFinderRequestData, LocationSuggestion, PopularDestination } from '../types';
 import { getDestinationSuggestions } from '../services/geminiService';
-import { useQuotas } from '../hooks/useQuotas';
 import { User } from '../services/authService';
 import BackToHomeButton from './BackToHomeButton';
 import SelectionPage from './SelectionPage';
@@ -23,7 +22,6 @@ const languages = [
 ];
 
 const MusicFinderForm: React.FC<MusicFinderFormProps> = ({ onSubmit, isLoading, error, onBack, onCancel, streamedText, initialData, user }) => {
-  const { quotas, quotasLoading } = useQuotas(user);
   const [formData, setFormData] = useState<MusicFinderRequestData>(initialData || {
     destination: '',
     language: 'English (en)',
@@ -206,12 +204,6 @@ const MusicFinderForm: React.FC<MusicFinderFormProps> = ({ onSubmit, isLoading, 
         return;
     }
 
-    // Check quota limits
-    if (user && quotas.music && quotas.music.remaining <= 0) {
-        setDestinationError("You have reached your weekly limit for music recommendations. Please try again next week or upgrade your plan.");
-        return;
-    }
-
     onSubmit(formData);
   };
 
@@ -279,15 +271,6 @@ const MusicFinderForm: React.FC<MusicFinderFormProps> = ({ onSubmit, isLoading, 
       <div className="text-center mb-10">
         <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Local Music Finder</h1>
         <p className="mt-2 text-lg text-slate-600">Discover the soundtrack of your travels.</p>
-        {user && (
-          <div className="mt-3 inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-fuchsia-100 text-fuchsia-800">
-            {quotasLoading ? (
-              <>⏳ Loading limits...</>
-            ) : (
-              <>🎵 {quotas.music ? `${quotas.music.remaining}/${quotas.music.weekly_limit}` : '0/2'} uses left this week</>
-            )}
-          </div>
-        )}
       </div>
 
       {error && (
@@ -386,9 +369,9 @@ const MusicFinderForm: React.FC<MusicFinderFormProps> = ({ onSubmit, isLoading, 
           <button
             type="submit"
             className="w-full sm:w-auto px-10 py-4 bg-fuchsia-600 text-white font-bold rounded-full hover:bg-fuchsia-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:bg-fuchsia-400/80 disabled:cursor-not-allowed disabled:shadow-md disabled:scale-100"
-            disabled={!isDestinationSelected || !!destinationError || isLoading || quotasLoading || (user && quotas.music && quotas.music.remaining <= 0)}
+            disabled={!isDestinationSelected || !!destinationError || isLoading}
           >
-            {quotasLoading ? '⏳ Loading limits...' : (user && quotas.music && quotas.music.remaining <= 0) ? '🚫 Limit Reached' : '🎶 Discover Local Music'}
+            🎶 Discover Local Music
           </button>
         </div>
       </form>

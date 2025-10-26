@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Budget, Vibe, FoodPreference, TripType, QuestionnaireData, LocationSuggestion, PopularDestination } from '../types';
 import { getDestinationSuggestions } from '../services/geminiService';
-import { useQuotas } from '../hooks/useQuotas';
 import { User } from '../services/authService';
 import { currencies } from '../data/currencies';
 import BackToHomeButton from './BackToHomeButton';
@@ -66,7 +65,6 @@ const Toggle: React.FC<{ label: string; description: string; enabled: boolean; o
 );
 
 const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, error, initialData, onBack, onCancel, streamedText, user }) => {
-  const { quotas, quotasLoading } = useQuotas(user);
   const defaultEndDate = new Date();
   defaultEndDate.setDate(defaultEndDate.getDate() + 2);
 
@@ -393,11 +391,6 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
         }
     }
 
-    // Check quota limits
-    if (user && quotas.itinerary && quotas.itinerary.remaining <= 0) {
-        setDestinationError("You have reached your weekly limit for itinerary plans. Please try again next week or upgrade your plan.");
-        hasError = true;
-    }
     
     if (hasError) return;
     onSubmit(formData);
@@ -778,9 +771,9 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
               <button
                 type="submit"
                 className="w-full sm:w-auto px-10 py-4 bg-violet-600 text-white font-bold rounded-full hover:bg-violet-700 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-violet-500/30 disabled:bg-violet-400/80 disabled:cursor-not-allowed disabled:shadow-md disabled:scale-100"
-                disabled={!isDestinationSelected || !!destinationError || (showStartPoint && (!isStartPointSelected || !!startPointError)) || formData.vibe.length === 0 || quotasLoading || (user && quotas.itinerary && quotas.itinerary.remaining <= 0)}
+                disabled={!isDestinationSelected || !!destinationError || (showStartPoint && (!isStartPointSelected || !!startPointError)) || formData.vibe.length === 0}
               >
-                {quotasLoading ? '⏳ Loading limits...' : (user && quotas.itinerary && quotas.itinerary.remaining <= 0) ? '🚫 Limit Reached' : '✨ Plan My Adventure'}
+                ✨ Plan My Adventure
               </button>
             </div>
           </form>

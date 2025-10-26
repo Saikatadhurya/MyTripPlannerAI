@@ -3,7 +3,6 @@ import { GoogleGenAI } from "@google/genai";
 import { FoodFinderRequestData, FoodRecommendations } from '../types';
 import { extractJson, cleanCitations } from './jsonUtils';
 import { CookieUtils } from './cookieUtils';
-import { incrementUsage } from './usageService';
 
 export const generateFoodRecommendations = async (data: FoodFinderRequestData, onChunk?: (chunk: string) => void, userApiKey?: string): Promise<FoodRecommendations> => {
   const apiKey = userApiKey || CookieUtils.getGeminiApiKey() || process.env.VITE_GEMINI_API_KEY;
@@ -142,8 +141,6 @@ export const generateFoodRecommendations = async (data: FoodFinderRequestData, o
       }
 
       const cleanedJson = cleanCitations(parsedJson);
-
-      // try { await incrementUsage('food'); } catch (e) { console.error('Failed to increment usage for food', e); }
 
       return cleanedJson;
   } catch (error) {

@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { LingoFinderRequestData, LocationSuggestion, PopularDestination } from '../types';
 import { getDestinationSuggestions } from '../services/geminiService';
-import { useQuotas } from '../hooks/useQuotas';
 import { User } from '../services/authService';
 import BackToHomeButton from './BackToHomeButton';
 import SelectionPage from './SelectionPage';
@@ -24,7 +23,6 @@ const languages = [
 ];
 
 const LingoFinderForm: React.FC<LingoFinderFormProps> = ({ onSubmit, isLoading, error, onBack, onCancel, streamedText, initialData, user }) => {
-  const { quotas, quotasLoading } = useQuotas(user);
   const [formData, setFormData] = useState<LingoFinderRequestData>(initialData || {
     destination: '',
     language: 'English (en)',
@@ -207,12 +205,6 @@ const LingoFinderForm: React.FC<LingoFinderFormProps> = ({ onSubmit, isLoading, 
         return;
     }
 
-    // Check quota limits
-    if (user && quotas.lingo && quotas.lingo.remaining <= 0) {
-        setDestinationError("You have reached your weekly limit for language guides. Please try again next week or upgrade your plan.");
-        return;
-    }
-
     onSubmit(formData);
   };
 
@@ -280,15 +272,6 @@ const LingoFinderForm: React.FC<LingoFinderFormProps> = ({ onSubmit, isLoading, 
       <div className="text-center mb-10">
         <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Local Lingo Guide</h1>
         <p className="mt-2 text-lg text-slate-600">Get essential phrases for your destination.</p>
-        {user && (
-          <div className="mt-3 inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-sky-100 text-sky-800">
-            {quotasLoading ? (
-              <>⏳ Loading limits...</>
-            ) : (
-              <>💬 {quotas.lingo ? `${quotas.lingo.remaining}/${quotas.lingo.weekly_limit}` : '0/2'} uses left this week</>
-            )}
-          </div>
-        )}
       </div>
 
       {error && (
@@ -387,9 +370,9 @@ const LingoFinderForm: React.FC<LingoFinderFormProps> = ({ onSubmit, isLoading, 
           <button
             type="submit"
             className="w-full sm:w-auto px-10 py-4 bg-sky-600 text-white font-bold rounded-full hover:bg-sky-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:bg-sky-400/80 disabled:cursor-not-allowed disabled:shadow-md disabled:scale-100"
-            disabled={!isDestinationSelected || !!destinationError || isLoading || quotasLoading || (user && quotas.lingo && quotas.lingo.remaining <= 0)}
+            disabled={!isDestinationSelected || !!destinationError || isLoading}
           >
-            {quotasLoading ? '⏳ Loading limits...' : (user && quotas.lingo && quotas.lingo.remaining <= 0) ? '🚫 Limit Reached' : '🗣️ Generate Phrasebook'}
+            🗣️ Generate Phrasebook
           </button>
         </div>
       </form>

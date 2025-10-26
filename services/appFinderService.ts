@@ -2,7 +2,6 @@ import { GoogleGenAI } from "@google/genai";
 import { AppFinderRequestData, AppRecommendations } from '../types';
 import { extractJson, cleanCitations } from './jsonUtils';
 import { CookieUtils } from './cookieUtils';
-import { incrementUsage } from './usageService';
 
 export const generateAppRecommendations = async (data: AppFinderRequestData, onChunk?: (chunk: string) => void, userApiKey?: string): Promise<AppRecommendations> => {
   const apiKey = userApiKey || CookieUtils.getGeminiApiKey() || process.env.VITE_GEMINI_API_KEY;
@@ -110,8 +109,6 @@ export const generateAppRecommendations = async (data: AppFinderRequestData, onC
       }
 
       const cleanedJson = cleanCitations(parsedJson);
-
-      // try { await incrementUsage('apps'); } catch (e) { console.error('Failed to increment usage for apps', e); }
 
       return cleanedJson;
   } catch (error) {

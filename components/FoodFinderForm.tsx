@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { FoodFinderRequestData, FoodPreference, LocationSuggestion, PopularDestination } from '../types';
 import { getDestinationSuggestions } from '../services/geminiService';
-import { useQuotas } from '../hooks/useQuotas';
 import { User } from '../services/authService';
 import BackToHomeButton from './BackToHomeButton';
 import SelectionPage from './SelectionPage';
@@ -47,7 +46,6 @@ const Toggle: React.FC<{ label: string; description: string; enabled: boolean; o
 );
 
 const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, error, onBack, onCancel, streamedText, initialData, user }) => {
-  const { quotas, quotasLoading } = useQuotas(user);
   const [formData, setFormData] = useState<FoodFinderRequestData>(initialData || {
     destination: '',
     startDate: new Date().toISOString().split('T')[0],
@@ -232,12 +230,6 @@ const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, er
         return;
     }
 
-    // Check quota limits
-    if (user && quotas.food && quotas.food.remaining <= 0) {
-        setDestinationError("You have reached your weekly limit for food recommendations. Please try again next week or upgrade your plan.");
-        return;
-    }
-
     onSubmit(formData);
   };
 
@@ -305,15 +297,6 @@ const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, er
       <div className="text-center mb-10">
         <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Local Food Finder</h1>
         <p className="mt-2 text-lg text-slate-600">Discover authentic local cuisine for your trip.</p>
-        {user && (
-          <div className="mt-3 inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-800">
-            {quotasLoading ? (
-              <>⏳ Loading limits...</>
-            ) : (
-              <>🍽️ {quotas.food ? `${quotas.food.remaining}/${quotas.food.weekly_limit}` : '0/2'} uses left this week</>
-            )}
-          </div>
-        )}
       </div>
 
       {error && (
@@ -439,9 +422,9 @@ const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, er
           <button
             type="submit"
             className="w-full sm:w-auto px-10 py-4 bg-amber-600 text-white font-bold rounded-full hover:bg-amber-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:bg-amber-400/80 disabled:cursor-not-allowed disabled:shadow-md disabled:scale-100"
-            disabled={!isDestinationSelected || !!destinationError || isLoading || quotasLoading || (user && quotas.food && quotas.food.remaining <= 0)}
+            disabled={!isDestinationSelected || !!destinationError || isLoading}
           >
-            {quotasLoading ? '⏳ Loading limits...' : (user && quotas.food && quotas.food.remaining <= 0) ? '🚫 Limit Reached' : '🍴 Discover My Local Feast'}
+            🍴 Discover My Local Feast
           </button>
         </div>
       </form>

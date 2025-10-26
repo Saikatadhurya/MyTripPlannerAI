@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { PackingListRequestData, LocationSuggestion, PopularDestination } from '../types';
 import { getDestinationSuggestions } from '../services/geminiService';
-import { useQuotas } from '../hooks/useQuotas';
 import { User } from '../services/authService';
 import BackToHomeButton from './BackToHomeButton';
 import DateRangePicker from './DateRangePicker';
@@ -24,7 +23,6 @@ const languages = [
 ];
 
 const PackingAssistantForm: React.FC<PackingAssistantFormProps> = ({ onSubmit, isLoading, error, onBack, onCancel, streamedText, initialData, user }) => {
-  const { quotas, quotasLoading } = useQuotas(user);
   const calculateEndDate = (start: string, days: number): string => {
     if (!start || !days) {
       const d = new Date();
@@ -233,12 +231,6 @@ const PackingAssistantForm: React.FC<PackingAssistantFormProps> = ({ onSubmit, i
         setDestinationError("Please pick a location from the list to lock it in! 🗺️");
         return;
     }
-
-    // Check quota limits
-    if (user && quotas.packing && quotas.packing.remaining <= 0) {
-        setDestinationError("You have reached your weekly limit for packing lists. Please try again next week or upgrade your plan.");
-        return;
-    }
     
     onSubmit({
       destination: formData.destination,
@@ -312,15 +304,6 @@ const PackingAssistantForm: React.FC<PackingAssistantFormProps> = ({ onSubmit, i
       <div className="text-center mb-10">
         <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Smart Bag Packing</h1>
         <p className="mt-2 text-lg text-slate-600">Get an AI-powered packing list tailored to your trip.</p>
-        {user && (
-          <div className="mt-3 inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-violet-100 text-violet-800">
-            {quotasLoading ? (
-              <>⏳ Loading limits...</>
-            ) : (
-              <>🧳 {quotas.packing ? `${quotas.packing.remaining}/${quotas.packing.weekly_limit}` : '0/2'} uses left this week</>
-            )}
-          </div>
-        )}
       </div>
 
       {error && (
@@ -437,9 +420,9 @@ const PackingAssistantForm: React.FC<PackingAssistantFormProps> = ({ onSubmit, i
           <button
             type="submit"
             className="w-full sm:w-auto px-10 py-4 bg-violet-600 text-white font-bold rounded-full hover:bg-violet-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:bg-violet-400/80 disabled:cursor-not-allowed disabled:shadow-md disabled:scale-100"
-            disabled={!isDestinationSelected || !!destinationError || isLoading || quotasLoading || (user && quotas.packing && quotas.packing.remaining <= 0)}
+            disabled={!isDestinationSelected || !!destinationError || isLoading}
           >
-            {quotasLoading ? '⏳ Loading limits...' : (user && quotas.packing && quotas.packing.remaining <= 0) ? '🚫 Limit Reached' : '🧳 Pack My Bag'}
+            🧳 Pack My Bag
           </button>
         </div>
       </form>

@@ -1,7 +1,6 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Budget, Itinerary, Vibe, FoodPreference, BlogReference, TripType, LocationSuggestion } from '../types';
 import { extractJson, cleanCitations } from './jsonUtils';
-import { incrementUsage } from './usageService';
 import { CookieUtils } from './cookieUtils';
 
 // Cache for destination suggestions to avoid redundant API calls
@@ -382,9 +381,6 @@ export const generateItinerary = async (
         }
 
         const cleanedJson = cleanCitations(parsedJson);
-
-        // Increment usage on successful generation
-        // try { await incrementUsage('itinerary'); } catch (e) { console.error('Failed to increment usage for itinerary', e); }
 
         return {
             ...cleanedJson,
