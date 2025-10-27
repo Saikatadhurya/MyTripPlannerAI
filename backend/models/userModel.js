@@ -26,7 +26,7 @@ class UserModel {
     const client = await pool.connect();
     try {
       const res = await client.query(
-        `SELECT id, full_name, email, password_hash FROM planora.users WHERE email = $1`,
+        `SELECT id, full_name, email, password_hash, gemini_api_key FROM planora.users WHERE email = $1`,
         [email]
       );
       return res.rows[0];
@@ -39,7 +39,7 @@ class UserModel {
     const client = await pool.connect();
     try {
       const res = await client.query(
-        `SELECT id, full_name, email FROM planora.users WHERE id = $1`,
+        `SELECT id, full_name, email, gemini_api_key FROM planora.users WHERE id = $1`,
         [id]
       );
       return res.rows[0];
@@ -65,7 +65,7 @@ class UserModel {
     const client = await pool.connect();
     try {
       const res = await client.query(
-        `SELECT sa.id as social_id, sa.user_id, sa.provider, sa.provider_id, u.id as user_id, u.full_name, u.email
+        `SELECT sa.id as social_id, sa.user_id, sa.provider, sa.provider_id, u.id as user_id, u.full_name, u.email, u.gemini_api_key
          FROM planora.social_accounts sa
          JOIN planora.users u ON sa.user_id = u.id
          WHERE sa.provider = $1 AND sa.provider_id = $2`,
