@@ -12,10 +12,10 @@ const Footer: React.FC<FooterProps> = ({ className = '' }) => {
           <div className="flex flex-col items-center justify-between gap-4 text-center">
             <div className="flex items-center gap-2 text-slate-600">
               <span className="text-sm">Powered by</span>
-              <span className="text-lg font-bold tracking-widest uppercase text-violet-600">PLANORA</span>
+              <span className="text-lg font-bold tracking-widest">Plan<span className="text-violet-600">My</span>Trip</span>
             </div>
             <p className="text-xs text-slate-500">
-              © {new Date().getFullYear()} Planora. Your AI-powered travel companion.
+              © {new Date().getFullYear()} PlanMyTrip. Your AI-powered travel companion.
             </p>
             <div className="flex items-center gap-2 text-slate-600">
               <span className="text-sm">Made with ❤️ in India</span>

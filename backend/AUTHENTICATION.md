@@ -1,8 +1,8 @@
-# PLANORA Authentication System
+# PlanMyTrip Authentication System
 
 ## Overview
 
-The PLANORA application now includes a complete authentication system with signup, login, and user profile management. The system is designed to match the existing application's aesthetic and provides a seamless user experience.
+The PlanMyTrip application now includes a complete authentication system with signup, login, and user profile management. The system is designed to match the existing application's aesthetic and provides a seamless user experience.
 
 ## Features
 
@@ -15,7 +15,7 @@ The PLANORA application now includes a complete authentication system with signu
 - **Social Login**: Placeholder for Google and Twitter integration
 
 ### 🎨 Design Features
-- **Consistent Styling**: Matches the existing PLANORA design system
+- **Consistent Styling**: Matches the existing PlanMyTrip design system
 - **Responsive Design**: Works on all device sizes
 - **Smooth Animations**: CSS transitions and animations for better UX
 - **Modal Interface**: Clean, centered authentication modal
@@ -96,7 +96,7 @@ The system includes mock user data for testing:
 - Tailwind CSS classes
 - Custom CSS animations
 - Responsive design
-- Consistent with PLANORA theme
+- Consistent with PlanMyTrip theme
 
 ## Future Enhancements
 

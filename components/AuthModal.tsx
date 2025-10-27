@@ -127,7 +127,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-slate-900">PLANORA</h1>
+            <h1 className="text-2xl font-bold text-slate-900">Plan<span className="text-violet-600">My</span>Trip</h1>
           </div>
           <h2 className="text-xl font-bold text-slate-900">
             {isLoginMode ? 'Welcome Back!' : 'Join the Adventure'}

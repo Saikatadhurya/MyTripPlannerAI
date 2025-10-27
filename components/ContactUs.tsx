@@ -38,8 +38,8 @@ const ContactUs: React.FC<ContactUsProps> = ({ onBack }) => {
                     <p className="flex items-center space-x-3"><strong className="w-24">LinkedIn:</strong> <a href="https://www.linkedin.com/in/saikat-adhurya/" target="_blank" rel="noopener noreferrer" className="text-violet-700 hover:underline">@saikat-adhurya</a></p>
                 </InfoCard>
 
-                <InfoCard title="About Planora" icon={<svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}>
-                    <p>Planora is your ultimate AI-powered travel companion, designed to make your adventures seamless and unforgettable. We specialize in creating personalized itineraries that blend your interests in food, music, and culture with smart, practical travel tools like our AI packing assistant.</p>
+                <InfoCard title="About PlanMyTrip" icon={<svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}>
+                    <p>PlanMyTrip is your ultimate AI-powered travel companion, designed to make your adventures seamless and unforgettable. We specialize in creating personalized itineraries that blend your interests in food, music, and culture with smart, practical travel tools like our AI packing assistant.</p>
                 </InfoCard>
 
                 <div className="md:col-span-2">

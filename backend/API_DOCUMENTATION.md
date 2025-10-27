@@ -1,4 +1,4 @@
-# PLANORA Profile Management API Documentation
+# PlanMyTrip Profile Management API Documentation
 
 ## Base URL
 ```

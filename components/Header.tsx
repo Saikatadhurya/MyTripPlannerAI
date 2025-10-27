@@ -77,26 +77,17 @@ const Header: React.FC<HeaderProps> = ({
             onClick={() => navigate('/')}
             className={`${logoContainerBaseClasses} hover:opacity-80 transition-opacity cursor-pointer`}
           >
-            {/* Simplified SVG Icon inspired by the Planora logo image */}
-            <svg width="32" height="32" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="50" cy="50" r="45" />
-              <line x1="50" y1="5" x2="50" y2="50" />
-              <line x1="50" y1="50" x2="95" y2="50" />
-              {/* Fork */}
-              <path d="M25 15 v 25" />
-              <path d="M35 15 v 25" />
-              <path d="M30 15 v 28" />
-              <path d="M25 15 C 25 10, 35 10, 35 15" />
-              {/* Lute/Music Icon */}
-              <circle cx="75" cy="25" r="8" />
-              <line x1="75" y1="33" x2="75" y2="45" />
-              {/* Plane */}
-              <path d="M20 60 l25 25 l-5 -10 l15 -5 l-20 -15Z" fill="currentColor" stroke="none" />
-            </svg>
+            {/* PlanMyTrip Logo - Square icon with location pin */}
+            <div className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center mr-1">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </div>
             <span 
-              className="text-3xl font-bold tracking-widest uppercase"
+              className="text-3xl font-bold tracking-widest"
             >
-              PLANORA
+              Plan<span className="text-violet-600">My</span>Trip
             </span>
           </button>
 
