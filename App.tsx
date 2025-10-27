@@ -343,12 +343,6 @@ const AppContent: React.FC = () => {
         
         // Redirect to landing page
         navigate('/');
-        
-        // Simple refresh after Google OAuth login to ensure token is available
-        console.log('App: Refreshing page after Google OAuth login...');
-        setTimeout(() => {
-          window.location.reload();
-        }, 500);
       } catch (error) {
         console.error('Error parsing user data from Google OAuth:', error);
         setAuthError('Failed to process Google authentication');
