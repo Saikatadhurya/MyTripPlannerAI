@@ -12,6 +12,23 @@ const parseBold = (text: string | undefined) => {
   return { __html: text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') };
 };
 
+// Helper to parse time from activity text
+const parseActivityTime = (text: string): { time?: string; description: string } => {
+  if (!text) return { description: '' };
+  
+  // Pattern to match time ranges like "02:00 PM - 03:00 PM", "09:00 PM onwards", etc.
+  const timePattern = /(\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)\s*-\s*\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)|\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)\s*onwards)/i;
+  const match = text.match(timePattern);
+  
+  if (match) {
+    const time = match[0];
+    const description = text.replace(match[0], '').replace(/^[:\-\s]+/, '').trim();
+    return { time, description };
+  }
+  
+  return { description: text };
+};
+
 const SummaryItem: React.FC<{ icon: React.ReactNode; label: string; children: React.ReactNode }> = ({ icon, label, children }) => (
     <div className="bg-white/40 backdrop-blur-md p-4 rounded-xl border border-white/50 flex items-center space-x-4">
         <div className="flex-shrink-0 bg-violet-100 text-violet-600 rounded-full p-3">
@@ -555,41 +572,107 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
             </div>
             <hr className="my-4 border-violet-200" />
             <div className="space-y-6">
-              <div className="bg-white/40 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/50">
-                  <h3 className="text-xl font-bold text-violet-800 mb-4">Activities</h3>
-                  <div className="prose prose-slate max-w-none text-gray-700">
+              <div className="bg-gradient-to-br from-violet-50/60 to-indigo-50/40 backdrop-blur-lg p-6 rounded-2xl shadow-lg border border-violet-200/50">
+                  <div className="flex items-center space-x-3 mb-6">
+                    <div className="bg-violet-600 text-white rounded-xl p-2.5 shadow-lg">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-2xl font-bold text-violet-900">Activities</h3>
+                  </div>
+                  
+                  <div className="space-y-4">
                     {day.activities && day.activities.length > 0 && (
-                      <ul className="list-disc pl-5 space-y-1">
-                        {day.activities.map((item, index) => (
-                          <li key={index} dangerouslySetInnerHTML={parseBold(item)} />
-                        ))}
-                      </ul>
+                      day.activities.map((item, index) => {
+                        const { time, description } = parseActivityTime(item);
+                        const isLastItem = index === day.activities!.length - 1;
+                        
+                        return (
+                          <div key={index} className="relative pl-8 group">
+                            {/* Timeline line */}
+                            {!isLastItem && (
+                              <div className="absolute left-3 top-8 bottom-0 w-0.5 bg-gradient-to-b from-violet-300 to-transparent group-hover:from-violet-500 transition-colors"></div>
+                            )}
+                            
+                            {/* Timeline dot */}
+                            <div className="absolute left-0 top-1.5 w-6 h-6 bg-gradient-to-br from-violet-500 to-indigo-500 rounded-full border-4 border-white shadow-lg flex items-center justify-center group-hover:scale-125 transition-transform duration-300">
+                              <div className="w-2 h-2 bg-white rounded-full"></div>
+                            </div>
+                            
+                            {/* Activity content */}
+                            <div className="bg-white/70 backdrop-blur-sm rounded-xl p-4 shadow-md border border-violet-100/50 hover:shadow-lg hover:border-violet-200 transition-all duration-300 hover:-translate-x-1">
+                              {time && (
+                                <div className="flex items-center space-x-2 mb-2">
+                                  <div className="bg-violet-100 text-violet-700 px-3 py-1 rounded-full text-sm font-semibold flex items-center space-x-1.5 shadow-sm">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <span>{time}</span>
+                                  </div>
+                                </div>
+                              )}
+                              <div className="text-gray-700 leading-relaxed" dangerouslySetInnerHTML={parseBold(description)} />
+                            </div>
+                          </div>
+                        );
+                      })
                     )}
                   </div>
               </div>
 
-              <div className="bg-white/40 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/50">
-                  <h3 className="text-xl font-bold text-violet-800 mb-4">Food Recommendations</h3>
-                  <div className="prose prose-slate max-w-none text-gray-700">
-                     {day.food && day.food.length > 0 && (
-                        <ul className="list-disc pl-5 space-y-1">
-                          {day.food.map((item, index) => (
-                            <li key={index} dangerouslySetInnerHTML={parseBold(item)} />
-                          ))}
-                        </ul>
-                      )}
+              <div className="bg-gradient-to-br from-amber-50/60 to-orange-50/40 backdrop-blur-lg p-6 rounded-2xl shadow-lg border border-amber-200/50">
+                  <div className="flex items-center space-x-3 mb-6">
+                    <div className="bg-amber-600 text-white rounded-xl p-2.5 shadow-lg">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0c-.454-.303-.977-.454-1.5-.454V5.454c.523 0 1.046-.151 1.5-.454a2.704 2.704 0 013 0 2.704 2.704 0 003 0 2.704 2.704 0 013 0 2.704 2.704 0 003 0c.454.303.977.454 1.5.454v10.092zM15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-2xl font-bold text-amber-900">Food Recommendations</h3>
+                  </div>
+                  
+                  <div className="grid gap-3">
+                    {day.food && day.food.length > 0 && (
+                      day.food.map((item, index) => (
+                        <div key={index} className="bg-white/70 backdrop-blur-sm rounded-xl p-4 shadow-md border border-amber-100/50 hover:shadow-lg hover:border-amber-200 transition-all duration-300 hover:scale-[1.02] group">
+                          <div className="flex items-start space-x-3">
+                            <div className="flex-shrink-0 bg-amber-100 text-amber-600 rounded-full p-2 mt-0.5 group-hover:bg-amber-200 transition-colors">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                              </svg>
+                            </div>
+                            <div className="text-gray-700 leading-relaxed flex-1" dangerouslySetInnerHTML={parseBold(item)} />
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
               </div>
               
-               <div className="bg-white/40 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/50">
-                  <h3 className="text-xl font-bold text-violet-800 mb-4">Suggested Places to Stay</h3>
-                  <div className="prose prose-slate max-w-none text-gray-700">
+               <div className="bg-gradient-to-br from-blue-50/60 to-cyan-50/40 backdrop-blur-lg p-6 rounded-2xl shadow-lg border border-blue-200/50">
+                  <div className="flex items-center space-x-3 mb-6">
+                    <div className="bg-blue-600 text-white rounded-xl p-2.5 shadow-lg">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                      </svg>
+                    </div>
+                    <h3 className="text-2xl font-bold text-blue-900">Suggested Places to Stay</h3>
+                  </div>
+                  
+                  <div className="grid gap-3">
                     {day.placesToStay && day.placesToStay.length > 0 && (
-                      <ul className="list-disc pl-5 space-y-1">
-                        {day.placesToStay.map((item, index) => (
-                          <li key={index} dangerouslySetInnerHTML={parseBold(item)} />
-                        ))}
-                      </ul>
+                      day.placesToStay.map((item, index) => (
+                        <div key={index} className="bg-white/70 backdrop-blur-sm rounded-xl p-4 shadow-md border border-blue-100/50 hover:shadow-lg hover:border-blue-200 transition-all duration-300 hover:scale-[1.02] group">
+                          <div className="flex items-start space-x-3">
+                            <div className="flex-shrink-0 bg-blue-100 text-blue-600 rounded-full p-2 mt-0.5 group-hover:bg-blue-200 transition-colors">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                              </svg>
+                            </div>
+                            <div className="text-gray-700 leading-relaxed flex-1" dangerouslySetInnerHTML={parseBold(item)} />
+                          </div>
+                        </div>
+                      ))
                     )}
                   </div>
               </div>
