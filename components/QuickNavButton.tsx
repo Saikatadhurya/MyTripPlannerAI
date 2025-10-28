@@ -109,13 +109,7 @@ const QuickNavButton: React.FC<QuickNavButtonProps> = ({
                 locked: !user,
                 tooltip: user ? undefined : 'Sign in to unlock'
             },
-            { 
-                label: 'Local Lingo Guide', 
-                action: user ? () => navigate('/lingo') : onOpenAuthModal, 
-                icon: user ? '🗣️' : '🔒',
-                locked: !user,
-                tooltip: user ? undefined : 'Sign in to unlock'
-            },
+            { label: 'Local Lingo Guide', action: () => navigate('/lingo'), icon: '🗣️' },
         ]
     },
     {

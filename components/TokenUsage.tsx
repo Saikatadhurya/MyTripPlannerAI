@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { historyService } from '../services/historyService';
+import { authService } from '../services/authService';
 
 interface TokenUsageProps {
   onBack: () => void;
@@ -39,6 +40,13 @@ const TokenUsage: React.FC<TokenUsageProps> = ({ onBack }) => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Check if user is authenticated before making API calls
+    if (!authService.isAuthenticated()) {
+      console.log('User not authenticated, skipping token usage fetch');
+      setError('Your session has expired. Please sign in again.');
+      setLoading(false);
+      return;
+    }
     fetchTokenUsage();
   }, []);
 

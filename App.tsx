@@ -299,6 +299,11 @@ const AppContent: React.FC = () => {
     window.scrollTo(0, 0);
   }, []);
 
+  // Scroll to top whenever the location changes
+  useEffect(() => {
+    scrollToTop();
+  }, [location.pathname, scrollToTop]);
+
   const handleViewChange = useCallback((newView: View) => {
     setError(null);
     setStreamedText('');

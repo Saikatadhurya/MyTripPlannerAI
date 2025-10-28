@@ -4,6 +4,7 @@ import { RecommendationHistory, UnifiedTrip } from '../services/historyService';
 import BackToHomeButton from './BackToHomeButton';
 import { historyService } from '../services/historyService';
 import Toast from './Toast';
+import { authService } from '../services/authService';
 
 interface UnifiedTripItemProps {
   trip: UnifiedTrip;
@@ -439,6 +440,13 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
   const loadMoreHistory = useCallback(async () => {
     if (loading || loadingMore || !hasMore) return;
     
+    // Check if user is authenticated before making API call
+    if (!authService.isAuthenticated()) {
+      console.log('User not authenticated, cannot load more history');
+      setHasMore(false);
+      return;
+    }
+    
     setLoadingMore(true);
     try {
       const nextPage = currentPage + 1;
@@ -505,6 +513,10 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
 
   const handleDelete = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this recommendation?')) {
+      if (!authService.isAuthenticated()) {
+        setToast({ message: 'Your session has expired. Please sign in again.', type: 'error' });
+        return;
+      }
       try {
         await deleteRecommendation(id);
       } catch (error) {
@@ -520,6 +532,10 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
   };
 
   const handleShare = async (item: RecommendationHistory) => {
+    if (!authService.isAuthenticated()) {
+      setToast({ message: 'Your session has expired. Please sign in again.', type: 'error' });
+      return;
+    }
     try {
       const shareUrl = `${window.location.origin}/share/${item.id}`;
       await navigator.clipboard.writeText(shareUrl);
@@ -531,6 +547,10 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
   };
 
   const handleShareTrip = async (trip: UnifiedTrip) => {
+    if (!authService.isAuthenticated()) {
+      setToast({ message: 'Your session has expired. Please sign in again.', type: 'error' });
+      return;
+    }
     try {
       const shareUrl = `${window.location.origin}/share/${trip.tripId}`;
       await navigator.clipboard.writeText(shareUrl);
@@ -543,6 +563,11 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
 
   // Count handlers
   const loadTotalCounts = async () => {
+    if (!authService.isAuthenticated()) {
+      console.log('User not authenticated, skipping loadTotalCounts');
+      return;
+    }
+    
     try {
       // Load total individual count (without filters)
       const individualResponse = await historyService.getHistory(1, 1, {});
@@ -583,6 +608,12 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
 
   // Unified trip handlers
   const loadUnifiedTrips = async () => {
+    if (!authService.isAuthenticated()) {
+      console.log('User not authenticated, skipping loadUnifiedTrips');
+      setUnifiedTripsLoading(false);
+      return;
+    }
+    
     setUnifiedTripsLoading(true);
     try {
       const trips = await historyService.getUnifiedTrips();
@@ -606,6 +637,10 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
 
   const handleDeleteUnifiedTrip = async (tripId: string) => {
     if (window.confirm('Are you sure you want to delete this unified trip? This will delete all associated recommendations.')) {
+      if (!authService.isAuthenticated()) {
+        setToast({ message: 'Your session has expired. Please sign in again.', type: 'error' });
+        return;
+      }
       try {
         await historyService.deleteUnifiedTrip(tripId);
         setUnifiedTrips(prev => prev.filter(trip => trip.tripId !== tripId));
@@ -619,6 +654,12 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
 
   // Load unified trips and total counts when component mounts
   useEffect(() => {
+    // Check if user is authenticated before making API calls
+    if (!authService.isAuthenticated()) {
+      console.log('User not authenticated, skipping API calls');
+      return;
+    }
+    
     loadUnifiedTrips();
     loadTotalCounts();
   }, []);
