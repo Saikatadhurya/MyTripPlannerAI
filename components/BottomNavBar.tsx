@@ -29,11 +29,12 @@ const MoreMenu: React.FC<{
     onStartAppFinder: () => void;
     onStartMusicFinder: () => void;
     onStartLingoGuide: () => void;
+    onStartItinerary: () => void;
     onGoToContact: () => void;
     onClose: () => void;
     onOpenAuthModal: () => void;
     user: User | null;
-}> = ({ onStartAppFinder, onStartMusicFinder, onStartLingoGuide, onGoToContact, onClose, onOpenAuthModal, user }) => {
+}> = ({ onStartAppFinder, onStartMusicFinder, onStartLingoGuide, onStartItinerary, onGoToContact, onClose, onOpenAuthModal, user }) => {
     const handleAction = (action: () => void) => {
         action();
         onClose();
@@ -53,9 +54,15 @@ const MoreMenu: React.FC<{
                 <span>Music Finder</span>
                 {!user && <span className="ml-auto text-xs text-gray-400">Sign in</span>}
             </button>
-            <button onClick={() => handleAction(onStartLingoGuide)} className="w-full flex items-center text-left px-3 py-2.5 rounded-lg text-slate-800 font-semibold transition-colors duration-200 hover:bg-violet-100/80">
-                <span className="text-xl w-8 text-center">🗣️</span>
+            <button onClick={() => handleAction(user ? onStartLingoGuide : onOpenAuthModal)} className="w-full flex items-center text-left px-3 py-2.5 rounded-lg text-slate-800 font-semibold transition-colors duration-200 hover:bg-violet-100/80">
+                <span className="text-xl w-8 text-center">{user ? '🗣️' : '🔒'}</span>
                 <span>Lingo Guide</span>
+                {!user && <span className="ml-auto text-xs text-gray-400">Sign in</span>}
+            </button>
+            <button onClick={() => handleAction(user ? onStartItinerary : onOpenAuthModal)} className="w-full flex items-center text-left px-3 py-2.5 rounded-lg text-slate-800 font-semibold transition-colors duration-200 hover:bg-violet-100/80">
+                <span className="text-xl w-8 text-center">{user ? '🗓️' : '🔒'}</span>
+                <span>Itinerary Planner</span>
+                {!user && <span className="ml-auto text-xs text-gray-400">Sign in</span>}
             </button>
             <hr className="border-slate-200/80 mx-2 my-1" />
             <button onClick={() => handleAction(onGoToContact)} className="w-full flex items-center text-left px-3 py-2.5 rounded-lg text-slate-800 font-semibold transition-colors duration-200 hover:bg-violet-100/80">
@@ -96,7 +103,7 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({
       locked: false 
     },
     { 
-      ids: ['/plan', '/itinerary'], 
+      ids: ['/plan'], 
       label: 'Plan Trip', 
       icon: user ? <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456L18 13.5l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 18l-1.035.259a3.375 3.375 0 00-2.456 2.456L18 21.75l-.259-1.035a3.375 3.375 0 00-2.456-2.456L14.25 18l1.035-.259a3.375 3.375 0 002.456-2.456L18 13.5z" /></svg> : lockedIcon, 
       action: () => navigate('/plan'), 
@@ -139,7 +146,7 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const isMoreSectionActive = ['/contact', '/apps', '/music', '/lingo'].includes(location.pathname);
+  const isMoreSectionActive = ['/contact', '/apps', '/music', '/lingo', '/itinerary'].includes(location.pathname);
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-40 sm:hidden no-print">
@@ -162,6 +169,7 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({
                     onStartAppFinder={() => navigate('/apps')}
                     onStartMusicFinder={() => navigate('/music')}
                     onStartLingoGuide={() => navigate('/lingo')}
+                    onStartItinerary={() => navigate('/itinerary')}
                     onGoToContact={() => navigate('/contact')}
                     onClose={() => setIsMoreMenuOpen(false)}
                     onOpenAuthModal={onOpenAuthModal}
