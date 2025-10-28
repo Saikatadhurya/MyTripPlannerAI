@@ -678,21 +678,46 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
               </div>
               
               {day.transport && (
-                <div className="bg-violet-50/50 backdrop-blur-lg p-4 rounded-xl border border-violet-200/50">
-                   <h4 className="font-bold text-violet-800 flex items-center space-x-2 mb-3">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18.562 6.077C18.238 5.437 17.562 5 16.808 5H3.192c-.754 0-1.43.437-1.754 1.077L.05 9.423A.5.5 0 00.5 10h19a.5.5 0 00.45-.577l-1.388-3.346zM2 11v4a1 1 0 001 1h1a1 1 0 001-1v-4H2zm15 0v4a1 1 0 001 1h1a1 1 0 001-1v-4h-3zM5 11v4a1 1 0 001 1h8a1 1 0 001-1v-4H5z" clipRule="evenodd" /></svg>
-                      <span>Transport Suggestions</span>
-                   </h4>
-                   {isRoadTrip && dailyFuelCostPerPerson > 0 && (
-                      <p className="text-sm text-slate-700 mb-2">
-                          <strong>Est. Fuel Cost:</strong> {currencySymbol}{dailyFuelCostPerPerson.toFixed(2)} per person
-                      </p>
-                   )}
-                   <ul className="list-disc pl-5 space-y-1 text-gray-700">
-                      {[].concat(day.transport.suggestions || []).map((item, index) => (
-                        <li key={index} dangerouslySetInnerHTML={parseBold(String(item))} />
-                      ))}
-                   </ul>
+                <div className="bg-gradient-to-br from-emerald-50/60 to-teal-50/40 backdrop-blur-lg p-6 rounded-2xl shadow-lg border border-emerald-200/50">
+                  <div className="flex items-center space-x-3 mb-6">
+                    <div className="bg-emerald-600 text-white rounded-xl p-2.5 shadow-lg">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 9m0 13V9m0 0l6-3m-6 3l6-3" />
+                      </svg>
+                    </div>
+                    <h3 className="text-2xl font-bold text-emerald-900">Transport Suggestions</h3>
+                  </div>
+                  
+                  {isRoadTrip && dailyFuelCostPerPerson > 0 && (
+                    <div className="bg-amber-100/70 backdrop-blur-sm rounded-xl p-4 mb-4 border border-amber-200/50 shadow-sm">
+                      <div className="flex items-center space-x-2">
+                        <div className="flex-shrink-0 bg-amber-500 text-white rounded-full p-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 10v-1m0 0c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-amber-900">Est. Fuel Cost</p>
+                          <p className="text-lg font-bold text-amber-800">{currencySymbol}{dailyFuelCostPerPerson.toFixed(2)} per person</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="grid gap-3">
+                    {[].concat(day.transport.suggestions || []).map((item, index) => (
+                      <div key={index} className="bg-white/70 backdrop-blur-sm rounded-xl p-4 shadow-md border border-emerald-100/50 hover:shadow-lg hover:border-emerald-200 transition-all duration-300 hover:scale-[1.02] group">
+                        <div className="flex items-start space-x-3">
+                          <div className="flex-shrink-0 bg-emerald-100 text-emerald-600 rounded-full p-2 mt-0.5 group-hover:bg-emerald-200 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          </div>
+                          <div className="text-gray-700 leading-relaxed flex-1" dangerouslySetInnerHTML={parseBold(String(item))} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
               
