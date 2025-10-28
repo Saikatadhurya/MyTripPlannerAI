@@ -26,7 +26,9 @@ const parseActivityTime = (text: string): { time?: string; description: string }
     return { time, description };
   }
   
-  return { description: text };
+  // If no time is found, still strip leading colons and trim
+  const cleanedDescription = text.replace(/^[:\-\s]+/, '').trim();
+  return { description: cleanedDescription };
 };
 
 const SummaryItem: React.FC<{ icon: React.ReactNode; label: string; children: React.ReactNode }> = ({ icon, label, children }) => (
