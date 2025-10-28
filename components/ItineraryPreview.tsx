@@ -724,16 +724,30 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
               )}
               
               {day.medicalFacilities && day.medicalFacilities.length > 0 && (
-                <div className="bg-green-50/50 backdrop-blur-lg p-4 rounded-xl border border-green-200/50">
-                   <h4 className="font-bold text-green-800 flex items-center space-x-2 mb-3">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.707-10.293a1 1 0 00-1.414-1.414l-3 3a1 1 0 001.414 1.414L9 10.414V13a1 1 0 102 0v-2.586l.293.293a1 1 0 001.414-1.414l-3-3z" clipRule="evenodd" /></svg>
-                      <span>Nearby Medical Facilities</span>
-                   </h4>
-                   <ul className="list-disc pl-5 space-y-1 text-gray-700">
-                      {day.medicalFacilities.map((item, index) => (
-                        <li key={index} dangerouslySetInnerHTML={parseBold(item)} />
-                      ))}
-                   </ul>
+                <div className="bg-gradient-to-br from-rose-50/60 to-pink-50/40 backdrop-blur-lg p-6 rounded-2xl shadow-lg border border-rose-200/50">
+                  <div className="flex items-center space-x-3 mb-6">
+                    <div className="bg-rose-600 text-white rounded-xl p-2.5 shadow-lg">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-2xl font-bold text-rose-900">Nearby Medical Facilities</h3>
+                  </div>
+                  
+                  <div className="grid gap-3">
+                    {day.medicalFacilities.map((item, index) => (
+                      <div key={index} className="bg-white/70 backdrop-blur-sm rounded-xl p-4 shadow-md border border-rose-100/50 hover:shadow-lg hover:border-rose-200 transition-all duration-300 hover:scale-[1.02] group">
+                        <div className="flex items-start space-x-3">
+                          <div className="flex-shrink-0 bg-rose-100 text-rose-600 rounded-full p-2 mt-0.5 group-hover:bg-rose-200 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                            </svg>
+                          </div>
+                          <div className="text-gray-700 leading-relaxed flex-1" dangerouslySetInnerHTML={parseBold(item)} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 
