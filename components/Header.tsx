@@ -17,6 +17,7 @@ interface HeaderProps {
   onCloseAuthModal: () => void;
   onViewTokenUsage: () => void;
   onGoToContact: () => void;
+  onGetApiKey: () => void;
 }
 
 const Header: React.FC<HeaderProps> = ({ 
@@ -32,6 +33,7 @@ const Header: React.FC<HeaderProps> = ({
   onCloseAuthModal,
   onViewTokenUsage,
   onGoToContact,
+  onGetApiKey,
 }) => {
   const navigate = useNavigate();
 
@@ -101,6 +103,7 @@ const Header: React.FC<HeaderProps> = ({
                   onEditProfile={onEditProfile}
                   onViewTokenUsage={onViewTokenUsage}
                   onGoToContact={onGoToContact}
+                  onGetApiKey={onGetApiKey}
                 />
               ) : (
                 <div className="flex items-center space-x-3 p-2">

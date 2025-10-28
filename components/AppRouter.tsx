@@ -25,6 +25,7 @@ import History from './History';
 import AuthModal from './AuthModal';
 import ShareableRecommendation from './ShareableRecommendation';
 import TokenUsage from './TokenUsage';
+import GetApiKey from './GetApiKey';
 
 // Import route protection components
 import ProtectedRoute from './ProtectedRoute';
@@ -165,6 +166,15 @@ const AppRouter: React.FC<AppRouterProps> = ({
         path="/contact" 
         element={
           <ContactUs onBack={onBackToHome} />
+        } 
+      />
+      
+      <Route 
+        path="/get-api-key" 
+        element={
+          <ProtectedRoute user={user}>
+            <GetApiKey onBack={onBackToHome} />
+          </ProtectedRoute>
         } 
       />
 

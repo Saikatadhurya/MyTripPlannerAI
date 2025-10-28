@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, User, Mail, Lock, Eye, EyeOff, CheckCircle, AlertCircle, Camera } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import profileService from '../services/profileService';
 
 interface User {
@@ -37,7 +38,8 @@ interface FormErrors {
 }
 
 const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate }) => {
-
+  const navigate = useNavigate();
+  
   const [formData, setFormData] = useState<FormData>({
     full_name: user?.full_name || '',
     email: user?.email || '',
@@ -568,7 +570,7 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate
                     )}
                     <div className="mt-2 flex items-center justify-between">
                       <p className="text-sm text-gray-500">
-                        Add your Gemini API key to use your own quota. Leave empty to use the default service.
+                        Add your Gemini API key to use your own quota.
                       </p>
                       {!isLoadingGeminiKey && formData.gemini_api_key && formData.gemini_api_key.trim().length > 0 && (
                         <button
@@ -581,6 +583,20 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate
                         </button>
                       )}
                     </div>
+                    {!isLoadingGeminiKey && !formData.gemini_api_key && (
+                      <div className="mt-3">
+                        <button
+                          type="button"
+                          onClick={() => navigate('/get-api-key')}
+                          className="text-sm text-violet-600 hover:text-violet-700 font-medium flex items-center space-x-1"
+                        >
+                          <span>Need help? Get your API key here</span>
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   {/* Account Info */}
