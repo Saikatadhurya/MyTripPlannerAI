@@ -84,6 +84,12 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate
     }
   }, [user]);
 
+  // Clear success message when switching tabs
+  useEffect(() => {
+    setSuccessMessage('');
+    setErrors({});
+  }, [activeTab]);
+
   // Check if user is authenticated
   useEffect(() => {
     const token = localStorage.getItem('planora_token');

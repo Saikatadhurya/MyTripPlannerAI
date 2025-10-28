@@ -332,8 +332,7 @@ const AppRouter: React.FC<AppRouterProps> = ({
               key={`profile-${user?.id}-${user?.gemini_api_key ? 'has-key' : 'no-key'}`}
               user={user!}
               onBack={onBackToHome}
-              onUpdate={onProfileUpdate}
-              error={authError}
+              onProfileUpdate={onProfileUpdate}
             />
           </ProtectedRoute>
         } 
