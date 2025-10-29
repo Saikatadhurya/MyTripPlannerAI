@@ -51,6 +51,7 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
     const [activeTab, setActiveTab] = useState<Tab>('itinerary');
     const [hasBeenSaved, setHasBeenSaved] = useState(false);
     const { saveUnifiedTripRecommendations } = useSaveRecommendation();
+    const mainContentRef = React.useRef<HTMLElement>(null);
     
     const isPlanComplete = Object.values(loadingStatus).every(status => status === 'done');
 
@@ -270,7 +271,25 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
                                 return (
                                     <button
                                         key={tab.id}
-                                        onClick={() => setActiveTab(tab.id)}
+                                        onClick={() => {
+                                            setActiveTab(tab.id);
+                                            
+                                            // Scroll to top when tab is clicked
+                                            setTimeout(() => {
+                                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                                                window.scrollTo(0, 0);
+                                                document.documentElement.scrollTop = 0;
+                                                document.body.scrollTop = 0;
+                                                
+                                                // Also scroll main content if it exists
+                                                if (mainContentRef.current) {
+                                                    mainContentRef.current.scrollTop = 0;
+                                                    mainContentRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                                }
+                                            }, 0);
+                                            
+                                            onTabChangeScrollToTop();
+                                        }}
                                         className={`relative flex flex-col items-center justify-center flex-1 space-y-1 transition-colors duration-200 md:flex-row md:flex-none md:px-4 md:py-2 md:space-x-2 md:rounded-full
                                             ${activeTab === tab.id
                                                 ? 'text-violet-600 md:bg-violet-600 md:text-white md:shadow'
@@ -297,7 +316,7 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
                     </div>
                 </nav>
 
-                <main>
+                <main ref={mainContentRef}>
                     {renderTabContent()}
                 </main>
                 {/* Spacer for bottom nav on mobile */}
