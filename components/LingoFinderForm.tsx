@@ -204,6 +204,9 @@ const LingoFinderForm: React.FC<LingoFinderFormProps> = ({ onSubmit, isLoading, 
         setDestinationError("Please pick a location from the list to lock it in! 🗺️");
         return;
     }
+    if (apiKeyError) {
+        return;
+    }
 
     onSubmit(formData);
   };
@@ -278,7 +281,15 @@ const LingoFinderForm: React.FC<LingoFinderFormProps> = ({ onSubmit, isLoading, 
       {error && (
         <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md mb-6" role="alert">
           <p className="font-bold">Oops!</p>
-          <p>{error}</p>
+          {typeof error === 'string' && error.toLowerCase().includes('gemini') && error.toLowerCase().includes('key') ? (
+            <p>
+              Gemini API key not set. Please add your API key in{' '}
+              <a href="/profile" className="font-semibold underline hover:text-red-800">Edit Profile</a>
+              {' '}to continue.
+            </p>
+          ) : (
+            <p>{error}</p>
+          )}
         </div>
       )}
 
@@ -316,7 +327,7 @@ const LingoFinderForm: React.FC<LingoFinderFormProps> = ({ onSubmit, isLoading, 
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
                 <span className="flex items-center flex-wrap gap-1">
                   Gemini API key not set. Please add your API key in{' '}
-                  <a href="/profile" className="font-semibold underline hover:text-amber-800">profile settings</a>
+                  <a href="/profile" className="font-semibold underline hover:text-amber-800">Edit Profile</a>
                   {' '}to search for destinations.
                 </span>
             </div>
@@ -375,7 +386,7 @@ const LingoFinderForm: React.FC<LingoFinderFormProps> = ({ onSubmit, isLoading, 
           <button
             type="submit"
             className="w-full sm:w-auto px-10 py-4 bg-sky-600 text-white font-bold rounded-full hover:bg-sky-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:bg-sky-400/80 disabled:cursor-not-allowed disabled:shadow-md disabled:scale-100"
-            disabled={!isDestinationSelected || !!destinationError || isLoading}
+            disabled={!isDestinationSelected || !!destinationError || !!apiKeyError || isLoading}
           >
             🗣️ Generate Phrasebook
           </button>
