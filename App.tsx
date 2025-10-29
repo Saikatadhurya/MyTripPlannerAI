@@ -1238,7 +1238,6 @@ const AppContent: React.FC = () => {
             accentColor: 'violet' as const,
             attemptCount: itineraryAttemptCount,
             maxAttempts: 3,
-            showTimer: true,
           };
           break;
         case 'packingAssistantResult':
@@ -1275,7 +1274,6 @@ const AppContent: React.FC = () => {
                     funFacts={itineraryFunFacts}
                     attemptCount={itineraryAttemptCount}
                     maxAttempts={3}
-                    showTimer={true}
                 />
             );
         }
