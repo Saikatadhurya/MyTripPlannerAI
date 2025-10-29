@@ -49,8 +49,17 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
     isHistoryView = false
 }) => {
     const [activeTab, setActiveTab] = useState<Tab>('itinerary');
-    const [hasBeenSaved, setHasBeenSaved] = useState(false);
-    const { saveUnifiedTripRecommendations } = useSaveRecommendation();
+    const [savedTripId, setSavedTripId] = useState<string | null>(null);
+    const savedTypesRef = React.useRef<Set<string>>(new Set());
+    const { 
+        saveUnifiedTripRecommendations,
+        saveItineraryRecommendation,
+        savePackingRecommendation,
+        saveFoodRecommendation,
+        saveAppRecommendation,
+        saveMusicRecommendation,
+        saveLingoRecommendation
+    } = useSaveRecommendation();
     const mainContentRef = React.useRef<HTMLElement>(null);
     
     const isPlanComplete = Object.values(loadingStatus).every(status => status === 'done');
@@ -59,83 +68,134 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
         onTabChangeScrollToTop();
     }, [activeTab, onTabChangeScrollToTop]);
 
-    // Save unified trip to history when plan is complete
+    // Incrementally save unified trip to history as each part becomes available
     useEffect(() => {
-        if (isPlanComplete && questionnaireData && !hasBeenSaved && !isHistoryView) {
-            
-            const recommendations = [];
-            
-            // Add itinerary if available
-            if (plan.itinerary) {
-                recommendations.push({
-                    type: 'itinerary',
-                    requestData: questionnaireData,
-                    responseData: plan.itinerary
-                });
-            }
-            
-            // Add packing list if available
-            if (plan.packingList) {
-                recommendations.push({
-                    type: 'packing',
-                    requestData: questionnaireData,
-                    responseData: plan.packingList
-                });
-            }
-            
-            // Add food recommendations if available
-            if (plan.foodRecommendations) {
-                recommendations.push({
-                    type: 'food',
-                    requestData: questionnaireData,
-                    responseData: plan.foodRecommendations
-                });
-            }
-            
-            // Add app recommendations if available
-            if (plan.appRecommendations) {
-                recommendations.push({
-                    type: 'apps',
-                    requestData: questionnaireData,
-                    responseData: plan.appRecommendations
-                });
-            }
-            
-            // Add music recommendations if available
-            if (plan.musicRecommendations) {
-                recommendations.push({
-                    type: 'music',
-                    requestData: questionnaireData,
-                    responseData: plan.musicRecommendations
-                });
-            }
-            
-            // Add lingo recommendations if available
-            if (plan.lingoRecommendations) {
-                recommendations.push({
-                    type: 'lingo',
-                    requestData: questionnaireData,
-                    responseData: plan.lingoRecommendations
-                });
-            }
-            
-            if (recommendations.length > 0) {
-                const tripName = `${questionnaireData.destination} Trip - ${new Date().toLocaleDateString()}`;
-                
-                saveUnifiedTripRecommendations(
-                    recommendations,
-                    questionnaireData.destination,
-                    questionnaireData.language || 'en',
+        if (!questionnaireData || isHistoryView) return;
+
+        const availableTypes: Array<{ key: string; saver: () => Promise<void> }> = [];
+        const destination = questionnaireData.destination;
+        const language = questionnaireData.language || 'en';
+        const tripName = `${destination} Trip - ${new Date().toLocaleDateString()}`;
+
+        if (plan.itinerary && !savedTypesRef.current.has('itinerary')) {
+            availableTypes.push({
+                key: 'itinerary',
+                saver: () => saveItineraryRecommendation(
                     questionnaireData,
+                    plan.itinerary,
+                    destination,
+                    language,
+                    questionnaireData,
+                    savedTripId || undefined,
                     tripName
-                ).then((tripId) => {
-                    setHasBeenSaved(true);
-                }).catch((error) => {
-                    console.error('Failed to save unified trip:', error);
-                });
-            }
+                )
+            });
         }
-    }, [isPlanComplete, questionnaireData, hasBeenSaved, plan, saveUnifiedTripRecommendations, isHistoryView]);
+        if (plan.packingList && !savedTypesRef.current.has('packing')) {
+            availableTypes.push({
+                key: 'packing',
+                saver: () => savePackingRecommendation(
+                    questionnaireData,
+                    plan.packingList,
+                    destination,
+                    language,
+                    questionnaireData,
+                    savedTripId || undefined,
+                    tripName
+                )
+            });
+        }
+        if (plan.foodRecommendations && !savedTypesRef.current.has('food')) {
+            availableTypes.push({
+                key: 'food',
+                saver: () => saveFoodRecommendation(
+                    questionnaireData,
+                    plan.foodRecommendations,
+                    destination,
+                    language,
+                    questionnaireData,
+                    savedTripId || undefined,
+                    tripName
+                )
+            });
+        }
+        if (plan.appRecommendations && !savedTypesRef.current.has('apps')) {
+            availableTypes.push({
+                key: 'apps',
+                saver: () => saveAppRecommendation(
+                    questionnaireData,
+                    plan.appRecommendations,
+                    destination,
+                    language,
+                    questionnaireData,
+                    savedTripId || undefined,
+                    tripName
+                )
+            });
+        }
+        if (plan.musicRecommendations && !savedTypesRef.current.has('music')) {
+            availableTypes.push({
+                key: 'music',
+                saver: () => saveMusicRecommendation(
+                    questionnaireData,
+                    plan.musicRecommendations,
+                    destination,
+                    language,
+                    questionnaireData,
+                    savedTripId || undefined,
+                    tripName
+                )
+            });
+        }
+        if (plan.lingoRecommendations && !savedTypesRef.current.has('lingo')) {
+            availableTypes.push({
+                key: 'lingo',
+                saver: () => saveLingoRecommendation(
+                    questionnaireData,
+                    plan.lingoRecommendations,
+                    destination,
+                    language,
+                    questionnaireData,
+                    savedTripId || undefined,
+                    tripName
+                )
+            });
+        }
+
+        if (availableTypes.length === 0) return;
+
+        const run = async () => {
+            try {
+                if (!savedTripId) {
+                    // First-time save: batch-save available types to create a unified trip and obtain tripId
+                    const recs = availableTypes.map(t => {
+                        const type = t.key;
+                        const responseData = (plan as any)[type === 'packing' ? 'packingList' : type === 'apps' ? 'appRecommendations' : type === 'food' ? 'foodRecommendations' : type === 'music' ? 'musicRecommendations' : type === 'lingo' ? 'lingoRecommendations' : 'itinerary'];
+                        return { type, requestData: questionnaireData, responseData };
+                    });
+                    const createdTripId = await saveUnifiedTripRecommendations(
+                        recs,
+                        destination,
+                        language,
+                        questionnaireData,
+                        tripName
+                    );
+                    setSavedTripId(createdTripId);
+                    recs.forEach(r => savedTypesRef.current.add(r.type));
+                } else {
+                    // Append new recommendations to existing trip
+                    for (const item of availableTypes) {
+                        await item.saver();
+                        savedTypesRef.current.add(item.key);
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to save unified trip recommendation(s):', error);
+            }
+        };
+
+        run();
+    }, [plan, questionnaireData, isHistoryView, savedTripId, saveUnifiedTripRecommendations, saveItineraryRecommendation, savePackingRecommendation, saveFoodRecommendation, saveAppRecommendation, saveMusicRecommendation, saveLingoRecommendation]);
     
     const getPlanDataForTab = (tab: Tab) => {
         switch (tab) {
