@@ -193,14 +193,6 @@ const DestinationInfoTabs: React.FC<{ destinationDetails: Itinerary['coveredDest
 
 
 const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegenerate, isUnifiedView = false, requestData, isHistoryView = false, user }) => {
-  console.log('ItineraryPreview rendered with props:', { 
-    itinerary: !!itinerary, 
-    isUnifiedView, 
-    requestData: !!requestData, 
-    requestDataKeys: requestData ? Object.keys(requestData) : null,
-    isHistoryView 
-  });
-  
   const [blogs, setBlogs] = useState<Itinerary['referenceBlogs']>([]);
   const [isLoadingBlogs, setIsLoadingBlogs] = useState(true);
   const [hasBeenSaved, setHasBeenSaved] = useState(false);
@@ -223,14 +215,10 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
 
   // Save to history when component mounts (only if not in unified view and request data is available)
   useEffect(() => {
-    console.log('ItineraryPreview useEffect:', { isUnifiedView, requestData, itinerary, hasBeenSaved, isHistoryView });
     // Don't save if this is a history view
     if (!isUnifiedView && requestData && !hasBeenSaved && !isHistoryView) {
-      console.log('Saving itinerary recommendation to history...');
       saveItineraryRecommendation(requestData, itinerary, itinerary.destination, requestData.language);
       setHasBeenSaved(true);
-    } else {
-      console.log('Not saving itinerary recommendation:', { isUnifiedView, hasRequestData: !!requestData, hasBeenSaved, isHistoryView });
     }
   }, [isUnifiedView, requestData, itinerary, saveItineraryRecommendation, hasBeenSaved, isHistoryView]);
 

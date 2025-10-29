@@ -22,11 +22,6 @@ interface UserProfileProps {
 const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onEditProfile, onGoToContact, onViewTokenUsage, onGetApiKey }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  // Debug logging to understand the user object structure
-  console.log('UserProfile received user:', user);
-  console.log('User full_name:', user?.full_name);
-  console.log('User email:', user?.email);
-
   const toggleDropdown = () => {
     setIsDropdownOpen(!isDropdownOpen);
   };

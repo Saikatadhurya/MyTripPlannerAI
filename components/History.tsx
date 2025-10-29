@@ -442,7 +442,6 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
     
     // Check if user is authenticated before making API call
     if (!authService.isAuthenticated()) {
-      console.log('User not authenticated, cannot load more history');
       setHasMore(false);
       return;
     }
@@ -564,7 +563,6 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
   // Count handlers
   const loadTotalCounts = async () => {
     if (!authService.isAuthenticated()) {
-      console.log('User not authenticated, skipping loadTotalCounts');
       return;
     }
     
@@ -609,7 +607,6 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
   // Unified trip handlers
   const loadUnifiedTrips = async () => {
     if (!authService.isAuthenticated()) {
-      console.log('User not authenticated, skipping loadUnifiedTrips');
       setUnifiedTripsLoading(false);
       return;
     }
@@ -656,7 +653,6 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
   useEffect(() => {
     // Check if user is authenticated before making API calls
     if (!authService.isAuthenticated()) {
-      console.log('User not authenticated, skipping API calls');
       return;
     }
     

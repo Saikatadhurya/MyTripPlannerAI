@@ -31,7 +31,6 @@ export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
     tripId?: string,
     tripName?: string
   ) => {
-    console.log('saveAppRecommendation called with:', { requestData, responseData, destination, language, tripContext, tripId, tripName });
     const title = historyService.generateDefaultTitle('apps', destination);
     
     await saveRecommendation({
@@ -182,8 +181,6 @@ export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
   ): Promise<string> => {
     // Generate a proper UUID for trip ID
     const tripId = crypto.randomUUID();
-    
-    console.log('Saving unified trip recommendations:', { tripId, tripName, destination, recommendations });
     
     // Save each recommendation with the same trip ID
     for (const rec of recommendations) {

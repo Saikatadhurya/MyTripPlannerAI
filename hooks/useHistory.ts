@@ -33,7 +33,6 @@ export const useHistory = (): UseHistoryReturn => {
   const loadHistory = useCallback(async (page: number = 1) => {
     // Check if user is authenticated before making API call
     if (!authService.isAuthenticated()) {
-      console.log('User not authenticated, skipping loadHistory');
       setLoading(false);
       return;
     }
@@ -55,7 +54,6 @@ export const useHistory = (): UseHistoryReturn => {
   const loadFilters = useCallback(async () => {
     // Check if user is authenticated before making API calls
     if (!authService.isAuthenticated()) {
-      console.log('User not authenticated, skipping loadFilters');
       return;
     }
     

@@ -67,14 +67,5 @@ const PORT = process.env.PORT || 5000;
 const BASE_URL = process.env.BASE_URL || 
                   (process.env.RENDER_URL ? process.env.RENDER_URL : `http://localhost:${PORT}`);
 
-console.log('Environment Configuration:');
-console.log('NODE_ENV:', process.env.NODE_ENV);
-console.log('Frontend URL:', frontendUrl);
-console.log('BASE_URL:', BASE_URL);
-console.log('DATABASE_URL:', process.env.DATABASE_URL ? 'Set' : 'Missing');
-
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-    console.log(`Frontend available at: ${frontendUrl}`);
-    console.log(`API available at: ${BASE_URL}/api`);
 });

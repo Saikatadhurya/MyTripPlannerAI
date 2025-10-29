@@ -62,13 +62,6 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
     // Save unified trip to history when plan is complete
     useEffect(() => {
         if (isPlanComplete && questionnaireData && !hasBeenSaved && !isHistoryView) {
-            console.log('Saving unified trip to history...', { 
-                isPlanComplete, 
-                questionnaireData: questionnaireData ? Object.keys(questionnaireData) : null, 
-                hasBeenSaved,
-                isHistoryView,
-                plan: Object.keys(plan).filter(key => plan[key as keyof UnifiedPlan] !== null)
-            });
             
             const recommendations = [];
             
@@ -126,17 +119,8 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
                 });
             }
             
-            console.log('Recommendations to save:', recommendations.length, recommendations.map(r => r.type));
-            
             if (recommendations.length > 0) {
                 const tripName = `${questionnaireData.destination} Trip - ${new Date().toLocaleDateString()}`;
-                
-                console.log('Calling saveUnifiedTripRecommendations with:', {
-                    recommendations: recommendations.length,
-                    destination: questionnaireData.destination,
-                    language: questionnaireData.language || 'en',
-                    tripName
-                });
                 
                 saveUnifiedTripRecommendations(
                     recommendations,
@@ -145,13 +129,10 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
                     questionnaireData,
                     tripName
                 ).then((tripId) => {
-                    console.log('Unified trip saved with ID:', tripId);
                     setHasBeenSaved(true);
                 }).catch((error) => {
                     console.error('Failed to save unified trip:', error);
                 });
-            } else {
-                console.log('No recommendations to save');
             }
         }
     }, [isPlanComplete, questionnaireData, hasBeenSaved, plan, saveUnifiedTripRecommendations, isHistoryView]);

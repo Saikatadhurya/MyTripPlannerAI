@@ -145,7 +145,6 @@ const AppContent: React.FC = () => {
   // Global logout handler for auto logout
   useEffect(() => {
     const handleGlobalLogout = () => {
-      console.log('Global logout triggered');
       setUser(null);
       setIsAuthModalOpen(false);
       navigate('/');
@@ -187,19 +186,14 @@ const AppContent: React.FC = () => {
       // Fetch latest profile from backend to ensure we have the most up-to-date gemini_api_key
       const fetchLatestProfile = async () => {
         try {
-          console.log('App: Fetching latest profile from backend to check gemini_api_key...');
           const profileResponse = await profileService.getProfile();
           if (profileResponse.success && profileResponse.data?.user) {
-            const backendGeminiKey = profileResponse.data.user.gemini_api_key;
-            console.log('App: Backend gemini_api_key present:', !!backendGeminiKey);
-            
             const updatedUser = {
               ...currentUser,
               ...profileResponse.data.user
             };
             setUser(updatedUser);
             localStorage.setItem('planora_user', JSON.stringify(updatedUser));
-            console.log('App: Updated user in localStorage with latest gemini_api_key');
           }
         } catch (error) {
           console.error('Failed to fetch latest profile on initialization:', error);
@@ -358,7 +352,6 @@ const AppContent: React.FC = () => {
     if (token && user) {
       try {
         const userData = JSON.parse(decodeURIComponent(user));
-        console.log('App: Processing Google OAuth callback for:', userData.email);
         
         // Store the token and user data
         localStorage.setItem('planora_token', token);
@@ -562,8 +555,6 @@ const AppContent: React.FC = () => {
   }, [location.pathname, navigate]);
 
   const handleGenerateItinerary = useCallback(async (data: QuestionnaireData) => {
-
-    console.log('handleGenerateItinerary called with data:', data);
     setInitialQuestionnaireData(data);
     setIsLoading(true);
     setError(null);

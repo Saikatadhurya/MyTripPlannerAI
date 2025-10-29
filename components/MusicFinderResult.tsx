@@ -143,14 +143,10 @@ const MusicFinderResult: React.FC<MusicFinderResultProps> = ({ recommendations, 
     
     // Save to history when component mounts (only if not in unified view and request data is available)
     useEffect(() => {
-        console.log('MusicFinderResult useEffect:', { isUnifiedView, requestData, recommendations, hasBeenSaved, isHistoryView });
         // Don't save if this is a history view
         if (!isUnifiedView && requestData && !hasBeenSaved && !isHistoryView) {
-            console.log('Saving music recommendation to history...');
             saveMusicRecommendation(requestData, recommendations, recommendations.destination, requestData.language);
             setHasBeenSaved(true);
-        } else {
-            console.log('Not saving music recommendation:', { isUnifiedView, hasRequestData: !!requestData, hasBeenSaved, isHistoryView });
         }
     }, [isUnifiedView, requestData, recommendations, saveMusicRecommendation, hasBeenSaved, isHistoryView]);
 

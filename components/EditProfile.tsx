@@ -95,14 +95,8 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate
     const token = localStorage.getItem('planora_token');
     const user = localStorage.getItem('planora_user');
     
-    console.log('EditProfile: Checking authentication...');
-    console.log('EditProfile: Token exists:', !!token);
-    console.log('EditProfile: User exists:', !!user);
-    
     if (!token) {
       setErrors({ general: 'Not authenticated. Please sign in to access your profile.' });
-    } else {
-      console.log('EditProfile: User is authenticated, token length:', token.length);
     }
   }, []);
 
@@ -351,14 +345,12 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate
         }));
         
         // Remove gemini_api_key from localStorage explicitly
-        console.log('EditProfile: Removing gemini_api_key from localStorage...');
         const storedUser = localStorage.getItem('planora_user');
         if (storedUser) {
           try {
             const parsedUser = JSON.parse(storedUser);
             const updatedStoredUser = { ...parsedUser, gemini_api_key: undefined };
             localStorage.setItem('planora_user', JSON.stringify(updatedStoredUser));
-            console.log('EditProfile: Successfully removed gemini_api_key from localStorage');
           } catch (e) {
             console.error('Failed to update localStorage:', e);
           }

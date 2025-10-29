@@ -118,22 +118,8 @@ const AppFinderResult: React.FC<AppFinderResultProps> = ({ recommendations, onRe
     const [hasBeenSaved, setHasBeenSaved] = useState(false);
     const { saveAppRecommendation } = useSaveRecommendation();
     
-    // Log the incoming recommendations data
-    console.log('📱 AppFinderResult received data:', {
-        isUnifiedView,
-        isHistoryView,
-        hasRecommendations: !!recommendations,
-        recommendationsType: typeof recommendations,
-        recommendationsKeys: recommendations ? Object.keys(recommendations) : 'none',
-        destination: recommendations?.destination,
-        transportAndTravel: recommendations?.transportAndTravel?.length || 0,
-        foodAndDining: recommendations?.foodAndDining?.length || 0,
-        fullRecommendations: recommendations
-    });
-    
     // Safety check for recommendations object
     if (!recommendations || typeof recommendations !== 'object') {
-        console.log('❌ AppFinderResult: Invalid recommendations data');
         return (
             <div className="max-w-6xl mx-auto text-center py-12">
                 <div className="bg-red-50 border border-red-200 rounded-lg p-6">
@@ -146,14 +132,10 @@ const AppFinderResult: React.FC<AppFinderResultProps> = ({ recommendations, onRe
     
     // Save to history when component mounts (only if not in unified view and request data is available)
     useEffect(() => {
-        console.log('AppFinderResult useEffect:', { isUnifiedView, requestData, recommendations, hasBeenSaved, isHistoryView });
         // Don't save if this is a history view
         if (!isUnifiedView && requestData && !hasBeenSaved && !isHistoryView) {
-            console.log('Saving app recommendation to history...');
             saveAppRecommendation(requestData, recommendations, recommendations.destination, requestData.language);
             setHasBeenSaved(true);
-        } else {
-            console.log('Not saving app recommendation:', { isUnifiedView, hasRequestData: !!requestData, hasBeenSaved, isHistoryView });
         }
     }, [isUnifiedView, requestData, recommendations, saveAppRecommendation, hasBeenSaved, isHistoryView]);
     
@@ -198,15 +180,6 @@ const AppFinderResult: React.FC<AppFinderResultProps> = ({ recommendations, onRe
                     const details = categoryDetails[key];
                     // Ensure items is always an array to prevent mapping errors
                     const items = Array.isArray(recommendations[key]) ? recommendations[key] : [];
-                    
-                    console.log(`🔍 Processing category "${key}":`, {
-                        key,
-                        title: details.title,
-                        rawData: recommendations[key],
-                        isArray: Array.isArray(recommendations[key]),
-                        itemsCount: items.length,
-                        items: items
-                    });
                     
                     return (
                         <CategorySection

@@ -42,7 +42,6 @@ const TokenUsage: React.FC<TokenUsageProps> = ({ onBack }) => {
   useEffect(() => {
     // Check if user is authenticated before making API calls
     if (!authService.isAuthenticated()) {
-      console.log('User not authenticated, skipping token usage fetch');
       setError('Your session has expired. Please sign in again.');
       setLoading(false);
       return;
