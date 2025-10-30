@@ -109,17 +109,6 @@ const SelectionPage = <T extends any>({
           </div>
         ) : isLoading ? (
           <div className="text-center p-8 text-slate-600 font-semibold">Loading suggestions...</div>
-        ) : searchValue.trim() === '' && popularItems && popularItems.length > 0 && renderPopularItem ? (
-            <div>
-              <h3 className="p-4 text-sm font-bold text-slate-500 uppercase tracking-wider bg-slate-100 border-b border-slate-200">Popular Searches</h3>
-              <ul className="divide-y divide-slate-200">
-                  {popularItems.map((item, index) => (
-                      <li key={index} onClick={() => onSelect(item)}>
-                          {renderPopularItem(item, index)}
-                      </li>
-                  ))}
-              </ul>
-            </div>
         ) : (
           <ul className="divide-y divide-slate-200">
             {items.map((item, index) => (
