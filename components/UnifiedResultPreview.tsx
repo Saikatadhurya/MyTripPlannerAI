@@ -342,7 +342,7 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
                                             {tab.icon}
                                             {/* Status Indicator Dot */}
                                             {status !== 'pending' && (
-                                                <span className={`absolute -top-0.5 -right-0.5 block h-2.5 w-2.5 rounded-full border-2 border-white
+                                                <span className={`absolute -top-1 -right-1 block h-3.5 w-3.5 rounded-full border-2 border-white
                                                     ${status === 'loading' && 'animate-pulse bg-blue-500'}
                                                     ${status === 'done' && dataExists && 'bg-green-500'}
                                                     ${(status === 'error' || status === 'cancelled') && 'bg-red-500'}
