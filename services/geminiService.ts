@@ -12,13 +12,17 @@ export const getDestinationSuggestions = async (query: string, userApiKey?: stri
     return suggestionsCache.get(cacheKey)!;
   }
 
-  const apiKey = userApiKey || CookieUtils.getGeminiApiKey() || process.env.VITE_GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error("Gemini key not set. Please provide your Gemini API key in your profile settings.");
+  const { apiKey, isUsingDefaultKey } = await CookieUtils.getApiKeyWithSource(userApiKey);
+  
+  // Ensure API key is properly trimmed and not empty
+  if (!apiKey || apiKey.trim().length === 0) {
+    throw new Error("Invalid API key: key is empty or whitespace only");
   }
+  
+  const cleanApiKey = apiKey.trim();
 
   try {
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = new GoogleGenAI({ apiKey: cleanApiKey });
 
     const prompt = query.trim()
         ? `You are a master geographer AI. Based on the user input "${query}", provide up to 5 location suggestions.
@@ -72,6 +76,14 @@ export const getDestinationSuggestions = async (query: string, userApiKey?: stri
     const nestedError = error?.error;
     const nestedErrorMessage = nestedError?.message || '';
     
+    // Check for quota/exhaustion errors when using default key
+    const combinedErrorText = (errorMessage + errorString + nestedErrorMessage).toLowerCase();
+    const isQuotaError = combinedErrorText.includes("quota") || combinedErrorText.includes("rate limit") || combinedErrorText.includes("429") || combinedErrorText.includes("exceeded");
+    
+    if (isQuotaError && isUsingDefaultKey) {
+      throw new Error('The default API key has reached its quota limit. Please set your own Gemini API key in your profile settings to continue.');
+    }
+    
     // Check for various API key error patterns
     if (
       errorMessage.includes('API key not valid') ||
@@ -98,12 +110,15 @@ export const getDestinationSuggestions = async (query: string, userApiKey?: stri
 };
 
 export const getReferenceBlogs = async (destination: string, language: string, userApiKey?: string): Promise<BlogReference[]> => {
-  const apiKey = userApiKey || CookieUtils.getGeminiApiKey() || process.env.VITE_GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error("Gemini key not set. Please provide your Gemini API key in your profile settings.");
+  const { apiKey, isUsingDefaultKey } = await CookieUtils.getApiKeyWithSource(userApiKey);
+  
+  // Ensure API key is properly trimmed
+  if (!apiKey || apiKey.trim().length === 0) {
+    throw new Error("Invalid API key: key is empty or whitespace only");
   }
+  const cleanApiKey = apiKey.trim();
 
-  const ai = new GoogleGenAI({ apiKey });
+  const ai = new GoogleGenAI({ apiKey: cleanApiKey });
 
   try {
     // --- Find blogs using Google Search ---
@@ -150,6 +165,17 @@ export const getReferenceBlogs = async (destination: string, language: string, u
 
   } catch (error) {
     console.error("Error finding reference blogs:", error);
+    
+    // Check for quota errors when using default key
+    if (error instanceof Error) {
+      const errorText = (error.message || '').toLowerCase();
+      const isQuotaError = errorText.includes("quota") || errorText.includes("rate limit") || errorText.includes("429") || errorText.includes("exceeded");
+      
+      if (isQuotaError && isUsingDefaultKey) {
+        throw new Error('The default API key has reached its quota limit. Please set your own Gemini API key in your profile settings to continue.');
+      }
+    }
+    
     return [];
   }
 };
@@ -173,12 +199,15 @@ export const generateItinerary = async (
   userApiKey?: string
 ): Promise<{result: Itinerary, prompt: string}> => {
 
-  const apiKey = userApiKey || CookieUtils.getGeminiApiKey() || process.env.VITE_GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error("Gemini key not set. Please provide your Gemini API key in your profile settings.");
+  const { apiKey, isUsingDefaultKey } = await CookieUtils.getApiKeyWithSource(userApiKey);
+  
+  // Ensure API key is properly trimmed
+  if (!apiKey || apiKey.trim().length === 0) {
+    throw new Error("Invalid API key: key is empty or whitespace only");
   }
+  const cleanApiKey = apiKey.trim();
 
-  const ai = new GoogleGenAI({ apiKey });
+  const ai = new GoogleGenAI({ apiKey: cleanApiKey });
   
   const regionalTripInstructions = `
   REGIONAL TRAVEL INSTRUCTION:
@@ -438,6 +467,9 @@ export const generateItinerary = async (
             const combinedErrorText = (error.message + fullText).toLowerCase();
     
             if (combinedErrorText.includes("quota") || combinedErrorText.includes("rate limit") || combinedErrorText.includes("429")) {
+                if (isUsingDefaultKey) {
+                    throw new Error("[429] The default API key has reached its quota limit. Please set your own Gemini API key in your profile settings to continue.");
+                }
                 throw new Error("[429] You have exceeded the request limit. Please check your plan and billing details and try again later.");
             }
             if (combinedErrorText.includes("overloaded") || combinedErrorText.includes("server error") || combinedErrorText.includes("503")) {

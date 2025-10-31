@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, User, Mail, Lock, Eye, EyeOff, CheckCircle, AlertCircle, Camera } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import profileService from '../services/profileService';
+import { CookieUtils } from '../services/cookieUtils';
 
 interface User {
   id: string;
@@ -249,26 +250,37 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate
       const data = await profileService.updateProfile(payload);
 
       if (data.success) {
+        // Update local presence flag and refresh the key from server response
+        let actualGeminiKey: string | undefined = undefined;
+        if (data.data?.user?.gemini_api_key) {
+          // Use the decrypted key from backend response
+          actualGeminiKey = data.data.user.gemini_api_key;
+          setHasGeminiKey(true);
+          setFormData(prev => ({ ...prev, gemini_api_key: actualGeminiKey }));
+          // Store the actual key in cookie
+          if (actualGeminiKey && actualGeminiKey.trim().length > 0) {
+            CookieUtils.setGeminiApiKey(actualGeminiKey.trim());
+          }
+        } else if (formData.gemini_api_key && formData.gemini_api_key.trim().length > 0) {
+          // User provided a new key, store it in cookie
+          setHasGeminiKey(true);
+          CookieUtils.setGeminiApiKey(formData.gemini_api_key.trim());
+        }
+        
         // Create updated user object with new data
+        // IMPORTANT: Don't store the actual API key in user object - it's stored in cookie
+        // Only store the key from backend response if available (decrypted), otherwise don't include it
         const updatedUser = {
           ...user,
           full_name: formData.full_name.trim(),
-          // If a new key was entered, mark as present; otherwise keep prior state
-          gemini_api_key: formData.gemini_api_key?.trim() ? 'SET' as any : (hasGeminiKey ? 'SET' as any : undefined),
+          // Only include gemini_api_key if we have the actual key from backend response
+          // Don't store placeholder "SET" or invalid values
+          gemini_api_key: actualGeminiKey && actualGeminiKey.trim().length >= 10 && actualGeminiKey !== 'SET' ? actualGeminiKey : undefined,
           updated_at: new Date().toISOString()
         };
         
         // Call the callback to update parent component state
         onProfileUpdate(updatedUser);
-        
-        // Update local presence flag and refresh the key from server response
-        if (data.data?.user?.gemini_api_key) {
-          setHasGeminiKey(true);
-          setFormData(prev => ({ ...prev, gemini_api_key: data.data.user.gemini_api_key }));
-        } else if (formData.gemini_api_key && formData.gemini_api_key.trim().length > 0) {
-          setHasGeminiKey(true);
-          // Keep the key user entered if not in response
-        }
         setSuccessMessage('Profile updated successfully!');
         // Navigate back to home after successful update
         setTimeout(() => {
@@ -364,6 +376,9 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate
         }));
         setHasGeminiKey(false);
         
+        // Clear the cookie locally (backend also clears it, but ensure local cleanup)
+        CookieUtils.deleteGeminiApiKey();
+        
         // Remove gemini_api_key from localStorage explicitly
         const storedUser = localStorage.getItem('planora_user');
         if (storedUser) {
@@ -379,7 +394,7 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate
         // Call the callback to update parent component state
         onProfileUpdate(updatedUser);
         
-        setSuccessMessage('Gemini API key deleted successfully!');
+        setSuccessMessage('Gemini API key deleted successfully! You will now use the default API key.');
         setTimeout(() => setSuccessMessage(''), 3000);
       } else {
         setErrors({ general: data.message || 'Failed to delete Gemini API key' });

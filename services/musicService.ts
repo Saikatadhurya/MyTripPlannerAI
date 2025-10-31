@@ -4,13 +4,16 @@ import { extractJson, cleanCitations } from './jsonUtils';
 import { CookieUtils } from './cookieUtils';
 
 export const generateMusicRecommendations = async (data: MusicFinderRequestData, onChunk?: (chunk: string) => void, userApiKey?: string): Promise<{result: MusicRecommendations, prompt: string}> => {
-  const apiKey = userApiKey || CookieUtils.getGeminiApiKey() || process.env.VITE_GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error("Gemini key not set. Please provide your Gemini API key in your profile settings.");
+  const { apiKey, isUsingDefaultKey } = await CookieUtils.getApiKeyWithSource(userApiKey);
+  
+  // Ensure API key is properly trimmed
+  if (!apiKey || apiKey.trim().length === 0) {
+    throw new Error("Invalid API key: key is empty or whitespace only");
   }
+  const cleanApiKey = apiKey.trim();
 
   const { destination, language, coveredDestinations } = data;
-  const ai = new GoogleGenAI({ apiKey });
+  const ai = new GoogleGenAI({ apiKey: cleanApiKey });
 
   const isMultiStop = coveredDestinations && coveredDestinations.length > 1;
   const destinationsString = isMultiStop ? coveredDestinations.map(d => d.name).join(', ') : destination;
@@ -140,6 +143,9 @@ export const generateMusicRecommendations = async (data: MusicFinderRequestData,
         const combinedErrorText = (error.message + fullText).toLowerCase();
 
         if (combinedErrorText.includes("quota") || combinedErrorText.includes("rate limit") || combinedErrorText.includes("429")) {
+            if (isUsingDefaultKey) {
+                throw new Error("[429] The default API key has reached its quota limit. Please set your own Gemini API key in your profile settings to continue.");
+            }
             throw new Error("[429] You have exceeded the request limit. Please check your plan and billing details and try again later.");
         }
         if (combinedErrorText.includes("overloaded") || combinedErrorText.includes("server error") || combinedErrorText.includes("503")) {

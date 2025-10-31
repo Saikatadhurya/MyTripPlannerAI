@@ -104,8 +104,10 @@ class AuthService {
     try {
       localStorage.removeItem('planora_user');
       localStorage.removeItem('planora_token');
-      // Clear Gemini API key cookie
+      // Clear user's Gemini API key cookie
       CookieUtils.deleteGeminiApiKey();
+      // Clear encrypted default API key from sessionStorage (will be re-initialized on next login)
+      CookieUtils.deleteDefaultApiKey();
     } catch (error) {
       // Error clearing session
     }
@@ -138,6 +140,12 @@ class AuthService {
       if (user.gemini_api_key) {
         CookieUtils.setGeminiApiKey(user.gemini_api_key);
       }
+
+      // Re-initialize default API key (will be encrypted and stored if available)
+      // This happens asynchronously but won't block login
+      CookieUtils.reinitializeDefaultKey().catch(() => {
+        // Silently fail - default key initialization is optional
+      });
 
       // Start token monitoring for auto logout
       startTokenMonitoring();
@@ -179,6 +187,12 @@ class AuthService {
       if (user.gemini_api_key) {
         CookieUtils.setGeminiApiKey(user.gemini_api_key);
       }
+
+      // Re-initialize default API key (will be encrypted and stored if available)
+      // This happens asynchronously but won't block signup
+      CookieUtils.reinitializeDefaultKey().catch(() => {
+        // Silently fail - default key initialization is optional
+      });
 
       // Start token monitoring for auto logout
       startTokenMonitoring();
