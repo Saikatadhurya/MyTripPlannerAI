@@ -180,8 +180,9 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
               setIsDestinationSuggestionsLoading(false);
               
               // Check if it's a Gemini API key error
-              if (error.message && error.message.includes('Gemini key not set')) {
-                setApiKeyError('Gemini API key not set. Please add your API key in profile settings to search for destinations.');
+              const errorMessage = error?.message || '';
+              if (errorMessage.includes('Gemini key not set') || errorMessage.includes('API key not valid')) {
+                setApiKeyError('API key not valid. Please provide a valid Gemini API key in your profile settings to search for destinations.');
               } else {
                 setApiKeyError('Failed to fetch destination suggestions. Please try again.');
               }
@@ -360,8 +361,9 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
                     setLoading(false);
                     
                     // Check if it's a Gemini API key error
-                    if (error.message && error.message.includes('Gemini key not set')) {
-                        setApiKeyError('Gemini API key not set. Please add your API key in profile settings to search for destinations.');
+                    const errorMessage = error?.message || '';
+                    if (errorMessage.includes('Gemini key not set') || errorMessage.includes('API key not valid')) {
+                        setApiKeyError('API key not valid. Please provide a valid Gemini API key in your profile settings to search for destinations.');
                     } else {
                         setApiKeyError('Failed to fetch destination suggestions. Please try again.');
                     }

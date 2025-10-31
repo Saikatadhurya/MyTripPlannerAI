@@ -181,8 +181,9 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
               setIsDestinationSuggestionsLoading(false);
               
               // Check if it's a Gemini API key error
-              if (error.message && error.message.includes('Gemini key not set')) {
-                setApiKeyError('Gemini API key not set. Please add your API key in profile settings to search for destinations.');
+              const errorMessage = error?.message || '';
+              if (errorMessage.includes('Gemini key not set') || errorMessage.includes('API key not valid')) {
+                setApiKeyError('API key not valid. Please provide a valid Gemini API key in your profile settings to search for destinations.');
               } else {
                 setApiKeyError('Failed to fetch destination suggestions. Please try again.');
               }
@@ -361,8 +362,9 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                     setLoading(false);
                     
                     // Check if it's a Gemini API key error
-                    if (error.message && error.message.includes('Gemini key not set')) {
-                        setApiKeyError('Gemini API key not set. Please add your API key in profile settings to search for destinations.');
+                    const errorMessage = error?.message || '';
+                    if (errorMessage.includes('Gemini key not set') || errorMessage.includes('API key not valid')) {
+                        setApiKeyError('API key not valid. Please provide a valid Gemini API key in your profile settings to search for destinations.');
                     } else {
                         setApiKeyError('Failed to fetch destination suggestions. Please try again.');
                     }
@@ -651,9 +653,15 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                           <div style={{ animation: 'validation-fade-in 0.3s ease' }} className="mt-2 text-sm text-amber-700 bg-amber-100/60 p-2 rounded-md flex items-center space-x-2">
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
                               <span className="flex items-center flex-wrap gap-1">
-                                Gemini API key not set. Please add your API key in{' '}
-                                <a href="/profile" className="font-semibold underline hover:text-amber-800">Edit Profile</a>
-                                {' '}to search for destinations.
+                                {apiKeyError.includes('API key not valid') ? (
+                                  <>
+                                    API key not valid. Please provide a valid Gemini API key in{' '}
+                                    <a href="/profile" className="font-semibold underline hover:text-amber-800">Edit Profile</a>
+                                    {' '}to search for destinations.
+                                  </>
+                                ) : (
+                                  apiKeyError
+                                )}
                               </span>
                           </div>
                         )}

@@ -63,8 +63,36 @@ export const getDestinationSuggestions = async (query: string, userApiKey?: stri
     suggestionsCache.set(cacheKey, suggestions);
     return suggestions;
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error fetching destination suggestions from AI:", error);
+    
+    // Check if it's an API key error - handle various error structures
+    const errorMessage = error?.message || '';
+    const errorString = JSON.stringify(error || {});
+    const nestedError = error?.error;
+    const nestedErrorMessage = nestedError?.message || '';
+    
+    // Check for various API key error patterns
+    if (
+      errorMessage.includes('API key not valid') ||
+      errorMessage.includes('API_KEY_INVALID') ||
+      errorMessage.includes('INVALID_ARGUMENT') ||
+      errorString.includes('API key not valid') ||
+      errorString.includes('API_KEY_INVALID') ||
+      nestedErrorMessage.includes('API key not valid') ||
+      nestedErrorMessage.includes('API key') ||
+      (nestedError?.code === 400 && nestedErrorMessage?.includes('API key')) ||
+      (nestedError?.status === 'INVALID_ARGUMENT' && nestedErrorMessage?.includes('API key'))
+    ) {
+      throw new Error('API key not valid. Please provide a valid Gemini API key in your profile settings.');
+    }
+    
+    // Re-throw if it's already a custom error
+    if (error instanceof Error && error.message.includes('Gemini key not set')) {
+      throw error;
+    }
+    
+    // For other errors, return empty array to not break the UI
     return [];
   }
 };
