@@ -86,7 +86,7 @@ class ProfileController {
 
       const updatedUser = await userModel.updateProfile(userId, updates);
 
-      // Handle Gemini API key cookie
+      // Handle Gemini API key cookie - use decrypted value from updatedUser
       if (gemini_api_key !== undefined) {
         if (gemini_api_key === null) {
           // Clear the cookie when API key is deleted
@@ -97,14 +97,17 @@ class ProfileController {
             sameSite: 'strict'
           });
         } else {
-          // Set the cookie when API key is added/updated
-          res.cookie('gemini_api_key', gemini_api_key.trim(), {
-            maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-            path: '/',
-            httpOnly: false, // Allow frontend to read it
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict'
-          });
+          // Set the cookie with the decrypted value from updatedUser
+          // updatedUser.gemini_api_key is already decrypted by userModel
+          if (updatedUser.gemini_api_key) {
+            res.cookie('gemini_api_key', updatedUser.gemini_api_key, {
+              maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+              path: '/',
+              httpOnly: false, // Allow frontend to read it
+              secure: process.env.NODE_ENV === 'production',
+              sameSite: 'strict'
+            });
+          }
         }
       }
 

@@ -1,5 +1,6 @@
 const { Pool } = require('pg');
 const bcrypt = require('bcrypt');
+const { encryptString, decryptString } = require('../utils/crypto');
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -29,7 +30,18 @@ class UserModel {
         `SELECT id, full_name, email, password_hash, gemini_api_key FROM planora.users WHERE email = $1`,
         [email]
       );
-      return res.rows[0];
+      const user = res.rows[0];
+      if (user && user.gemini_api_key) {
+        try { 
+          const decrypted = decryptString(user.gemini_api_key);
+          user.gemini_api_key = decrypted || null;
+        } catch (error) {
+          console.error('Error decrypting gemini_api_key:', error.message);
+          // If decryption fails, set to null to force user to re-enter
+          user.gemini_api_key = null;
+        }
+      }
+      return user;
     } finally {
       client.release();
     }
@@ -42,7 +54,18 @@ class UserModel {
         `SELECT id, full_name, email, gemini_api_key FROM planora.users WHERE id = $1`,
         [id]
       );
-      return res.rows[0];
+      const user = res.rows[0];
+      if (user && user.gemini_api_key) {
+        try { 
+          const decrypted = decryptString(user.gemini_api_key);
+          user.gemini_api_key = decrypted || null;
+        } catch (error) {
+          console.error('Error decrypting gemini_api_key:', error.message);
+          // If decryption fails, set to null to force user to re-enter
+          user.gemini_api_key = null;
+        }
+      }
+      return user;
     } finally {
       client.release();
     }
@@ -71,7 +94,17 @@ class UserModel {
          WHERE sa.provider = $1 AND sa.provider_id = $2`,
         [provider, provider_id]
       );
-      return res.rows[0];
+      const row = res.rows[0];
+      if (row && row.gemini_api_key) {
+        try { 
+          const decrypted = decryptString(row.gemini_api_key);
+          row.gemini_api_key = decrypted || null;
+        } catch (error) {
+          console.error('Error decrypting gemini_api_key:', error.message);
+          row.gemini_api_key = null;
+        }
+      }
+      return row;
     } finally {
       client.release();
     }
@@ -129,7 +162,7 @@ class UserModel {
 
       if (gemini_api_key !== undefined) {
         updateFields.push(`gemini_api_key = $${paramCount++}`);
-        values.push(gemini_api_key);
+        values.push(gemini_api_key === null ? null : encryptString(gemini_api_key));
       }
   
       if (updateFields.length === 0) {
@@ -152,8 +185,18 @@ class UserModel {
       if (result.rows.length === 0) {
         throw new Error('User not found');
       }
-  
-      return result.rows[0];
+
+      const user = result.rows[0];
+      if (user && user.gemini_api_key) {
+        try { 
+          const decrypted = decryptString(user.gemini_api_key);
+          user.gemini_api_key = decrypted || null;
+        } catch (error) {
+          console.error('Error decrypting gemini_api_key:', error.message);
+          user.gemini_api_key = null;
+        }
+      }
+      return user;
     } finally {
       client.release();
     }
@@ -316,6 +359,15 @@ class UserModel {
       }
 
       const user = result.rows[0];
+      if (user && user.gemini_api_key) {
+        try { 
+          const decrypted = decryptString(user.gemini_api_key);
+          user.gemini_api_key = decrypted || null;
+        } catch (error) {
+          console.error('Error decrypting gemini_api_key:', error.message);
+          user.gemini_api_key = null;
+        }
+      }
 
       // Get social accounts
       const socialAccounts = await this.getSocialAccounts(userId);
@@ -332,14 +384,24 @@ class UserModel {
     try {
       const result = await client.query(
         'UPDATE planora.users SET gemini_api_key = $1, updated_at = NOW() WHERE id = $2 RETURNING id, gemini_api_key',
-        [apiKey, userId]
+        [apiKey === null ? null : encryptString(apiKey), userId]
       );
 
       if (result.rows.length === 0) {
         throw new Error('User not found');
       }
 
-      return result.rows[0];
+      const user = result.rows[0];
+      if (user && user.gemini_api_key) {
+        try { 
+          const decrypted = decryptString(user.gemini_api_key);
+          user.gemini_api_key = decrypted || null;
+        } catch (error) {
+          console.error('Error decrypting gemini_api_key:', error.message);
+          user.gemini_api_key = null;
+        }
+      }
+      return user;
     } finally {
       client.release();
     }

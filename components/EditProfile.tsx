@@ -43,7 +43,8 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate
   const [formData, setFormData] = useState<FormData>({
     full_name: user?.full_name || '',
     email: user?.email || '',
-    gemini_api_key: user?.gemini_api_key || '',
+    // Do not prefill sensitive keys; keep input empty
+    gemini_api_key: '',
     current_password: '',
     new_password: '',
     confirm_password: ''
@@ -67,17 +68,21 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate
   const [hasPassword, setHasPassword] = useState<boolean>(true);
   // Whether any social account is linked
   const [hasAnySocialLinked, setHasAnySocialLinked] = useState<boolean>(false);
+  // Whether a Gemini API key exists on the server
+  const [hasGeminiKey, setHasGeminiKey] = useState<boolean>(!!user?.gemini_api_key);
 
   useEffect(() => {
     if (user) {
       setFormData({
         full_name: user.full_name || '',
         email: user.email || '',
+        // Prefill with decrypted key if available (will be loaded from API in loadProfileMeta)
         gemini_api_key: user.gemini_api_key || '',
         current_password: '',
         new_password: '',
         confirm_password: ''
       });
+      setHasGeminiKey(!!user.gemini_api_key);
       setErrors({});
       setSuccessMessage('');
       setActiveTab('profile');
@@ -115,7 +120,8 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate
         if (typeof hp === 'boolean') setHasPassword(hp);
         setHasAnySocialLinked(Array.isArray(socials) && socials.length > 0);
         
-        // Update form data with the fetched Gemini API key
+        // Track presence and display the decrypted key
+        setHasGeminiKey(!!geminiApiKey);
         if (geminiApiKey) {
           setFormData(prev => ({
             ...prev,
@@ -232,24 +238,37 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate
     setErrors({});
 
     try {
-      const data = await profileService.updateProfile({
+      const payload: any = {
         full_name: formData.full_name.trim(),
-        email: formData.email.trim(),
-        gemini_api_key: formData.gemini_api_key?.trim() || undefined
-      });
+        email: formData.email.trim()
+      };
+      // Only send gemini_api_key if user provided a new value (blank keeps existing)
+      if (formData.gemini_api_key && formData.gemini_api_key.trim().length > 0) {
+        payload.gemini_api_key = formData.gemini_api_key.trim();
+      }
+      const data = await profileService.updateProfile(payload);
 
       if (data.success) {
         // Create updated user object with new data
         const updatedUser = {
           ...user,
           full_name: formData.full_name.trim(),
-          gemini_api_key: formData.gemini_api_key?.trim() || undefined,
+          // If a new key was entered, mark as present; otherwise keep prior state
+          gemini_api_key: formData.gemini_api_key?.trim() ? 'SET' as any : (hasGeminiKey ? 'SET' as any : undefined),
           updated_at: new Date().toISOString()
         };
         
         // Call the callback to update parent component state
         onProfileUpdate(updatedUser);
         
+        // Update local presence flag and refresh the key from server response
+        if (data.data?.user?.gemini_api_key) {
+          setHasGeminiKey(true);
+          setFormData(prev => ({ ...prev, gemini_api_key: data.data.user.gemini_api_key }));
+        } else if (formData.gemini_api_key && formData.gemini_api_key.trim().length > 0) {
+          setHasGeminiKey(true);
+          // Keep the key user entered if not in response
+        }
         setSuccessMessage('Profile updated successfully!');
         // Navigate back to home after successful update
         setTimeout(() => {
@@ -343,6 +362,7 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate
           ...prev,
           gemini_api_key: ''
         }));
+        setHasGeminiKey(false);
         
         // Remove gemini_api_key from localStorage explicitly
         const storedUser = localStorage.getItem('planora_user');
@@ -550,7 +570,7 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate
                             className={`w-full pl-10 pr-12 py-3 border rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-colors ${
                               errors.gemini_api_key ? 'border-red-300' : 'border-gray-300'
                             }`}
-                            placeholder="Enter your Gemini API key (optional)"
+                            placeholder={hasGeminiKey ? 'Update your Gemini API key' : 'Enter your Gemini API key (optional)'}
                           />
                           <button
                             type="button"
@@ -568,9 +588,9 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate
                     )}
                     <div className="mt-2 flex items-center justify-between">
                       <p className="text-sm text-gray-500">
-                        Add your Gemini API key to use your own quota.
+                        {hasGeminiKey ? 'Your Gemini API key is displayed above. Update it to change, or delete it below.' : 'Add your Gemini API key to use your own quota.'}
                       </p>
-                      {!isLoadingGeminiKey && formData.gemini_api_key && formData.gemini_api_key.trim().length > 0 && (
+                      {!isLoadingGeminiKey && hasGeminiKey && (
                         <button
                           type="button"
                           onClick={handleDeleteGeminiKey}
@@ -581,7 +601,7 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate
                         </button>
                       )}
                     </div>
-                    {!isLoadingGeminiKey && !formData.gemini_api_key && (
+                    {!isLoadingGeminiKey && !hasGeminiKey && (
                       <div className="mt-3">
                         <button
                           type="button"
