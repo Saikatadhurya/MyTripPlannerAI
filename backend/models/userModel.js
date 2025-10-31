@@ -32,14 +32,10 @@ class UserModel {
       );
       const user = res.rows[0];
       if (user && user.gemini_api_key) {
-        try { 
-          const decrypted = decryptString(user.gemini_api_key);
-          user.gemini_api_key = decrypted || null;
-        } catch (error) {
-          console.error('Error decrypting gemini_api_key:', error.message);
-          // If decryption fails, set to null to force user to re-enter
-          user.gemini_api_key = null;
-        }
+        // decryptString now handles errors internally and logs them appropriately
+        // It will return null if decryption fails, or the plain text if successful
+        const decrypted = decryptString(user.gemini_api_key);
+        user.gemini_api_key = decrypted || null;
       }
       return user;
     } finally {
@@ -56,14 +52,10 @@ class UserModel {
       );
       const user = res.rows[0];
       if (user && user.gemini_api_key) {
-        try { 
-          const decrypted = decryptString(user.gemini_api_key);
-          user.gemini_api_key = decrypted || null;
-        } catch (error) {
-          console.error('Error decrypting gemini_api_key:', error.message);
-          // If decryption fails, set to null to force user to re-enter
-          user.gemini_api_key = null;
-        }
+        // decryptString now handles errors internally and logs them appropriately
+        // It will return null if decryption fails, or the plain text if successful
+        const decrypted = decryptString(user.gemini_api_key);
+        user.gemini_api_key = decrypted || null;
       }
       return user;
     } finally {
@@ -96,13 +88,10 @@ class UserModel {
       );
       const row = res.rows[0];
       if (row && row.gemini_api_key) {
-        try { 
-          const decrypted = decryptString(row.gemini_api_key);
-          row.gemini_api_key = decrypted || null;
-        } catch (error) {
-          console.error('Error decrypting gemini_api_key:', error.message);
-          row.gemini_api_key = null;
-        }
+        // decryptString now handles errors internally and logs them appropriately
+        // It will return null if decryption fails, or the plain text if successful
+        const decrypted = decryptString(row.gemini_api_key);
+        row.gemini_api_key = decrypted || null;
       }
       return row;
     } finally {
@@ -188,13 +177,10 @@ class UserModel {
 
       const user = result.rows[0];
       if (user && user.gemini_api_key) {
-        try { 
-          const decrypted = decryptString(user.gemini_api_key);
-          user.gemini_api_key = decrypted || null;
-        } catch (error) {
-          console.error('Error decrypting gemini_api_key:', error.message);
-          user.gemini_api_key = null;
-        }
+        // decryptString now handles errors internally and logs them appropriately
+        // It will return null if decryption fails, or the plain text if successful
+        const decrypted = decryptString(user.gemini_api_key);
+        user.gemini_api_key = decrypted || null;
       }
       return user;
     } finally {
@@ -360,13 +346,10 @@ class UserModel {
 
       const user = result.rows[0];
       if (user && user.gemini_api_key) {
-        try { 
-          const decrypted = decryptString(user.gemini_api_key);
-          user.gemini_api_key = decrypted || null;
-        } catch (error) {
-          console.error('Error decrypting gemini_api_key:', error.message);
-          user.gemini_api_key = null;
-        }
+        // decryptString now handles errors internally and logs them appropriately
+        // It will return null if decryption fails, or the plain text if successful
+        const decrypted = decryptString(user.gemini_api_key);
+        user.gemini_api_key = decrypted || null;
       }
 
       // Get social accounts
@@ -393,13 +376,10 @@ class UserModel {
 
       const user = result.rows[0];
       if (user && user.gemini_api_key) {
-        try { 
-          const decrypted = decryptString(user.gemini_api_key);
-          user.gemini_api_key = decrypted || null;
-        } catch (error) {
-          console.error('Error decrypting gemini_api_key:', error.message);
-          user.gemini_api_key = null;
-        }
+        // decryptString now handles errors internally and logs them appropriately
+        // It will return null if decryption fails, or the plain text if successful
+        const decrypted = decryptString(user.gemini_api_key);
+        user.gemini_api_key = decrypted || null;
       }
       return user;
     } finally {

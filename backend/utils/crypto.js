@@ -91,19 +91,59 @@ function decryptString(payload) {
     console.error('Crypto: Decryption resulted in what looks like encrypted data');
     return null;
   } catch (error) {
-    // Decryption failed - if it looked encrypted, this is an error
-    // If it's a plain text API key that happens to have 2 dots, return it
-    // Most API keys don't have exactly 2 dots separating 3 base64-looking parts
-    console.error('Crypto: Decryption failed for encrypted-looking payload:', error.message);
+    // Decryption failed - check if this might be a plain text value that just looks encrypted
+    // (e.g., an API key that happens to have 2 dots separating 3 base64-looking parts)
     
     // Check if this might be a valid API key (they're usually alphanumeric with some special chars)
-    // Encrypted strings are base64, so they won't have spaces or many special chars
-    if (/^[A-Za-z0-9+/=._-]+$/.test(payload) && payload.length > 20) {
-      // Looks like it might be a valid API key format, return it
+    // API keys are typically 20-200 characters and base64-like
+    const mightBePlainText = payload.length >= 20 && payload.length <= 200 && /^[A-Za-z0-9+/=._-]+$/.test(payload);
+    
+    // Use a more specific error check to identify authentication/decryption errors
+    const isAuthError = error.message.includes('Unsupported state') || 
+                       error.message.includes('unable to authenticate') ||
+                       error.message.includes('bad decrypt');
+    
+    if (mightBePlainText) {
+      // Likely a plain text API key that happens to match encrypted format
+      // Silently return it without logging (this is expected behavior for backward compatibility)
       return payload;
     }
     
-    // Looks encrypted but can't decrypt - return null to indicate error
+    if (isAuthError) {
+      // This is an authentication/decryption error for genuinely encrypted-looking data
+      // Log once per unique payload using a simple in-memory cache to prevent spam
+      if (!decryptString._errorCache) {
+        decryptString._errorCache = new Set();
+      }
+      const cacheKey = `${payload.substring(0, 50)}_${error.message}`;
+      if (!decryptString._errorCache.has(cacheKey)) {
+        decryptString._errorCache.add(cacheKey);
+        // Limit cache size to prevent memory issues
+        if (decryptString._errorCache.size > 100) {
+          const firstKey = decryptString._errorCache.values().next().value;
+          decryptString._errorCache.delete(firstKey);
+        }
+        console.error('Crypto: Decryption failed for encrypted-looking payload:', error.message);
+        console.error('Crypto: This might be due to a changed encryption key or corrupted data.');
+        console.error('Crypto: The user will need to re-enter their API key.');
+      }
+      // Return null to indicate decryption failure, but don't spam logs
+      return null;
+    }
+    
+    // Other unexpected errors - log them (but also use cache to prevent spam)
+    if (!decryptString._errorCache) {
+      decryptString._errorCache = new Set();
+    }
+    const cacheKey = `other_${payload.substring(0, 50)}_${error.message}`;
+    if (!decryptString._errorCache.has(cacheKey)) {
+      decryptString._errorCache.add(cacheKey);
+      if (decryptString._errorCache.size > 100) {
+        const firstKey = decryptString._errorCache.values().next().value;
+        decryptString._errorCache.delete(firstKey);
+      }
+      console.error('Crypto: Unexpected decryption error:', error.message);
+    }
     return null;
   }
 }
