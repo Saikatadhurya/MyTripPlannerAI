@@ -7,6 +7,7 @@ import AppFinderResult from './AppFinderResult';
 import MusicFinderResult from './MusicFinderResult';
 import LingoFinderResult from './LingoFinderResult';
 import { useSaveRecommendation } from '../hooks/useSaveRecommendation';
+import Toast from './Toast';
 
 type Tab = 'itinerary' | 'packing' | 'food' | 'apps' | 'music' | 'lingo';
 
@@ -50,6 +51,7 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
 }) => {
     const [activeTab, setActiveTab] = useState<Tab>('itinerary');
     const [savedTripId, setSavedTripId] = useState<string | null>(null);
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
     const savedTypesRef = React.useRef<Set<string>>(new Set());
     const { 
         saveUnifiedTripRecommendations,
@@ -197,6 +199,47 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
         run();
     }, [plan, questionnaireData, isHistoryView, savedTripId, saveUnifiedTripRecommendations, saveItineraryRecommendation, savePackingRecommendation, saveFoodRecommendation, saveAppRecommendation, saveMusicRecommendation, saveLingoRecommendation]);
     
+    const handleCopyLink = async () => {
+        if (!savedTripId) {
+            setToast({ message: 'Trip is still being saved. Please wait a moment.', type: 'error' });
+            return;
+        }
+        try {
+            const shareUrl = `${window.location.origin}/share/${savedTripId}`;
+            await navigator.clipboard.writeText(shareUrl);
+            setToast({ message: 'Shareable link copied to clipboard!', type: 'success' });
+        } catch (error) {
+            setToast({ message: 'Failed to copy link. Please try again.', type: 'error' });
+        }
+    };
+
+    const handleShare = async () => {
+        if (!savedTripId) {
+            setToast({ message: 'Trip is still being saved. Please wait a moment.', type: 'error' });
+            return;
+        }
+        try {
+            const shareUrl = `${window.location.origin}/share/${savedTripId}`;
+            if (navigator.share) {
+                await navigator.share({
+                    title: `Trip Plan to ${plan.itinerary?.destination || 'Your Destination'}`,
+                    text: 'Check out this amazing trip plan!',
+                    url: shareUrl,
+                });
+                setToast({ message: 'Trip plan shared successfully!', type: 'success' });
+            } else {
+                // Fallback to copy if Web Share API is not available
+                await navigator.clipboard.writeText(shareUrl);
+                setToast({ message: 'Shareable link copied to clipboard!', type: 'success' });
+            }
+        } catch (error: any) {
+            // User cancelled or error occurred
+            if (error.name !== 'AbortError') {
+                setToast({ message: 'Failed to share link. Please try again.', type: 'error' });
+            }
+        }
+    };
+    
     const getPlanDataForTab = (tab: Tab) => {
         switch (tab) {
             case 'itinerary': return plan.itinerary;
@@ -300,6 +343,30 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
                     </button>
                 </div>
             </header>
+            
+            {/* Share buttons - Only show when plan is complete and saved */}
+            {isPlanComplete && savedTripId && !isHistoryView && (
+                <div className="flex items-center justify-center gap-3 py-4 no-print">
+                    <button
+                        onClick={handleCopyLink}
+                        className="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-violet-600 to-violet-700 text-white font-semibold rounded-full hover:from-violet-700 hover:to-violet-800 transition-all duration-300 shadow-md text-sm"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                        Copy Link
+                    </button>
+                    <button
+                        onClick={handleShare}
+                        className="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-full hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-md text-sm"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                        </svg>
+                        Share
+                    </button>
+                </div>
+            )}
                 
                 {/* Responsive Navigation */}
                 <nav className="no-print fixed bottom-0 left-0 right-0 z-50 md:sticky md:top-4 md:z-40 md:mb-6 unified-nav">
@@ -362,6 +429,15 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
                 </main>
                 {/* Spacer for bottom nav on mobile */}
                 <div className="h-20 md:h-0" />
+                
+                {/* Toast notification */}
+                {toast && (
+                    <Toast
+                        message={toast.message}
+                        type={toast.type}
+                        onClose={() => setToast(null)}
+                    />
+                )}
             </div>
     );
 };

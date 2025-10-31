@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { LingoRecommendations, PhraseCategory } from '../types';
 import { useSaveRecommendation } from '../hooks/useSaveRecommendation';
+import Toast from './Toast';
 
 const AccordionItem: React.FC<{ category: PhraseCategory, isOpen: boolean, onToggle: () => void }> = ({ category, isOpen, onToggle }) => {
     const [copiedPhrase, setCopiedPhrase] = useState<string | null>(null);
@@ -69,6 +70,8 @@ interface LingoFinderResultProps {
 const LingoFinderResult: React.FC<LingoFinderResultProps> = ({ recommendations, onRegenerate, isUnifiedView = false, requestData, isHistoryView = false }) => {
     const [openCategory, setOpenCategory] = useState<string | null>(recommendations.categories[0]?.categoryName || null);
     const [hasBeenSaved, setHasBeenSaved] = useState(false);
+    const [savedId, setSavedId] = useState<string | null>(null);
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
     const { saveLingoRecommendation } = useSaveRecommendation();
 
     const toggleCategory = (categoryName: string) => {
@@ -79,10 +82,55 @@ const LingoFinderResult: React.FC<LingoFinderResultProps> = ({ recommendations, 
     useEffect(() => {
         // Don't save if this is a history view
         if (!isUnifiedView && requestData && !hasBeenSaved && !isHistoryView) {
-            saveLingoRecommendation(requestData, recommendations, recommendations.destination, requestData.language);
-            setHasBeenSaved(true);
+            const saveRecommendation = async () => {
+                const id = await saveLingoRecommendation(requestData, recommendations, recommendations.destination, requestData.language);
+                if (id) {
+                    setSavedId(id);
+                }
+                setHasBeenSaved(true);
+            };
+            saveRecommendation();
         }
     }, [isUnifiedView, requestData, recommendations, saveLingoRecommendation, hasBeenSaved, isHistoryView]);
+    
+    const handleCopyLink = async () => {
+        if (!savedId) {
+            setToast({ message: 'Recommendation is still being saved. Please wait a moment.', type: 'error' });
+            return;
+        }
+        try {
+            const shareUrl = `${window.location.origin}/share/${savedId}`;
+            await navigator.clipboard.writeText(shareUrl);
+            setToast({ message: 'Shareable link copied to clipboard!', type: 'success' });
+        } catch (error) {
+            setToast({ message: 'Failed to copy link. Please try again.', type: 'error' });
+        }
+    };
+
+    const handleShare = async () => {
+        if (!savedId) {
+            setToast({ message: 'Recommendation is still being saved. Please wait a moment.', type: 'error' });
+            return;
+        }
+        try {
+            const shareUrl = `${window.location.origin}/share/${savedId}`;
+            if (navigator.share) {
+                await navigator.share({
+                    title: `Local Lingo Guide for ${recommendations.destination}`,
+                    text: 'Check out this essential phrasebook!',
+                    url: shareUrl,
+                });
+                setToast({ message: 'Recommendation shared successfully!', type: 'success' });
+            } else {
+                await navigator.clipboard.writeText(shareUrl);
+                setToast({ message: 'Shareable link copied to clipboard!', type: 'success' });
+            }
+        } catch (error: any) {
+            if (error.name !== 'AbortError') {
+                setToast({ message: 'Failed to share link. Please try again.', type: 'error' });
+            }
+        }
+    };
 
     return (
         <div className="max-w-3xl mx-auto space-y-12 animated-card mb-16" id="lingo-finder-result-content">
@@ -106,6 +154,30 @@ const LingoFinderResult: React.FC<LingoFinderResultProps> = ({ recommendations, 
                     Your essential phrasebook for speaking <span className="font-semibold text-sky-700">{recommendations.localLanguage}</span>.
                 </p>
             </header>
+            
+            {/* Share buttons - Only show when saved and not in history view */}
+            {savedId && !isHistoryView && !isUnifiedView && (
+                <div className="flex items-center justify-center gap-3 py-4 no-print">
+                    <button
+                        onClick={handleCopyLink}
+                        className="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-violet-600 to-violet-700 text-white font-semibold rounded-full hover:from-violet-700 hover:to-violet-800 transition-all duration-300 shadow-md text-sm"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                        Copy Link
+                    </button>
+                    <button
+                        onClick={handleShare}
+                        className="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-full hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-md text-sm"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                        </svg>
+                        Share
+                    </button>
+                </div>
+            )}
             
             <div className="space-y-4">
                 {recommendations.categories.map((category, index) => (
@@ -131,6 +203,15 @@ const LingoFinderResult: React.FC<LingoFinderResultProps> = ({ recommendations, 
                     )}
                 </div>
             </div>
+            
+            {/* Toast notification */}
+            {toast && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={() => setToast(null)}
+                />
+            )}
         </div>
     );
 };

@@ -2,23 +2,25 @@ import { useCallback } from 'react';
 import { historyService, SaveRecommendationRequest } from '../services/historyService';
 
 interface UseSaveRecommendationReturn {
-  saveRecommendation: (data: SaveRecommendationRequest) => Promise<void>;
-  saveAppRecommendation: (requestData: any, responseData: any, destination: string, language?: string, tripContext?: any, tripId?: string, tripName?: string) => Promise<void>;
-  saveLingoRecommendation: (requestData: any, responseData: any, destination: string, language?: string, tripContext?: any, tripId?: string, tripName?: string) => Promise<void>;
-  saveMusicRecommendation: (requestData: any, responseData: any, destination: string, language?: string, tripContext?: any, tripId?: string, tripName?: string) => Promise<void>;
-  savePackingRecommendation: (requestData: any, responseData: any, destination: string, language?: string, tripContext?: any, tripId?: string, tripName?: string) => Promise<void>;
-  saveFoodRecommendation: (requestData: any, responseData: any, destination: string, language?: string, tripContext?: any, tripId?: string, tripName?: string) => Promise<void>;
-  saveItineraryRecommendation: (requestData: any, responseData: any, destination: string, language?: string, tripContext?: any, tripId?: string, tripName?: string) => Promise<void>;
+  saveRecommendation: (data: SaveRecommendationRequest) => Promise<string | null>;
+  saveAppRecommendation: (requestData: any, responseData: any, destination: string, language?: string, tripContext?: any, tripId?: string, tripName?: string) => Promise<string | null>;
+  saveLingoRecommendation: (requestData: any, responseData: any, destination: string, language?: string, tripContext?: any, tripId?: string, tripName?: string) => Promise<string | null>;
+  saveMusicRecommendation: (requestData: any, responseData: any, destination: string, language?: string, tripContext?: any, tripId?: string, tripName?: string) => Promise<string | null>;
+  savePackingRecommendation: (requestData: any, responseData: any, destination: string, language?: string, tripContext?: any, tripId?: string, tripName?: string) => Promise<string | null>;
+  saveFoodRecommendation: (requestData: any, responseData: any, destination: string, language?: string, tripContext?: any, tripId?: string, tripName?: string) => Promise<string | null>;
+  saveItineraryRecommendation: (requestData: any, responseData: any, destination: string, language?: string, tripContext?: any, tripId?: string, tripName?: string) => Promise<string | null>;
   saveUnifiedTripRecommendations: (recommendations: Array<{type: string, requestData: any, responseData: any}>, destination: string, language?: string, tripContext?: any, tripName?: string) => Promise<string>;
 }
 
 export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
-  const saveRecommendation = useCallback(async (data: SaveRecommendationRequest) => {
+  const saveRecommendation = useCallback(async (data: SaveRecommendationRequest): Promise<string | null> => {
     try {
-      await historyService.saveRecommendation(data);
+      const result = await historyService.saveRecommendation(data);
+      return result?.id || null;
     } catch (error) {
       console.error('Failed to save recommendation:', error);
       // Don't throw error to avoid breaking the user experience
+      return null;
     }
   }, []);
 
@@ -30,10 +32,10 @@ export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
     tripContext?: any,
     tripId?: string,
     tripName?: string
-  ) => {
+  ): Promise<string | null> => {
     const title = historyService.generateDefaultTitle('apps', destination);
     
-    await saveRecommendation({
+    return await saveRecommendation({
       recommendationType: 'apps',
       destination,
       language,
@@ -55,10 +57,10 @@ export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
     tripContext?: any,
     tripId?: string,
     tripName?: string
-  ) => {
+  ): Promise<string | null> => {
     const title = historyService.generateDefaultTitle('lingo', destination);
     
-    await saveRecommendation({
+    return await saveRecommendation({
       recommendationType: 'lingo',
       destination,
       language,
@@ -80,10 +82,10 @@ export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
     tripContext?: any,
     tripId?: string,
     tripName?: string
-  ) => {
+  ): Promise<string | null> => {
     const title = historyService.generateDefaultTitle('music', destination);
     
-    await saveRecommendation({
+    return await saveRecommendation({
       recommendationType: 'music',
       destination,
       language,
@@ -105,10 +107,10 @@ export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
     tripContext?: any,
     tripId?: string,
     tripName?: string
-  ) => {
+  ): Promise<string | null> => {
     const title = historyService.generateDefaultTitle('packing', destination);
     
-    await saveRecommendation({
+    return await saveRecommendation({
       recommendationType: 'packing',
       destination,
       language,
@@ -130,10 +132,10 @@ export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
     tripContext?: any,
     tripId?: string,
     tripName?: string
-  ) => {
+  ): Promise<string | null> => {
     const title = historyService.generateDefaultTitle('food', destination);
     
-    await saveRecommendation({
+    return await saveRecommendation({
       recommendationType: 'food',
       destination,
       language,
@@ -155,10 +157,10 @@ export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
     tripContext?: any,
     tripId?: string,
     tripName?: string
-  ) => {
+  ): Promise<string | null> => {
     const title = historyService.generateDefaultTitle('itinerary', destination);
     
-    await saveRecommendation({
+    return await saveRecommendation({
       recommendationType: 'itinerary',
       destination,
       language,

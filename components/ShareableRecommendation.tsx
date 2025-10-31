@@ -10,6 +10,7 @@ import PackingListPreview from './PackingListPreview';
 import ItineraryPreview from './ItineraryPreview';
 import UnifiedResultPreview from './UnifiedResultPreview';
 import LoadingIndicator from './LoadingIndicator';
+import Toast from './Toast';
 
 const ShareableRecommendation: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -18,6 +19,7 @@ const ShareableRecommendation: React.FC = () => {
   const [unifiedTrip, setUnifiedTrip] = useState<UnifiedTrip | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
   useEffect(() => {
     const loadRecommendation = async () => {
@@ -70,6 +72,51 @@ const ShareableRecommendation: React.FC = () => {
 
   const handleBackToHome = () => {
     navigate('/');
+  };
+
+  const handleCopyLink = async () => {
+    if (!id) {
+      setToast({ message: 'Invalid share link.', type: 'error' });
+      return;
+    }
+    try {
+      const shareUrl = `${window.location.origin}/share/${id}`;
+      await navigator.clipboard.writeText(shareUrl);
+      setToast({ message: 'Shareable link copied to clipboard!', type: 'success' });
+    } catch (error) {
+      setToast({ message: 'Failed to copy link. Please try again.', type: 'error' });
+    }
+  };
+
+  const handleShare = async () => {
+    if (!id) {
+      setToast({ message: 'Invalid share link.', type: 'error' });
+      return;
+    }
+    try {
+      const shareUrl = `${window.location.origin}/share/${id}`;
+      const title = unifiedTrip 
+        ? `Trip Plan to ${unifiedTrip.destination || 'Your Destination'}`
+        : recommendation 
+        ? `${recommendation.recommendationType.charAt(0).toUpperCase() + recommendation.recommendationType.slice(1)} Recommendation for ${recommendation.destination || 'Your Destination'}`
+        : 'Trip Recommendation';
+      
+      if (navigator.share) {
+        await navigator.share({
+          title: title,
+          text: 'Check out this amazing trip recommendation!',
+          url: shareUrl,
+        });
+        setToast({ message: 'Recommendation shared successfully!', type: 'success' });
+      } else {
+        await navigator.clipboard.writeText(shareUrl);
+        setToast({ message: 'Shareable link copied to clipboard!', type: 'success' });
+      }
+    } catch (error: any) {
+      if (error.name !== 'AbortError') {
+        setToast({ message: 'Failed to share link. Please try again.', type: 'error' });
+      }
+    }
   };
 
   if (loading) {
@@ -375,14 +422,50 @@ const ShareableRecommendation: React.FC = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-violet-50/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-          <button
-            onClick={handleBackToHome}
-            className="mb-6 px-4 py-2 bg-white/60 text-slate-800 font-semibold rounded-full hover:bg-white/80 transition-all duration-300 shadow-md border border-white/50"
-          >
-            ← Back to Home
-          </button>
+          <div className="flex flex-col sm:flex-row gap-3 mb-6 items-start sm:items-center">
+            <button
+              onClick={handleBackToHome}
+              className="px-4 py-2 bg-white/60 text-slate-800 font-semibold rounded-full hover:bg-white/80 transition-all duration-300 shadow-md border border-white/50"
+            >
+              ← Back to Home
+            </button>
+            
+            {/* Share buttons */}
+            {id && (
+              <div className="flex gap-2">
+                <button
+                  onClick={handleCopyLink}
+                  className="inline-flex items-center px-4 py-2 bg-violet-600 text-white font-bold rounded-full hover:bg-violet-700 transition-all duration-300 shadow-md text-sm"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+                    <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
+                  </svg>
+                  Copy Link
+                </button>
+                <button
+                  onClick={handleShare}
+                  className="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-bold rounded-full hover:bg-blue-700 transition-all duration-300 shadow-md text-sm"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" />
+                  </svg>
+                  Share
+                </button>
+              </div>
+            )}
+          </div>
           {renderIndividualRecommendation(recommendation)}
         </div>
+        
+        {/* Toast notification */}
+        {toast && (
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            onClose={() => setToast(null)}
+          />
+        )}
       </div>
     );
   }
@@ -392,14 +475,50 @@ const ShareableRecommendation: React.FC = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-violet-50/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-          <button
-            onClick={handleBackToHome}
-            className="mb-6 px-4 py-2 bg-white/60 text-slate-800 font-semibold rounded-full hover:bg-white/80 transition-all duration-300 shadow-md border border-white/50"
-          >
-            ← Back to Home
-          </button>
+          <div className="flex flex-col sm:flex-row gap-3 mb-6 items-start sm:items-center">
+            <button
+              onClick={handleBackToHome}
+              className="px-4 py-2 bg-white/60 text-slate-800 font-semibold rounded-full hover:bg-white/80 transition-all duration-300 shadow-md border border-white/50"
+            >
+              ← Back to Home
+            </button>
+            
+            {/* Share buttons */}
+            {id && (
+              <div className="flex gap-2">
+                <button
+                  onClick={handleCopyLink}
+                  className="inline-flex items-center px-4 py-2 bg-violet-600 text-white font-bold rounded-full hover:bg-violet-700 transition-all duration-300 shadow-md text-sm"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+                    <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
+                  </svg>
+                  Copy Link
+                </button>
+                <button
+                  onClick={handleShare}
+                  className="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-bold rounded-full hover:bg-blue-700 transition-all duration-300 shadow-md text-sm"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" />
+                  </svg>
+                  Share
+                </button>
+              </div>
+            )}
+          </div>
           {renderUnifiedTrip(unifiedTrip)}
         </div>
+        
+        {/* Toast notification */}
+        {toast && (
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            onClose={() => setToast(null)}
+          />
+        )}
       </div>
     );
   }
