@@ -64,15 +64,30 @@ function decryptString(payload) {
   }
   
   try {
-    const iv = Buffer.from(ivB64, 'base64');
-    const ciphertext = Buffer.from(ctB64, 'base64');
-    const authTag = Buffer.from(tagB64, 'base64');
+    let iv, ciphertext, authTag;
+    try {
+      iv = Buffer.from(ivB64, 'base64');
+      ciphertext = Buffer.from(ctB64, 'base64');
+      authTag = Buffer.from(tagB64, 'base64');
+    } catch (base64Error) {
+      // Invalid base64 encoding - return as plain text
+      return payload;
+    }
     
-    // Validate lengths
-    if (iv.length !== IV_LENGTH || !ciphertext.length || !authTag.length) {
-      // Invalid encrypted format, but might be plain text that happens to have dots
-      // Try to decrypt anyway, but if it fails, return as plain text
-      console.warn('Crypto: Suspicious format but attempting decryption');
+    // Validate lengths before attempting decryption
+    // GCM auth tag should be 16 bytes
+    const EXPECTED_AUTH_TAG_LENGTH = 16;
+    
+    if (iv.length !== IV_LENGTH) {
+      // Invalid IV length - this is definitely not valid encrypted data
+      // Return as plain text (backward compatibility for keys that look encrypted)
+      return payload;
+    }
+    
+    if (!ciphertext.length || !authTag.length || authTag.length !== EXPECTED_AUTH_TAG_LENGTH) {
+      // Empty ciphertext or invalid auth tag - invalid encrypted format
+      // Return as plain text (backward compatibility)
+      return payload;
     }
     
     const decipher = crypto.createDecipheriv('aes-256-gcm', KEY, iv);
@@ -80,14 +95,22 @@ function decryptString(payload) {
     const plain = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
     const decrypted = plain.toString('utf8');
     
-    // Successfully decrypted - validate it doesn't look like an encrypted string
+    // Successfully decrypted - validate the result
+    // Empty decrypted string should return null (invalid/empty key)
+    if (!decrypted || decrypted.trim().length === 0) {
+      return null;
+    }
+    
+    // Validate it doesn't look like an encrypted string
     // (i.e., it shouldn't have exactly 3 dot-separated base64 parts)
     const decryptedParts = decrypted.split('.');
-    if (decrypted && decryptedParts.length !== 3) {
+    if (decryptedParts.length !== 3) {
+      // Normal decrypted value - return trimmed
       return decrypted.trim();
     }
     
     // Decrypted result still looks encrypted - something went wrong
+    // This is extremely rare but could indicate double encryption or corruption
     console.error('Crypto: Decryption resulted in what looks like encrypted data');
     return null;
   } catch (error) {
@@ -99,9 +122,10 @@ function decryptString(payload) {
     const mightBePlainText = payload.length >= 20 && payload.length <= 200 && /^[A-Za-z0-9+/=._-]+$/.test(payload);
     
     // Use a more specific error check to identify authentication/decryption errors
-    const isAuthError = error.message.includes('Unsupported state') || 
-                       error.message.includes('unable to authenticate') ||
-                       error.message.includes('bad decrypt');
+    const errorMessage = error?.message || String(error) || '';
+    const isAuthError = errorMessage.includes('Unsupported state') || 
+                       errorMessage.includes('unable to authenticate') || 
+                       errorMessage.includes('bad decrypt');
     
     if (mightBePlainText) {
       // Likely a plain text API key that happens to match encrypted format
@@ -115,7 +139,7 @@ function decryptString(payload) {
       if (!decryptString._errorCache) {
         decryptString._errorCache = new Set();
       }
-      const cacheKey = `${payload.substring(0, 50)}_${error.message}`;
+      const cacheKey = `${payload.substring(0, 50)}_${errorMessage}`;
       if (!decryptString._errorCache.has(cacheKey)) {
         decryptString._errorCache.add(cacheKey);
         // Limit cache size to prevent memory issues
@@ -123,7 +147,7 @@ function decryptString(payload) {
           const firstKey = decryptString._errorCache.values().next().value;
           decryptString._errorCache.delete(firstKey);
         }
-        console.error('Crypto: Decryption failed for encrypted-looking payload:', error.message);
+        console.error('Crypto: Decryption failed for encrypted-looking payload:', errorMessage);
         console.error('Crypto: This might be due to a changed encryption key or corrupted data.');
         console.error('Crypto: The user will need to re-enter their API key.');
       }
@@ -135,14 +159,14 @@ function decryptString(payload) {
     if (!decryptString._errorCache) {
       decryptString._errorCache = new Set();
     }
-    const cacheKey = `other_${payload.substring(0, 50)}_${error.message}`;
-    if (!decryptString._errorCache.has(cacheKey)) {
-      decryptString._errorCache.add(cacheKey);
-      if (decryptString._errorCache.size > 100) {
-        const firstKey = decryptString._errorCache.values().next().value;
-        decryptString._errorCache.delete(firstKey);
-      }
-      console.error('Crypto: Unexpected decryption error:', error.message);
+    const cacheKey = `other_${payload.substring(0, 50)}_${errorMessage}`;
+      if (!decryptString._errorCache.has(cacheKey)) {
+        decryptString._errorCache.add(cacheKey);
+        if (decryptString._errorCache.size > 100) {
+          const firstKey = decryptString._errorCache.values().next().value;
+          decryptString._errorCache.delete(firstKey);
+        }
+        console.error('Crypto: Unexpected decryption error:', errorMessage);
     }
     return null;
   }
