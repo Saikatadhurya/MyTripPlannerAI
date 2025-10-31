@@ -118,12 +118,32 @@ export const generatePackingList = async (data: PackingListRequestData, onChunk?
         }
 
         const combinedErrorText = (error.message + fullText).toLowerCase();
+        
+        // Extract original error message from nested error objects if available
+        // GoogleGenAI SDK may structure errors differently
+        const errorObj = error as any;
+        const originalErrorMessage = errorObj?.error?.message || 
+                                    errorObj?.cause?.message ||
+                                    errorObj?.statusText ||
+                                    errorObj?.response?.data?.error?.message ||
+                                    errorObj?.response?.statusText ||
+                                    error.message;
 
         if (combinedErrorText.includes("quota") || combinedErrorText.includes("rate limit") || combinedErrorText.includes("429")) {
             throw new Error("[429] You have exceeded the request limit. Please check your plan and billing details and try again later.");
         }
         if (combinedErrorText.includes("overloaded") || combinedErrorText.includes("server error") || combinedErrorText.includes("503")) {
-             throw new Error("[503] The AI model is currently busy. Please wait a moment and try again.");
+             // Show the original Gemini error message if available, otherwise use default
+             let errorMsg = originalErrorMessage && originalErrorMessage !== error.message 
+                 ? originalErrorMessage 
+                 : error.message || "The AI model is currently busy. Please wait a moment and try again.";
+             
+             // Remove [503] prefix if already present to avoid duplication
+             if (errorMsg.startsWith('[503]')) {
+                 errorMsg = errorMsg.substring(5).trim();
+             }
+             
+             throw new Error(`[503] ${errorMsg}`);
         }
         
         if (error instanceof SyntaxError) {
