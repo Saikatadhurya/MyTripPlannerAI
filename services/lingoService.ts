@@ -3,7 +3,7 @@ import { LingoFinderRequestData, LingoRecommendations } from '../types';
 import { extractJson, cleanCitations } from './jsonUtils';
 import { CookieUtils } from './cookieUtils';
 
-export const generateLingoGuide = async (data: LingoFinderRequestData, onChunk?: (chunk: string) => void, userApiKey?: string): Promise<LingoRecommendations> => {
+export const generateLingoGuide = async (data: LingoFinderRequestData, onChunk?: (chunk: string) => void, userApiKey?: string): Promise<{result: LingoRecommendations, prompt: string}> => {
   const apiKey = userApiKey || CookieUtils.getGeminiApiKey() || process.env.VITE_GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error("Gemini key not set. Please provide your Gemini API key in your profile settings.");
@@ -76,7 +76,7 @@ export const generateLingoGuide = async (data: LingoFinderRequestData, onChunk?:
 
       const cleanedJson = cleanCitations(parsedJson);
 
-      return cleanedJson;
+      return { result: cleanedJson, prompt };
   } catch (error) {
       console.error("Failed to generate and parse lingo guide stream:", error);
       console.error("Original AI response text accumulated:", fullText);

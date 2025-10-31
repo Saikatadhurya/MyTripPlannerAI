@@ -171,7 +171,7 @@ export const generateItinerary = async (
   currency: string,
   onChunk?: (chunk: string) => void,
   userApiKey?: string
-): Promise<Itinerary> => {
+): Promise<{result: Itinerary, prompt: string}> => {
 
   const apiKey = userApiKey || CookieUtils.getGeminiApiKey() || process.env.VITE_GEMINI_API_KEY;
   if (!apiKey) {
@@ -410,7 +410,7 @@ export const generateItinerary = async (
 
         const cleanedJson = cleanCitations(parsedJson);
 
-        return {
+        const result = {
             ...cleanedJson,
             startPoint,
             tripType,
@@ -423,6 +423,8 @@ export const generateItinerary = async (
             language,
             currency,
         };
+
+        return { result, prompt };
     } catch (error) {
         console.error("Failed to generate and parse itinerary stream:", error);
         console.error("Original AI response text accumulated:", fullText);

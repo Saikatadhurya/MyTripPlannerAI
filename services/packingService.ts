@@ -4,7 +4,7 @@ import { PackingList, PackingListRequestData } from '../types';
 import { extractJson, cleanCitations } from './jsonUtils';
 import { CookieUtils } from './cookieUtils';
 
-export const generatePackingList = async (data: PackingListRequestData, onChunk?: (chunk: string) => void, userApiKey?: string): Promise<PackingList> => {
+export const generatePackingList = async (data: PackingListRequestData, onChunk?: (chunk: string) => void, userApiKey?: string): Promise<{result: PackingList, prompt: string}> => {
   const apiKey = userApiKey || CookieUtils.getGeminiApiKey() || process.env.VITE_GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error("Gemini key not set. Please provide your Gemini API key in your profile settings.");
@@ -99,12 +99,14 @@ export const generatePackingList = async (data: PackingListRequestData, onChunk?
       
       const cleanedJson = cleanCitations(parsedJson);
 
-      return {
+      const result = {
         ...cleanedJson,
         destination,
         days,
         startDate,
       };
+
+      return { result, prompt };
   } catch (error) {
       console.error("Failed to generate and parse packing list stream:", error);
       console.error("Original AI response text accumulated:", fullText);

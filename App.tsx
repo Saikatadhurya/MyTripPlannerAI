@@ -577,7 +577,7 @@ const AppContent: React.FC = () => {
         if (simplePlanCancellationFlag.current) break;
 
         try {
-            const result = await generateItinerary(
+            const { result, prompt: itineraryPrompt } = await generateItinerary(
                 data.destination, data.startPoint, data.tripType, data.days, data.budget, data.vibe, data.persons, data.foodPreference, data.startDate, data.includeMedical, data.language, data.isRoundTrip, data.currency,
                 (chunk) => {
                     if (simplePlanCancellationFlag.current) throw new Error("Cancelled");
@@ -589,6 +589,8 @@ const AppContent: React.FC = () => {
             if (simplePlanCancellationFlag.current) break;
 
             setItinerary(result);
+            // Store prompt for token calculation when saving
+            (result as any).__prompt = itineraryPrompt;
             
             await new Promise(resolve => setTimeout(resolve, 1000));
             setItineraryAttemptCount(0);
@@ -695,7 +697,7 @@ const AppContent: React.FC = () => {
                 }
                 
                 try {
-                    const result = await generateItinerary(
+                    const { result, prompt: itineraryPrompt } = await generateItinerary(
                         data.destination, data.startPoint, data.tripType, data.days, data.budget, data.vibe, data.persons, data.foodPreference, data.startDate, data.includeMedical, data.language, data.isRoundTrip, data.currency,
                         (chunk) => {
                             if (cancellationFlags.current.itinerary) {
@@ -711,6 +713,8 @@ const AppContent: React.FC = () => {
                         return;
                     }
 
+                    // Store prompt for token calculation when saving
+                    (result as any).__prompt = itineraryPrompt;
                     setUnifiedPlan(prev => ({ ...prev, itinerary: result }));
                     
                     setUnifiedPlanLoadingStatus(prev => ({ ...prev, itinerary: 'done' }));
@@ -761,13 +765,15 @@ const AppContent: React.FC = () => {
           if (simplePlanCancellationFlag.current) break;
   
           try {
-              const result = await generatePackingList(data, (chunk) => {
+              const { result, prompt: packingPrompt } = await generatePackingList(data, (chunk) => {
                   if (simplePlanCancellationFlag.current) throw new Error("Cancelled");
                   if (!isUnified) setStreamedText(prev => prev + chunk);
               }, user?.gemini_api_key);
               
               if (simplePlanCancellationFlag.current) break;
   
+              // Store prompt for token calculation when saving
+              (result as any).__prompt = packingPrompt;
               if (!isUnified) {
                 setPackingList(result);
               }
@@ -825,13 +831,15 @@ const AppContent: React.FC = () => {
           if (simplePlanCancellationFlag.current) break;
   
           try {
-              const result = await generateFoodRecommendations(data, (chunk) => {
+              const { result, prompt: foodPrompt } = await generateFoodRecommendations(data, (chunk) => {
                   if (simplePlanCancellationFlag.current) throw new Error("Cancelled");
                   if (!isUnified) setStreamedText(prev => prev + chunk)
               }, user?.gemini_api_key);
               
               if (simplePlanCancellationFlag.current) break;
   
+              // Store prompt for token calculation when saving
+              (result as any).__prompt = foodPrompt;
               if (!isUnified) {
                 setFoodRecommendations(result);
               }
@@ -889,13 +897,15 @@ const AppContent: React.FC = () => {
           if (simplePlanCancellationFlag.current) break;
   
           try {
-              const result = await generateAppRecommendations(data, (chunk) => {
+              const { result, prompt: appPrompt } = await generateAppRecommendations(data, (chunk) => {
                   if (simplePlanCancellationFlag.current) throw new Error("Cancelled");
                   if (!isUnified) setStreamedText(prev => prev + chunk)
               }, user?.gemini_api_key);
               
               if (simplePlanCancellationFlag.current) break;
   
+              // Store prompt for token calculation when saving
+              (result as any).__prompt = appPrompt;
               if (!isUnified) {
                 setAppRecommendations(result);
               }
@@ -953,13 +963,15 @@ const AppContent: React.FC = () => {
           if (simplePlanCancellationFlag.current) break;
   
           try {
-              const result = await generateMusicRecommendations(data, (chunk) => {
+              const { result, prompt: musicPrompt } = await generateMusicRecommendations(data, (chunk) => {
                   if (simplePlanCancellationFlag.current) throw new Error("Cancelled");
                   if (!isUnified) setStreamedText(prev => prev + chunk)
               }, user?.gemini_api_key);
               
               if (simplePlanCancellationFlag.current) break;
   
+              // Store prompt for token calculation when saving
+              (result as any).__prompt = musicPrompt;
               if (!isUnified) {
                 setMusicRecommendations(result);
               }
@@ -1017,13 +1029,15 @@ const AppContent: React.FC = () => {
           if (simplePlanCancellationFlag.current) break;
   
           try {
-              const result = await generateLingoGuide(data, (chunk) => {
+              const { result, prompt: lingoPrompt } = await generateLingoGuide(data, (chunk) => {
                   if (simplePlanCancellationFlag.current) throw new Error("Cancelled");
                   if (!isUnified) setStreamedText(prev => prev + chunk)
               }, user?.gemini_api_key);
               
               if (simplePlanCancellationFlag.current) break;
   
+              // Store prompt for token calculation when saving
+              (result as any).__prompt = lingoPrompt;
               if (!isUnified) {
                 setLingoRecommendations(result);
               }

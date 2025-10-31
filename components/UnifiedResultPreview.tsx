@@ -82,85 +82,97 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
         if (plan.itinerary && !savedTypesRef.current.has('itinerary')) {
             availableTypes.push({
                 key: 'itinerary',
-                saver: () => saveItineraryRecommendation(
-                    questionnaireData,
-                    plan.itinerary,
-                    destination,
-                    language,
-                    questionnaireData,
-                    savedTripId || undefined,
-                    tripName
-                )
+                saver: async () => {
+                    await saveItineraryRecommendation(
+                        questionnaireData,
+                        plan.itinerary,
+                        destination,
+                        language,
+                        questionnaireData,
+                        savedTripId || undefined,
+                        tripName
+                    );
+                }
             });
         }
         if (plan.packingList && !savedTypesRef.current.has('packing')) {
             availableTypes.push({
                 key: 'packing',
-                saver: () => savePackingRecommendation(
-                    questionnaireData,
-                    plan.packingList,
-                    destination,
-                    language,
-                    questionnaireData,
-                    savedTripId || undefined,
-                    tripName
-                )
+                saver: async () => {
+                    await savePackingRecommendation(
+                        questionnaireData,
+                        plan.packingList,
+                        destination,
+                        language,
+                        questionnaireData,
+                        savedTripId || undefined,
+                        tripName
+                    );
+                }
             });
         }
         if (plan.foodRecommendations && !savedTypesRef.current.has('food')) {
             availableTypes.push({
                 key: 'food',
-                saver: () => saveFoodRecommendation(
-                    questionnaireData,
-                    plan.foodRecommendations,
-                    destination,
-                    language,
-                    questionnaireData,
-                    savedTripId || undefined,
-                    tripName
-                )
+                saver: async () => {
+                    await saveFoodRecommendation(
+                        questionnaireData,
+                        plan.foodRecommendations,
+                        destination,
+                        language,
+                        questionnaireData,
+                        savedTripId || undefined,
+                        tripName
+                    );
+                }
             });
         }
         if (plan.appRecommendations && !savedTypesRef.current.has('apps')) {
             availableTypes.push({
                 key: 'apps',
-                saver: () => saveAppRecommendation(
-                    questionnaireData,
-                    plan.appRecommendations,
-                    destination,
-                    language,
-                    questionnaireData,
-                    savedTripId || undefined,
-                    tripName
-                )
+                saver: async () => {
+                    await saveAppRecommendation(
+                        questionnaireData,
+                        plan.appRecommendations,
+                        destination,
+                        language,
+                        questionnaireData,
+                        savedTripId || undefined,
+                        tripName
+                    );
+                }
             });
         }
         if (plan.musicRecommendations && !savedTypesRef.current.has('music')) {
             availableTypes.push({
                 key: 'music',
-                saver: () => saveMusicRecommendation(
-                    questionnaireData,
-                    plan.musicRecommendations,
-                    destination,
-                    language,
-                    questionnaireData,
-                    savedTripId || undefined,
-                    tripName
-                )
+                saver: async () => {
+                    await saveMusicRecommendation(
+                        questionnaireData,
+                        plan.musicRecommendations,
+                        destination,
+                        language,
+                        questionnaireData,
+                        savedTripId || undefined,
+                        tripName
+                    );
+                }
             });
         }
         if (plan.lingoRecommendations && !savedTypesRef.current.has('lingo')) {
             availableTypes.push({
                 key: 'lingo',
-                saver: () => saveLingoRecommendation(
-                    questionnaireData,
-                    plan.lingoRecommendations,
-                    destination,
-                    language,
-                    questionnaireData,
-                    savedTripId || undefined,
-                    tripName
-                )
+                saver: async () => {
+                    await saveLingoRecommendation(
+                        questionnaireData,
+                        plan.lingoRecommendations,
+                        destination,
+                        language,
+                        questionnaireData,
+                        savedTripId || undefined,
+                        tripName
+                    );
+                }
             });
         }
 

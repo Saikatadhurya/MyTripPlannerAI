@@ -69,6 +69,7 @@ export interface SaveRecommendationRequest {
   tripContext?: TripContext;
   tripId?: string;
   tripName?: string;
+  prompt?: string;
 }
 
 export interface UpdateRecommendationRequest {

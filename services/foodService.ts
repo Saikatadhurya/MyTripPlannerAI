@@ -4,7 +4,7 @@ import { FoodFinderRequestData, FoodRecommendations } from '../types';
 import { extractJson, cleanCitations } from './jsonUtils';
 import { CookieUtils } from './cookieUtils';
 
-export const generateFoodRecommendations = async (data: FoodFinderRequestData, onChunk?: (chunk: string) => void, userApiKey?: string): Promise<FoodRecommendations> => {
+export const generateFoodRecommendations = async (data: FoodFinderRequestData, onChunk?: (chunk: string) => void, userApiKey?: string): Promise<{result: FoodRecommendations, prompt: string}> => {
   const apiKey = userApiKey || CookieUtils.getGeminiApiKey() || process.env.VITE_GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error("Gemini key not set. Please provide your Gemini API key in your profile settings.");
@@ -142,7 +142,7 @@ export const generateFoodRecommendations = async (data: FoodFinderRequestData, o
 
       const cleanedJson = cleanCitations(parsedJson);
 
-      return cleanedJson;
+      return { result: cleanedJson, prompt };
   } catch (error) {
       console.error("Failed to generate and parse food recommendations stream:", error);
       console.error("Original AI response text accumulated:", fullText);

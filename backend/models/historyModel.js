@@ -14,11 +14,12 @@ class HistoryModel {
   }
 
   // Save a new recommendation to history
-  async saveRecommendation({ userId, recommendationType, destination, language, requestData, responseData, title, tags, notes, tripContext, tripId, tripName }) {
+  async saveRecommendation({ userId, recommendationType, destination, language, requestData, responseData, title, tags, notes, tripContext, tripId, tripName, prompt }) {
     const client = await pool.connect();
     try {
       // Calculate token counts
-      const inputTokenCount = this.estimateTokenCount(requestData);
+      // Use the actual prompt sent to Gemini if provided, otherwise fall back to requestData
+      const inputTokenCount = prompt ? this.estimateTokenCount(prompt) : this.estimateTokenCount(requestData);
       const outputTokenCount = this.estimateTokenCount(responseData);
       
       const query = `

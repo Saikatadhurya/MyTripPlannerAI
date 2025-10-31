@@ -14,7 +14,7 @@ class HistoryController {
         });
       }
 
-      const { recommendationType, destination, language, requestData, responseData, title, tags, notes, tripContext, tripId, tripName } = req.body;
+      const { recommendationType, destination, language, requestData, responseData, title, tags, notes, tripContext, tripId, tripName, prompt } = req.body;
       const userId = req.user.id;
 
       const result = await historyModel.saveRecommendation({
@@ -29,7 +29,8 @@ class HistoryController {
         notes,
         tripContext,
         tripId,
-        tripName
+        tripName,
+        prompt
       });
 
       res.status(201).json({
