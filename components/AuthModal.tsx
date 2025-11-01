@@ -6,6 +6,7 @@ interface AuthModalProps {
   onClose: () => void;
   onLogin: (email: string, password: string) => void;
   onSignup: (full_name: string, email: string, password: string, confirmPassword: string) => void; // Changed 'name' to 'full_name'
+  onForgotPassword?: () => void;
   isLoading?: boolean;
   error?: string;
 }
@@ -15,6 +16,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
   onClose,
   onLogin,
   onSignup,
+  onForgotPassword,
   isLoading = false,
   error
 }) => {
@@ -204,6 +206,18 @@ const AuthModal: React.FC<AuthModalProps> = ({
             />
             {validationErrors.password && <p className="text-red-500 text-xs mt-1">{validationErrors.password}</p>}
           </div>
+
+          {isLoginMode && onForgotPassword && (
+            <div className="text-right">
+              <button
+                type="button"
+                onClick={onForgotPassword}
+                className="text-sm text-violet-600 font-semibold hover:text-violet-700 transition-colors duration-200"
+              >
+                Forgot Password?
+              </button>
+            </div>
+          )}
 
           {!isLoginMode && (
             <div>

@@ -20,6 +20,8 @@ import AppRouter from './components/AppRouter';
 import BottomNavBar from './components/BottomNavBar';
 import UnifiedResultPreview from './components/UnifiedResultPreview';
 import Footer from './components/Footer';
+import OTPVerification from './components/OTPVerification';
+import ForgotPassword from './components/ForgotPassword';
 
 
 
@@ -141,6 +143,9 @@ const AppContent: React.FC = () => {
   const [isAuthLoading, setIsAuthLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false); // New state for modal visibility
+  const [isOTPModalOpen, setIsOTPModalOpen] = useState(false);
+  const [isForgotPasswordModalOpen, setIsForgotPasswordModalOpen] = useState(false);
+  const [pendingVerificationEmail, setPendingVerificationEmail] = useState<string | null>(null);
 
   // Global logout handler for auto logout
   useEffect(() => {
@@ -242,7 +247,15 @@ const AppContent: React.FC = () => {
       navigate('/');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Login failed. Please try again.';
-      setAuthError(errorMessage);
+      
+      // Check if the error is about email verification
+      if (errorMessage.includes('verify your email') || errorMessage.includes('verification')) {
+        // Extract email from error context or use a different approach
+        // For now, we'll show the error and let user resend OTP from signup flow
+        setAuthError(errorMessage);
+      } else {
+        setAuthError(errorMessage);
+      }
     } finally {
       setIsAuthLoading(false);
     }
@@ -253,6 +266,15 @@ const AppContent: React.FC = () => {
     setAuthError(null);
     try {
       const response = await authService.signup({ full_name, email, password, confirmPassword });
+      
+      // Check if OTP verification is required
+      if (response.requiresVerification) {
+        setPendingVerificationEmail(response.email);
+        setIsAuthModalOpen(false);
+        setIsOTPModalOpen(true);
+        setIsAuthLoading(false);
+        return;
+      }
       
       // Wait a bit to ensure the token is properly set in authService
       await new Promise(resolve => setTimeout(resolve, 50));
@@ -279,6 +301,69 @@ const AppContent: React.FC = () => {
     } finally {
       setIsAuthLoading(false);
     }
+  };
+
+  const handleOTPVerification = async (otp: string) => {
+    if (!pendingVerificationEmail) return;
+    
+    setIsAuthLoading(true);
+    setAuthError(null);
+    try {
+      const response = await authService.verifyOTP(pendingVerificationEmail, otp);
+      
+      // Wait a bit to ensure the token is properly set in authService
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
+      // Fetch complete user profile
+      const profileResponse = await profileService.getProfile();
+      if (profileResponse.success && profileResponse.data?.user) {
+        const completeUser = {
+          ...response.user,
+          ...profileResponse.data.user
+        };
+        setUser(completeUser);
+        localStorage.setItem('planora_user', JSON.stringify(completeUser));
+      } else {
+        setUser(response.user);
+        localStorage.setItem('planora_user', JSON.stringify(response.user));
+      }
+      
+      setIsOTPModalOpen(false);
+      setPendingVerificationEmail(null);
+      navigate('/');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'OTP verification failed. Please try again.';
+      setAuthError(errorMessage);
+    } finally {
+      setIsAuthLoading(false);
+    }
+  };
+
+  const handleResendOTP = async () => {
+    if (!pendingVerificationEmail) return;
+    
+    setIsAuthLoading(true);
+    setAuthError(null);
+    try {
+      await authService.resendOTP(pendingVerificationEmail);
+      setAuthError(null); // Clear any previous errors
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to resend OTP. Please try again.';
+      setAuthError(errorMessage);
+    } finally {
+      setIsAuthLoading(false);
+    }
+  };
+
+  const handleForgotPassword = () => {
+    setIsAuthModalOpen(false);
+    setIsForgotPasswordModalOpen(true);
+  };
+
+  const handleForgotPasswordSuccess = () => {
+    setIsForgotPasswordModalOpen(false);
+    setIsAuthModalOpen(true);
+    setAuthError(null);
   };
 
   const handleLogout = () => {
@@ -1365,7 +1450,7 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
-  <Header user={user} onLogout={handleLogout} onEditProfile={handleEditProfile} onLogin={handleLogin} onSignup={handleSignup} isLoading={isAuthLoading} error={authError} isAuthModalOpen={isAuthModalOpen} onOpenAuthModal={() => setIsAuthModalOpen(true)} onCloseAuthModal={() => setIsAuthModalOpen(false)} onViewTokenUsage={() => navigate('/token-usage')} onGoToContact={() => navigate('/contact')} onGetApiKey={() => navigate('/get-api-key')} />
+  <Header user={user} onLogout={handleLogout} onEditProfile={handleEditProfile} onLogin={handleLogin} onSignup={handleSignup} isLoading={isAuthLoading} error={authError} isAuthModalOpen={isAuthModalOpen} onOpenAuthModal={() => setIsAuthModalOpen(true)} onCloseAuthModal={() => setIsAuthModalOpen(false)} onForgotPassword={handleForgotPassword} onViewTokenUsage={() => navigate('/token-usage')} onGoToContact={() => navigate('/contact')} onGetApiKey={() => navigate('/get-api-key')} />
   {/* Spacer to offset the fixed header so content isn't hidden behind it */}
   <div className="h-20 md:h-24" />
   <div ref={mainContentRef} className="flex-1 overflow-y-auto px-4 sm:px-6 md:px-0">
@@ -1386,6 +1471,61 @@ const AppContent: React.FC = () => {
       {/* Scroll to Top Button */}
       <ScrollToTopButton scrollContainerRef={mainContentRef} />
       {/* Auth modal is handled by Header via the AuthModal component */}
+      
+      {/* OTP Verification Modal */}
+      {isOTPModalOpen && pendingVerificationEmail && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/60 max-w-md w-full p-8 relative">
+            <button
+              onClick={() => {
+                setIsOTPModalOpen(false);
+                setPendingVerificationEmail(null);
+                setIsAuthModalOpen(true);
+              }}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors duration-200"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <OTPVerification
+              email={pendingVerificationEmail}
+              onVerify={handleOTPVerification}
+              onResend={handleResendOTP}
+              isLoading={isAuthLoading}
+              error={authError || undefined}
+              resendCooldown={60}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Forgot Password Modal */}
+      {isForgotPasswordModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/60 max-w-md w-full p-8 relative">
+            <button
+              onClick={() => {
+                setIsForgotPasswordModalOpen(false);
+                setIsAuthModalOpen(true);
+              }}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors duration-200"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <ForgotPassword
+              onBack={() => {
+                setIsForgotPasswordModalOpen(false);
+                setIsAuthModalOpen(true);
+              }}
+              onSuccess={handleForgotPasswordSuccess}
+            />
+          </div>
+        </div>
+      )}
+      
       <div className="hidden">
         {/* Debugging information */}
             <pre>{JSON.stringify({ currentView, user, itinerary, packingList, foodRecommendations, appRecommendations, musicRecommendations, lingoRecommendations, unifiedPlan, unifiedPlanLoadingStatus, error }, null, 2)}</pre>

@@ -15,6 +15,7 @@ interface HeaderProps {
   isAuthModalOpen: boolean;
   onOpenAuthModal: () => void;
   onCloseAuthModal: () => void;
+  onForgotPassword?: () => void;
   onViewTokenUsage: () => void;
   onGoToContact: () => void;
   onGetApiKey: () => void;
@@ -31,6 +32,7 @@ const Header: React.FC<HeaderProps> = ({
   isAuthModalOpen,
   onOpenAuthModal,
   onCloseAuthModal,
+  onForgotPassword,
   onViewTokenUsage,
   onGoToContact,
   onGetApiKey,
@@ -129,6 +131,7 @@ const Header: React.FC<HeaderProps> = ({
         onClose={onCloseAuthModal}
         onLogin={handleLogin}
         onSignup={handleSignup}
+        onForgotPassword={onForgotPassword}
         isLoading={isLoading}
         error={error}
       />

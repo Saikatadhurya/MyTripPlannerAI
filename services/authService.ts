@@ -30,6 +30,12 @@ export interface AuthResponse {
   token: string;
 }
 
+export interface SignupResponse {
+  message: string;
+  email: string;
+  requiresVerification: boolean;
+}
+
 export interface LoginCredentials {
   email: string;
   password: string;
@@ -161,7 +167,7 @@ class AuthService {
     }
   }
 
-  async signup(credentials: SignupCredentials): Promise<AuthResponse> {
+  async signup(credentials: SignupCredentials): Promise<SignupResponse> {
     try {
       const response = await axios.post(`${API_URL}/signup`, { 
         full_name: credentials.full_name, 
@@ -169,35 +175,11 @@ class AuthService {
         password: credentials.password 
       });
       
-      const { user, token } = response.data;
-
-      const newUser: User = {
-        id: user.id,
-        full_name: user.full_name,
-        email: user.email,
-        createdAt: user.created_at,
-        gemini_api_key: user.gemini_api_key, // Include Gemini API key from backend
+      return {
+        message: response.data.message,
+        email: response.data.email,
+        requiresVerification: response.data.requiresVerification
       };
-
-      this.currentUser = newUser;
-      this.token = token;
-      this.saveSession(newUser, token);
-
-      // Handle Gemini API key cookie
-      if (user.gemini_api_key) {
-        CookieUtils.setGeminiApiKey(user.gemini_api_key);
-      }
-
-      // Re-initialize default API key (will be encrypted and stored if available)
-      // This happens asynchronously but won't block signup
-      CookieUtils.reinitializeDefaultKey().catch(() => {
-        // Silently fail - default key initialization is optional
-      });
-
-      // Start token monitoring for auto logout
-      startTokenMonitoring();
-
-      return { user: newUser, token };
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
         throw new Error(error.response.data.message || 'Signup failed');
@@ -205,6 +187,110 @@ class AuthService {
         throw error;
       }
       throw new Error('An unknown error occurred during signup');
+    }
+  }
+
+  async verifyOTP(email: string, otpCode: string): Promise<AuthResponse> {
+    try {
+      const response = await axios.post(`${API_URL}/verify-otp`, {
+        email,
+        otpCode
+      });
+      
+      const { user, token } = response.data;
+
+      const verifiedUser: User = {
+        id: user.id,
+        full_name: user.full_name,
+        email: user.email,
+        createdAt: user.created_at,
+        gemini_api_key: user.gemini_api_key,
+      };
+
+      this.currentUser = verifiedUser;
+      this.token = token;
+      this.saveSession(verifiedUser, token);
+
+      // Handle Gemini API key cookie
+      if (user.gemini_api_key) {
+        CookieUtils.setGeminiApiKey(user.gemini_api_key);
+      }
+
+      // Re-initialize default API key
+      CookieUtils.reinitializeDefaultKey().catch(() => {
+        // Silently fail - default key initialization is optional
+      });
+
+      // Start token monitoring for auto logout
+      startTokenMonitoring();
+
+      return { user: verifiedUser, token };
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        throw new Error(error.response.data.message || 'OTP verification failed');
+      } else if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('An unknown error occurred during OTP verification');
+    }
+  }
+
+  async resendOTP(email: string): Promise<void> {
+    try {
+      await axios.post(`${API_URL}/resend-otp`, { email });
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        throw new Error(error.response.data.message || 'Failed to resend OTP');
+      } else if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('An unknown error occurred while resending OTP');
+    }
+  }
+
+  async forgotPassword(email: string): Promise<void> {
+    try {
+      await axios.post(`${API_URL}/forgot-password`, { email });
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        throw new Error(error.response.data.message || 'Failed to send password reset OTP');
+      } else if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('An unknown error occurred while requesting password reset');
+    }
+  }
+
+  async verifyResetOTP(email: string, otpCode: string): Promise<void> {
+    try {
+      await axios.post(`${API_URL}/verify-reset-otp`, {
+        email,
+        otpCode
+      });
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        throw new Error(error.response.data.message || 'OTP verification failed');
+      } else if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('An unknown error occurred during OTP verification');
+    }
+  }
+
+  async resetPassword(email: string, otpCode: string, newPassword: string): Promise<void> {
+    try {
+      await axios.post(`${API_URL}/reset-password`, {
+        email,
+        otpCode,
+        newPassword
+      });
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        throw new Error(error.response.data.message || 'Failed to reset password');
+      } else if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('An unknown error occurred while resetting password');
     }
   }
 
