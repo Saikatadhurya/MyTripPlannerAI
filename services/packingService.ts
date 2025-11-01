@@ -2,14 +2,18 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { PackingList, PackingListRequestData } from '../types';
 import { extractJson, cleanCitations } from './jsonUtils';
-import { incrementUsage } from './usageService';
+import { CookieUtils } from './cookieUtils';
 
-export const generatePackingList = async (data: PackingListRequestData, onChunk?: (chunk: string) => void): Promise<PackingList> => {
-  if (!process.env.API_KEY) {
-    throw new Error("API key is missing. Please set it in your environment variables.");
+export const generatePackingList = async (data: PackingListRequestData, onChunk?: (chunk: string) => void, userApiKey?: string): Promise<{result: PackingList, prompt: string}> => {
+  const { apiKey, isUsingDefaultKey } = await CookieUtils.getApiKeyWithSource(userApiKey);
+  
+  // Ensure API key is properly trimmed
+  if (!apiKey || apiKey.trim().length === 0) {
+    throw new Error("Invalid API key: key is empty or whitespace only");
   }
+  const cleanApiKey = apiKey.trim();
 
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey: cleanApiKey });
 
   const { destination, startDate, days, language, coveredDestinations } = data;
 
@@ -98,14 +102,14 @@ export const generatePackingList = async (data: PackingListRequestData, onChunk?
       
       const cleanedJson = cleanCitations(parsedJson);
 
-      // try { await incrementUsage('packing'); } catch (e) { console.error('Failed to increment usage for packing', e); }
-
-      return {
+      const result = {
         ...cleanedJson,
         destination,
         days,
         startDate,
       };
+
+      return { result, prompt };
   } catch (error) {
       console.error("Failed to generate and parse packing list stream:", error);
       console.error("Original AI response text accumulated:", fullText);
@@ -119,6 +123,9 @@ export const generatePackingList = async (data: PackingListRequestData, onChunk?
         const combinedErrorText = (error.message + fullText).toLowerCase();
 
         if (combinedErrorText.includes("quota") || combinedErrorText.includes("rate limit") || combinedErrorText.includes("429")) {
+            if (isUsingDefaultKey) {
+                throw new Error("[429] The default API key has reached its quota limit. Please set your own Gemini API key in your profile settings to continue.");
+            }
             throw new Error("[429] You have exceeded the request limit. Please check your plan and billing details and try again later.");
         }
         if (combinedErrorText.includes("overloaded") || combinedErrorText.includes("server error") || combinedErrorText.includes("503")) {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MusicRecommendations, MusicItem, MusicGenreCategory } from '../types';
 import { useSaveRecommendation } from '../hooks/useSaveRecommendation';
+import Toast from './Toast';
 
 const AppLinkButton: React.FC<{ appName: MusicItem['appLinks'][0]['appName'], musicTitle: string, artist: string }> = ({ appName, musicTitle, artist }) => {
     const styles = {
@@ -139,20 +140,63 @@ interface MusicFinderResultProps {
 const MusicFinderResult: React.FC<MusicFinderResultProps> = ({ recommendations, onRegenerate, isUnifiedView = false, requestData, isHistoryView = false }) => {
     const hasMusic = recommendations.musicCategories && recommendations.musicCategories.length > 0;
     const [hasBeenSaved, setHasBeenSaved] = useState(false);
+    const [savedId, setSavedId] = useState<string | null>(null);
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
     const { saveMusicRecommendation } = useSaveRecommendation();
     
     // Save to history when component mounts (only if not in unified view and request data is available)
     useEffect(() => {
-        console.log('MusicFinderResult useEffect:', { isUnifiedView, requestData, recommendations, hasBeenSaved, isHistoryView });
         // Don't save if this is a history view
         if (!isUnifiedView && requestData && !hasBeenSaved && !isHistoryView) {
-            console.log('Saving music recommendation to history...');
-            saveMusicRecommendation(requestData, recommendations, recommendations.destination, requestData.language);
-            setHasBeenSaved(true);
-        } else {
-            console.log('Not saving music recommendation:', { isUnifiedView, hasRequestData: !!requestData, hasBeenSaved, isHistoryView });
+            const saveRecommendation = async () => {
+                const id = await saveMusicRecommendation(requestData, recommendations, recommendations.destination, requestData.language);
+                if (id) {
+                    setSavedId(id);
+                }
+                setHasBeenSaved(true);
+            };
+            saveRecommendation();
         }
     }, [isUnifiedView, requestData, recommendations, saveMusicRecommendation, hasBeenSaved, isHistoryView]);
+    
+    const handleCopyLink = async () => {
+        if (!savedId) {
+            setToast({ message: 'Recommendation is still being saved. Please wait a moment.', type: 'error' });
+            return;
+        }
+        try {
+            const shareUrl = `${window.location.origin}/share/${savedId}`;
+            await navigator.clipboard.writeText(shareUrl);
+            setToast({ message: 'Shareable link copied to clipboard!', type: 'success' });
+        } catch (error) {
+            setToast({ message: 'Failed to copy link. Please try again.', type: 'error' });
+        }
+    };
+
+    const handleShare = async () => {
+        if (!savedId) {
+            setToast({ message: 'Recommendation is still being saved. Please wait a moment.', type: 'error' });
+            return;
+        }
+        try {
+            const shareUrl = `${window.location.origin}/share/${savedId}`;
+            if (navigator.share) {
+                await navigator.share({
+                    title: `The Sound of ${recommendations.destination}`,
+                    text: 'Check out this amazing music guide!',
+                    url: shareUrl,
+                });
+                setToast({ message: 'Recommendation shared successfully!', type: 'success' });
+            } else {
+                await navigator.clipboard.writeText(shareUrl);
+                setToast({ message: 'Shareable link copied to clipboard!', type: 'success' });
+            }
+        } catch (error: any) {
+            if (error.name !== 'AbortError') {
+                setToast({ message: 'Failed to share link. Please try again.', type: 'error' });
+            }
+        }
+    };
 
     return (
         <div className="max-w-5xl mx-auto space-y-12 animated-card mb-16" id="music-finder-result-content">
@@ -176,6 +220,30 @@ const MusicFinderResult: React.FC<MusicFinderResultProps> = ({ recommendations, 
                     Your personalized guide to the local music scene.
                 </p>
             </header>
+            
+            {/* Share buttons - Only show when saved and not in history view */}
+            {savedId && !isHistoryView && !isUnifiedView && (
+                <div className="flex items-center justify-center gap-3 py-4 no-print">
+                    <button
+                        onClick={handleCopyLink}
+                        className="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-violet-600 to-violet-700 text-white font-semibold rounded-full hover:from-violet-700 hover:to-violet-800 transition-all duration-300 shadow-md text-sm"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                        Copy Link
+                    </button>
+                    <button
+                        onClick={handleShare}
+                        className="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-full hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-md text-sm"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                        </svg>
+                        Share
+                    </button>
+                </div>
+            )}
             
             <div className="space-y-10">
                 {hasMusic ? (
@@ -210,6 +278,15 @@ const MusicFinderResult: React.FC<MusicFinderResultProps> = ({ recommendations, 
                     )}
                 </div>
             </div>
+            
+            {/* Toast notification */}
+            {toast && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={() => setToast(null)}
+                />
+            )}
         </div>
     );
 };

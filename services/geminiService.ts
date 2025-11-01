@@ -1,24 +1,28 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Budget, Itinerary, Vibe, FoodPreference, BlogReference, TripType, LocationSuggestion } from '../types';
 import { extractJson, cleanCitations } from './jsonUtils';
-import { incrementUsage } from './usageService';
+import { CookieUtils } from './cookieUtils';
 
 // Cache for destination suggestions to avoid redundant API calls
 const suggestionsCache = new Map<string, LocationSuggestion[]>();
 
-export const getDestinationSuggestions = async (query: string): Promise<LocationSuggestion[]> => {
+export const getDestinationSuggestions = async (query: string, userApiKey?: string): Promise<LocationSuggestion[]> => {
   const cacheKey = query.trim().toLowerCase();
   if (suggestionsCache.has(cacheKey)) {
     return suggestionsCache.get(cacheKey)!;
   }
 
-  if (!process.env.API_KEY) {
-    console.error("API key is missing.");
-    return [];
+  const { apiKey, isUsingDefaultKey } = await CookieUtils.getApiKeyWithSource(userApiKey);
+  
+  // Ensure API key is properly trimmed and not empty
+  if (!apiKey || apiKey.trim().length === 0) {
+    throw new Error("Invalid API key: key is empty or whitespace only");
   }
+  
+  const cleanApiKey = apiKey.trim();
 
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = new GoogleGenAI({ apiKey: cleanApiKey });
 
     const prompt = query.trim()
         ? `You are a master geographer AI. Based on the user input "${query}", provide up to 5 location suggestions.
@@ -63,19 +67,58 @@ export const getDestinationSuggestions = async (query: string): Promise<Location
     suggestionsCache.set(cacheKey, suggestions);
     return suggestions;
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error fetching destination suggestions from AI:", error);
+    
+    // Check if it's an API key error - handle various error structures
+    const errorMessage = error?.message || '';
+    const errorString = JSON.stringify(error || {});
+    const nestedError = error?.error;
+    const nestedErrorMessage = nestedError?.message || '';
+    
+    // Check for quota/exhaustion errors when using default key
+    const combinedErrorText = (errorMessage + errorString + nestedErrorMessage).toLowerCase();
+    const isQuotaError = combinedErrorText.includes("quota") || combinedErrorText.includes("rate limit") || combinedErrorText.includes("429") || combinedErrorText.includes("exceeded");
+    
+    if (isQuotaError && isUsingDefaultKey) {
+      throw new Error('The default API key has reached its quota limit. Please set your own Gemini API key in your profile settings to continue.');
+    }
+    
+    // Check for various API key error patterns
+    if (
+      errorMessage.includes('API key not valid') ||
+      errorMessage.includes('API_KEY_INVALID') ||
+      errorMessage.includes('INVALID_ARGUMENT') ||
+      errorString.includes('API key not valid') ||
+      errorString.includes('API_KEY_INVALID') ||
+      nestedErrorMessage.includes('API key not valid') ||
+      nestedErrorMessage.includes('API key') ||
+      (nestedError?.code === 400 && nestedErrorMessage?.includes('API key')) ||
+      (nestedError?.status === 'INVALID_ARGUMENT' && nestedErrorMessage?.includes('API key'))
+    ) {
+      throw new Error('API key not valid. Please provide a valid Gemini API key in your profile settings.');
+    }
+    
+    // Re-throw if it's already a custom error
+    if (error instanceof Error && error.message.includes('Gemini key not set')) {
+      throw error;
+    }
+    
+    // For other errors, return empty array to not break the UI
     return [];
   }
 };
 
-export const getReferenceBlogs = async (destination: string, language: string): Promise<BlogReference[]> => {
-  if (!process.env.API_KEY) {
-    console.error("API key is missing.");
-    return [];
+export const getReferenceBlogs = async (destination: string, language: string, userApiKey?: string): Promise<BlogReference[]> => {
+  const { apiKey, isUsingDefaultKey } = await CookieUtils.getApiKeyWithSource(userApiKey);
+  
+  // Ensure API key is properly trimmed
+  if (!apiKey || apiKey.trim().length === 0) {
+    throw new Error("Invalid API key: key is empty or whitespace only");
   }
+  const cleanApiKey = apiKey.trim();
 
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey: cleanApiKey });
 
   try {
     // --- Find blogs using Google Search ---
@@ -122,6 +165,17 @@ export const getReferenceBlogs = async (destination: string, language: string): 
 
   } catch (error) {
     console.error("Error finding reference blogs:", error);
+    
+    // Check for quota errors when using default key
+    if (error instanceof Error) {
+      const errorText = (error.message || '').toLowerCase();
+      const isQuotaError = errorText.includes("quota") || errorText.includes("rate limit") || errorText.includes("429") || errorText.includes("exceeded");
+      
+      if (isQuotaError && isUsingDefaultKey) {
+        throw new Error('The default API key has reached its quota limit. Please set your own Gemini API key in your profile settings to continue.');
+      }
+    }
+    
     return [];
   }
 };
@@ -141,14 +195,19 @@ export const generateItinerary = async (
   language: string,
   isRoundTrip: boolean | undefined,
   currency: string,
-  onChunk?: (chunk: string) => void
-): Promise<Itinerary> => {
+  onChunk?: (chunk: string) => void,
+  userApiKey?: string
+): Promise<{result: Itinerary, prompt: string}> => {
 
-  if (!process.env.API_KEY) {
-    throw new Error("API key is missing. Please set it in your environment variables.");
+  const { apiKey, isUsingDefaultKey } = await CookieUtils.getApiKeyWithSource(userApiKey);
+  
+  // Ensure API key is properly trimmed
+  if (!apiKey || apiKey.trim().length === 0) {
+    throw new Error("Invalid API key: key is empty or whitespace only");
   }
+  const cleanApiKey = apiKey.trim();
 
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey: cleanApiKey });
   
   const regionalTripInstructions = `
   REGIONAL TRAVEL INSTRUCTION:
@@ -380,10 +439,7 @@ export const generateItinerary = async (
 
         const cleanedJson = cleanCitations(parsedJson);
 
-        // Increment usage on successful generation
-        // try { await incrementUsage('itinerary'); } catch (e) { console.error('Failed to increment usage for itinerary', e); }
-
-        return {
+        const result = {
             ...cleanedJson,
             startPoint,
             tripType,
@@ -396,6 +452,8 @@ export const generateItinerary = async (
             language,
             currency,
         };
+
+        return { result, prompt };
     } catch (error) {
         console.error("Failed to generate and parse itinerary stream:", error);
         console.error("Original AI response text accumulated:", fullText);
@@ -409,6 +467,9 @@ export const generateItinerary = async (
             const combinedErrorText = (error.message + fullText).toLowerCase();
     
             if (combinedErrorText.includes("quota") || combinedErrorText.includes("rate limit") || combinedErrorText.includes("429")) {
+                if (isUsingDefaultKey) {
+                    throw new Error("[429] The default API key has reached its quota limit. Please set your own Gemini API key in your profile settings to continue.");
+                }
                 throw new Error("[429] You have exceeded the request limit. Please check your plan and billing details and try again later.");
             }
             if (combinedErrorText.includes("overloaded") || combinedErrorText.includes("server error") || combinedErrorText.includes("503")) {

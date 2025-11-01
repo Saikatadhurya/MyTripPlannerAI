@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { LingoFinderRequestData, LocationSuggestion, PopularDestination } from '../types';
 import { getDestinationSuggestions } from '../services/geminiService';
-import { useQuotas } from '../hooks/useQuotas';
 import { User } from '../services/authService';
 import BackToHomeButton from './BackToHomeButton';
 import SelectionPage from './SelectionPage';
@@ -24,7 +23,6 @@ const languages = [
 ];
 
 const LingoFinderForm: React.FC<LingoFinderFormProps> = ({ onSubmit, isLoading, error, onBack, onCancel, streamedText, initialData, user }) => {
-  const { quotas, quotasLoading } = useQuotas(user);
   const [formData, setFormData] = useState<LingoFinderRequestData>(initialData || {
     destination: '',
     language: 'English (en)',
@@ -32,6 +30,7 @@ const LingoFinderForm: React.FC<LingoFinderFormProps> = ({ onSubmit, isLoading, 
 
   const [suggestions, setSuggestions] = useState<LocationSuggestion[]>([]);
   const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false);
+  const [apiKeyError, setApiKeyError] = useState<string | null>(null);
   const [isDestinationSelected, setIsDestinationSelected] = useState(!!initialData?.destination);
   const [destinationError, setDestinationError] = useState<string | null>(null);
   const [popularDestinations, setPopularDestinations] = useState<PopularDestination[]>([]);
@@ -79,9 +78,21 @@ const LingoFinderForm: React.FC<LingoFinderFormProps> = ({ onSubmit, isLoading, 
       setIsSuggestionsLoading(true);
       debounceTimeout.current = setTimeout(() => {
         if (!isSelectingSuggestion.current) {
-          getDestinationSuggestions(value).then(results => {
+          getDestinationSuggestions(value, user?.gemini_api_key).then(results => {
             setSuggestions(results);
             setIsSuggestionsLoading(false);
+            setApiKeyError(null); // Clear any previous API key errors
+          }).catch(error => {
+            setSuggestions([]);
+            setIsSuggestionsLoading(false);
+            
+            // Check if it's a Gemini API key error
+            const errorMessage = error?.message || '';
+            if (errorMessage.includes('Gemini key not set') || errorMessage.includes('API key not valid')) {
+              setApiKeyError('API key not valid. Please provide a valid Gemini API key in your profile settings to search for destinations.');
+            } else {
+              setApiKeyError('Failed to fetch destination suggestions. Please try again.');
+            }
           });
         }
       }, 500);
@@ -161,9 +172,21 @@ const LingoFinderForm: React.FC<LingoFinderFormProps> = ({ onSubmit, isLoading, 
       if (value.trim().length > 1) {
         setIsSuggestionsLoading(true);
         debounceTimeout.current = setTimeout(() => {
-          getDestinationSuggestions(value).then(results => {
+          getDestinationSuggestions(value, user?.gemini_api_key).then(results => {
             setSuggestions(results);
             setIsSuggestionsLoading(false);
+            setApiKeyError(null); // Clear any previous API key errors
+          }).catch(error => {
+            setSuggestions([]);
+            setIsSuggestionsLoading(false);
+            
+            // Check if it's a Gemini API key error
+            const errorMessage = error?.message || '';
+            if (errorMessage.includes('Gemini key not set') || errorMessage.includes('API key not valid')) {
+              setApiKeyError('API key not valid. Please provide a valid Gemini API key in your profile settings to search for destinations.');
+            } else {
+              setApiKeyError('Failed to fetch destination suggestions. Please try again.');
+            }
           });
         }, 500);
       } else {
@@ -183,10 +206,7 @@ const LingoFinderForm: React.FC<LingoFinderFormProps> = ({ onSubmit, isLoading, 
         setDestinationError("Please pick a location from the list to lock it in! 🗺️");
         return;
     }
-
-    // Check quota limits
-    if (user && quotas.lingo && quotas.lingo.remaining <= 0) {
-        setDestinationError("You have reached your weekly limit for language guides. Please try again next week or upgrade your plan.");
+    if (apiKeyError) {
         return;
     }
 
@@ -246,6 +266,7 @@ const LingoFinderForm: React.FC<LingoFinderFormProps> = ({ onSubmit, isLoading, 
             popularItems={popularItems}
             renderPopularItem={renderPopularItem}
             accentColor="sky"
+            error={apiKeyError && selectionView?.field === 'destination' ? apiKeyError : null}
         />
     );
   };
@@ -257,21 +278,20 @@ const LingoFinderForm: React.FC<LingoFinderFormProps> = ({ onSubmit, isLoading, 
       <div className="text-center mb-10">
         <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Local Lingo Guide</h1>
         <p className="mt-2 text-lg text-slate-600">Get essential phrases for your destination.</p>
-        {user && (
-          <div className="mt-3 inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-sky-100 text-sky-800">
-            {quotasLoading ? (
-              <>⏳ Loading limits...</>
-            ) : (
-              <>💬 {quotas.lingo ? `${quotas.lingo.remaining}/${quotas.lingo.weekly_limit}` : '0/2'} uses left this week</>
-            )}
-          </div>
-        )}
       </div>
 
       {error && (
         <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md mb-6" role="alert">
           <p className="font-bold">Oops!</p>
-          <p>{error}</p>
+          {typeof error === 'string' && error.toLowerCase().includes('gemini') && error.toLowerCase().includes('key') ? (
+            <p>
+              Gemini API key not set. Please add your API key in{' '}
+              <a href="/profile" className="font-semibold underline hover:text-red-800">Edit Profile</a>
+              {' '}to continue.
+            </p>
+          ) : (
+            <p>{error}</p>
+          )}
         </div>
       )}
 
@@ -302,6 +322,16 @@ const LingoFinderForm: React.FC<LingoFinderFormProps> = ({ onSubmit, isLoading, 
             <div style={{ animation: 'validation-fade-in 0.3s ease' }} className="mt-2 text-sm text-rose-700 bg-rose-100/60 p-2 rounded-md flex items-center space-x-2">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
                 <span>{destinationError}</span>
+            </div>
+          )}
+          {apiKeyError && (
+            <div style={{ animation: 'validation-fade-in 0.3s ease' }} className="mt-2 text-sm text-amber-700 bg-amber-100/60 p-2 rounded-md flex items-center space-x-2">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+                <span className="flex items-center flex-wrap gap-1">
+                  Gemini API key not set. Please add your API key in{' '}
+                  <a href="/profile" className="font-semibold underline hover:text-amber-800">Edit Profile</a>
+                  {' '}to search for destinations.
+                </span>
             </div>
           )}
         </div>
@@ -354,13 +384,13 @@ const LingoFinderForm: React.FC<LingoFinderFormProps> = ({ onSubmit, isLoading, 
             )}
         </div>
 
-        <div className="text-center pt-4 mb-32 pb-12">
+        <div className="text-center pt-4 mb-24 pb-24">
           <button
             type="submit"
             className="w-full sm:w-auto px-10 py-4 bg-sky-600 text-white font-bold rounded-full hover:bg-sky-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:bg-sky-400/80 disabled:cursor-not-allowed disabled:shadow-md disabled:scale-100"
-            disabled={!isDestinationSelected || !!destinationError || isLoading || quotasLoading || (user && quotas.lingo && quotas.lingo.remaining <= 0)}
+            disabled={!isDestinationSelected || !!destinationError || !!apiKeyError || isLoading}
           >
-            {quotasLoading ? '⏳ Loading limits...' : (user && quotas.lingo && quotas.lingo.remaining <= 0) ? '🚫 Limit Reached' : '🗣️ Generate Phrasebook'}
+            🗣️ Generate Phrasebook
           </button>
         </div>
       </form>

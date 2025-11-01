@@ -81,14 +81,10 @@ const PackingListPreview: React.FC<PackingListPreviewProps> = ({ packingList, on
     
     // Save to history when component mounts (only if not in unified view and request data is available)
     useEffect(() => {
-        console.log('PackingListPreview useEffect:', { isUnifiedView, requestData, packingList, hasBeenSaved, isHistoryView });
         // Don't save if this is a history view
         if (!isUnifiedView && requestData && !hasBeenSaved && !isHistoryView) {
-            console.log('Saving packing recommendation to history...');
             savePackingRecommendation(requestData, packingList, packingList.destination, requestData.language);
             setHasBeenSaved(true);
-        } else {
-            console.log('Not saving packing recommendation:', { isUnifiedView, hasRequestData: !!requestData, hasBeenSaved, isHistoryView });
         }
     }, [isUnifiedView, requestData, packingList, savePackingRecommendation, hasBeenSaved, isHistoryView]);
     

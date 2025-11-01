@@ -1,15 +1,19 @@
 import { GoogleGenAI } from "@google/genai";
 import { AppFinderRequestData, AppRecommendations } from '../types';
 import { extractJson, cleanCitations } from './jsonUtils';
-import { incrementUsage } from './usageService';
+import { CookieUtils } from './cookieUtils';
 
-export const generateAppRecommendations = async (data: AppFinderRequestData, onChunk?: (chunk: string) => void): Promise<AppRecommendations> => {
-  if (!process.env.API_KEY) {
-    throw new Error("API key is missing. Please set it in your environment variables.");
+export const generateAppRecommendations = async (data: AppFinderRequestData, onChunk?: (chunk: string) => void, userApiKey?: string): Promise<{result: AppRecommendations, prompt: string}> => {
+  const { apiKey, isUsingDefaultKey } = await CookieUtils.getApiKeyWithSource(userApiKey);
+  
+  // Ensure API key is properly trimmed
+  if (!apiKey || apiKey.trim().length === 0) {
+    throw new Error("Invalid API key: key is empty or whitespace only");
   }
+  const cleanApiKey = apiKey.trim();
 
   const { destination, language, coveredDestinations } = data;
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey: cleanApiKey });
   
   const isMultiStop = coveredDestinations && coveredDestinations.length > 1;
   const destinationsString = isMultiStop ? coveredDestinations.map(d => d.name).join(', ') : destination;
@@ -109,9 +113,7 @@ export const generateAppRecommendations = async (data: AppFinderRequestData, onC
 
       const cleanedJson = cleanCitations(parsedJson);
 
-      // try { await incrementUsage('apps'); } catch (e) { console.error('Failed to increment usage for apps', e); }
-
-      return cleanedJson;
+      return { result: cleanedJson, prompt };
   } catch (error) {
       console.error("Failed to generate and parse app recommendations stream:", error);
       console.error("Original AI response text accumulated:", fullText);
@@ -125,6 +127,9 @@ export const generateAppRecommendations = async (data: AppFinderRequestData, onC
         const combinedErrorText = (error.message + fullText).toLowerCase();
 
         if (combinedErrorText.includes("quota") || combinedErrorText.includes("rate limit") || combinedErrorText.includes("429")) {
+            if (isUsingDefaultKey) {
+                throw new Error("[429] The default API key has reached its quota limit. Please set your own Gemini API key in your profile settings to continue.");
+            }
             throw new Error("[429] You have exceeded the request limit. Please check your plan and billing details and try again later.");
         }
         if (combinedErrorText.includes("overloaded") || combinedErrorText.includes("server error") || combinedErrorText.includes("503")) {

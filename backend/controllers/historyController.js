@@ -14,7 +14,7 @@ class HistoryController {
         });
       }
 
-      const { recommendationType, destination, language, requestData, responseData, title, tags, notes, tripContext, tripId, tripName } = req.body;
+      const { recommendationType, destination, language, requestData, responseData, title, tags, notes, tripContext, tripId, tripName, prompt } = req.body;
       const userId = req.user.id;
 
       const result = await historyModel.saveRecommendation({
@@ -29,7 +29,8 @@ class HistoryController {
         notes,
         tripContext,
         tripId,
-        tripName
+        tripName,
+        prompt
       });
 
       res.status(201).json({
@@ -548,6 +549,24 @@ class HistoryController {
       res.status(500).json({
         success: false,
         message: 'Server error while deleting unified trip'
+      });
+    }
+  }
+
+  // Get token usage statistics
+  async getTokenUsageStats(req, res) {
+    try {
+      const userId = req.user.id;
+      const result = await historyModel.getTokenUsageStats({ userId });
+      
+      res.json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Server error while fetching token usage statistics'
       });
     }
   }

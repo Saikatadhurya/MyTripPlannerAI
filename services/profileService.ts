@@ -3,6 +3,7 @@ import { User } from './authService';
 export interface ProfileUpdateData {
   full_name?: string;
   email?: string;
+  gemini_api_key?: string | null;
 }
 
 export interface PasswordChangeData {

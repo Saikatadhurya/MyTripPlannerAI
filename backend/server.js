@@ -17,19 +17,26 @@ const app = express();
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Get the frontend URL, with fallback logic for production
+const frontendUrl = process.env.FRONTEND_URL || 
+                     process.env.BASE_URL || 
+                     (process.env.NODE_ENV === 'production' ? process.env.RENDER_URL : 'http://localhost:5000');
+
 app.use(cors({
-    origin: process.env.FRONTEND_URL || process.env.BASE_URL || 'http://localhost:5000',
+    origin: frontendUrl,
     credentials: true
 }));
 
 // Session configuration
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'your-session-secret-key',
+    secret: process.env.SESSION_SECRET || process.env.NODE_ENV === 'production' ? 'your-production-secret-key-change-this' : 'your-session-secret-key',
     resave: false,
     saveUninitialized: false,
     cookie: {
-        secure: process.env.NODE_ENV === 'production',
+        secure: process.env.NODE_ENV === 'production', // HTTPS in production
         httpOnly: true,
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Required for cross-origin cookies
         maxAge: 24 * 60 * 60 * 1000 // 24 hours
     }
 }));
@@ -57,10 +64,8 @@ app.use((req, res) => {
 });
 
 const PORT = process.env.PORT || 5000;
-const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
+const BASE_URL = process.env.BASE_URL || 
+                  (process.env.RENDER_URL ? process.env.RENDER_URL : `http://localhost:${PORT}`);
 
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-    console.log(`Frontend available at: ${BASE_URL}`);
-    console.log(`API available at: ${BASE_URL}/api`);
 });

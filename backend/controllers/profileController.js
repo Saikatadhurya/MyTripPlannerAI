@@ -25,7 +25,8 @@ class ProfileController {
             created_at: user.created_at,
             updated_at: user.updated_at,
             social_accounts: user.social_accounts,
-            has_password: user.has_password
+            has_password: user.has_password,
+            gemini_api_key: user.gemini_api_key
           }
         }
       });
@@ -42,13 +43,13 @@ class ProfileController {
   async updateProfile(req, res) {
     try {
       const userId = req.user.id;
-      const { full_name, email } = req.body;
+      const { full_name, email, gemini_api_key } = req.body;
 
       // Validate input
-      if (!full_name && !email) {
+      if (!full_name && !email && gemini_api_key === undefined) {
         return res.status(400).json({
           success: false,
-          message: 'At least one field (full_name or email) is required'
+          message: 'At least one field (full_name, email, or gemini_api_key) is required'
         });
       }
 
@@ -66,11 +67,49 @@ class ProfileController {
         });
       }
 
+      if (gemini_api_key !== undefined && gemini_api_key !== null && gemini_api_key !== '') {
+        // Basic validation for Gemini API key format
+        if (typeof gemini_api_key !== 'string' || gemini_api_key.trim().length < 10) {
+          return res.status(400).json({
+            success: false,
+            message: 'Invalid Gemini API key format'
+          });
+        }
+      }
+
       const updates = {};
       if (full_name) updates.full_name = full_name.trim();
       if (email) updates.email = email.toLowerCase().trim();
+      if (gemini_api_key !== undefined) {
+        updates.gemini_api_key = gemini_api_key === null ? null : gemini_api_key.trim();
+      }
 
       const updatedUser = await userModel.updateProfile(userId, updates);
+
+      // Handle Gemini API key cookie - use decrypted value from updatedUser
+      if (gemini_api_key !== undefined) {
+        if (gemini_api_key === null) {
+          // Clear the cookie when API key is deleted
+          res.clearCookie('gemini_api_key', {
+            path: '/',
+            httpOnly: false, // Allow frontend to read it
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict'
+          });
+        } else {
+          // Set the cookie with the decrypted value from updatedUser
+          // updatedUser.gemini_api_key is already decrypted by userModel
+          if (updatedUser.gemini_api_key) {
+            res.cookie('gemini_api_key', updatedUser.gemini_api_key, {
+              maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+              path: '/',
+              httpOnly: false, // Allow frontend to read it
+              secure: process.env.NODE_ENV === 'production',
+              sameSite: 'strict'
+            });
+          }
+        }
+      }
 
       res.json({
         success: true,
@@ -81,7 +120,8 @@ class ProfileController {
             full_name: updatedUser.full_name,
             email: updatedUser.email,
             created_at: updatedUser.created_at,
-            updated_at: updatedUser.updated_at
+            updated_at: updatedUser.updated_at,
+            gemini_api_key: updatedUser.gemini_api_key
           }
         }
       });

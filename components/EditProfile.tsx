@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, User, Mail, Lock, Eye, EyeOff, CheckCircle, AlertCircle, Camera } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import profileService from '../services/profileService';
+import { CookieUtils } from '../services/cookieUtils';
 
 interface User {
   id: string;
@@ -9,6 +11,7 @@ interface User {
   avatar?: string;
   created_at?: string;
   updated_at?: string;
+  gemini_api_key?: string;
 }
 
 interface EditProfileProps {
@@ -20,6 +23,7 @@ interface EditProfileProps {
 interface FormData {
   full_name: string;
   email: string;
+  gemini_api_key?: string;
   current_password: string;
   new_password: string;
   confirm_password: string;
@@ -27,6 +31,7 @@ interface FormData {
 
 interface FormErrors {
   full_name?: string;
+  gemini_api_key?: string;
   current_password?: string;
   new_password?: string;
   confirm_password?: string;
@@ -34,10 +39,13 @@ interface FormErrors {
 }
 
 const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate }) => {
-
+  const navigate = useNavigate();
+  
   const [formData, setFormData] = useState<FormData>({
     full_name: user?.full_name || '',
     email: user?.email || '',
+    // Do not prefill sensitive keys; keep input empty
+    gemini_api_key: '',
     current_password: '',
     new_password: '',
     confirm_password: ''
@@ -48,7 +56,8 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate
   const [showPasswords, setShowPasswords] = useState({
     current: false,
     new: false,
-    confirm: false
+    confirm: false,
+    gemini: false
   });
   const [successMessage, setSuccessMessage] = useState('');
   const [activeTab, setActiveTab] = useState<'profile' | 'password' | 'security'>('profile');
@@ -60,49 +69,70 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate
   const [hasPassword, setHasPassword] = useState<boolean>(true);
   // Whether any social account is linked
   const [hasAnySocialLinked, setHasAnySocialLinked] = useState<boolean>(false);
+  // Whether a Gemini API key exists on the server
+  const [hasGeminiKey, setHasGeminiKey] = useState<boolean>(!!user?.gemini_api_key);
 
   useEffect(() => {
     if (user) {
       setFormData({
         full_name: user.full_name || '',
         email: user.email || '',
+        // Prefill with decrypted key if available (will be loaded from API in loadProfileMeta)
+        gemini_api_key: user.gemini_api_key || '',
         current_password: '',
         new_password: '',
         confirm_password: ''
       });
+      setHasGeminiKey(!!user.gemini_api_key);
       setErrors({});
       setSuccessMessage('');
       setActiveTab('profile');
     }
   }, [user]);
 
+  // Clear success message when switching tabs
+  useEffect(() => {
+    setSuccessMessage('');
+    setErrors({});
+  }, [activeTab]);
+
   // Check if user is authenticated
   useEffect(() => {
     const token = localStorage.getItem('planora_token');
     const user = localStorage.getItem('planora_user');
     
-    console.log('EditProfile: Checking authentication...');
-    console.log('EditProfile: Token exists:', !!token);
-    console.log('EditProfile: User exists:', !!user);
-    
     if (!token) {
       setErrors({ general: 'Not authenticated. Please sign in to access your profile.' });
-    } else {
-      console.log('EditProfile: User is authenticated, token length:', token.length);
     }
   }, []);
 
   // Load profile meta (has_password) for conditional password UI
+  const [isLoadingGeminiKey, setIsLoadingGeminiKey] = useState(true);
+  
   useEffect(() => {
     const loadProfileMeta = async () => {
       try {
+        setIsLoadingGeminiKey(true);
         const resp = await profileService.getProfile();
         const hp = (resp as any)?.data?.user?.has_password;
         const socials = (resp as any)?.data?.user?.social_accounts || [];
+        const geminiApiKey = (resp as any)?.data?.user?.gemini_api_key;
+        
         if (typeof hp === 'boolean') setHasPassword(hp);
         setHasAnySocialLinked(Array.isArray(socials) && socials.length > 0);
+        
+        // Track presence and display the decrypted key
+        setHasGeminiKey(!!geminiApiKey);
+        if (geminiApiKey) {
+          setFormData(prev => ({
+            ...prev,
+            gemini_api_key: geminiApiKey
+          }));
+        }
       } catch (e) {
         console.warn('EditProfile: Failed to load profile meta');
+      } finally {
+        setIsLoadingGeminiKey(false);
       }
     };
     loadProfileMeta();
@@ -165,6 +195,11 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate
       } else if (formData.full_name.trim().length < 2) {
         newErrors.full_name = 'Full name must be at least 2 characters';
       }
+      
+      // Gemini API key validation
+      if (formData.gemini_api_key && typeof formData.gemini_api_key === 'string' && formData.gemini_api_key.trim().length > 0 && formData.gemini_api_key.trim().length < 10) {
+        newErrors.gemini_api_key = 'Gemini API key must be at least 10 characters';
+      }
       // Email validation removed since email field is read-only
     }
 
@@ -190,7 +225,7 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate
   };
 
   const handleInputChange = (field: keyof FormData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => ({ ...prev, [field]: value || '' }));
     // Clear field-specific error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: undefined }));
@@ -204,22 +239,48 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate
     setErrors({});
 
     try {
-      const data = await profileService.updateProfile({
+      const payload: any = {
         full_name: formData.full_name.trim(),
         email: formData.email.trim()
-      });
+      };
+      // Only send gemini_api_key if user provided a new value (blank keeps existing)
+      if (formData.gemini_api_key && formData.gemini_api_key.trim().length > 0) {
+        payload.gemini_api_key = formData.gemini_api_key.trim();
+      }
+      const data = await profileService.updateProfile(payload);
 
       if (data.success) {
+        // Update local presence flag and refresh the key from server response
+        let actualGeminiKey: string | undefined = undefined;
+        if (data.data?.user?.gemini_api_key) {
+          // Use the decrypted key from backend response
+          actualGeminiKey = data.data.user.gemini_api_key;
+          setHasGeminiKey(true);
+          setFormData(prev => ({ ...prev, gemini_api_key: actualGeminiKey }));
+          // Store the actual key in cookie
+          if (actualGeminiKey && actualGeminiKey.trim().length > 0) {
+            CookieUtils.setGeminiApiKey(actualGeminiKey.trim());
+          }
+        } else if (formData.gemini_api_key && formData.gemini_api_key.trim().length > 0) {
+          // User provided a new key, store it in cookie
+          setHasGeminiKey(true);
+          CookieUtils.setGeminiApiKey(formData.gemini_api_key.trim());
+        }
+        
         // Create updated user object with new data
+        // IMPORTANT: Don't store the actual API key in user object - it's stored in cookie
+        // Only store the key from backend response if available (decrypted), otherwise don't include it
         const updatedUser = {
           ...user,
           full_name: formData.full_name.trim(),
+          // Only include gemini_api_key if we have the actual key from backend response
+          // Don't store placeholder "SET" or invalid values
+          gemini_api_key: actualGeminiKey && actualGeminiKey.trim().length >= 10 && actualGeminiKey !== 'SET' ? actualGeminiKey : undefined,
           updated_at: new Date().toISOString()
         };
         
         // Call the callback to update parent component state
         onProfileUpdate(updatedUser);
-        
         setSuccessMessage('Profile updated successfully!');
         // Navigate back to home after successful update
         setTimeout(() => {
@@ -279,6 +340,68 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate
           onBack();
         }, 2000);
       }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteGeminiKey = async () => {
+    if (!window.confirm('Are you sure you want to delete your Gemini API key? This will disable your personal API quota usage.')) {
+      return;
+    }
+
+    setIsLoading(true);
+    setErrors({});
+
+    try {
+      const data = await profileService.updateProfile({
+        full_name: formData.full_name.trim(),
+        email: formData.email.trim(),
+        gemini_api_key: null
+      });
+
+      if (data.success) {
+        // Create updated user object with cleared API key
+        const updatedUser = {
+          ...user,
+          full_name: formData.full_name.trim(),
+          gemini_api_key: undefined,
+          updated_at: new Date().toISOString()
+        };
+        
+        // Update form data
+        setFormData(prev => ({
+          ...prev,
+          gemini_api_key: ''
+        }));
+        setHasGeminiKey(false);
+        
+        // Clear the cookie locally (backend also clears it, but ensure local cleanup)
+        CookieUtils.deleteGeminiApiKey();
+        
+        // Remove gemini_api_key from localStorage explicitly
+        const storedUser = localStorage.getItem('planora_user');
+        if (storedUser) {
+          try {
+            const parsedUser = JSON.parse(storedUser);
+            const updatedStoredUser = { ...parsedUser, gemini_api_key: undefined };
+            localStorage.setItem('planora_user', JSON.stringify(updatedStoredUser));
+          } catch (e) {
+            console.error('Failed to update localStorage:', e);
+          }
+        }
+        
+        // Call the callback to update parent component state
+        onProfileUpdate(updatedUser);
+        
+        setSuccessMessage('Gemini API key deleted successfully! You will now use the default API key.');
+        setTimeout(() => setSuccessMessage(''), 3000);
+      } else {
+        setErrors({ general: data.message || 'Failed to delete Gemini API key' });
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Network error. Please try again.';
+      setErrors({ general: errorMessage });
     } finally {
       setIsLoading(false);
     }
@@ -439,6 +562,74 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate
                       />
                     </div>
                     <p className="mt-1 text-sm text-gray-500">Email address cannot be changed</p>
+                  </div>
+
+                  {/* Gemini API Key */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Gemini API Key
+                    </label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      {isLoadingGeminiKey ? (
+                        <div className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl bg-gray-50 flex items-center">
+                          <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin mr-3"></div>
+                          <span className="text-gray-500 text-sm">Loading API key...</span>
+                        </div>
+                      ) : (
+                        <>
+                          <input
+                            type={showPasswords.gemini ? 'text' : 'password'}
+                            value={formData.gemini_api_key}
+                            onChange={(e) => handleInputChange('gemini_api_key', e.target.value)}
+                            className={`w-full pl-10 pr-12 py-3 border rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-colors ${
+                              errors.gemini_api_key ? 'border-red-300' : 'border-gray-300'
+                            }`}
+                            placeholder={hasGeminiKey ? 'Update your Gemini API key' : 'Enter your Gemini API key (optional)'}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPasswords(prev => ({ ...prev, gemini: !prev.gemini }))}
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                            title={showPasswords.gemini ? 'Hide API key' : 'Show API key'}
+                          >
+                            {showPasswords.gemini ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                          </button>
+                        </>
+                      )}
+                    </div>
+                    {errors.gemini_api_key && (
+                      <p className="mt-1 text-sm text-red-600">{errors.gemini_api_key}</p>
+                    )}
+                    <div className="mt-2 flex items-center justify-between">
+                      <p className="text-sm text-gray-500">
+                        {hasGeminiKey ? 'Your Gemini API key is displayed above. Update it to change, or delete it below.' : 'Add your Gemini API key to use your own quota.'}
+                      </p>
+                      {!isLoadingGeminiKey && hasGeminiKey && (
+                        <button
+                          type="button"
+                          onClick={handleDeleteGeminiKey}
+                          disabled={isLoading}
+                          className="ml-4 px-3 py-1 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Delete Key
+                        </button>
+                      )}
+                    </div>
+                    {!isLoadingGeminiKey && !hasGeminiKey && (
+                      <div className="mt-3">
+                        <button
+                          type="button"
+                          onClick={() => navigate('/get-api-key')}
+                          className="text-sm text-violet-600 hover:text-violet-700 font-medium flex items-center space-x-1"
+                        >
+                          <span>Need help? Get your API key here</span>
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   {/* Account Info */}

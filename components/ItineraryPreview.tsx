@@ -3,12 +3,33 @@ import React, { useState, useEffect } from 'react';
 import { Itinerary } from '../types';
 import { getReferenceBlogs } from '../services/geminiService';
 import { useSaveRecommendation } from '../hooks/useSaveRecommendation';
+import { User } from '../services/authService';
+import Toast from './Toast';
 
 // Helper to parse simple markdown bolding
 const parseBold = (text: string | undefined) => {
   if (!text) return { __html: '' };
   // Simple regex to replace **text** with <strong>text</strong>
   return { __html: text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') };
+};
+
+// Helper to parse time from activity text
+const parseActivityTime = (text: string): { time?: string; description: string } => {
+  if (!text) return { description: '' };
+  
+  // Pattern to match time ranges like "02:00 PM - 03:00 PM", "09:00 PM onwards", etc.
+  const timePattern = /(\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)\s*-\s*\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)|\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)\s*onwards)/i;
+  const match = text.match(timePattern);
+  
+  if (match) {
+    const time = match[0];
+    const description = text.replace(match[0], '').replace(/^[:\-\s]+/, '').trim();
+    return { time, description };
+  }
+  
+  // If no time is found, still strip leading colons and trim
+  const cleanedDescription = text.replace(/^[:\-\s]+/, '').trim();
+  return { description: cleanedDescription };
 };
 
 const SummaryItem: React.FC<{ icon: React.ReactNode; label: string; children: React.ReactNode }> = ({ icon, label, children }) => (
@@ -91,6 +112,7 @@ interface ItineraryPreviewProps {
   isUnifiedView?: boolean;
   requestData?: any; // Add request data for history saving
   isHistoryView?: boolean; // Add flag to indicate if this is from history
+  user?: User | null;
 }
 
 const getAboutSectionsForDestination = (destinationDetails: Itinerary['coveredDestinations'][0]) => {
@@ -171,42 +193,82 @@ const DestinationInfoTabs: React.FC<{ destinationDetails: Itinerary['coveredDest
 };
 
 
-const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegenerate, isUnifiedView = false, requestData, isHistoryView = false }) => {
-  console.log('ItineraryPreview rendered with props:', { 
-    itinerary: !!itinerary, 
-    isUnifiedView, 
-    requestData: !!requestData, 
-    requestDataKeys: requestData ? Object.keys(requestData) : null,
-    isHistoryView 
-  });
-  
+const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegenerate, isUnifiedView = false, requestData, isHistoryView = false, user }) => {
   const [blogs, setBlogs] = useState<Itinerary['referenceBlogs']>([]);
   const [isLoadingBlogs, setIsLoadingBlogs] = useState(true);
   const [hasBeenSaved, setHasBeenSaved] = useState(false);
+  const [savedId, setSavedId] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const { saveItineraryRecommendation } = useSaveRecommendation();
   
   useEffect(() => {
     const fetchBlogs = async () => {
       setIsLoadingBlogs(true);
-      const fetchedBlogs = await getReferenceBlogs(itinerary.destination, itinerary.language);
-      setBlogs(fetchedBlogs);
+      try {
+        const fetchedBlogs = await getReferenceBlogs(itinerary.destination, itinerary.language, user?.gemini_api_key);
+        setBlogs(fetchedBlogs);
+      } catch (error) {
+        console.error('Failed to fetch reference blogs:', error);
+        setBlogs([]);
+      }
       setIsLoadingBlogs(false);
     };
     fetchBlogs();
-  }, [itinerary.destination, itinerary.language]);
+  }, [itinerary.destination, itinerary.language, user?.gemini_api_key]);
 
   // Save to history when component mounts (only if not in unified view and request data is available)
   useEffect(() => {
-    console.log('ItineraryPreview useEffect:', { isUnifiedView, requestData, itinerary, hasBeenSaved, isHistoryView });
     // Don't save if this is a history view
     if (!isUnifiedView && requestData && !hasBeenSaved && !isHistoryView) {
-      console.log('Saving itinerary recommendation to history...');
-      saveItineraryRecommendation(requestData, itinerary, itinerary.destination, requestData.language);
-      setHasBeenSaved(true);
-    } else {
-      console.log('Not saving itinerary recommendation:', { isUnifiedView, hasRequestData: !!requestData, hasBeenSaved, isHistoryView });
+      const saveRecommendation = async () => {
+        const id = await saveItineraryRecommendation(requestData, itinerary, itinerary.destination, requestData.language);
+        if (id) {
+          setSavedId(id);
+        }
+        setHasBeenSaved(true);
+      };
+      saveRecommendation();
     }
   }, [isUnifiedView, requestData, itinerary, saveItineraryRecommendation, hasBeenSaved, isHistoryView]);
+  
+  const handleCopyLink = async () => {
+    if (!savedId) {
+      setToast({ message: 'Itinerary is still being saved. Please wait a moment.', type: 'error' });
+      return;
+    }
+    try {
+      const shareUrl = `${window.location.origin}/share/${savedId}`;
+      await navigator.clipboard.writeText(shareUrl);
+      setToast({ message: 'Shareable link copied to clipboard!', type: 'success' });
+    } catch (error) {
+      setToast({ message: 'Failed to copy link. Please try again.', type: 'error' });
+    }
+  };
+
+  const handleShare = async () => {
+    if (!savedId) {
+      setToast({ message: 'Itinerary is still being saved. Please wait a moment.', type: 'error' });
+      return;
+    }
+    try {
+      const shareUrl = `${window.location.origin}/share/${savedId}`;
+      if (navigator.share) {
+        await navigator.share({
+          title: `Trip to ${itinerary.destination}`,
+          text: 'Check out this amazing trip itinerary!',
+          url: shareUrl,
+        });
+        setToast({ message: 'Itinerary shared successfully!', type: 'success' });
+      } else {
+        await navigator.clipboard.writeText(shareUrl);
+        setToast({ message: 'Shareable link copied to clipboard!', type: 'success' });
+      }
+    } catch (error: any) {
+      if (error.name !== 'AbortError') {
+        setToast({ message: 'Failed to share link. Please try again.', type: 'error' });
+      }
+    }
+  };
 
   const formattedStartDate = new Date(itinerary.startDate + 'T00:00:00').toLocaleDateString('en-US', {
     year: 'numeric',
@@ -331,6 +393,30 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
             <p className="text-lg text-gray-700 mt-2 break-words">Your amazing {itinerary.days}-day {itinerary.isRoundTrip ? 'round trip ' : ''}itinerary</p>
         </div>
       </header>
+      
+      {/* Share buttons - Only show when saved and not in history view */}
+      {savedId && !isHistoryView && !isUnifiedView && (
+        <div className="flex items-center justify-center gap-3 py-4 no-print animated-card">
+          <button
+            onClick={handleCopyLink}
+            className="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-violet-600 to-violet-700 text-white font-semibold rounded-full hover:from-violet-700 hover:to-violet-800 transition-all duration-300 shadow-md text-sm"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+            Copy Link
+          </button>
+          <button
+            onClick={handleShare}
+            className="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-full hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-md text-sm"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+            </svg>
+            Share
+          </button>
+        </div>
+      )}
       
       <section>
         <h2 className="text-3xl font-bold text-slate-800 mb-6 animated-card" style={{ animationDelay: '100ms' }}>Trip Summary</h2>
@@ -548,75 +634,180 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
             </div>
             <hr className="my-4 border-violet-200" />
             <div className="space-y-6">
-              <div className="bg-white/40 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/50">
-                  <h3 className="text-xl font-bold text-violet-800 mb-4">Activities</h3>
-                  <div className="prose prose-slate max-w-none text-gray-700">
+              <div className="bg-gradient-to-br from-violet-50/60 to-indigo-50/40 backdrop-blur-lg p-6 rounded-2xl shadow-lg border border-violet-200/50">
+                  <div className="flex items-center space-x-3 mb-6">
+                    <div className="bg-violet-600 text-white rounded-xl p-2.5 shadow-lg">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-2xl font-bold text-violet-900">Activities</h3>
+                  </div>
+                  
+                  <div className="space-y-4">
                     {day.activities && day.activities.length > 0 && (
-                      <ul className="list-disc pl-5 space-y-1">
-                        {day.activities.map((item, index) => (
-                          <li key={index} dangerouslySetInnerHTML={parseBold(item)} />
-                        ))}
-                      </ul>
+                      day.activities.map((item, index) => {
+                        const { time, description } = parseActivityTime(item);
+                        const isLastItem = index === day.activities!.length - 1;
+                        
+                        return (
+                          <div key={index} className="relative pl-8 group">
+                            {/* Timeline line */}
+                            {!isLastItem && (
+                              <div className="absolute left-3 top-8 bottom-0 w-0.5 bg-gradient-to-b from-violet-300 to-transparent group-hover:from-violet-500 transition-colors"></div>
+                            )}
+                            
+                            {/* Timeline dot */}
+                            <div className="absolute left-0 top-1.5 w-6 h-6 bg-gradient-to-br from-violet-500 to-indigo-500 rounded-full border-4 border-white shadow-lg flex items-center justify-center group-hover:scale-125 transition-transform duration-300">
+                              <div className="w-2 h-2 bg-white rounded-full"></div>
+                            </div>
+                            
+                            {/* Activity content */}
+                            <div className="bg-white/70 backdrop-blur-sm rounded-xl p-4 shadow-md border border-violet-100/50 hover:shadow-lg hover:border-violet-200 transition-all duration-300 hover:-translate-x-1">
+                              {time && (
+                                <div className="flex items-center space-x-2 mb-2">
+                                  <div className="bg-violet-100 text-violet-700 px-3 py-1 rounded-full text-sm font-semibold flex items-center space-x-1.5 shadow-sm">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <span>{time}</span>
+                                  </div>
+                                </div>
+                              )}
+                              <div className="text-gray-700 leading-relaxed" dangerouslySetInnerHTML={parseBold(description)} />
+                            </div>
+                          </div>
+                        );
+                      })
                     )}
                   </div>
               </div>
 
-              <div className="bg-white/40 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/50">
-                  <h3 className="text-xl font-bold text-violet-800 mb-4">Food Recommendations</h3>
-                  <div className="prose prose-slate max-w-none text-gray-700">
-                     {day.food && day.food.length > 0 && (
-                        <ul className="list-disc pl-5 space-y-1">
-                          {day.food.map((item, index) => (
-                            <li key={index} dangerouslySetInnerHTML={parseBold(item)} />
-                          ))}
-                        </ul>
-                      )}
+              <div className="bg-gradient-to-br from-amber-50/60 to-orange-50/40 backdrop-blur-lg p-6 rounded-2xl shadow-lg border border-amber-200/50">
+                  <div className="flex items-center space-x-3 mb-6">
+                    <div className="bg-amber-600 text-white rounded-xl p-2.5 shadow-lg">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0c-.454-.303-.977-.454-1.5-.454V5.454c.523 0 1.046-.151 1.5-.454a2.704 2.704 0 013 0 2.704 2.704 0 003 0 2.704 2.704 0 013 0 2.704 2.704 0 003 0c.454.303.977.454 1.5.454v10.092zM15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-2xl font-bold text-amber-900">Food Recommendations</h3>
+                  </div>
+                  
+                  <div className="grid gap-3">
+                    {day.food && day.food.length > 0 && (
+                      day.food.map((item, index) => (
+                        <div key={index} className="bg-white/70 backdrop-blur-sm rounded-xl p-4 shadow-md border border-amber-100/50 hover:shadow-lg hover:border-amber-200 transition-all duration-300 hover:scale-[1.02] group">
+                          <div className="flex items-start space-x-3">
+                            <div className="flex-shrink-0 bg-amber-100 text-amber-600 rounded-full p-2 mt-0.5 group-hover:bg-amber-200 transition-colors">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                              </svg>
+                            </div>
+                            <div className="text-gray-700 leading-relaxed flex-1" dangerouslySetInnerHTML={parseBold(item)} />
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
               </div>
               
-               <div className="bg-white/40 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/50">
-                  <h3 className="text-xl font-bold text-violet-800 mb-4">Suggested Places to Stay</h3>
-                  <div className="prose prose-slate max-w-none text-gray-700">
+               <div className="bg-gradient-to-br from-blue-50/60 to-cyan-50/40 backdrop-blur-lg p-6 rounded-2xl shadow-lg border border-blue-200/50">
+                  <div className="flex items-center space-x-3 mb-6">
+                    <div className="bg-blue-600 text-white rounded-xl p-2.5 shadow-lg">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                      </svg>
+                    </div>
+                    <h3 className="text-2xl font-bold text-blue-900">Suggested Places to Stay</h3>
+                  </div>
+                  
+                  <div className="grid gap-3">
                     {day.placesToStay && day.placesToStay.length > 0 && (
-                      <ul className="list-disc pl-5 space-y-1">
-                        {day.placesToStay.map((item, index) => (
-                          <li key={index} dangerouslySetInnerHTML={parseBold(item)} />
-                        ))}
-                      </ul>
+                      day.placesToStay.map((item, index) => (
+                        <div key={index} className="bg-white/70 backdrop-blur-sm rounded-xl p-4 shadow-md border border-blue-100/50 hover:shadow-lg hover:border-blue-200 transition-all duration-300 hover:scale-[1.02] group">
+                          <div className="flex items-start space-x-3">
+                            <div className="flex-shrink-0 bg-blue-100 text-blue-600 rounded-full p-2 mt-0.5 group-hover:bg-blue-200 transition-colors">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                              </svg>
+                            </div>
+                            <div className="text-gray-700 leading-relaxed flex-1" dangerouslySetInnerHTML={parseBold(item)} />
+                          </div>
+                        </div>
+                      ))
                     )}
                   </div>
               </div>
               
               {day.transport && (
-                <div className="bg-violet-50/50 backdrop-blur-lg p-4 rounded-xl border border-violet-200/50">
-                   <h4 className="font-bold text-violet-800 flex items-center space-x-2 mb-3">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18.562 6.077C18.238 5.437 17.562 5 16.808 5H3.192c-.754 0-1.43.437-1.754 1.077L.05 9.423A.5.5 0 00.5 10h19a.5.5 0 00.45-.577l-1.388-3.346zM2 11v4a1 1 0 001 1h1a1 1 0 001-1v-4H2zm15 0v4a1 1 0 001 1h1a1 1 0 001-1v-4h-3zM5 11v4a1 1 0 001 1h8a1 1 0 001-1v-4H5z" clipRule="evenodd" /></svg>
-                      <span>Transport Suggestions</span>
-                   </h4>
-                   {isRoadTrip && dailyFuelCostPerPerson > 0 && (
-                      <p className="text-sm text-slate-700 mb-2">
-                          <strong>Est. Fuel Cost:</strong> {currencySymbol}{dailyFuelCostPerPerson.toFixed(2)} per person
-                      </p>
-                   )}
-                   <ul className="list-disc pl-5 space-y-1 text-gray-700">
-                      {[].concat(day.transport.suggestions || []).map((item, index) => (
-                        <li key={index} dangerouslySetInnerHTML={parseBold(String(item))} />
-                      ))}
-                   </ul>
+                <div className="bg-gradient-to-br from-emerald-50/60 to-teal-50/40 backdrop-blur-lg p-6 rounded-2xl shadow-lg border border-emerald-200/50">
+                  <div className="flex items-center space-x-3 mb-6">
+                    <div className="bg-emerald-600 text-white rounded-xl p-2.5 shadow-lg">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 9m0 13V9m0 0l6-3m-6 3l6-3" />
+                      </svg>
+                    </div>
+                    <h3 className="text-2xl font-bold text-emerald-900">Transport Suggestions</h3>
+                  </div>
+                  
+                  {isRoadTrip && dailyFuelCostPerPerson > 0 && (
+                    <div className="bg-amber-100/70 backdrop-blur-sm rounded-xl p-4 mb-4 border border-amber-200/50 shadow-sm">
+                      <div className="flex items-center space-x-2">
+                        <div className="flex-shrink-0 bg-amber-500 text-white rounded-full p-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 10v-1m0 0c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-amber-900">Est. Fuel Cost</p>
+                          <p className="text-lg font-bold text-amber-800">{currencySymbol}{dailyFuelCostPerPerson.toFixed(2)} per person</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="grid gap-3">
+                    {[].concat(day.transport.suggestions || []).map((item, index) => (
+                      <div key={index} className="bg-white/70 backdrop-blur-sm rounded-xl p-4 shadow-md border border-emerald-100/50 hover:shadow-lg hover:border-emerald-200 transition-all duration-300 hover:scale-[1.02] group">
+                        <div className="flex items-start space-x-3">
+                          <div className="flex-shrink-0 bg-emerald-100 text-emerald-600 rounded-full p-2 mt-0.5 group-hover:bg-emerald-200 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          </div>
+                          <div className="text-gray-700 leading-relaxed flex-1" dangerouslySetInnerHTML={parseBold(String(item))} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
               
               {day.medicalFacilities && day.medicalFacilities.length > 0 && (
-                <div className="bg-green-50/50 backdrop-blur-lg p-4 rounded-xl border border-green-200/50">
-                   <h4 className="font-bold text-green-800 flex items-center space-x-2 mb-3">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.707-10.293a1 1 0 00-1.414-1.414l-3 3a1 1 0 001.414 1.414L9 10.414V13a1 1 0 102 0v-2.586l.293.293a1 1 0 001.414-1.414l-3-3z" clipRule="evenodd" /></svg>
-                      <span>Nearby Medical Facilities</span>
-                   </h4>
-                   <ul className="list-disc pl-5 space-y-1 text-gray-700">
-                      {day.medicalFacilities.map((item, index) => (
-                        <li key={index} dangerouslySetInnerHTML={parseBold(item)} />
-                      ))}
-                   </ul>
+                <div className="bg-gradient-to-br from-rose-50/60 to-pink-50/40 backdrop-blur-lg p-6 rounded-2xl shadow-lg border border-rose-200/50">
+                  <div className="flex items-center space-x-3 mb-6">
+                    <div className="bg-rose-600 text-white rounded-xl p-2.5 shadow-lg">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-2xl font-bold text-rose-900">Nearby Medical Facilities</h3>
+                  </div>
+                  
+                  <div className="grid gap-3">
+                    {day.medicalFacilities.map((item, index) => (
+                      <div key={index} className="bg-white/70 backdrop-blur-sm rounded-xl p-4 shadow-md border border-rose-100/50 hover:shadow-lg hover:border-rose-200 transition-all duration-300 hover:scale-[1.02] group">
+                        <div className="flex items-start space-x-3">
+                          <div className="flex-shrink-0 bg-rose-100 text-rose-600 rounded-full p-2 mt-0.5 group-hover:bg-rose-200 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                            </svg>
+                          </div>
+                          <div className="text-gray-700 leading-relaxed flex-1" dangerouslySetInnerHTML={parseBold(item)} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 
@@ -638,6 +829,15 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
         </button>
         )}
       </div>
+      
+      {/* Toast notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 };

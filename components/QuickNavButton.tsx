@@ -13,7 +13,9 @@ const QuickNavButton: React.FC<QuickNavButtonProps> = ({
 }) => {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
+  const [showDownArrow, setShowDownArrow] = useState(false);
   const navRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -26,6 +28,30 @@ const QuickNavButton: React.FC<QuickNavButtonProps> = ({
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+
+  useEffect(() => {
+    const checkScrollability = () => {
+      if (scrollContainerRef.current) {
+        const { scrollHeight, clientHeight } = scrollContainerRef.current;
+        const isScrollable = scrollHeight > clientHeight;
+        const scrolledToBottom = scrollContainerRef.current.scrollTop + clientHeight >= scrollHeight - 10;
+        setShowDownArrow(isScrollable && !scrolledToBottom);
+      }
+    };
+
+    checkScrollability();
+    
+    const container = scrollContainerRef.current;
+    if (container) {
+      container.addEventListener('scroll', checkScrollability);
+      window.addEventListener('resize', checkScrollability);
+      
+      return () => {
+        container.removeEventListener('scroll', checkScrollability);
+        window.removeEventListener('resize', checkScrollability);
+      };
+    }
+  }, [isOpen]);
 
   const handleAction = (action: () => void) => {
     action();
@@ -106,22 +132,61 @@ const QuickNavButton: React.FC<QuickNavButtonProps> = ({
 
   return (
     <div ref={navRef} className="fixed bottom-6 left-6 z-50 no-print hidden sm:block" aria-live="polite">
+      {/* Scrollbar Styling */}
+      <style>{`
+        #quick-nav-menu > div::-webkit-scrollbar {
+          width: 8px;
+        }
+        #quick-nav-menu > div::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        #quick-nav-menu > div::-webkit-scrollbar-thumb {
+          background: #c4b5fd;
+          border-radius: 10px;
+          opacity: 0.7;
+        }
+        #quick-nav-menu > div::-webkit-scrollbar-thumb:hover {
+          background: #a78bfa;
+          opacity: 1;
+        }
+      `}</style>
+      
       {/* Wrapper to handle positioning and animation context */}
       <div className="relative flex flex-col items-start">
 
         {/* Menu Panel */}
         <div
           id="quick-nav-menu"
-          className={`absolute bottom-full mb-4 w-72 origin-bottom-left transition-all duration-300 ease-out ${
+          className={`absolute bottom-full mb-4 w-72 origin-bottom-left transition-all duration-300 ease-out max-h-[calc(100vh-120px)] ${
             isOpen ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4 pointer-events-none'
           }`}
           aria-hidden={!isOpen}
         >
-          <div className="bg-white/70 backdrop-blur-xl border border-white/40 rounded-xl shadow-lg p-2 flex flex-col">
+          {/* Top Fade Indicator */}
+          <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-white/90 to-transparent pointer-events-none z-10 rounded-t-xl" />
+          
+          {/* Down Arrow Indicator */}
+          {showDownArrow && (
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
+              <svg className="w-6 h-6 text-violet-500 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          )}
+          
+          <div 
+            ref={scrollContainerRef}
+            className="bg-white/70 backdrop-blur-xl border border-white/40 rounded-xl shadow-lg p-1.5 flex flex-col overflow-y-auto max-h-[calc(100vh-120px)] scroll-smooth" 
+            style={{ 
+              scrollbarWidth: 'thin', 
+              scrollbarColor: '#c4b5fd transparent',
+              WebkitOverflowScrolling: 'touch'
+            }}
+          >
             {menuSections.map((section, sectionIndex) => (
               <React.Fragment key={section.title}>
-                {sectionIndex > 0 && <hr className="border-slate-200/80 mx-2 my-1" />}
-                {section.title && <p className="px-3 pt-2 pb-1 text-xs font-bold text-slate-500 uppercase tracking-wider">{section.title}</p>}
+                {sectionIndex > 0 && <hr className="border-slate-200/80 mx-2 my-0.5" />}
+                {section.title && <p className="px-3 pt-1.5 pb-0.5 text-xs font-bold text-slate-500 uppercase tracking-wider">{section.title}</p>}
                 {section.items.map((item) => {
                   const currentItemIndex = itemIndex++;
                   const isLocked = item.locked || false;
@@ -132,7 +197,7 @@ const QuickNavButton: React.FC<QuickNavButtonProps> = ({
                       title={item.tooltip || item.label}
                       aria-label={item.label}
                       tabIndex={isOpen ? 0 : -1}
-                      className={`w-full flex items-center text-left px-3 py-2.5 rounded-lg font-semibold transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-violet-400 ${
+                      className={`w-full flex items-center text-left px-3 py-1.5 rounded-lg font-semibold transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-violet-400 ${
                         isLocked 
                           ? 'text-gray-500 hover:bg-gray-100/80 cursor-pointer' 
                           : 'text-slate-800 hover:bg-violet-100/80'

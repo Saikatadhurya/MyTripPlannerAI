@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AppRecommendations, MobileApp } from '../types';
 import { useSaveRecommendation } from '../hooks/useSaveRecommendation';
+import Toast from './Toast';
 
 const PlatformBadge: React.FC<{ platform: MobileApp['platform'] }> = ({ platform }) => {
     const baseClasses = "text-xs font-semibold px-2.5 py-0.5 rounded-full";
@@ -116,24 +117,12 @@ interface AppFinderResultProps {
 const AppFinderResult: React.FC<AppFinderResultProps> = ({ recommendations, onRegenerate, isUnifiedView = false, requestData, isHistoryView = false }) => {
     const iconClass = "h-6 w-6";
     const [hasBeenSaved, setHasBeenSaved] = useState(false);
+    const [savedId, setSavedId] = useState<string | null>(null);
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
     const { saveAppRecommendation } = useSaveRecommendation();
-    
-    // Log the incoming recommendations data
-    console.log('📱 AppFinderResult received data:', {
-        isUnifiedView,
-        isHistoryView,
-        hasRecommendations: !!recommendations,
-        recommendationsType: typeof recommendations,
-        recommendationsKeys: recommendations ? Object.keys(recommendations) : 'none',
-        destination: recommendations?.destination,
-        transportAndTravel: recommendations?.transportAndTravel?.length || 0,
-        foodAndDining: recommendations?.foodAndDining?.length || 0,
-        fullRecommendations: recommendations
-    });
     
     // Safety check for recommendations object
     if (!recommendations || typeof recommendations !== 'object') {
-        console.log('❌ AppFinderResult: Invalid recommendations data');
         return (
             <div className="max-w-6xl mx-auto text-center py-12">
                 <div className="bg-red-50 border border-red-200 rounded-lg p-6">
@@ -146,16 +135,57 @@ const AppFinderResult: React.FC<AppFinderResultProps> = ({ recommendations, onRe
     
     // Save to history when component mounts (only if not in unified view and request data is available)
     useEffect(() => {
-        console.log('AppFinderResult useEffect:', { isUnifiedView, requestData, recommendations, hasBeenSaved, isHistoryView });
         // Don't save if this is a history view
         if (!isUnifiedView && requestData && !hasBeenSaved && !isHistoryView) {
-            console.log('Saving app recommendation to history...');
-            saveAppRecommendation(requestData, recommendations, recommendations.destination, requestData.language);
-            setHasBeenSaved(true);
-        } else {
-            console.log('Not saving app recommendation:', { isUnifiedView, hasRequestData: !!requestData, hasBeenSaved, isHistoryView });
+            const saveRecommendation = async () => {
+                const id = await saveAppRecommendation(requestData, recommendations, recommendations.destination, requestData.language);
+                if (id) {
+                    setSavedId(id);
+                }
+                setHasBeenSaved(true);
+            };
+            saveRecommendation();
         }
     }, [isUnifiedView, requestData, recommendations, saveAppRecommendation, hasBeenSaved, isHistoryView]);
+    
+    const handleCopyLink = async () => {
+        if (!savedId) {
+            setToast({ message: 'Recommendation is still being saved. Please wait a moment.', type: 'error' });
+            return;
+        }
+        try {
+            const shareUrl = `${window.location.origin}/share/${savedId}`;
+            await navigator.clipboard.writeText(shareUrl);
+            setToast({ message: 'Shareable link copied to clipboard!', type: 'success' });
+        } catch (error) {
+            setToast({ message: 'Failed to copy link. Please try again.', type: 'error' });
+        }
+    };
+
+    const handleShare = async () => {
+        if (!savedId) {
+            setToast({ message: 'Recommendation is still being saved. Please wait a moment.', type: 'error' });
+            return;
+        }
+        try {
+            const shareUrl = `${window.location.origin}/share/${savedId}`;
+            if (navigator.share) {
+                await navigator.share({
+                    title: `Essential Apps for ${recommendations.destination}`,
+                    text: 'Check out these essential apps for your trip!',
+                    url: shareUrl,
+                });
+                setToast({ message: 'Recommendation shared successfully!', type: 'success' });
+            } else {
+                await navigator.clipboard.writeText(shareUrl);
+                setToast({ message: 'Shareable link copied to clipboard!', type: 'success' });
+            }
+        } catch (error: any) {
+            if (error.name !== 'AbortError') {
+                setToast({ message: 'Failed to share link. Please try again.', type: 'error' });
+            }
+        }
+    };
     
     const categoryDetails = {
         transportAndTravel: { title: "Transport & Travel", icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18.562 6.077C18.238 5.437 17.562 5 16.808 5H3.192c-.754 0-1.43.437-1.754 1.077L.05 9.423A.5.5 0 00.5 10h19a.5.5 0 00.45-.577l-1.388-3.346zM2 11v4a1 1 0 001 1h1a1 1 0 001-1v-4H2zm15 0v4a1 1 0 001 1h1a1 1 0 001-1v-4h-3zM5 11v4a1 1 0 001 1h8a1 1 0 001-1v-4H5z" clipRule="evenodd" /></svg>, color: "blue"},
@@ -193,20 +223,35 @@ const AppFinderResult: React.FC<AppFinderResultProps> = ({ recommendations, onRe
                 </p>
             </header>
             
+            {/* Share buttons - Only show when saved and not in history view */}
+            {savedId && !isHistoryView && !isUnifiedView && (
+                <div className="flex items-center justify-center gap-3 py-4 no-print">
+                    <button
+                        onClick={handleCopyLink}
+                        className="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-violet-600 to-violet-700 text-white font-semibold rounded-full hover:from-violet-700 hover:to-violet-800 transition-all duration-300 shadow-md text-sm"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                        Copy Link
+                    </button>
+                    <button
+                        onClick={handleShare}
+                        className="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-full hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-md text-sm"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                        </svg>
+                        Share
+                    </button>
+                </div>
+            )}
+            
             <div className="space-y-10">
                 {displayOrder.map(key => {
                     const details = categoryDetails[key];
                     // Ensure items is always an array to prevent mapping errors
                     const items = Array.isArray(recommendations[key]) ? recommendations[key] : [];
-                    
-                    console.log(`🔍 Processing category "${key}":`, {
-                        key,
-                        title: details.title,
-                        rawData: recommendations[key],
-                        isArray: Array.isArray(recommendations[key]),
-                        itemsCount: items.length,
-                        items: items
-                    });
                     
                     return (
                         <CategorySection
@@ -233,6 +278,15 @@ const AppFinderResult: React.FC<AppFinderResultProps> = ({ recommendations, onRe
                     )}
                 </div>
             </div>
+            
+            {/* Toast notification */}
+            {toast && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={() => setToast(null)}
+                />
+            )}
         </div>
     );
 };

@@ -49,7 +49,12 @@ const validateSaveRecommendation = [
   body('tripContext')
     .optional()
     .isObject()
-    .withMessage('Trip context must be a valid object')
+    .withMessage('Trip context must be a valid object'),
+  
+  body('prompt')
+    .optional()
+    .isString()
+    .withMessage('Prompt must be a valid string')
 ];
 
 // Validation for updating recommendation (unified)

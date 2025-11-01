@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useHistory } from '../hooks/useHistory';
 import { RecommendationHistory, UnifiedTrip } from '../services/historyService';
 import BackToHomeButton from './BackToHomeButton';
 import { historyService } from '../services/historyService';
 import Toast from './Toast';
+import { authService } from '../services/authService';
 
 interface UnifiedTripItemProps {
   trip: UnifiedTrip;
@@ -110,6 +111,20 @@ const UnifiedTripItem: React.FC<UnifiedTripItemProps> = ({ trip, onView, onDelet
           </div>
         </div>
 
+        {/* Tags */}
+        {trip.tags && trip.tags.length > 0 && (
+          <div className="mb-6">
+            <h4 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">Tags</h4>
+            <div className="flex flex-wrap gap-2">
+              {trip.tags.map((tag, index) => (
+                <span key={index} className="inline-flex items-center px-3 py-1 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg border border-gray-200">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Action buttons */}
         <div className="flex gap-3">
           <button
@@ -148,13 +163,12 @@ const UnifiedTripItem: React.FC<UnifiedTripItemProps> = ({ trip, onView, onDelet
 
 interface HistoryItemProps {
   item: RecommendationHistory;
-  onEdit: (item: RecommendationHistory) => void;
   onDelete: (id: string) => void;
   onView: (item: RecommendationHistory) => void;
   onShare: (item: RecommendationHistory) => void;
 }
 
-const HistoryItem: React.FC<HistoryItemProps> = ({ item, onEdit, onDelete, onView, onShare }) => {
+const HistoryItem: React.FC<HistoryItemProps> = ({ item, onDelete, onView, onShare }) => {
   const getTypeIcon = (type: string) => {
     const icons = {
       apps: '📱',
@@ -308,15 +322,6 @@ const HistoryItem: React.FC<HistoryItemProps> = ({ item, onEdit, onDelete, onVie
             </svg>
           </button>
           <button
-            onClick={() => onEdit(item)}
-            className="px-4 py-3 bg-green-50 text-green-600 rounded-xl font-semibold hover:bg-green-100 transition-all duration-300 border border-green-200 hover:border-green-300 flex items-center justify-center"
-            title="Edit"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
-          </button>
-          <button
             onClick={() => onDelete(item.id)}
             className="px-4 py-3 bg-red-50 text-red-600 rounded-xl font-semibold hover:bg-red-100 transition-all duration-300 border border-red-200 hover:border-red-300 flex items-center justify-center"
             title="Delete"
@@ -330,89 +335,6 @@ const HistoryItem: React.FC<HistoryItemProps> = ({ item, onEdit, onDelete, onVie
     </div>
   );
 };
-
-interface EditModalProps {
-  item: RecommendationHistory | null;
-  onClose: () => void;
-  onSave: (id: string, data: { title: string; tags: string[]; notes: string }) => void;
-}
-
-const EditModal: React.FC<EditModalProps> = ({ item, onClose, onSave }) => {
-  const [title, setTitle] = useState(item?.title || '');
-  const [tags, setTags] = useState(item?.tags?.join(', ') || '');
-  const [notes, setNotes] = useState(item?.notes || '');
-
-  const handleSave = () => {
-    if (item) {
-      onSave(item.id, {
-        title,
-        tags: tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0),
-        notes
-      });
-    }
-  };
-
-  if (!item) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl p-6 w-full max-w-md">
-        <h3 className="text-lg font-bold text-slate-800 mb-4">Edit Recommendation</h3>
-        
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Title</label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Enter a title..."
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Tags (comma-separated)</label>
-            <input
-              type="text"
-              value={tags}
-              onChange={(e) => setTags(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="e.g., apps, travel, food"
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Notes</label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={3}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Add any notes..."
-            />
-          </div>
-        </div>
-        
-        <div className="flex justify-end space-x-3 mt-6">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-slate-600 hover:text-slate-800 transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Save Changes
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 
 const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string, responseData: any, requestData: any, isHistoryView: boolean) => void }> = ({ onBack, onNavigateToResult }) => {
   const {
@@ -430,7 +352,6 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
     deleteRecommendation
   } = useHistory();
 
-  const [editingItem, setEditingItem] = useState<RecommendationHistory | null>(null);
   const [searchTerm, setSearchTerm] = useState(filters.search || '');
   const [selectedDestination, setSelectedDestination] = useState(filters.destination || '');
   const [selectedType, setSelectedType] = useState(filters.recommendationType || '');
@@ -439,6 +360,16 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
   const [unifiedTrips, setUnifiedTrips] = useState<UnifiedTrip[]>([]);
   const [allUnifiedTrips, setAllUnifiedTrips] = useState<UnifiedTrip[]>([]); // Store all trips for filtering
   const [unifiedTripsLoading, setUnifiedTripsLoading] = useState(false);
+  
+  // Combined items state
+  type CombinedItem = { type: 'individual'; data: RecommendationHistory } | { type: 'unified'; data: UnifiedTrip };
+  const [combinedItems, setCombinedItems] = useState<CombinedItem[]>([]);
+  
+  // Infinite scroll state - accumulate all loaded items
+  const [allLoadedHistory, setAllLoadedHistory] = useState<RecommendationHistory[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   
   // Trip type visibility state
   const [showIndividual, setShowIndividual] = useState<boolean>(true);
@@ -453,6 +384,8 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
 
   const handleSearchTermChange = (value: string) => {
     setSearchTerm(value);
+    setCurrentPage(1);
+    setHasMore(true);
     // Apply filters immediately
     setFilters({
       search: value || undefined,
@@ -467,6 +400,8 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
 
   const handleDestinationChange = (value: string) => {
     setSelectedDestination(value);
+    setCurrentPage(1);
+    setHasMore(true);
     // Apply filters immediately
     setFilters({
       search: searchTerm || undefined,
@@ -481,6 +416,8 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
 
   const handleTypeChange = (value: string) => {
     setSelectedType(value);
+    setCurrentPage(1);
+    setHasMore(true);
     // Apply filters immediately
     setFilters({
       search: searchTerm || undefined,
@@ -493,27 +430,106 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
     setSearchTerm('');
     setSelectedDestination('');
     setSelectedType('');
+    setCurrentPage(1);
+    setHasMore(true);
     setFilters({});
     
     // Clear unified trip filters
     setUnifiedTrips(allUnifiedTrips);
   };
-
-  const handleEdit = (item: RecommendationHistory) => {
-    setEditingItem(item);
-  };
-
-  const handleSaveEdit = async (id: string, data: { title: string; tags: string[]; notes: string }) => {
-    try {
-      await updateRecommendation(id, data);
-      setEditingItem(null);
-    } catch (error) {
-      // Failed to update recommendation
+  
+  // Update allLoadedHistory when history changes from the hook
+  useEffect(() => {
+    if (history.length > 0) {
+      setAllLoadedHistory(history);
+      // Set hasMore based on pagination
+      if (pagination) {
+        const moreAvailable = pagination.page < pagination.totalPages;
+        setHasMore(moreAvailable);
+      }
     }
-  };
+  }, [history, pagination]);
+  
+  // Load more individual recommendations
+  const loadMoreHistory = useCallback(async () => {
+    if (loading || loadingMore || !hasMore) return;
+    
+    // Check if user is authenticated before making API call
+    if (!authService.isAuthenticated()) {
+      setHasMore(false);
+      return;
+    }
+    
+    setLoadingMore(true);
+    try {
+      const nextPage = currentPage + 1;
+      const response = await historyService.getHistory(nextPage, 10, filters);
+      
+      // Append the new data
+      setAllLoadedHistory(prev => [...prev, ...response.data]);
+      setCurrentPage(nextPage);
+      
+      // Check if there are more pages
+      if (nextPage >= response.pagination.totalPages) {
+        setHasMore(false);
+      }
+    } catch (error) {
+      console.error('Failed to load more history:', error);
+      setHasMore(false);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [loading, loadingMore, hasMore, currentPage, filters]);
+  
+  // Scroll detection for infinite scroll using IntersectionObserver
+  useEffect(() => {
+    if (!hasMore || loading || loadingMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry.isIntersecting && hasMore && !loading && !loadingMore) {
+          loadMoreHistory();
+        }
+      },
+      { rootMargin: '300px' }
+    );
+
+    // Create a sentinel element to observe
+    const sentinel = document.createElement('div');
+    sentinel.id = 'infinite-scroll-sentinel';
+    sentinel.style.height = '1px';
+    
+    // Find the last item container
+    const observerTarget = document.querySelector('.grid');
+    if (observerTarget && observerTarget.parentNode) {
+      observerTarget.parentNode.insertBefore(sentinel, observerTarget.nextSibling);
+      observer.observe(sentinel);
+    }
+
+    return () => {
+      observer.disconnect();
+      const existingSentinel = document.getElementById('infinite-scroll-sentinel');
+      if (existingSentinel) {
+        existingSentinel.remove();
+      }
+    };
+  }, [hasMore, loading, loadingMore, loadMoreHistory, combinedItems]);
+  
+  // Reset pagination when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+    setHasMore(true);
+    setAllLoadedHistory([]); // Clear accumulated history when filters change
+    setLoadingMore(false);
+  }, [searchTerm, selectedDestination, selectedType]);
 
   const handleDelete = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this recommendation?')) {
+      if (!authService.isAuthenticated()) {
+        setToast({ message: 'Your session has expired. Please sign in again.', type: 'error' });
+        return;
+      }
       try {
         await deleteRecommendation(id);
       } catch (error) {
@@ -529,6 +545,10 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
   };
 
   const handleShare = async (item: RecommendationHistory) => {
+    if (!authService.isAuthenticated()) {
+      setToast({ message: 'Your session has expired. Please sign in again.', type: 'error' });
+      return;
+    }
     try {
       const shareUrl = `${window.location.origin}/share/${item.id}`;
       await navigator.clipboard.writeText(shareUrl);
@@ -540,6 +560,10 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
   };
 
   const handleShareTrip = async (trip: UnifiedTrip) => {
+    if (!authService.isAuthenticated()) {
+      setToast({ message: 'Your session has expired. Please sign in again.', type: 'error' });
+      return;
+    }
     try {
       const shareUrl = `${window.location.origin}/share/${trip.tripId}`;
       await navigator.clipboard.writeText(shareUrl);
@@ -552,6 +576,10 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
 
   // Count handlers
   const loadTotalCounts = async () => {
+    if (!authService.isAuthenticated()) {
+      return;
+    }
+    
     try {
       // Load total individual count (without filters)
       const individualResponse = await historyService.getHistory(1, 1, {});
@@ -592,6 +620,11 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
 
   // Unified trip handlers
   const loadUnifiedTrips = async () => {
+    if (!authService.isAuthenticated()) {
+      setUnifiedTripsLoading(false);
+      return;
+    }
+    
     setUnifiedTripsLoading(true);
     try {
       const trips = await historyService.getUnifiedTrips();
@@ -615,6 +648,10 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
 
   const handleDeleteUnifiedTrip = async (tripId: string) => {
     if (window.confirm('Are you sure you want to delete this unified trip? This will delete all associated recommendations.')) {
+      if (!authService.isAuthenticated()) {
+        setToast({ message: 'Your session has expired. Please sign in again.', type: 'error' });
+        return;
+      }
       try {
         await historyService.deleteUnifiedTrip(tripId);
         setUnifiedTrips(prev => prev.filter(trip => trip.tripId !== tripId));
@@ -628,6 +665,11 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
 
   // Load unified trips and total counts when component mounts
   useEffect(() => {
+    // Check if user is authenticated before making API calls
+    if (!authService.isAuthenticated()) {
+      return;
+    }
+    
     loadUnifiedTrips();
     loadTotalCounts();
   }, []);
@@ -649,13 +691,40 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
     });
   };
 
-  // Get sorted items
-  const sortedHistory = sortByTime(history);
-  const sortedUnifiedTrips = sortByTime(unifiedTrips);
+  // Use allLoadedHistory for display instead of history
+  const sortedHistory = useMemo(() => {
+    const dataToSort = allLoadedHistory.length > 0 ? allLoadedHistory : history;
+    return sortByTime(dataToSort);
+  }, [allLoadedHistory, history]);
+  const sortedUnifiedTrips = useMemo(() => sortByTime(unifiedTrips), [unifiedTrips]);
 
-  const handlePageChange = (page: number) => {
-    loadHistory(page);
-  };
+  // Combine and sort all items by creation date (most recent first)
+  useEffect(() => {
+    const combined: CombinedItem[] = [];
+    
+    // Add individual recommendations
+    if (showIndividual) {
+      sortedHistory.forEach(item => {
+        combined.push({ type: 'individual', data: item });
+      });
+    }
+    
+    // Add unified trips
+    if (showUnified) {
+      sortedUnifiedTrips.forEach(trip => {
+        combined.push({ type: 'unified', data: trip });
+      });
+    }
+    
+    // Sort by creation date (most recent first)
+    combined.sort((a, b) => {
+      const dateA = new Date(a.data.created_at).getTime();
+      const dateB = new Date(b.data.created_at).getTime();
+      return dateB - dateA;
+    });
+    
+    setCombinedItems(combined);
+  }, [sortedHistory, sortedUnifiedTrips, showIndividual, showUnified]);
 
   return (
     <div className="bg-gradient-to-br from-slate-50 via-blue-50/30 to-violet-50/30 min-h-screen">
@@ -757,7 +826,7 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
                   <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                     showIndividual ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'
                   }`}>
-                    {sortedHistory.length}
+                    {combinedItems.filter(item => item.type === 'individual').length}
                   </span>
                 </span>
               </button>
@@ -777,7 +846,7 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
                   <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                     showUnified ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'
                   }`}>
-                    {sortedUnifiedTrips.length}
+                    {combinedItems.filter(item => item.type === 'unified').length}
                   </span>
                 </span>
               </button>
@@ -795,7 +864,7 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold text-slate-700">Individual Recommendations</span>
                     <span className="text-sm font-bold text-blue-600">
-                      {loading ? '...' : `${sortedHistory.length}${pagination ? ` of ${pagination.total}` : ''}`}
+                      {loading ? '...' : `${combinedItems.filter(item => item.type === 'individual').length}${pagination ? ` of ${pagination.total}` : ''}`}
                     </span>
                   </div>
                 </div>
@@ -807,7 +876,7 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold text-slate-700">Unified Trips</span>
                     <span className="text-sm font-bold text-violet-600">
-                      {unifiedTripsLoading ? '...' : `${sortedUnifiedTrips.length}${allUnifiedTrips.length > 0 ? ` of ${allUnifiedTrips.length}` : ''}`}
+                      {unifiedTripsLoading ? '...' : `${combinedItems.filter(item => item.type === 'unified').length}${allUnifiedTrips.length > 0 ? ` of ${allUnifiedTrips.length}` : ''}`}
                     </span>
                   </div>
                 </div>
@@ -880,74 +949,62 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
           </div>
         )}
 
-        {/* Combined Results - Show first if any content is available */}
-        {!loading && !error && (showIndividual || showUnified) && (sortedHistory.length > 0 || sortedUnifiedTrips.length > 0) && (
+        {/* Combined Results - Show items sorted by creation date (most recent first) */}
+        {!loading && !error && (showIndividual || showUnified) && combinedItems.length > 0 && (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 mb-12">
-              {/* Individual Recommendations */}
-              {showIndividual && sortedHistory.map(item => (
-                <HistoryItem
-                  key={item.id}
-                  item={item}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                  onView={handleView}
-                  onShare={handleShare}
-                />
-              ))}
-              
-              {/* Unified Trips */}
-              {showUnified && sortedUnifiedTrips.map(trip => (
-                <UnifiedTripItem
-                  key={trip.tripId}
-                  trip={trip}
-                  onView={handleViewUnifiedTrip}
-                  onDelete={handleDeleteUnifiedTrip}
-                  onShareTrip={handleShareTrip}
-                />
-              ))}
+              {combinedItems.map((combinedItem, index) => {
+                if (combinedItem.type === 'individual') {
+                  return (
+                    <HistoryItem
+                      key={`individual-${combinedItem.data.id}`}
+                      item={combinedItem.data}
+                      onDelete={handleDelete}
+                      onView={handleView}
+                      onShare={handleShare}
+                    />
+                  );
+                } else {
+                  return (
+                    <UnifiedTripItem
+                      key={`unified-${combinedItem.data.tripId}`}
+                      trip={combinedItem.data}
+                      onView={handleViewUnifiedTrip}
+                      onDelete={handleDeleteUnifiedTrip}
+                      onShareTrip={handleShareTrip}
+                    />
+                  );
+                }
+              })}
             </div>
 
-            {/* Pagination - Only show for individual recommendations */}
-            {showIndividual && pagination && pagination.totalPages > 1 && (
-              <div className="bg-white/90 backdrop-blur-xl rounded-3xl p-6 shadow-xl border border-white/60">
-                <div className="flex justify-center items-center gap-4">
-                  <button
-                    onClick={() => handlePageChange(pagination.page - 1)}
-                    disabled={pagination.page === 1}
-                    className="px-6 py-3 bg-gradient-to-r from-slate-100 to-slate-200 text-slate-700 rounded-2xl hover:from-slate-200 hover:to-slate-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold transition-all duration-200 shadow-md hover:shadow-lg disabled:shadow-none"
-                  >
-                    ← Previous
-                  </button>
-                  <div className="px-6 py-3 bg-gradient-to-r from-blue-500 to-violet-600 text-white rounded-2xl text-sm font-bold shadow-lg">
-                    Page {pagination.page} of {pagination.totalPages}
+            {/* Loading More Indicator */}
+            {loadingMore && (
+              <div className="flex justify-center items-center py-8">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-100 via-blue-200 to-blue-300 rounded-2xl flex items-center justify-center shadow-lg">
+                  <div className="w-6 h-6 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+                <span className="ml-4 text-blue-600 font-medium">Loading more...</span>
+              </div>
+            )}
+
+            {/* End of Results Indicator */}
+            {!loadingMore && !hasMore && combinedItems.length > 0 && showIndividual && (
+              <div className="flex justify-center items-center py-8">
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-gradient-to-br from-green-100 via-green-200 to-green-300 rounded-2xl flex items-center justify-center shadow-lg mx-auto mb-3">
+                    <span className="text-2xl">✨</span>
                   </div>
-                  <button
-                    onClick={() => handlePageChange(pagination.page + 1)}
-                    disabled={pagination.page === pagination.totalPages}
-                    className="px-6 py-3 bg-gradient-to-r from-slate-100 to-slate-200 text-slate-700 rounded-2xl hover:from-slate-200 hover:to-slate-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold transition-all duration-200 shadow-md hover:shadow-lg disabled:shadow-none"
-                  >
-                    Next →
-                  </button>
+                  <p className="text-green-600 font-medium">You've reached the end!</p>
+                  <p className="text-sm text-slate-600 mt-1">All your recommendations are loaded</p>
                 </div>
               </div>
             )}
           </>
         )}
 
-        {/* Empty States - Only show when no content is available */}
-        {!loading && !error && !showIndividual && !showUnified && (
-          <div className="text-center py-20">
-            <div className="w-24 h-24 mx-auto mb-8 bg-gradient-to-br from-slate-100 via-slate-200 to-slate-300 rounded-3xl flex items-center justify-center shadow-lg">
-              <span className="text-4xl">🎯</span>
-            </div>
-            <h3 className="text-2xl font-bold text-slate-800 mb-4">Select Trip Types to View</h3>
-            <p className="text-lg text-slate-600 max-w-lg mx-auto leading-relaxed">Click on the filter chips above to show individual recommendations or unified trips. You can view both types simultaneously!</p>
-          </div>
-        )}
-
         {/* Individual Empty State - Only show if individual is selected but no results */}
-        {!loading && !error && showIndividual && sortedHistory.length === 0 && !showUnified && (
+        {!loading && !error && showIndividual && combinedItems.filter(item => item.type === 'individual').length === 0 && !showUnified && (
           <div className="text-center py-20">
             <div className="w-24 h-24 mx-auto mb-8 bg-gradient-to-br from-blue-100 via-blue-200 to-blue-300 rounded-3xl flex items-center justify-center shadow-lg">
               <span className="text-4xl">📋</span>
@@ -958,7 +1015,7 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
         )}
 
         {/* Unified Empty State - Only show if unified is selected but no results */}
-        {!loading && !error && showUnified && sortedUnifiedTrips.length === 0 && !showIndividual && (
+        {!loading && !error && showUnified && combinedItems.filter(item => item.type === 'unified').length === 0 && !showIndividual && (
           <div className="text-center py-20">
             <div className="w-24 h-24 mx-auto mb-8 bg-gradient-to-br from-violet-100 via-violet-200 to-violet-300 rounded-3xl flex items-center justify-center shadow-lg">
               <span className="text-4xl">🗺️</span>
@@ -969,7 +1026,7 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
         )}
 
         {/* Both Empty State - Only show if both are selected but no results */}
-        {!loading && !error && showIndividual && showUnified && sortedHistory.length === 0 && sortedUnifiedTrips.length === 0 && (
+        {!loading && !error && showIndividual && showUnified && combinedItems.length === 0 && (
           <div className="text-center py-20">
             <div className="w-24 h-24 mx-auto mb-8 bg-gradient-to-br from-slate-100 via-slate-200 to-slate-300 rounded-3xl flex items-center justify-center shadow-lg">
               <span className="text-4xl">📭</span>
@@ -979,24 +1036,6 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
           </div>
         )}
 
-        {/* Loading State for Unified Trips */}
-        {unifiedTripsLoading && showUnified && (
-          <div className="text-center py-16">
-            <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-violet-100 to-violet-200 rounded-2xl flex items-center justify-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600"></div>
-            </div>
-            <h3 className="text-lg font-semibold text-slate-800 mb-2">Loading Unified Trips</h3>
-            <p className="text-slate-600">Fetching your comprehensive trip plans...</p>
-          </div>
-        )}
-
-        {/* Modals */}
-        <EditModal
-          item={editingItem}
-          onClose={() => setEditingItem(null)}
-          onSave={handleSaveEdit}
-        />
-        
         {/* Toast */}
         {toast && (
           <Toast

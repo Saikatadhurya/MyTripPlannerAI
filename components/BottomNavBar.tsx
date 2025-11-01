@@ -28,11 +28,12 @@ const NavItem: React.FC<{
 const MoreMenu: React.FC<{
     onStartAppFinder: () => void;
     onStartMusicFinder: () => void;
+    onStartLingoGuide: () => void;
     onGoToContact: () => void;
     onClose: () => void;
     onOpenAuthModal: () => void;
     user: User | null;
-}> = ({ onStartAppFinder, onStartMusicFinder, onGoToContact, onClose, onOpenAuthModal, user }) => {
+}> = ({ onStartAppFinder, onStartMusicFinder, onStartLingoGuide, onGoToContact, onClose, onOpenAuthModal, user }) => {
     const handleAction = (action: () => void) => {
         action();
         onClose();
@@ -51,6 +52,10 @@ const MoreMenu: React.FC<{
                 <span className="text-xl w-8 text-center">{user ? '🎶' : '🔒'}</span>
                 <span>Music Finder</span>
                 {!user && <span className="ml-auto text-xs text-gray-400">Sign in</span>}
+            </button>
+            <button onClick={() => handleAction(onStartLingoGuide)} className="w-full flex items-center text-left px-3 py-2.5 rounded-lg text-slate-800 font-semibold transition-colors duration-200 hover:bg-violet-100/80">
+                <span className="text-xl w-8 text-center">🗣️</span>
+                <span>Lingo Guide</span>
             </button>
             <hr className="border-slate-200/80 mx-2 my-1" />
             <button onClick={() => handleAction(onGoToContact)} className="w-full flex items-center text-left px-3 py-2.5 rounded-lg text-slate-800 font-semibold transition-colors duration-200 hover:bg-violet-100/80">
@@ -156,6 +161,7 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({
                 <MoreMenu
                     onStartAppFinder={() => navigate('/apps')}
                     onStartMusicFinder={() => navigate('/music')}
+                    onStartLingoGuide={() => navigate('/lingo')}
                     onGoToContact={() => navigate('/contact')}
                     onClose={() => setIsMoreMenuOpen(false)}
                     onOpenAuthModal={onOpenAuthModal}

@@ -7,10 +7,9 @@ import { generateFoodRecommendations } from './services/foodService';
 import { generateAppRecommendations } from './services/appFinderService';
 import { generateMusicRecommendations } from './services/musicService';
 import { generateLingoGuide } from './services/lingoService';
-import { incrementUsage } from './services/usageService';
 
 import { authService, User } from './services/authService';
-import { useQuotas } from './hooks/useQuotas';
+import profileService from './services/profileService';
 import { setGlobalLogoutHandler } from './services/axiosInterceptor';
 
 import LoadingIndicator from './components/LoadingIndicator';
@@ -20,6 +19,9 @@ import QuickNavButton from './components/QuickNavButton';
 import AppRouter from './components/AppRouter';
 import BottomNavBar from './components/BottomNavBar';
 import UnifiedResultPreview from './components/UnifiedResultPreview';
+import Footer from './components/Footer';
+import OTPVerification from './components/OTPVerification';
+import ForgotPassword from './components/ForgotPassword';
 
 
 
@@ -141,14 +143,13 @@ const AppContent: React.FC = () => {
   const [isAuthLoading, setIsAuthLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false); // New state for modal visibility
-
-  // Quota management
-  const { quotas } = useQuotas(user);
+  const [isOTPModalOpen, setIsOTPModalOpen] = useState(false);
+  const [isForgotPasswordModalOpen, setIsForgotPasswordModalOpen] = useState(false);
+  const [pendingVerificationEmail, setPendingVerificationEmail] = useState<string | null>(null);
 
   // Global logout handler for auto logout
   useEffect(() => {
     const handleGlobalLogout = () => {
-      console.log('Global logout triggered');
       setUser(null);
       setIsAuthModalOpen(false);
       navigate('/');
@@ -181,41 +182,80 @@ const AppContent: React.FC = () => {
 
   // Initialize authentication state
   useEffect(() => {
-    console.log('App: useEffect for user initialization called');
     const currentUser = authService.getCurrentUser();
-    console.log('App: Retrieved currentUser from authService:', currentUser);
-    setUser(currentUser);
-    console.log('App: User state set to:', currentUser);
+    
+    if (currentUser) {
+      // Set user initially from localStorage
+      setUser(currentUser);
+      
+      // Fetch latest profile from backend to ensure we have the most up-to-date gemini_api_key
+      const fetchLatestProfile = async () => {
+        try {
+          const profileResponse = await profileService.getProfile();
+          if (profileResponse.success && profileResponse.data?.user) {
+            const updatedUser = {
+              ...currentUser,
+              ...profileResponse.data.user
+            };
+            setUser(updatedUser);
+            localStorage.setItem('planora_user', JSON.stringify(updatedUser));
+          }
+        } catch (error) {
+          console.error('Failed to fetch latest profile on initialization:', error);
+          // If fetch fails, continue with user from localStorage
+        }
+      };
+      
+      fetchLatestProfile();
+    } else {
+      setUser(null);
+    }
   }, []);
 
   // Authentication handlers
   const handleLogin = async (email: string, password: string) => {
-    console.log('App: Starting login process for:', email);
     setIsAuthLoading(true);
     setAuthError(null);
     try {
-      console.log('App: Calling authService.login...');
       const response = await authService.login({ email, password });
-      console.log('App: Login successful, response:', response);
       
       // Wait a bit to ensure the token is properly set in authService
-      console.log('App: Waiting 50ms for token to be set...');
       await new Promise(resolve => setTimeout(resolve, 50));
       
-      console.log('App: Setting user state...');
-      setUser(response.user);
-      setIsAuthModalOpen(false); // Close modal on successful login
-      navigate('/'); // Redirect to landing page
+      // Check if we already have complete user data in localStorage
+      const existingUser = authService.getCurrentUser();
+      if (existingUser && existingUser.gemini_api_key !== undefined) {
+        // We already have complete user data, use it
+        setUser(existingUser);
+      } else {
+        // Fetch complete user profile including Gemini API key
+        const profileResponse = await profileService.getProfile();
+        if (profileResponse.success && profileResponse.data?.user) {
+          const completeUser = {
+            ...response.user,
+            ...profileResponse.data.user
+          };
+          setUser(completeUser);
+          localStorage.setItem('planora_user', JSON.stringify(completeUser));
+        } else {
+          setUser(response.user);
+          localStorage.setItem('planora_user', JSON.stringify(response.user));
+        }
+      }
       
-      // Simple refresh after login to ensure token is available
-      console.log('App: Refreshing page to ensure token is available...');
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
+      setIsAuthModalOpen(false);
+      navigate('/');
     } catch (error) {
-      console.error('App: Login failed:', error);
-      setAuthError(error instanceof Error ? error.message : 'Login failed');
-      setIsAuthModalOpen(true); // Keep modal open to display error
+      const errorMessage = error instanceof Error ? error.message : 'Login failed. Please try again.';
+      
+      // Check if the error is about email verification
+      if (errorMessage.includes('verify your email') || errorMessage.includes('verification')) {
+        // Extract email from error context or use a different approach
+        // For now, we'll show the error and let user resend OTP from signup flow
+        setAuthError(errorMessage);
+      } else {
+        setAuthError(errorMessage);
+      }
     } finally {
       setIsAuthLoading(false);
     }
@@ -227,23 +267,103 @@ const AppContent: React.FC = () => {
     try {
       const response = await authService.signup({ full_name, email, password, confirmPassword });
       
+      // Check if OTP verification is required
+      if (response.requiresVerification) {
+        setPendingVerificationEmail(response.email);
+        setIsAuthModalOpen(false);
+        setIsOTPModalOpen(true);
+        setIsAuthLoading(false);
+        return;
+      }
+      
       // Wait a bit to ensure the token is properly set in authService
       await new Promise(resolve => setTimeout(resolve, 50));
       
-      setUser(response.user);
-      setIsAuthModalOpen(false); // Close modal on successful signup
-      navigate('/'); // Redirect to landing page
+      // For new users, always fetch complete profile to get initial data
+      const profileResponse = await profileService.getProfile();
+      if (profileResponse.success && profileResponse.data?.user) {
+        const completeUser = {
+          ...response.user,
+          ...profileResponse.data.user
+        };
+        setUser(completeUser);
+        localStorage.setItem('planora_user', JSON.stringify(completeUser));
+      } else {
+        setUser(response.user);
+        localStorage.setItem('planora_user', JSON.stringify(response.user));
+      }
       
-      // Simple refresh after signup to ensure token is available
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
+      setIsAuthModalOpen(false);
+      navigate('/');
     } catch (error) {
-      setAuthError(error instanceof Error ? error.message : 'Signup failed');
-      setIsAuthModalOpen(true); // Keep modal open to display error
+      const errorMessage = error instanceof Error ? error.message : 'Signup failed. Please try again.';
+      setAuthError(errorMessage);
     } finally {
       setIsAuthLoading(false);
     }
+  };
+
+  const handleOTPVerification = async (otp: string) => {
+    if (!pendingVerificationEmail) return;
+    
+    setIsAuthLoading(true);
+    setAuthError(null);
+    try {
+      const response = await authService.verifyOTP(pendingVerificationEmail, otp);
+      
+      // Wait a bit to ensure the token is properly set in authService
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
+      // Fetch complete user profile
+      const profileResponse = await profileService.getProfile();
+      if (profileResponse.success && profileResponse.data?.user) {
+        const completeUser = {
+          ...response.user,
+          ...profileResponse.data.user
+        };
+        setUser(completeUser);
+        localStorage.setItem('planora_user', JSON.stringify(completeUser));
+      } else {
+        setUser(response.user);
+        localStorage.setItem('planora_user', JSON.stringify(response.user));
+      }
+      
+      setIsOTPModalOpen(false);
+      setPendingVerificationEmail(null);
+      navigate('/');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'OTP verification failed. Please try again.';
+      setAuthError(errorMessage);
+    } finally {
+      setIsAuthLoading(false);
+    }
+  };
+
+  const handleResendOTP = async () => {
+    if (!pendingVerificationEmail) return;
+    
+    setIsAuthLoading(true);
+    setAuthError(null);
+    try {
+      await authService.resendOTP(pendingVerificationEmail);
+      setAuthError(null); // Clear any previous errors
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to resend OTP. Please try again.';
+      setAuthError(errorMessage);
+    } finally {
+      setIsAuthLoading(false);
+    }
+  };
+
+  const handleForgotPassword = () => {
+    setIsAuthModalOpen(false);
+    setIsForgotPasswordModalOpen(true);
+  };
+
+  const handleForgotPasswordSuccess = () => {
+    setIsForgotPasswordModalOpen(false);
+    setIsAuthModalOpen(true);
+    setAuthError(null);
   };
 
   const handleLogout = () => {
@@ -257,6 +377,11 @@ const AppContent: React.FC = () => {
     mainContentRef.current?.scrollTo(0, 0);
     window.scrollTo(0, 0);
   }, []);
+
+  // Scroll to top whenever the location changes
+  useEffect(() => {
+    scrollToTop();
+  }, [location.pathname, scrollToTop]);
 
   const handleViewChange = useCallback((newView: View) => {
     setError(null);
@@ -312,7 +437,6 @@ const AppContent: React.FC = () => {
     if (token && user) {
       try {
         const userData = JSON.parse(decodeURIComponent(user));
-        console.log('App: Processing Google OAuth callback for:', userData.email);
         
         // Store the token and user data
         localStorage.setItem('planora_token', token);
@@ -327,9 +451,8 @@ const AppContent: React.FC = () => {
         
         // Redirect to landing page
         navigate('/');
-        
+
         // Simple refresh after Google OAuth login to ensure token is available
-        console.log('App: Refreshing page after Google OAuth login...');
         setTimeout(() => {
           window.location.reload();
         }, 500);
@@ -342,7 +465,7 @@ const AppContent: React.FC = () => {
       // Clear URL parameters
       window.history.replaceState({}, document.title, window.location.pathname);
     }
-  }, [navigate, user, quotas]);
+  }, [navigate, user]);
 
   const createInitialData = (destination?: string) => {
     const data: QuestionnaireData = {
@@ -372,37 +495,37 @@ const AppContent: React.FC = () => {
       const dest = typeof destination === 'string' ? destination : undefined;
       setInitialQuestionnaireData(createInitialData(dest));
       navigate('/plan');
-    }, [navigate, user, quotas]);
+    }, [navigate, user]);
   
   const handleStartItineraryPlanner = useCallback(() => {
     setInitialQuestionnaireData(createInitialData());
     navigate('/itinerary');
-  }, [navigate, user, quotas]);
+  }, [navigate, user]);
 
   const handleStartPackingAssistant = useCallback(() => {
     setPackingRequestData(null);
     navigate('/packing');
-  }, [navigate, user, quotas]);
+  }, [navigate, user]);
 
   const handleStartFoodFinder = useCallback(() => {
     setFoodRequestData(null);
     navigate('/food');
-  }, [navigate, user, quotas]);
+  }, [navigate, user]);
 
   const handleStartAppFinder = useCallback(() => {
     setAppRequestData(null);
     navigate('/apps');
-  }, [navigate, user, quotas]);
+  }, [navigate, user]);
 
   const handleStartMusicFinder = useCallback(() => {
     setMusicRequestData(null);
     navigate('/music');
-  }, [navigate, user, quotas]);
+  }, [navigate, user]);
 
   const handleStartLingoFinder = useCallback(() => {
     setLingoRequestData(null);
     navigate('/lingo');
-  }, [navigate, user, quotas]);
+  }, [navigate, user]);
 
   const handleBackToHome = useCallback(() => {
     setItinerary(null);
@@ -421,7 +544,7 @@ const AppContent: React.FC = () => {
     setQuestionnaireDataForUnifiedPlan(null);
     setIsHistoryView(false); // Reset history view flag
     navigate('/');
-  }, [navigate, user, quotas]);
+  }, [navigate, user]);
 
   const handleNavigateToResult = useCallback((type: string, responseData: any, requestData: any, isHistoryView: boolean = false) => {
     setIsHistoryView(isHistoryView);
@@ -480,12 +603,14 @@ const AppContent: React.FC = () => {
 
   const handleEditProfile = useCallback(() => {
     navigate('/profile');
-  }, [navigate, user, quotas]);
+  }, [navigate, user]);
 
   const handleProfileUpdate = useCallback((updatedUser: User) => {
     setUser(updatedUser);
     // Update localStorage with new user data
     localStorage.setItem('planora_user', JSON.stringify(updatedUser));
+    // Update authService current user
+    authService.updateCurrentUser(updatedUser);
   }, []);
   
   const handleCancelGeneration = useCallback(() => {
@@ -520,13 +645,6 @@ const AppContent: React.FC = () => {
   }, [location.pathname, navigate]);
 
   const handleGenerateItinerary = useCallback(async (data: QuestionnaireData) => {
-    // Check quota limits before starting generation
-    if (user && quotas.itinerary && quotas.itinerary.remaining <= 0) {
-      setError("You have reached your weekly limit for itinerary plans. Please try again next week or upgrade your plan.");
-      return;
-    }
-
-    console.log('handleGenerateItinerary called with data:', data);
     setInitialQuestionnaireData(data);
     setIsLoading(true);
     setError(null);
@@ -544,26 +662,20 @@ const AppContent: React.FC = () => {
         if (simplePlanCancellationFlag.current) break;
 
         try {
-            const result = await generateItinerary(
+            const { result, prompt: itineraryPrompt } = await generateItinerary(
                 data.destination, data.startPoint, data.tripType, data.days, data.budget, data.vibe, data.persons, data.foodPreference, data.startDate, data.includeMedical, data.language, data.isRoundTrip, data.currency,
                 (chunk) => {
                     if (simplePlanCancellationFlag.current) throw new Error("Cancelled");
                     setStreamedText(prev => prev + chunk);
-                }
+                },
+                user?.gemini_api_key
             );
             
             if (simplePlanCancellationFlag.current) break;
 
             setItinerary(result);
-            
-            // Increment usage after successful generation
-            try {
-              await incrementUsage('itinerary');
-              console.log('Successfully incremented usage for itinerary');
-            } catch (error) {
-              console.error('Failed to increment usage for itinerary:', error);
-              // Don't fail the whole operation if usage tracking fails
-            }
+            // Store prompt for token calculation when saving
+            (result as any).__prompt = itineraryPrompt;
             
             await new Promise(resolve => setTimeout(resolve, 1000));
             setItineraryAttemptCount(0);
@@ -586,7 +698,7 @@ const AppContent: React.FC = () => {
     
     setIsLoading(false);
     setItineraryAttemptCount(0);
-  }, [navigate, user, quotas]);
+  }, [navigate, user]);
   
     // Helper to run each non-streaming generation step with retry/cancellation
     const generateStep = useCallback(async <T,>(
@@ -670,14 +782,15 @@ const AppContent: React.FC = () => {
                 }
                 
                 try {
-                    const result = await generateItinerary(
+                    const { result, prompt: itineraryPrompt } = await generateItinerary(
                         data.destination, data.startPoint, data.tripType, data.days, data.budget, data.vibe, data.persons, data.foodPreference, data.startDate, data.includeMedical, data.language, data.isRoundTrip, data.currency,
                         (chunk) => {
                             if (cancellationFlags.current.itinerary) {
                                 throw new Error("Cancelled");
                             }
                             setItineraryStreamedText(prev => prev + chunk);
-                        }
+                        },
+                        user?.gemini_api_key
                     );
                     
                     if (cancellationFlags.current.itinerary) {
@@ -685,16 +798,9 @@ const AppContent: React.FC = () => {
                         return;
                     }
 
+                    // Store prompt for token calculation when saving
+                    (result as any).__prompt = itineraryPrompt;
                     setUnifiedPlan(prev => ({ ...prev, itinerary: result }));
-                    
-                    // Increment usage after successful unified plan generation
-                    try {
-                      await incrementUsage('unified');
-                      console.log('Successfully incremented usage for unified planner');
-                    } catch (error) {
-                      console.error('Failed to increment usage for unified planner:', error);
-                      // Don't fail the whole operation if usage tracking fails
-                    }
                     
                     setUnifiedPlanLoadingStatus(prev => ({ ...prev, itinerary: 'done' }));
                     setItineraryAttemptCount(0);
@@ -724,11 +830,6 @@ const AppContent: React.FC = () => {
     }, [location.pathname, questionnaireDataForUnifiedPlan, unifiedPlanLoadingStatus.itinerary]);
 
     const handleGeneratePackingList = useCallback(async (data: PackingListRequestData, isUnified = false): Promise<PackingList | null> => {
-      // Check quota limits before starting generation (only for standalone usage)
-      if (!isUnified && user && quotas.packing && quotas.packing.remaining <= 0) {
-        setError("You have reached your weekly limit for packing lists. Please try again next week or upgrade your plan.");
-        return null;
-      }
 
       if (!isUnified) {
         setPackingRequestData(data);
@@ -749,21 +850,17 @@ const AppContent: React.FC = () => {
           if (simplePlanCancellationFlag.current) break;
   
           try {
-              const result = await generatePackingList(data, (chunk) => {
+              const { result, prompt: packingPrompt } = await generatePackingList(data, (chunk) => {
                   if (simplePlanCancellationFlag.current) throw new Error("Cancelled");
                   if (!isUnified) setStreamedText(prev => prev + chunk);
-              });
+              }, user?.gemini_api_key);
               
               if (simplePlanCancellationFlag.current) break;
   
+              // Store prompt for token calculation when saving
+              (result as any).__prompt = packingPrompt;
               if (!isUnified) {
                 setPackingList(result);
-                try {
-                  await incrementUsage('packing');
-                  console.log('Successfully incremented usage for packing assistant');
-                } catch (error) {
-                  console.error('Failed to increment usage for packing assistant:', error);
-                }
               }
               
               await new Promise(resolve => setTimeout(resolve, 1000));
@@ -796,14 +893,9 @@ const AppContent: React.FC = () => {
         setMiniAppAttemptCount(0);
       }
       return null;
-  }, [navigate, user, quotas]);
+  }, [navigate, user]);
   
     const handleGenerateFoodRecommendations = useCallback(async (data: FoodFinderRequestData, isUnified = false): Promise<FoodRecommendations | null> => {
-      // Check quota limits before starting generation (only for standalone usage)
-      if (!isUnified && user && quotas.food && quotas.food.remaining <= 0) {
-        setError("You have reached your weekly limit for food recommendations. Please try again next week or upgrade your plan.");
-        return null;
-      }
 
       if (!isUnified) {
         setFoodRequestData(data);
@@ -824,21 +916,17 @@ const AppContent: React.FC = () => {
           if (simplePlanCancellationFlag.current) break;
   
           try {
-              const result = await generateFoodRecommendations(data, (chunk) => {
+              const { result, prompt: foodPrompt } = await generateFoodRecommendations(data, (chunk) => {
                   if (simplePlanCancellationFlag.current) throw new Error("Cancelled");
                   if (!isUnified) setStreamedText(prev => prev + chunk)
-              });
+              }, user?.gemini_api_key);
               
               if (simplePlanCancellationFlag.current) break;
   
+              // Store prompt for token calculation when saving
+              (result as any).__prompt = foodPrompt;
               if (!isUnified) {
                 setFoodRecommendations(result);
-                try {
-                  await incrementUsage('food');
-                  console.log('Successfully incremented usage for food finder');
-                } catch (error) {
-                  console.error('Failed to increment usage for food finder:', error);
-                }
               }
               
               await new Promise(resolve => setTimeout(resolve, 1000));
@@ -871,14 +959,9 @@ const AppContent: React.FC = () => {
         setMiniAppAttemptCount(0);
       }
       return null;
-  }, [navigate, user, quotas]);
+  }, [navigate, user]);
     
     const handleGenerateAppRecommendations = useCallback(async (data: AppFinderRequestData, isUnified = false): Promise<AppRecommendations | null> => {
-      // Check quota limits before starting generation (only for standalone usage)
-      if (!isUnified && user && quotas.apps && quotas.apps.remaining <= 0) {
-        setError("You have reached your weekly limit for app recommendations. Please try again next week or upgrade your plan.");
-        return null;
-      }
 
       if (!isUnified) {
         setAppRequestData(data);
@@ -899,21 +982,17 @@ const AppContent: React.FC = () => {
           if (simplePlanCancellationFlag.current) break;
   
           try {
-              const result = await generateAppRecommendations(data, (chunk) => {
+              const { result, prompt: appPrompt } = await generateAppRecommendations(data, (chunk) => {
                   if (simplePlanCancellationFlag.current) throw new Error("Cancelled");
                   if (!isUnified) setStreamedText(prev => prev + chunk)
-              });
+              }, user?.gemini_api_key);
               
               if (simplePlanCancellationFlag.current) break;
   
+              // Store prompt for token calculation when saving
+              (result as any).__prompt = appPrompt;
               if (!isUnified) {
                 setAppRecommendations(result);
-                try {
-                  await incrementUsage('apps');
-                  console.log('Successfully incremented usage for app finder');
-                } catch (error) {
-                  console.error('Failed to increment usage for app finder:', error);
-                }
               }
               
               await new Promise(resolve => setTimeout(resolve, 1000));
@@ -946,14 +1025,9 @@ const AppContent: React.FC = () => {
         setMiniAppAttemptCount(0);
       }
       return null;
-  }, [navigate, user, quotas]);
+  }, [navigate, user]);
     
     const handleGenerateMusicRecommendations = useCallback(async (data: MusicFinderRequestData, isUnified = false): Promise<MusicRecommendations | null> => {
-      // Check quota limits before starting generation (only for standalone usage)
-      if (!isUnified && user && quotas.music && quotas.music.remaining <= 0) {
-        setError("You have reached your weekly limit for music recommendations. Please try again next week or upgrade your plan.");
-        return null;
-      }
 
       if (!isUnified) {
         setMusicRequestData(data);
@@ -974,21 +1048,17 @@ const AppContent: React.FC = () => {
           if (simplePlanCancellationFlag.current) break;
   
           try {
-              const result = await generateMusicRecommendations(data, (chunk) => {
+              const { result, prompt: musicPrompt } = await generateMusicRecommendations(data, (chunk) => {
                   if (simplePlanCancellationFlag.current) throw new Error("Cancelled");
                   if (!isUnified) setStreamedText(prev => prev + chunk)
-              });
+              }, user?.gemini_api_key);
               
               if (simplePlanCancellationFlag.current) break;
   
+              // Store prompt for token calculation when saving
+              (result as any).__prompt = musicPrompt;
               if (!isUnified) {
                 setMusicRecommendations(result);
-                try {
-                  await incrementUsage('music');
-                  console.log('Successfully incremented usage for music finder');
-                } catch (error) {
-                  console.error('Failed to increment usage for music finder:', error);
-                }
               }
               
               await new Promise(resolve => setTimeout(resolve, 1000));
@@ -1021,14 +1091,9 @@ const AppContent: React.FC = () => {
         setMiniAppAttemptCount(0);
       }
       return null;
-  }, [navigate, user, quotas]);
+  }, [navigate, user]);
     
     const handleGenerateLingoGuide = useCallback(async (data: LingoFinderRequestData, isUnified = false): Promise<LingoRecommendations | null> => {
-      // Check quota limits before starting generation (only for standalone usage)
-      if (!isUnified && user && quotas.lingo && quotas.lingo.remaining <= 0) {
-        setError("You have reached your weekly limit for language guides. Please try again next week or upgrade your plan.");
-        return null;
-      }
 
       if (!isUnified) {
         setLingoRequestData(data);
@@ -1049,21 +1114,17 @@ const AppContent: React.FC = () => {
           if (simplePlanCancellationFlag.current) break;
   
           try {
-              const result = await generateLingoGuide(data, (chunk) => {
+              const { result, prompt: lingoPrompt } = await generateLingoGuide(data, (chunk) => {
                   if (simplePlanCancellationFlag.current) throw new Error("Cancelled");
                   if (!isUnified) setStreamedText(prev => prev + chunk)
-              });
+              }, user?.gemini_api_key);
               
               if (simplePlanCancellationFlag.current) break;
   
+              // Store prompt for token calculation when saving
+              (result as any).__prompt = lingoPrompt;
               if (!isUnified) {
                 setLingoRecommendations(result);
-                try {
-                  await incrementUsage('lingo');
-                  console.log('Successfully incremented usage for lingo finder');
-                } catch (error) {
-                  console.error('Failed to increment usage for lingo finder:', error);
-                }
               }
               
               await new Promise(resolve => setTimeout(resolve, 1000));
@@ -1096,7 +1157,7 @@ const AppContent: React.FC = () => {
         setMiniAppAttemptCount(0);
       }
       return null;
-  }, [navigate, user, quotas]);
+  }, [navigate, user]);
 
     // Effect for parallel generation of other steps, dependent on itinerary completion
     useEffect(() => {
@@ -1163,11 +1224,6 @@ const AppContent: React.FC = () => {
 
 
   const handleGenerateUnifiedPlan = useCallback(async (data: QuestionnaireData) => {
-    // Check quota limits before starting generation
-    if (user && quotas.unified && quotas.unified.remaining <= 0) {
-      setError("You have reached your weekly limit for unified plans. Please try again next week or upgrade your plan.");
-      return;
-    }
 
     setInitialQuestionnaireData(data);
     setQuestionnaireDataForUnifiedPlan(data);
@@ -1180,7 +1236,7 @@ const AppContent: React.FC = () => {
     navigate('/results/unified');
     // This state change will trigger the pipeline `useEffect`
     setUnifiedPlanLoadingStatus({ itinerary: 'pending', packing: 'pending', food: 'pending', apps: 'pending', music: 'pending', lingo: 'pending' });
-  }, [navigate, user, quotas]);
+  }, [navigate, user]);
 
   const handleRegenerateUnifiedPlanStep = useCallback((step: keyof UnifiedPlanLoadingStatus) => {
     if (!questionnaireDataForUnifiedPlan) return;
@@ -1281,7 +1337,6 @@ const AppContent: React.FC = () => {
             accentColor: 'violet' as const,
             attemptCount: itineraryAttemptCount,
             maxAttempts: 3,
-            showTimer: true,
           };
           break;
         case 'packingAssistantResult':
@@ -1318,7 +1373,6 @@ const AppContent: React.FC = () => {
                     funFacts={itineraryFunFacts}
                     attemptCount={itineraryAttemptCount}
                     maxAttempts={3}
-                    showTimer={true}
                 />
             );
         }
@@ -1396,11 +1450,12 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
-  <Header user={user} onLogout={handleLogout} onEditProfile={handleEditProfile} onLogin={handleLogin} onSignup={handleSignup} isLoading={isAuthLoading} error={authError} isAuthModalOpen={isAuthModalOpen} onOpenAuthModal={() => setIsAuthModalOpen(true)} onCloseAuthModal={() => setIsAuthModalOpen(false)} />
+  <Header user={user} onLogout={handleLogout} onEditProfile={handleEditProfile} onLogin={handleLogin} onSignup={handleSignup} isLoading={isAuthLoading} error={authError} isAuthModalOpen={isAuthModalOpen} onOpenAuthModal={() => setIsAuthModalOpen(true)} onCloseAuthModal={() => setIsAuthModalOpen(false)} onForgotPassword={handleForgotPassword} onViewTokenUsage={() => navigate('/token-usage')} onGoToContact={() => navigate('/contact')} onGetApiKey={() => navigate('/get-api-key')} />
   {/* Spacer to offset the fixed header so content isn't hidden behind it */}
   <div className="h-20 md:h-24" />
-  <div ref={mainContentRef} className="flex-1 overflow-y-auto">
+  <div ref={mainContentRef} className="flex-1 overflow-y-auto px-4 sm:px-6 md:px-0">
         {renderContent()}
+        <Footer />
       </div>
       <BottomNavBar
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
@@ -1416,6 +1471,61 @@ const AppContent: React.FC = () => {
       {/* Scroll to Top Button */}
       <ScrollToTopButton scrollContainerRef={mainContentRef} />
       {/* Auth modal is handled by Header via the AuthModal component */}
+      
+      {/* OTP Verification Modal */}
+      {isOTPModalOpen && pendingVerificationEmail && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/60 max-w-md w-full p-8 relative">
+            <button
+              onClick={() => {
+                setIsOTPModalOpen(false);
+                setPendingVerificationEmail(null);
+                setIsAuthModalOpen(true);
+              }}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors duration-200"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <OTPVerification
+              email={pendingVerificationEmail}
+              onVerify={handleOTPVerification}
+              onResend={handleResendOTP}
+              isLoading={isAuthLoading}
+              error={authError || undefined}
+              resendCooldown={60}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Forgot Password Modal */}
+      {isForgotPasswordModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/60 max-w-md w-full p-8 relative">
+            <button
+              onClick={() => {
+                setIsForgotPasswordModalOpen(false);
+                setIsAuthModalOpen(true);
+              }}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors duration-200"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <ForgotPassword
+              onBack={() => {
+                setIsForgotPasswordModalOpen(false);
+                setIsAuthModalOpen(true);
+              }}
+              onSuccess={handleForgotPasswordSuccess}
+            />
+          </div>
+        </div>
+      )}
+      
       <div className="hidden">
         {/* Debugging information */}
             <pre>{JSON.stringify({ currentView, user, itinerary, packingList, foodRecommendations, appRecommendations, musicRecommendations, lingoRecommendations, unifiedPlan, unifiedPlanLoadingStatus, error }, null, 2)}</pre>

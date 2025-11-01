@@ -1,0 +1,31 @@
+# robots.txt for PlanMyTrip AI
+# This file tells search engines which pages they can and cannot crawl
+
+User-agent: *
+Allow: /
+
+# Disallow result pages as they are dynamic and require authentication
+Disallow: /results/
+
+# Disallow auth pages
+Disallow: /auth
+
+# Allow all main pages for SEO
+Allow: /
+Allow: /contact
+Allow: /plan
+Allow: /itinerary
+Allow: /packing
+Allow: /food
+Allow: /apps
+Allow: /music
+Allow: /lingo
+Allow: /get-api-key
+Allow: /share/
+
+# Crawl-delay for better server performance
+Crawl-delay: 1
+
+# Sitemap location
+Sitemap: https://www.planmytripai.in/sitemap.xml
+

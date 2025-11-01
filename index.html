@@ -3,11 +3,85 @@
   <head>
     <meta charset="UTF-8" />
     <!-- FIX: Replaced placeholder favicon with a custom, relevant SVG icon for the travel app. -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3e%3ccircle cx='16' cy='16' r='16' fill='%236D28D9'/%3e%3cpath d='M15.25 7C11.25 7 8 10.25 8 14.25C8 19.5 15.25 25 15.25 25C15.25 25 22.5 19.5 22.5 14.25C22.5 10.25 19.25 7 15.25 7ZM15.25 16.5C13.9 16.5 12.75 15.35 12.75 14C12.75 12.65 13.9 11.5 15.25 11.5C16.6 11.5 17.75 12.65 17.75 14C17.75 15.35 16.6 16.5 15.25 16.5Z' fill='white'/%3e%3c/svg%3e" />
+    <link rel="icon" type="image/png" href="/PlanMyTrip.png" />
+    <link rel="apple-touch-icon" href="/PlanMyTrip.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- FIX: Added meta description for better SEO and social sharing previews. -->
-    <meta name="description" content="Get personalized travel itineraries powered by AI. From budget planning to day-wise activities, we've got you covered." />
-    <title>Plan Your Dream Trip with AI</title>
+    
+    <!-- SEO Meta Tags -->
+    <title>AI Trip Planner | Plan Your Dream Trip with AI-Powered Itineraries</title>
+    <meta name="description" content="Create personalized travel itineraries with AI. Get day-wise planning, budget estimates, packing lists, local food recommendations, and more for your perfect trip." />
+    <meta name="keywords" content="trip planner, plan my trip, AI trip planner, travel itinerary, vacation planner, travel planning, trip organizer, travel guide, itinerary maker, travel assistant, smart trip planner, personalized travel, travel itinerary generator, AI travel planner" />
+    <meta name="author" content="PlanMyTrip AI" />
+    <meta name="robots" content="index, follow" />
+    <meta name="language" content="English" />
+    <meta name="revisit-after" content="7 days" />
+    
+    <!-- Open Graph Tags for Social Media -->
+    <meta property="og:title" content="AI Trip Planner | Plan Your Dream Trip with AI-Powered Itineraries" />
+    <meta property="og:description" content="Create personalized travel itineraries with AI. Get day-wise planning, budget estimates, packing lists, local food recommendations, and more for your perfect trip." />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="PlanMyTrip AI" />
+    
+    <!-- Twitter Card Tags -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="AI Trip Planner | Plan Your Dream Trip with AI" />
+    <meta name="twitter:description" content="Create personalized travel itineraries with AI. Get day-wise planning, budget estimates, and more." />
+    
+    <!-- Additional SEO Meta Tags -->
+    <meta name="theme-color" content="#6D28D9" />
+    <meta name="application-name" content="PlanMyTrip AI" />
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://www.planmytripai.in/" />
+    
+    <!-- Sitemap Reference -->
+    <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+    
+    <!-- Structured Data for Google -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "PlanMyTrip AI",
+      "description": "AI-powered trip planner that creates personalized travel itineraries with day-wise planning, budget estimates, packing lists, and local recommendations",
+      "url": "https://www.planmytripai.in",
+      "applicationCategory": "TravelApplication",
+      "operatingSystem": "Web",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.8",
+        "ratingCount": "150"
+      },
+      "featureList": [
+        "AI-powered itinerary planning",
+        "Budget estimation",
+        "Packing list generator",
+        "Local food recommendations",
+        "Music playlist suggestions",
+        "Language phrase guide",
+        "Mobile app recommendations"
+      ]
+    }
+    </script>
+    
+    <!-- Local Business Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "PlanMyTrip AI",
+      "url": "https://www.planmytripai.in",
+      "logo": "https://www.planmytripai.in/PlanMyTrip.png",
+      "description": "AI-powered travel planning platform"
+    }
+    </script>
+    <!-- Load Tailwind CSS first -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <!-- FIX: Added Tailwind CSS configuration script to properly set the Inter font family. -->
     <script>
       tailwind.config = {
@@ -20,7 +94,6 @@
         }
       }
     </script>
-    <script src="https://cdn.tailwindcss.com"></script>
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
       body {

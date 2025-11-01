@@ -1,5 +1,6 @@
 const { Pool } = require('pg');
 const bcrypt = require('bcrypt');
+const { encryptString, decryptString } = require('../utils/crypto');
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -13,7 +14,7 @@ class UserModel {
     const client = await pool.connect();
     try {
       const res = await client.query(
-        `INSERT INTO planora.users(full_name, email, password_hash) VALUES($1, $2, $3) RETURNING id, full_name, email, created_at`,
+        `INSERT INTO planora.users(full_name, email, password_hash, is_verified) VALUES($1, $2, $3, false) RETURNING id, full_name, email, created_at, is_verified`,
         [full_name, email, password_hash]
       );
       return res.rows[0];
@@ -26,10 +27,17 @@ class UserModel {
     const client = await pool.connect();
     try {
       const res = await client.query(
-        `SELECT id, full_name, email, password_hash FROM planora.users WHERE email = $1`,
+        `SELECT id, full_name, email, password_hash, gemini_api_key, is_verified FROM planora.users WHERE email = $1`,
         [email]
       );
-      return res.rows[0];
+      const user = res.rows[0];
+      if (user && user.gemini_api_key) {
+        // decryptString now handles errors internally and logs them appropriately
+        // It will return null if decryption fails, or the plain text if successful
+        const decrypted = decryptString(user.gemini_api_key);
+        user.gemini_api_key = decrypted || null;
+      }
+      return user;
     } finally {
       client.release();
     }
@@ -39,10 +47,17 @@ class UserModel {
     const client = await pool.connect();
     try {
       const res = await client.query(
-        `SELECT id, full_name, email FROM planora.users WHERE id = $1`,
+        `SELECT id, full_name, email, gemini_api_key FROM planora.users WHERE id = $1`,
         [id]
       );
-      return res.rows[0];
+      const user = res.rows[0];
+      if (user && user.gemini_api_key) {
+        // decryptString now handles errors internally and logs them appropriately
+        // It will return null if decryption fails, or the plain text if successful
+        const decrypted = decryptString(user.gemini_api_key);
+        user.gemini_api_key = decrypted || null;
+      }
+      return user;
     } finally {
       client.release();
     }
@@ -65,13 +80,20 @@ class UserModel {
     const client = await pool.connect();
     try {
       const res = await client.query(
-        `SELECT sa.id as social_id, sa.user_id, sa.provider, sa.provider_id, u.id as user_id, u.full_name, u.email
+        `SELECT sa.id as social_id, sa.user_id, sa.provider, sa.provider_id, u.id as user_id, u.full_name, u.email, u.gemini_api_key
          FROM planora.social_accounts sa
          JOIN planora.users u ON sa.user_id = u.id
          WHERE sa.provider = $1 AND sa.provider_id = $2`,
         [provider, provider_id]
       );
-      return res.rows[0];
+      const row = res.rows[0];
+      if (row && row.gemini_api_key) {
+        // decryptString now handles errors internally and logs them appropriately
+        // It will return null if decryption fails, or the plain text if successful
+        const decrypted = decryptString(row.gemini_api_key);
+        row.gemini_api_key = decrypted || null;
+      }
+      return row;
     } finally {
       client.release();
     }
@@ -102,7 +124,8 @@ class UserModel {
   async updateProfile(userId, updates) {
     const client = await pool.connect();
     try {
-      const { full_name, email } = updates;
+      const { full_name, email, gemini_api_key } = updates;
+      
       const updateFields = [];
       const values = [];
       let paramCount = 1;
@@ -125,6 +148,11 @@ class UserModel {
         updateFields.push(`email = $${paramCount++}`);
         values.push(email);
       }
+
+      if (gemini_api_key !== undefined) {
+        updateFields.push(`gemini_api_key = $${paramCount++}`);
+        values.push(gemini_api_key === null ? null : encryptString(gemini_api_key));
+      }
   
       if (updateFields.length === 0) {
         throw new Error('No valid fields to update');
@@ -138,16 +166,23 @@ class UserModel {
         UPDATE planora.users 
         SET ${updateFields.join(', ')}
         WHERE id = $${paramCount}
-        RETURNING id, full_name, email, created_at, updated_at
+        RETURNING id, full_name, email, created_at, updated_at, gemini_api_key
       `;
-  
+
       const result = await client.query(query, values);
   
       if (result.rows.length === 0) {
         throw new Error('User not found');
       }
-  
-      return result.rows[0];
+
+      const user = result.rows[0];
+      if (user && user.gemini_api_key) {
+        // decryptString now handles errors internally and logs them appropriately
+        // It will return null if decryption fails, or the plain text if successful
+        const decrypted = decryptString(user.gemini_api_key);
+        user.gemini_api_key = decrypted || null;
+      }
+      return user;
     } finally {
       client.release();
     }
@@ -194,6 +229,45 @@ class UserModel {
       }
 
       return { success: true, message: 'Password updated successfully' };
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Reset password directly (for password reset flow via OTP)
+   * This bypasses current password verification since OTP was already verified
+   * @param {string} userId - User ID
+   * @param {string} newPassword - New password to set
+   */
+  async resetPasswordDirect(userId, newPassword) {
+    const client = await pool.connect();
+    try {
+      // Check if user exists
+      const userResult = await client.query(
+        'SELECT id FROM planora.users WHERE id = $1',
+        [userId]
+      );
+
+      if (userResult.rows.length === 0) {
+        throw new Error('User not found');
+      }
+
+      // Hash new password
+      const saltRounds = 12;
+      const newPasswordHash = await bcrypt.hash(newPassword, saltRounds);
+
+      // Update password directly (OTP verification already happened)
+      const updateResult = await client.query(
+        'UPDATE planora.users SET password_hash = $1, updated_at = NOW() WHERE id = $2 RETURNING id',
+        [newPasswordHash, userId]
+      );
+
+      if (updateResult.rows.length === 0) {
+        throw new Error('Failed to reset password');
+      }
+
+      return { success: true, message: 'Password reset successfully' };
     } finally {
       client.release();
     }
@@ -301,7 +375,7 @@ class UserModel {
     const client = await pool.connect();
     try {
       const result = await client.query(
-        'SELECT id, full_name, email, created_at, updated_at, (password_hash IS NOT NULL) AS has_password FROM planora.users WHERE id = $1',
+        'SELECT id, full_name, email, created_at, updated_at, gemini_api_key, (password_hash IS NOT NULL) AS has_password FROM planora.users WHERE id = $1',
         [userId]
       );
 
@@ -310,12 +384,61 @@ class UserModel {
       }
 
       const user = result.rows[0];
+      if (user && user.gemini_api_key) {
+        // decryptString now handles errors internally and logs them appropriately
+        // It will return null if decryption fails, or the plain text if successful
+        const decrypted = decryptString(user.gemini_api_key);
+        user.gemini_api_key = decrypted || null;
+      }
 
       // Get social accounts
       const socialAccounts = await this.getSocialAccounts(userId);
       user.social_accounts = socialAccounts;
 
       return user;
+    } finally {
+      client.release();
+    }
+  }
+
+  async updateGeminiApiKey(userId, apiKey) {
+    const client = await pool.connect();
+    try {
+      const result = await client.query(
+        'UPDATE planora.users SET gemini_api_key = $1, updated_at = NOW() WHERE id = $2 RETURNING id, gemini_api_key',
+        [apiKey === null ? null : encryptString(apiKey), userId]
+      );
+
+      if (result.rows.length === 0) {
+        throw new Error('User not found');
+      }
+
+      const user = result.rows[0];
+      if (user && user.gemini_api_key) {
+        // decryptString now handles errors internally and logs them appropriately
+        // It will return null if decryption fails, or the plain text if successful
+        const decrypted = decryptString(user.gemini_api_key);
+        user.gemini_api_key = decrypted || null;
+      }
+      return user;
+    } finally {
+      client.release();
+    }
+  }
+
+  async verifyUserEmail(userId) {
+    const client = await pool.connect();
+    try {
+      const result = await client.query(
+        'UPDATE planora.users SET is_verified = true, email_verified_at = NOW() WHERE id = $1 RETURNING id, is_verified, email_verified_at',
+        [userId]
+      );
+
+      if (result.rows.length === 0) {
+        throw new Error('User not found');
+      }
+
+      return result.rows[0];
     } finally {
       client.release();
     }

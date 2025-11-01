@@ -7,6 +7,7 @@ import AppFinderResult from './AppFinderResult';
 import MusicFinderResult from './MusicFinderResult';
 import LingoFinderResult from './LingoFinderResult';
 import { useSaveRecommendation } from '../hooks/useSaveRecommendation';
+import Toast from './Toast';
 
 type Tab = 'itinerary' | 'packing' | 'food' | 'apps' | 'music' | 'lingo';
 
@@ -49,8 +50,19 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
     isHistoryView = false
 }) => {
     const [activeTab, setActiveTab] = useState<Tab>('itinerary');
-    const [hasBeenSaved, setHasBeenSaved] = useState(false);
-    const { saveUnifiedTripRecommendations } = useSaveRecommendation();
+    const [savedTripId, setSavedTripId] = useState<string | null>(null);
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+    const savedTypesRef = React.useRef<Set<string>>(new Set());
+    const { 
+        saveUnifiedTripRecommendations,
+        saveItineraryRecommendation,
+        savePackingRecommendation,
+        saveFoodRecommendation,
+        saveAppRecommendation,
+        saveMusicRecommendation,
+        saveLingoRecommendation
+    } = useSaveRecommendation();
+    const mainContentRef = React.useRef<HTMLElement>(null);
     
     const isPlanComplete = Object.values(loadingStatus).every(status => status === 'done');
 
@@ -58,102 +70,187 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
         onTabChangeScrollToTop();
     }, [activeTab, onTabChangeScrollToTop]);
 
-    // Save unified trip to history when plan is complete
+    // Incrementally save unified trip to history as each part becomes available
     useEffect(() => {
-        if (isPlanComplete && questionnaireData && !hasBeenSaved && !isHistoryView) {
-            console.log('Saving unified trip to history...', { 
-                isPlanComplete, 
-                questionnaireData: questionnaireData ? Object.keys(questionnaireData) : null, 
-                hasBeenSaved,
-                isHistoryView,
-                plan: Object.keys(plan).filter(key => plan[key as keyof UnifiedPlan] !== null)
+        if (!questionnaireData || isHistoryView) return;
+
+        const availableTypes: Array<{ key: string; saver: () => Promise<void> }> = [];
+        const destination = questionnaireData.destination;
+        const language = questionnaireData.language || 'en';
+        const tripName = `${destination} Trip - ${new Date().toLocaleDateString()}`;
+
+        if (plan.itinerary && !savedTypesRef.current.has('itinerary')) {
+            availableTypes.push({
+                key: 'itinerary',
+                saver: async () => {
+                    await saveItineraryRecommendation(
+                        questionnaireData,
+                        plan.itinerary,
+                        destination,
+                        language,
+                        questionnaireData,
+                        savedTripId || undefined,
+                        tripName
+                    );
+                }
             });
-            
-            const recommendations = [];
-            
-            // Add itinerary if available
-            if (plan.itinerary) {
-                recommendations.push({
-                    type: 'itinerary',
-                    requestData: questionnaireData,
-                    responseData: plan.itinerary
-                });
+        }
+        if (plan.packingList && !savedTypesRef.current.has('packing')) {
+            availableTypes.push({
+                key: 'packing',
+                saver: async () => {
+                    await savePackingRecommendation(
+                        questionnaireData,
+                        plan.packingList,
+                        destination,
+                        language,
+                        questionnaireData,
+                        savedTripId || undefined,
+                        tripName
+                    );
+                }
+            });
+        }
+        if (plan.foodRecommendations && !savedTypesRef.current.has('food')) {
+            availableTypes.push({
+                key: 'food',
+                saver: async () => {
+                    await saveFoodRecommendation(
+                        questionnaireData,
+                        plan.foodRecommendations,
+                        destination,
+                        language,
+                        questionnaireData,
+                        savedTripId || undefined,
+                        tripName
+                    );
+                }
+            });
+        }
+        if (plan.appRecommendations && !savedTypesRef.current.has('apps')) {
+            availableTypes.push({
+                key: 'apps',
+                saver: async () => {
+                    await saveAppRecommendation(
+                        questionnaireData,
+                        plan.appRecommendations,
+                        destination,
+                        language,
+                        questionnaireData,
+                        savedTripId || undefined,
+                        tripName
+                    );
+                }
+            });
+        }
+        if (plan.musicRecommendations && !savedTypesRef.current.has('music')) {
+            availableTypes.push({
+                key: 'music',
+                saver: async () => {
+                    await saveMusicRecommendation(
+                        questionnaireData,
+                        plan.musicRecommendations,
+                        destination,
+                        language,
+                        questionnaireData,
+                        savedTripId || undefined,
+                        tripName
+                    );
+                }
+            });
+        }
+        if (plan.lingoRecommendations && !savedTypesRef.current.has('lingo')) {
+            availableTypes.push({
+                key: 'lingo',
+                saver: async () => {
+                    await saveLingoRecommendation(
+                        questionnaireData,
+                        plan.lingoRecommendations,
+                        destination,
+                        language,
+                        questionnaireData,
+                        savedTripId || undefined,
+                        tripName
+                    );
+                }
+            });
+        }
+
+        if (availableTypes.length === 0) return;
+
+        const run = async () => {
+            try {
+                if (!savedTripId) {
+                    // First-time save: batch-save available types to create a unified trip and obtain tripId
+                    const recs = availableTypes.map(t => {
+                        const type = t.key;
+                        const responseData = (plan as any)[type === 'packing' ? 'packingList' : type === 'apps' ? 'appRecommendations' : type === 'food' ? 'foodRecommendations' : type === 'music' ? 'musicRecommendations' : type === 'lingo' ? 'lingoRecommendations' : 'itinerary'];
+                        return { type, requestData: questionnaireData, responseData };
+                    });
+                    const createdTripId = await saveUnifiedTripRecommendations(
+                        recs,
+                        destination,
+                        language,
+                        questionnaireData,
+                        tripName
+                    );
+                    setSavedTripId(createdTripId);
+                    recs.forEach(r => savedTypesRef.current.add(r.type));
+                } else {
+                    // Append new recommendations to existing trip
+                    for (const item of availableTypes) {
+                        await item.saver();
+                        savedTypesRef.current.add(item.key);
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to save unified trip recommendation(s):', error);
             }
-            
-            // Add packing list if available
-            if (plan.packingList) {
-                recommendations.push({
-                    type: 'packing',
-                    requestData: questionnaireData,
-                    responseData: plan.packingList
+        };
+
+        run();
+    }, [plan, questionnaireData, isHistoryView, savedTripId, saveUnifiedTripRecommendations, saveItineraryRecommendation, savePackingRecommendation, saveFoodRecommendation, saveAppRecommendation, saveMusicRecommendation, saveLingoRecommendation]);
+    
+    const handleCopyLink = async () => {
+        if (!savedTripId) {
+            setToast({ message: 'Trip is still being saved. Please wait a moment.', type: 'error' });
+            return;
+        }
+        try {
+            const shareUrl = `${window.location.origin}/share/${savedTripId}`;
+            await navigator.clipboard.writeText(shareUrl);
+            setToast({ message: 'Shareable link copied to clipboard!', type: 'success' });
+        } catch (error) {
+            setToast({ message: 'Failed to copy link. Please try again.', type: 'error' });
+        }
+    };
+
+    const handleShare = async () => {
+        if (!savedTripId) {
+            setToast({ message: 'Trip is still being saved. Please wait a moment.', type: 'error' });
+            return;
+        }
+        try {
+            const shareUrl = `${window.location.origin}/share/${savedTripId}`;
+            if (navigator.share) {
+                await navigator.share({
+                    title: `Trip Plan to ${plan.itinerary?.destination || 'Your Destination'}`,
+                    text: 'Check out this amazing trip plan!',
+                    url: shareUrl,
                 });
-            }
-            
-            // Add food recommendations if available
-            if (plan.foodRecommendations) {
-                recommendations.push({
-                    type: 'food',
-                    requestData: questionnaireData,
-                    responseData: plan.foodRecommendations
-                });
-            }
-            
-            // Add app recommendations if available
-            if (plan.appRecommendations) {
-                recommendations.push({
-                    type: 'apps',
-                    requestData: questionnaireData,
-                    responseData: plan.appRecommendations
-                });
-            }
-            
-            // Add music recommendations if available
-            if (plan.musicRecommendations) {
-                recommendations.push({
-                    type: 'music',
-                    requestData: questionnaireData,
-                    responseData: plan.musicRecommendations
-                });
-            }
-            
-            // Add lingo recommendations if available
-            if (plan.lingoRecommendations) {
-                recommendations.push({
-                    type: 'lingo',
-                    requestData: questionnaireData,
-                    responseData: plan.lingoRecommendations
-                });
-            }
-            
-            console.log('Recommendations to save:', recommendations.length, recommendations.map(r => r.type));
-            
-            if (recommendations.length > 0) {
-                const tripName = `${questionnaireData.destination} Trip - ${new Date().toLocaleDateString()}`;
-                
-                console.log('Calling saveUnifiedTripRecommendations with:', {
-                    recommendations: recommendations.length,
-                    destination: questionnaireData.destination,
-                    language: questionnaireData.language || 'en',
-                    tripName
-                });
-                
-                saveUnifiedTripRecommendations(
-                    recommendations,
-                    questionnaireData.destination,
-                    questionnaireData.language || 'en',
-                    questionnaireData,
-                    tripName
-                ).then((tripId) => {
-                    console.log('Unified trip saved with ID:', tripId);
-                    setHasBeenSaved(true);
-                }).catch((error) => {
-                    console.error('Failed to save unified trip:', error);
-                });
+                setToast({ message: 'Trip plan shared successfully!', type: 'success' });
             } else {
-                console.log('No recommendations to save');
+                // Fallback to copy if Web Share API is not available
+                await navigator.clipboard.writeText(shareUrl);
+                setToast({ message: 'Shareable link copied to clipboard!', type: 'success' });
+            }
+        } catch (error: any) {
+            // User cancelled or error occurred
+            if (error.name !== 'AbortError') {
+                setToast({ message: 'Failed to share link. Please try again.', type: 'error' });
             }
         }
-    }, [isPlanComplete, questionnaireData, hasBeenSaved, plan, saveUnifiedTripRecommendations, isHistoryView]);
+    };
     
     const getPlanDataForTab = (tab: Tab) => {
         switch (tab) {
@@ -258,6 +355,30 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
                     </button>
                 </div>
             </header>
+            
+            {/* Share buttons - Only show when plan is complete and saved */}
+            {isPlanComplete && savedTripId && !isHistoryView && (
+                <div className="flex items-center justify-center gap-3 py-4 no-print">
+                    <button
+                        onClick={handleCopyLink}
+                        className="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-violet-600 to-violet-700 text-white font-semibold rounded-full hover:from-violet-700 hover:to-violet-800 transition-all duration-300 shadow-md text-sm"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                        Copy Link
+                    </button>
+                    <button
+                        onClick={handleShare}
+                        className="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-full hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-md text-sm"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                        </svg>
+                        Share
+                    </button>
+                </div>
+            )}
                 
                 {/* Responsive Navigation */}
                 <nav className="no-print fixed bottom-0 left-0 right-0 z-50 md:sticky md:top-4 md:z-40 md:mb-6 unified-nav">
@@ -270,7 +391,25 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
                                 return (
                                     <button
                                         key={tab.id}
-                                        onClick={() => setActiveTab(tab.id)}
+                                        onClick={() => {
+                                            setActiveTab(tab.id);
+                                            
+                                            // Scroll to top when tab is clicked
+                                            setTimeout(() => {
+                                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                                                window.scrollTo(0, 0);
+                                                document.documentElement.scrollTop = 0;
+                                                document.body.scrollTop = 0;
+                                                
+                                                // Also scroll main content if it exists
+                                                if (mainContentRef.current) {
+                                                    mainContentRef.current.scrollTop = 0;
+                                                    mainContentRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                                }
+                                            }, 0);
+                                            
+                                            onTabChangeScrollToTop();
+                                        }}
                                         className={`relative flex flex-col items-center justify-center flex-1 space-y-1 transition-colors duration-200 md:flex-row md:flex-none md:px-4 md:py-2 md:space-x-2 md:rounded-full
                                             ${activeTab === tab.id
                                                 ? 'text-violet-600 md:bg-violet-600 md:text-white md:shadow'
@@ -282,7 +421,7 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
                                             {tab.icon}
                                             {/* Status Indicator Dot */}
                                             {status !== 'pending' && (
-                                                <span className={`absolute -top-0.5 -right-0.5 block h-2.5 w-2.5 rounded-full border-2 border-white
+                                                <span className={`absolute -top-1 -right-1 block h-3.5 w-3.5 rounded-full border-2 border-white
                                                     ${status === 'loading' && 'animate-pulse bg-blue-500'}
                                                     ${status === 'done' && dataExists && 'bg-green-500'}
                                                     ${(status === 'error' || status === 'cancelled') && 'bg-red-500'}
@@ -297,11 +436,20 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
                     </div>
                 </nav>
 
-                <main>
+                <main ref={mainContentRef}>
                     {renderTabContent()}
                 </main>
                 {/* Spacer for bottom nav on mobile */}
                 <div className="h-20 md:h-0" />
+                
+                {/* Toast notification */}
+                {toast && (
+                    <Toast
+                        message={toast.message}
+                        type={toast.type}
+                        onClose={() => setToast(null)}
+                    />
+                )}
             </div>
     );
 };

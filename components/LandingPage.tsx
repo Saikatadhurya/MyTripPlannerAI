@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { PopularDestination } from '../types';
 import { User } from '../services/authService';
-import { useQuotas } from '../hooks/useQuotas';
 import TestimonialsCarousel from './TestimonialsCarousel';
 
 interface LandingPageProps {
@@ -19,7 +18,6 @@ interface LandingPageProps {
 
 const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPlanItinerary, onStartPacking, onStartFoodFinder, onStartAppFinder, onStartMusicFinder, onStartLingoFinder, onOpenAuthModal, onViewHistory }) => {
   const [destinations, setDestinations] = useState<PopularDestination[]>([]);
-  const { quotas, quotasLoading } = useQuotas(user);
 
   useEffect(() => {
     const fetchDestinations = async () => {
@@ -116,7 +114,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
       id: 'lingo',
       title: 'Local Lingo Guide',
       description: 'Learn essential phrases for your trip',
-      onClick: onStartLingoFinder,
+      onClick: user ? onStartLingoFinder : onOpenAuthModal,
       color: 'sky' as const,
       icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 sm:h-8 sm:w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>,
       buttonText: 'Get Phrases',
@@ -168,34 +166,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
           {user ? (
             <>
               <button
-                 disabled={quotasLoading}
-                 onClick={() => { if (!quotasLoading) onPlanUnifiedTrip(); }}
-                 className={`cta-pulse inline-block px-10 py-4 font-bold rounded-full text-lg shadow-lg transition-all duration-300 transform focus:outline-none focus:ring-4 ${
-                   quotasLoading
-                     ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
-                     : 'bg-violet-600 text-white shadow-violet-500/30 hover:bg-violet-700 hover:shadow-xl hover:shadow-violet-500/40 hover:scale-105 focus:ring-violet-300'
-                 }`}
+                 onClick={onPlanUnifiedTrip}
+                 className="cta-pulse inline-block px-10 py-4 font-bold rounded-full text-lg shadow-lg transition-all duration-300 transform focus:outline-none focus:ring-4 bg-violet-600 text-white shadow-violet-500/30 hover:bg-violet-700 hover:shadow-xl hover:shadow-violet-500/40 hover:scale-105 focus:ring-violet-300"
               >
-                 {(() => {
-                   return `✨ Build Your Ultimate Itinerary`;
-                 })()}
+                 ✨ Build Your Ultimate Itinerary
               </button>
               <p className="mt-4 text-sm text-violet-700/80 font-medium tracking-wide">
                 Includes: Itinerary, Packing, Food, Apps & Music
               </p>
-              {quotasLoading ? (
-                <div className="mt-2 text-xs text-blue-600">
-                  <span>⏳ Fetching limit...</span>
-                </div>
-              ) : quotas.unified && (
-                <div className="mt-2 text-xs text-slate-600">
-                  {quotas.unified.remaining > 0 ? (
-                    <span className="text-green-600">✓ {quotas.unified.remaining} unified trips remaining this week</span>
-                  ) : (
-                    <span className="text-red-600">⚠️ Weekly limit reached - try individual tools</span>
-                  )}
-                </div>
-              )}
             </>
           ) : (
             <>
@@ -235,13 +213,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
           </p>
           <button
             onClick={onViewHistory}
-            className="group relative inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-2xl text-lg shadow-lg transition-all duration-300 transform hover:scale-105 hover:shadow-xl hover:shadow-indigo-500/40 focus:outline-none focus:ring-4 focus:ring-indigo-300"
+            className="group relative inline-flex items-center gap-2 md:gap-3 px-6 py-3 md:px-8 md:py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-2xl text-base md:text-lg shadow-lg transition-all duration-300 transform hover:scale-105 hover:shadow-xl hover:shadow-indigo-500/40 focus:outline-none focus:ring-4 focus:ring-indigo-300"
           >
             <div className="flex items-center gap-2">
               <svg className="w-6 h-6 group-hover:rotate-12 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
               </svg>
-              <span>📖 Journey Down Memory Lane</span>
+              <span className="text-sm md:text-base">📖 Journey Down Memory Lane</span>
             </div>
             <div className="absolute inset-0 bg-gradient-to-r from-indigo-700 to-purple-700 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10"></div>
           </button>
@@ -258,9 +236,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
         <div className="mt-10 grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6">
           {miniApps.map((app, index) => {
             const colors = colorClasses[app.color];
-            const quota = user ? quotas[app.id] : undefined;
-            const labelSuffix = quotasLoading ? ' (⏳ Fetching limit...)' : '';
-            const isLocked = app.locked || quotasLoading;
+            const isLocked = app.locked;
             return (
               <div
                 key={app.id}
@@ -292,21 +268,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
                         ? 'bg-gray-400 text-gray-600 cursor-not-allowed' 
                         : colors.button
                     }`}>
-                             {isLocked ? `🔒 ${app.buttonText}` : `${app.buttonText}${labelSuffix}`}
+                             {isLocked ? `🔒 ${app.buttonText}` : app.buttonText}
                         </span>
-                        {user && (
-                          <div className="mt-2 text-xs text-slate-500">
-                            {quotasLoading ? (
-                              <span className="text-blue-600">⏳ Fetching limit...</span>
-                            ) : quota ? (
-                              quota.remaining > 0 ? (
-                                <span className="text-green-600">✓ {quota.remaining} uses remaining</span>
-                              ) : (
-                                <span className="text-red-600">⚠️ Limit reached</span>
-                              )
-                            ) : null}
-                          </div>
-                        )}
                     </div>
                 </div>
               </div>
@@ -351,7 +314,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
               }`} 
               style={{ animationDelay: `${1200 + index * 50}ms` }}
             >
-              <span className="text-4xl" role="img" aria-label="">{dest.icon}</span>
+              <span className="text-4xl" role="img" aria-label="destination">{dest.icon}</span>
               <h3 className="text-lg font-semibold mt-3 text-slate-800">{dest.name}</h3>
               <p className="text-slate-600 text-sm">{dest.description}</p>
               {!user ? (
@@ -359,19 +322,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
                   <span className="mr-1">🔒</span>
                   <span>Sign in to plan</span>
                 </div>
-              ) : quotasLoading ? (
-                <div className="mt-2 text-xs text-blue-600">
-                  <span>⏳ Fetching limit...</span>
-                </div>
-              ) : quotas.unified && (
-                <div className="mt-2 text-xs">
-                  {quotas.unified.remaining > 0 ? (
-                    <span className="text-green-600">✓ {quotas.unified.remaining} trips left</span>
-                  ) : (
-                    <span className="text-red-600">⚠️ Limit reached</span>
-                  )}
-                </div>
-              )}
+              ) : null}
             </button>
           ))}
         </div>

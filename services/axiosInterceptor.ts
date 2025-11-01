@@ -111,13 +111,31 @@ axios.interceptors.response.use(
   (error: AxiosError) => {
     if (error.response?.status === 401) {
       const errorMessage = (error.response.data as any)?.message || '';
+      const errorMessageLower = errorMessage.toLowerCase();
       
-      // Check if it's a token-related error
-      if (errorMessage.includes('token') || 
-          errorMessage.includes('authorized') || 
-          errorMessage.includes('expired') ||
-          errorMessage.includes('invalid')) {
-        
+      // Only logout for actual authentication/authorization errors
+      // Be specific to avoid logging out for quota/rate limit errors
+      const isAuthError = 
+        errorMessageLower.includes('not authorized') ||
+        errorMessageLower.includes('token failed') ||
+        errorMessageLower.includes('token expired') ||
+        errorMessageLower.includes('token invalid') ||
+        errorMessageLower.includes('invalid token') ||
+        errorMessageLower.includes('session expired') ||
+        errorMessageLower.includes('authentication failed') ||
+        errorMessageLower.includes('unauthorized') ||
+        (errorMessageLower.includes('token') && (errorMessageLower.includes('expired') || errorMessageLower.includes('invalid'))) ||
+        (errorMessageLower.includes('user not found') && errorMessageLower.includes('authorized'));
+      
+      // Explicitly exclude quota/rate limit errors
+      const isQuotaError = 
+        errorMessageLower.includes('quota') ||
+        errorMessageLower.includes('rate limit') ||
+        errorMessageLower.includes('429') ||
+        errorMessageLower.includes('billing') ||
+        errorMessageLower.includes('exceeded');
+      
+      if (isAuthError && !isQuotaError) {
         console.warn('Authentication failed, logging out user');
         authService.logout();
         triggerGlobalLogout();

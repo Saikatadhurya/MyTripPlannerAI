@@ -15,7 +15,6 @@ export function useQuotas(user: User | null) {
 
   const refetchQuotas = async (retryCount = 0) => {
     if (!user) {
-      console.log('useQuotas: No user, clearing quotas');
       setQuotas({});
       setQuotasLoading(false);
       return;
@@ -24,7 +23,6 @@ export function useQuotas(user: User | null) {
     // Check if we have a valid token before attempting to fetch
     const token = authService.getToken();
     if (!token) {
-      console.log(`useQuotas: No token available, retrying in 100ms... (attempt ${retryCount + 1})`);
       if (retryCount < 20) { // Retry up to 20 times (2 seconds total)
         setTimeout(() => refetchQuotas(retryCount + 1), 100);
       } else {
@@ -34,11 +32,9 @@ export function useQuotas(user: User | null) {
       return;
     }
 
-    console.log('useQuotas: Fetching quotas for user:', user.email);
     setQuotasLoading(true);
     try {
       const q = await fetchQuotas();
-      console.log('useQuotas: Received quotas:', q);
       setQuotas(q);
     } catch (err) {
       console.error('useQuotas: Failed to fetch quotas', err);
@@ -56,7 +52,6 @@ export function useQuotas(user: User | null) {
   // Listen for quota updates and refresh automatically
   useEffect(() => {
     const handleQuotasUpdated = () => {
-      console.log('useQuotas: Received quotasUpdated event, refreshing...');
       refetchQuotas();
     };
 

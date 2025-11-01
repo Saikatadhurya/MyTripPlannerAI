@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Budget, Vibe, FoodPreference, TripType, QuestionnaireData, LocationSuggestion, PopularDestination } from '../types';
 import { getDestinationSuggestions } from '../services/geminiService';
-import { useQuotas } from '../hooks/useQuotas';
 import { User } from '../services/authService';
 import { currencies } from '../data/currencies';
 import BackToHomeButton from './BackToHomeButton';
@@ -65,7 +64,6 @@ const Toggle: React.FC<{ label: string; description: string; enabled: boolean; o
 
 // FIX: Renamed component to UnifiedPlannerForm and updated props
 const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error, initialData, onBack, user }) => {
-  const { quotas, quotasLoading } = useQuotas(user);
   const defaultEndDate = new Date();
   defaultEndDate.setDate(defaultEndDate.getDate() + 2);
 
@@ -91,6 +89,7 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
   const [isDestinationSuggestionsLoading, setIsDestinationSuggestionsLoading] = useState(false);
   const [isDestinationSelected, setIsDestinationSelected] = useState(!!initialData?.destination);
   const [destinationError, setDestinationError] = useState<string | null>(null);
+  const [apiKeyError, setApiKeyError] = useState<string | null>(null);
   const [popularDestinations, setPopularDestinations] = useState<PopularDestination[]>([]);
 
   const [startPointSuggestions, setStartPointSuggestions] = useState<LocationSuggestion[]>([]);
@@ -172,9 +171,21 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
         setIsDestinationSuggestionsLoading(true);
         debounceTimeout.current = setTimeout(() => {
           if (!isSelectingSuggestion.current) {
-            getDestinationSuggestions(value).then(results => {
+            getDestinationSuggestions(value, user?.gemini_api_key).then(results => {
               setDestinationSuggestions(results);
               setIsDestinationSuggestionsLoading(false);
+              setApiKeyError(null); // Clear any previous API key errors
+            }).catch(error => {
+              setDestinationSuggestions([]);
+              setIsDestinationSuggestionsLoading(false);
+              
+              // Check if it's a Gemini API key error
+              const errorMessage = error?.message || '';
+              if (errorMessage.includes('Gemini key not set') || errorMessage.includes('API key not valid')) {
+                setApiKeyError('API key not valid. Please provide a valid Gemini API key in your profile settings to search for destinations.');
+              } else {
+                setApiKeyError('Failed to fetch destination suggestions. Please try again.');
+              }
             });
           }
         }, 500);
@@ -216,7 +227,7 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
         setIsStartPointSuggestionsLoading(true);
         debounceTimeout.current = setTimeout(() => {
           if (!isSelectingSuggestion.current) {
-            getDestinationSuggestions(value).then(results => {
+            getDestinationSuggestions(value, user?.gemini_api_key).then(results => {
               setStartPointSuggestions(results);
               setIsStartPointSuggestionsLoading(false);
             });
@@ -341,9 +352,21 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
             const setSuggestions = field === 'destination' ? setDestinationSuggestions : setStartPointSuggestions;
             setLoading(true);
             debounceTimeout.current = setTimeout(() => {
-                getDestinationSuggestions(value).then(results => {
+                getDestinationSuggestions(value, user?.gemini_api_key).then(results => {
                     setSuggestions(results);
                     setLoading(false);
+                    setApiKeyError(null); // Clear any previous API key errors
+                }).catch(error => {
+                    setSuggestions([]);
+                    setLoading(false);
+                    
+                    // Check if it's a Gemini API key error
+                    const errorMessage = error?.message || '';
+                    if (errorMessage.includes('Gemini key not set') || errorMessage.includes('API key not valid')) {
+                        setApiKeyError('API key not valid. Please provide a valid Gemini API key in your profile settings to search for destinations.');
+                    } else {
+                        setApiKeyError('Failed to fetch destination suggestions. Please try again.');
+                    }
                 });
             }, 500);
         } else {
@@ -379,10 +402,8 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
             hasError = true;
         }
     }
-
-    // Check quota limits
-    if (user && quotas.unified && quotas.unified.remaining <= 0) {
-        setDestinationError("You have reached your weekly limit for unified plans. Please try again next week or upgrade your plan.");
+    
+    if (apiKeyError) {
         hasError = true;
     }
     
@@ -451,6 +472,7 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
             popularItems={popularItems}
             renderPopularItem={renderPopularItem}
             accentColor="violet"
+            error={apiKeyError && (selectionView?.field === 'destination' || selectionView?.field === 'startPoint') ? apiKeyError : null}
         />
     );
   };
@@ -465,21 +487,20 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
       <div className="text-center mb-10">
         <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Unified Trip Planner</h1>
         <p className="mt-2 text-lg text-slate-600">Tell us about your dream trip to get a complete, AI-generated plan.</p>
-        {user && (
-          <div className="mt-3 inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-violet-100 text-violet-800">
-            {quotasLoading ? (
-              <>⏳ Loading limits...</>
-            ) : (
-              <>✨ {quotas.unified || quotas.itinerary ? `${(quotas.unified || quotas.itinerary).remaining}/${(quotas.unified || quotas.itinerary).weekly_limit}` : '0/5'} uses left this week</>
-            )}
-          </div>
-        )}
       </div>
 
       {error && (
         <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md mb-6" role="alert">
           <p className="font-bold">Oops!</p>
-          <p>{error}</p>
+          {typeof error === 'string' && error.toLowerCase().includes('gemini') && error.toLowerCase().includes('key') ? (
+            <p>
+              Gemini API key not set. Please add your API key in{' '}
+              <a href="/profile" className="font-semibold underline hover:text-red-800">Edit Profile</a>
+              {' '}to continue.
+            </p>
+          ) : (
+            <p>{error}</p>
+          )}
         </div>
       )}
 
@@ -627,6 +648,16 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
                               <span>{destinationError}</span>
                           </div>
                         )}
+                        {apiKeyError && (
+                          <div style={{ animation: 'validation-fade-in 0.3s ease' }} className="mt-2 text-sm text-amber-700 bg-amber-100/60 p-2 rounded-md flex items-center space-x-2">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+                              <span className="flex items-center flex-wrap gap-1">
+                                Gemini API key not set. Please add your API key in{' '}
+                                <a href="/profile" className="font-semibold underline hover:text-amber-800">Edit Profile</a>
+                                {' '}to search for destinations.
+                              </span>
+                          </div>
+                        )}
                     </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -764,13 +795,13 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
                 </div>
             </div>
 
-            <div className="text-center pt-4 mb-48 pb-16">
+            <div className="text-center pt-4 mb-24 pb-24">
               <button
                 type="submit"
                 className="w-full sm:w-auto px-10 py-4 bg-violet-600 text-white font-bold rounded-full hover:bg-violet-700 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-violet-500/30 disabled:bg-violet-400/80 disabled:cursor-not-allowed disabled:shadow-md disabled:scale-100"
-                disabled={!isDestinationSelected || !!destinationError || (showStartPoint && (!isStartPointSelected || !!startPointError)) || formData.vibe.length === 0 || quotasLoading || (user && quotas.unified && quotas.unified.remaining <= 0)}
+                disabled={!isDestinationSelected || !!destinationError || !!apiKeyError || (showStartPoint && (!isStartPointSelected || !!startPointError)) || formData.vibe.length === 0}
               >
-                {quotasLoading ? '⏳ Loading limits...' : (user && quotas.unified && quotas.unified.remaining <= 0) ? '🚫 Limit Reached' : '✨ Plan My Adventure'}
+                ✨ Plan My Adventure
               </button>
             </div>
           </form>

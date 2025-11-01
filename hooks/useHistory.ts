@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { historyService, RecommendationHistory, HistoryFilters, HistoryPagination, SaveRecommendationRequest } from '../services/historyService';
+import { authService } from '../services/authService';
 
 interface UseHistoryReturn {
   history: RecommendationHistory[];
@@ -30,6 +31,12 @@ export const useHistory = (): UseHistoryReturn => {
   const [filters, setFilters] = useState<HistoryFilters>({});
 
   const loadHistory = useCallback(async (page: number = 1) => {
+    // Check if user is authenticated before making API call
+    if (!authService.isAuthenticated()) {
+      setLoading(false);
+      return;
+    }
+    
     setLoading(true);
     setError(null);
     
@@ -45,6 +52,11 @@ export const useHistory = (): UseHistoryReturn => {
   }, [filters]);
 
   const loadFilters = useCallback(async () => {
+    // Check if user is authenticated before making API calls
+    if (!authService.isAuthenticated()) {
+      return;
+    }
+    
     try {
       const [destinationsData, tagsData, typesData] = await Promise.all([
         historyService.getUserDestinations(),

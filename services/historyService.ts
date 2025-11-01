@@ -69,6 +69,7 @@ export interface SaveRecommendationRequest {
   tripContext?: TripContext;
   tripId?: string;
   tripName?: string;
+  prompt?: string;
 }
 
 export interface UpdateRecommendationRequest {
@@ -338,6 +339,13 @@ class HistoryService {
     if (!response.ok) {
       throw new Error(`Failed to delete unified trip: ${response.statusText}`);
     }
+  }
+
+  // Get token usage statistics
+  async getTokenUsageStats(): Promise<any> {
+    const headers = authService.getAuthHeaders();
+    const response = await axios.get(`${API_URL}/token-usage`, { headers });
+    return response.data.data;
   }
 }
 

@@ -2,25 +2,25 @@ import { useCallback } from 'react';
 import { historyService, SaveRecommendationRequest } from '../services/historyService';
 
 interface UseSaveRecommendationReturn {
-  saveRecommendation: (data: SaveRecommendationRequest) => Promise<void>;
-  saveAppRecommendation: (requestData: any, responseData: any, destination: string, language?: string, tripContext?: any, tripId?: string, tripName?: string) => Promise<void>;
-  saveLingoRecommendation: (requestData: any, responseData: any, destination: string, language?: string, tripContext?: any, tripId?: string, tripName?: string) => Promise<void>;
-  saveMusicRecommendation: (requestData: any, responseData: any, destination: string, language?: string, tripContext?: any, tripId?: string, tripName?: string) => Promise<void>;
-  savePackingRecommendation: (requestData: any, responseData: any, destination: string, language?: string, tripContext?: any, tripId?: string, tripName?: string) => Promise<void>;
-  saveFoodRecommendation: (requestData: any, responseData: any, destination: string, language?: string, tripContext?: any, tripId?: string, tripName?: string) => Promise<void>;
-  saveItineraryRecommendation: (requestData: any, responseData: any, destination: string, language?: string, tripContext?: any, tripId?: string, tripName?: string) => Promise<void>;
+  saveRecommendation: (data: SaveRecommendationRequest) => Promise<string | null>;
+  saveAppRecommendation: (requestData: any, responseData: any, destination: string, language?: string, tripContext?: any, tripId?: string, tripName?: string) => Promise<string | null>;
+  saveLingoRecommendation: (requestData: any, responseData: any, destination: string, language?: string, tripContext?: any, tripId?: string, tripName?: string) => Promise<string | null>;
+  saveMusicRecommendation: (requestData: any, responseData: any, destination: string, language?: string, tripContext?: any, tripId?: string, tripName?: string) => Promise<string | null>;
+  savePackingRecommendation: (requestData: any, responseData: any, destination: string, language?: string, tripContext?: any, tripId?: string, tripName?: string) => Promise<string | null>;
+  saveFoodRecommendation: (requestData: any, responseData: any, destination: string, language?: string, tripContext?: any, tripId?: string, tripName?: string) => Promise<string | null>;
+  saveItineraryRecommendation: (requestData: any, responseData: any, destination: string, language?: string, tripContext?: any, tripId?: string, tripName?: string) => Promise<string | null>;
   saveUnifiedTripRecommendations: (recommendations: Array<{type: string, requestData: any, responseData: any}>, destination: string, language?: string, tripContext?: any, tripName?: string) => Promise<string>;
 }
 
 export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
-  const saveRecommendation = useCallback(async (data: SaveRecommendationRequest) => {
+  const saveRecommendation = useCallback(async (data: SaveRecommendationRequest): Promise<string | null> => {
     try {
-      console.log('Attempting to save recommendation:', data);
-      await historyService.saveRecommendation(data);
-      console.log('Successfully saved recommendation');
+      const result = await historyService.saveRecommendation(data);
+      return result?.id || null;
     } catch (error) {
       console.error('Failed to save recommendation:', error);
       // Don't throw error to avoid breaking the user experience
+      return null;
     }
   }, []);
 
@@ -32,11 +32,12 @@ export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
     tripContext?: any,
     tripId?: string,
     tripName?: string
-  ) => {
-    console.log('saveAppRecommendation called with:', { requestData, responseData, destination, language, tripContext, tripId, tripName });
+  ): Promise<string | null> => {
     const title = historyService.generateDefaultTitle('apps', destination);
+    // Extract prompt from responseData if it was attached
+    const prompt = (responseData as any)?.__prompt;
     
-    await saveRecommendation({
+    return await saveRecommendation({
       recommendationType: 'apps',
       destination,
       language,
@@ -46,7 +47,8 @@ export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
       tags: ['apps', 'technology'],
       tripContext,
       tripId,
-      tripName
+      tripName,
+      prompt
     });
   }, [saveRecommendation]);
 
@@ -58,10 +60,12 @@ export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
     tripContext?: any,
     tripId?: string,
     tripName?: string
-  ) => {
+  ): Promise<string | null> => {
     const title = historyService.generateDefaultTitle('lingo', destination);
+    // Extract prompt from responseData if it was attached
+    const prompt = (responseData as any)?.__prompt;
     
-    await saveRecommendation({
+    return await saveRecommendation({
       recommendationType: 'lingo',
       destination,
       language,
@@ -71,7 +75,8 @@ export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
       tags: ['lingo', 'language'],
       tripContext,
       tripId,
-      tripName
+      tripName,
+      prompt
     });
   }, [saveRecommendation]);
 
@@ -83,10 +88,12 @@ export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
     tripContext?: any,
     tripId?: string,
     tripName?: string
-  ) => {
+  ): Promise<string | null> => {
     const title = historyService.generateDefaultTitle('music', destination);
+    // Extract prompt from responseData if it was attached
+    const prompt = (responseData as any)?.__prompt;
     
-    await saveRecommendation({
+    return await saveRecommendation({
       recommendationType: 'music',
       destination,
       language,
@@ -96,7 +103,8 @@ export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
       tags: ['music', 'entertainment'],
       tripContext,
       tripId,
-      tripName
+      tripName,
+      prompt
     });
   }, [saveRecommendation]);
 
@@ -108,10 +116,12 @@ export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
     tripContext?: any,
     tripId?: string,
     tripName?: string
-  ) => {
+  ): Promise<string | null> => {
     const title = historyService.generateDefaultTitle('packing', destination);
+    // Extract prompt from responseData if it was attached
+    const prompt = (responseData as any)?.__prompt;
     
-    await saveRecommendation({
+    return await saveRecommendation({
       recommendationType: 'packing',
       destination,
       language,
@@ -121,7 +131,8 @@ export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
       tags: ['packing', 'travel'],
       tripContext,
       tripId,
-      tripName
+      tripName,
+      prompt
     });
   }, [saveRecommendation]);
 
@@ -133,10 +144,12 @@ export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
     tripContext?: any,
     tripId?: string,
     tripName?: string
-  ) => {
+  ): Promise<string | null> => {
     const title = historyService.generateDefaultTitle('food', destination);
+    // Extract prompt from responseData if it was attached
+    const prompt = (responseData as any)?.__prompt;
     
-    await saveRecommendation({
+    return await saveRecommendation({
       recommendationType: 'food',
       destination,
       language,
@@ -146,7 +159,8 @@ export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
       tags: ['food', 'dining'],
       tripContext,
       tripId,
-      tripName
+      tripName,
+      prompt
     });
   }, [saveRecommendation]);
 
@@ -158,10 +172,12 @@ export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
     tripContext?: any,
     tripId?: string,
     tripName?: string
-  ) => {
+  ): Promise<string | null> => {
     const title = historyService.generateDefaultTitle('itinerary', destination);
+    // Extract prompt from responseData if it was attached
+    const prompt = (responseData as any)?.__prompt;
     
-    await saveRecommendation({
+    return await saveRecommendation({
       recommendationType: 'itinerary',
       destination,
       language,
@@ -171,7 +187,8 @@ export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
       tags: ['itinerary', 'planning'],
       tripContext,
       tripId,
-      tripName
+      tripName,
+      prompt
     });
   }, [saveRecommendation]);
 
@@ -185,12 +202,12 @@ export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
     // Generate a proper UUID for trip ID
     const tripId = crypto.randomUUID();
     
-    console.log('Saving unified trip recommendations:', { tripId, tripName, destination, recommendations });
-    
     // Save each recommendation with the same trip ID
     for (const rec of recommendations) {
       const title = historyService.generateDefaultTitle(rec.type as any, destination);
       const tags = getTagsForType(rec.type);
+      // Extract prompt from responseData if it was attached
+      const prompt = (rec.responseData as any)?.__prompt;
       
       await saveRecommendation({
         recommendationType: rec.type as any,
@@ -202,7 +219,8 @@ export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
         tags,
         tripContext,
         tripId,
-        tripName
+        tripName,
+        prompt
       });
     }
     
