@@ -387,7 +387,7 @@ const AppFinderForm: React.FC<AppFinderFormProps> = ({ onSubmit, isLoading, erro
           <button
             type="submit"
             className="w-full sm:w-auto px-10 py-4 bg-teal-600 text-white font-bold rounded-full hover:bg-teal-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:bg-teal-400/80 disabled:cursor-not-allowed disabled:shadow-md disabled:scale-100"
-            disabled={!isDestinationSelected || !!destinationError || !!apiKeyError || isLoading}
+            disabled={!user || !isDestinationSelected || !!destinationError || !!apiKeyError || isLoading}
           >
             📱 Find My Apps
           </button>

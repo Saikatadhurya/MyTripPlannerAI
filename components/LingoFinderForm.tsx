@@ -388,7 +388,7 @@ const LingoFinderForm: React.FC<LingoFinderFormProps> = ({ onSubmit, isLoading, 
           <button
             type="submit"
             className="w-full sm:w-auto px-10 py-4 bg-sky-600 text-white font-bold rounded-full hover:bg-sky-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:bg-sky-400/80 disabled:cursor-not-allowed disabled:shadow-md disabled:scale-100"
-            disabled={!isDestinationSelected || !!destinationError || !!apiKeyError || isLoading}
+            disabled={!user || !isDestinationSelected || !!destinationError || !!apiKeyError || isLoading}
           >
             🗣️ Generate Phrasebook
           </button>

@@ -806,7 +806,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
               <button
                 type="submit"
                 className="w-full sm:w-auto px-10 py-4 bg-violet-600 text-white font-bold rounded-full hover:bg-violet-700 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-violet-500/30 disabled:bg-violet-400/80 disabled:cursor-not-allowed disabled:shadow-md disabled:scale-100"
-                disabled={!isDestinationSelected || !!destinationError || !!apiKeyError || (showStartPoint && (!isStartPointSelected || !!startPointError)) || formData.vibe.length === 0}
+                disabled={!user || !isDestinationSelected || !!destinationError || !!apiKeyError || (showStartPoint && (!isStartPointSelected || !!startPointError)) || formData.vibe.length === 0}
               >
                 ✨ Plan My Adventure
               </button>

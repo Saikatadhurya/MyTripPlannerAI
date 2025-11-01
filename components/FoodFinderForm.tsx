@@ -440,7 +440,7 @@ const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, er
           <button
             type="submit"
             className="w-full sm:w-auto px-10 py-4 bg-amber-600 text-white font-bold rounded-full hover:bg-amber-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:bg-amber-400/80 disabled:cursor-not-allowed disabled:shadow-md disabled:scale-100"
-            disabled={!isDestinationSelected || !!destinationError || !!apiKeyError || isLoading}
+            disabled={!user || !isDestinationSelected || !!destinationError || !!apiKeyError || isLoading}
           >
             🍴 Discover My Local Feast
           </button>
