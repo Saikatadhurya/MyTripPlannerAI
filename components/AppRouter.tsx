@@ -310,17 +310,19 @@ const AppRouter: React.FC<AppRouterProps> = ({
       <Route 
         path="/lingo" 
         element={
-          <LingoFinderForm 
-            key={`lingo-${user?.id}-${user?.gemini_api_key ? 'has-key' : 'no-key'}`}
-            onSubmit={onGenerateLingoGuide}
-            isLoading={isFormLoading}
-            error={formError}
-            onBack={onBackToHome}
-            onCancel={() => {}}
-            streamedText={streamedText}
-            initialData={lingoRequestData}
-            user={user}
-          />
+          <ProtectedRoute user={user}>
+            <LingoFinderForm 
+              key={`lingo-${user?.id}-${user?.gemini_api_key ? 'has-key' : 'no-key'}`}
+              onSubmit={onGenerateLingoGuide}
+              isLoading={isFormLoading}
+              error={formError}
+              onBack={onBackToHome}
+              onCancel={() => {}}
+              streamedText={streamedText}
+              initialData={lingoRequestData}
+              user={user}
+            />
+          </ProtectedRoute>
         } 
       />
 
@@ -440,13 +442,15 @@ const AppRouter: React.FC<AppRouterProps> = ({
       <Route 
         path="/results/lingo" 
         element={
-          <LingoFinderResult 
-            recommendations={lingoRecommendations}
-            onRegenerate={onStartLingoFinder}
-            requestData={lingoRequestData}
-            isHistoryView={isHistoryView}
-            user={user}
-          />
+          <ProtectedRoute user={user}>
+            <LingoFinderResult 
+              recommendations={lingoRecommendations}
+              onRegenerate={onStartLingoFinder}
+              requestData={lingoRequestData}
+              isHistoryView={isHistoryView}
+              user={user}
+            />
+          </ProtectedRoute>
         } 
       />
 
