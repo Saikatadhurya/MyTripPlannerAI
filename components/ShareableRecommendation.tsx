@@ -74,6 +74,30 @@ const ShareableRecommendation: React.FC = () => {
     navigate('/');
   };
 
+  const handleStartItineraryPlanner = () => {
+    navigate('/itinerary');
+  };
+
+  const handleStartPackingAssistant = () => {
+    navigate('/packing');
+  };
+
+  const handleStartFoodFinder = () => {
+    navigate('/food');
+  };
+
+  const handleStartAppFinder = () => {
+    navigate('/apps');
+  };
+
+  const handleStartMusicFinder = () => {
+    navigate('/music');
+  };
+
+  const handleStartLingoFinder = () => {
+    navigate('/lingo');
+  };
+
   const handleCopyLink = async () => {
     if (!id) {
       setToast({ message: 'Invalid share link.', type: 'error' });
@@ -204,7 +228,7 @@ const ShareableRecommendation: React.FC = () => {
         return (
           <AppFinderResult
             recommendations={appsData}
-            onRegenerate={() => {}}
+            onRegenerate={handleStartAppFinder}
             requestData={requestData}
             isHistoryView={true}
           />
@@ -230,7 +254,7 @@ const ShareableRecommendation: React.FC = () => {
         return (
           <FoodFinderResult
             recommendations={foodData}
-            onRegenerate={() => {}}
+            onRegenerate={handleStartFoodFinder}
             requestData={requestData}
             isHistoryView={true}
           />
@@ -246,7 +270,7 @@ const ShareableRecommendation: React.FC = () => {
         return (
           <MusicFinderResult
             recommendations={musicData}
-            onRegenerate={() => {}}
+            onRegenerate={handleStartMusicFinder}
             requestData={requestData}
             isHistoryView={true}
           />
@@ -262,7 +286,7 @@ const ShareableRecommendation: React.FC = () => {
         return (
           <LingoFinderResult
             recommendations={lingoData}
-            onRegenerate={() => {}}
+            onRegenerate={handleStartLingoFinder}
             requestData={requestData}
             isHistoryView={true}
           />
@@ -289,7 +313,7 @@ const ShareableRecommendation: React.FC = () => {
         return (
           <PackingListPreview
             packingList={packingData}
-            onRegenerate={() => {}}
+            onRegenerate={handleStartPackingAssistant}
             requestData={requestData}
             isHistoryView={true}
           />
@@ -327,7 +351,7 @@ const ShareableRecommendation: React.FC = () => {
         return (
           <ItineraryPreview
             itinerary={itineraryData}
-            onRegenerate={() => {}}
+            onRegenerate={handleStartItineraryPlanner}
             requestData={requestData}
             isHistoryView={true}
           />
@@ -402,8 +426,30 @@ const ShareableRecommendation: React.FC = () => {
         loadingStatus={loadingStatus}
         stepErrors={stepErrors}
         onPlanNew={handleBackToHome}
-        onRegenerate={() => {}}
-        onRegenerateStep={() => {}}
+        onRegenerate={handleStartItineraryPlanner}
+        onRegenerateStep={(step) => {
+          // Navigate to appropriate form based on step
+          switch (step) {
+            case 'itinerary':
+              handleStartItineraryPlanner();
+              break;
+            case 'packing':
+              handleStartPackingAssistant();
+              break;
+            case 'food':
+              handleStartFoodFinder();
+              break;
+            case 'apps':
+              handleStartAppFinder();
+              break;
+            case 'music':
+              handleStartMusicFinder();
+              break;
+            case 'lingo':
+              handleStartLingoFinder();
+              break;
+          }
+        }}
         onCancel={() => {}}
         onCancelStep={() => {}}
         onTabChangeScrollToTop={() => {}}

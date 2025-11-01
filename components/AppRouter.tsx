@@ -368,7 +368,7 @@ const AppRouter: React.FC<AppRouterProps> = ({
           <ProtectedRoute user={user}>
             <ItineraryPreview 
               itinerary={itinerary}
-              onRegenerate={() => {}}
+              onRegenerate={onPlanItinerary}
               requestData={initialQuestionnaireData}
               isHistoryView={isHistoryView}
               user={user}
@@ -383,7 +383,7 @@ const AppRouter: React.FC<AppRouterProps> = ({
           <ProtectedRoute user={user}>
             <PackingListPreview 
               packingList={packingList}
-              onRegenerate={() => {}}
+              onRegenerate={onStartPacking}
               requestData={packingRequestData}
               isHistoryView={isHistoryView}
               user={user}
@@ -398,7 +398,7 @@ const AppRouter: React.FC<AppRouterProps> = ({
           <ProtectedRoute user={user}>
             <FoodFinderResult 
               recommendations={foodRecommendations}
-              onRegenerate={() => {}}
+              onRegenerate={onStartFoodFinder}
               requestData={foodRequestData}
               isHistoryView={isHistoryView}
               user={user}
@@ -413,7 +413,7 @@ const AppRouter: React.FC<AppRouterProps> = ({
           <ProtectedRoute user={user}>
             <AppFinderResult 
               recommendations={appRecommendations}
-              onRegenerate={() => {}}
+              onRegenerate={onStartAppFinder}
               requestData={appRequestData}
               isHistoryView={isHistoryView}
               user={user}
@@ -428,7 +428,7 @@ const AppRouter: React.FC<AppRouterProps> = ({
           <ProtectedRoute user={user}>
             <MusicFinderResult 
               recommendations={musicRecommendations}
-              onRegenerate={() => {}}
+              onRegenerate={onStartMusicFinder}
               requestData={musicRequestData}
               isHistoryView={isHistoryView}
               user={user}
@@ -442,7 +442,7 @@ const AppRouter: React.FC<AppRouterProps> = ({
         element={
           <LingoFinderResult 
             recommendations={lingoRecommendations}
-            onRegenerate={() => {}}
+            onRegenerate={onStartLingoFinder}
             requestData={lingoRequestData}
             isHistoryView={isHistoryView}
             user={user}

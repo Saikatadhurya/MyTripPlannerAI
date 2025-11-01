@@ -377,7 +377,12 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
        {!isUnifiedView && (
        <div className="flex justify-start items-center no-print animated-card">
         <button
-          onClick={onRegenerate}
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onRegenerate();
+          }}
           className="inline-flex items-center px-6 py-2 my-2 bg-white/60 text-slate-800 font-bold rounded-full hover:bg-white/80 transition-all duration-300 shadow-md border border-white/50"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
@@ -819,7 +824,12 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
       <div className="pt-8 text-center no-print">
         {!isUnifiedView && (
         <button
-            onClick={onRegenerate}
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onRegenerate();
+            }}
             className="mt-8 inline-flex items-center px-8 py-3 bg-indigo-600 text-white font-bold rounded-full hover:bg-indigo-700 transition-all duration-300 transform hover:scale-105 shadow-lg"
         >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
