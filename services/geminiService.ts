@@ -275,6 +275,25 @@ export const generateItinerary = async (
   
   const prompt = `Create a detailed travel itinerary in ${language}. The user wants to plan a ${days}-day trip to ${destination} with a ${budget} budget.
   
+  **GOOGLE SEARCH OPTIMIZATION (CRITICAL FOR SPEED):**
+  You have access to Google Search, but use it efficiently and strategically:
+  1. **USE GOOGLE SEARCH ONLY FOR:**
+     - Current entry prices and ticket costs for specific attractions
+     - Real-time events, festivals, or special events happening during travel dates (${startDate})
+     - Current exchange rates between currencies
+     - Recent changes to attraction hours or availability
+  2. **USE YOUR TRAINING DATA FOR:**
+     - Famous attractions, landmarks, and historical sites
+     - Cultural information, traditions, and local customs
+     - Popular restaurants and dining recommendations
+     - Natural places, museums, and tourist spots
+     - Historical background and general travel information
+  3. **SEARCH EFFICIENCY RULES:**
+     - Make maximum 2-3 targeted searches per request
+     - Combine related searches: "Search for current prices and events together"
+     - Prioritize: Search for prices and events first, then use knowledge base for everything else
+     - Do NOT search for information already in your training data (attractions, culture, history)
+  
   **CORE ITINERARY PHILOSOPHY: MAXIMALIST & EFFICIENT**
   Your core directive is to create a dense and efficient travel plan that maximizes the user's time. Assume the traveler is energetic and wants to see and do as much as possible.
   - **NO WASTED TIME:** Minimize downtime. Days should be packed with activities from morning to evening. Avoid suggesting entire "rest days" or "leisure days" unless the trip is extremely long or the vibe is explicitly 'Relaxation'.
@@ -297,16 +316,10 @@ export const generateItinerary = async (
   - Output Language: ${language}
   - Desired Currency for Costs: ${currency}
   
-  CRITICAL COST BREAKDOWN INSTRUCTIONS (MANDATORY):
-  1.  **budgetSummary.total**: This MUST be the sum of all other per-person costs in the budgetSummary (stay, food, and any fuel or miscellaneous costs).
-  2.  **budgetSummary.miscellaneous**:
-      - **For 'Car' and 'Bike' trips**: You MUST estimate a per-person budget for **tolls, parking, and minor unforeseen expenses**.
-      - **For 'Standard' trips**: You MUST estimate a per-person budget for **local transport, tips, and other minor unforeseen expenses**. Entry fees for major attractions MUST NOT be included here; they belong in the daily cost.
-  3.  **plan.approxCost (CRITICAL - DYNAMIC CALCULATION REQUIRED)**: This field MUST represent the realistic per-person daily cost for **that day's specific activities and food ONLY**.
-      - **YOU ARE STRICTLY FORBIDDEN FROM SIMPLY AVERAGING THE TOTAL BUDGET.** Averaging is a critical failure.
-      - **HOW TO CALCULATE (MANDATORY):** For each day, you MUST use your search capabilities to estimate the real entry fees for all ticketed attractions listed in that day's 'activities'. You will then sum these entry fees with a reasonable estimate for that day's food recommendations. The final sum is the value for 'approxCost'.
-      - **Example:** A day visiting the **Louvre Museum** in Paris will have a significantly higher 'approxCost' than a day spent on a **free walking tour**.
-      - This value must EXCLUDE inter-city travel fuel and miscellaneous budget items.
+  CRITICAL COST BREAKDOWN:
+  1. **budgetSummary.total**: Sum of all per-person costs (stay + food + fuel + miscellaneous).
+  2. **budgetSummary.miscellaneous**: Per-person budget for ${(tripType === 'Car' || tripType === 'Bike') ? 'tolls, parking, and minor expenses' : 'local transport, tips, and minor expenses'}. Exclude attraction entry fees (those go in daily costs).
+  3. **plan.approxCost**: Realistic per-person daily cost for that day's activities and food ONLY. CRITICAL: Calculate dynamically by searching for actual entry fees of attractions listed, then add food estimate. DO NOT average the total budget. Example: Louvre Museum day costs more than a free walking tour day. Exclude fuel and miscellaneous.
   
   ${(tripType === 'Car' || tripType === 'Bike') ? `
   CRITICAL VEHICLE-SPECIFIC INSTRUCTIONS:
@@ -365,36 +378,20 @@ export const generateItinerary = async (
     "referenceBlogs": []
   }
 
-  Important Rules:
-  1.  All string values in the JSON must be in ${language}.
-  2.  The 'plan' array must have exactly ${days} elements.
-  3.  The 'coveredDestinations' array is mandatory and must be populated if the trip covers multiple locations (e.g., a round trip or a regional tour). For a trip to a single city, it should contain details for just that destination.
-  4.  **ACTIVITY TIMINGS (CRITICAL):** For each string in the 'activities' array, you MUST prefix the activity with a specific time or time range. The timings should be realistic, accounting for travel between activities, duration of the activity, and meals. Format it as **HH:MM AM/PM - HH:MM AM/PM:** or **HH:MM AM/PM:**. For example: "**09:00 AM - 11:00 AM:** Visit the Louvre Museum." or "**01:00 PM:** Lunch at a local cafe.". Be specific and logical.
-  5.  **COST FORMATTING (MANDATORY)**: All cost fields ('stay', 'food', 'fuel', 'miscellaneous', 'total' in 'budgetSummary'; 'approxCost' in 'plan'; 'cost' in 'transport') MUST be a string containing ONLY numbers (e.g., "1500", "250.50"). Do NOT include currency symbols, currency codes, or any text. All costs must be per person (unless specified otherwise in instructions) and calculated in the user's chosen currency: "${currency}".
-  6.  **MANDATORY BOLDING**: You MUST use bold markdown (**text**) to highlight key information. This includes, but is not limited to: names of specific attractions, restaurants, hotels, important timings, unique cultural items, and critical travel advice. This is crucial for readability.
-  7.  **ABSOLUTE RULE - NO TECHNICAL JARGON IN USER TEXT:** This is a critical rule for maintaining a professional user experience.
-      -   All text that will be shown to the user (e.g., in 'planNote', 'activities', descriptions, etc.) MUST be written in friendly, natural language.
-      -   You are **STRICTLY FORBIDDEN** from ever mentioning any internal JSON field names from the schema provided. This includes, but is not limited to: 'budgetSummary.total', 'approxCost', 'placesToStay', 'historicBackground', etc.
-      -   **Correct Example:** "The total estimated cost for your trip, excluding flights..."
-      -   **INCORRECT EXAMPLE (FAILURE):** "The cost is not included in the 'budgetSummary.total'..."
-      -   **Correct Example:** "...and the approximate cost for each day's activities and food."
-      -   **INCORRECT EXAMPLE (FAILURE):** "...and the 'approxCost' for each day."
-      -   Mentioning any technical variable name in user-facing text is a critical failure. You MUST rephrase to explain the concept naturally.
-  8.  If 'includeMedical' is true, the 'medicalFacilities' array for each day must list at least one nearby hospital or pharmacy.
-  9.  The 'referenceBlogs' field should be an empty array. It will be populated later.
-  10. For 'Standard' trip types, 'transport' suggestions should be tailored to the selected budget. For 'Car' or 'Bike' trips, you MUST follow the critical vehicle instructions provided above.
-  11. For 'historicBackground', 'famousCulture', 'naturalPlaces', 'museums', 'specialOrnaments', and 'recommendedRestaurants', provide a list of 1-3 very concise bullet points. Each point must be a short, descriptive phrase (around 5-10 words maximum). For restaurants, this can be just the name.
-  12. For 'specialEvents', find specific events, festivals, or notable occurrences happening ONLY during the travel dates (starting ${startDate} for ${days} days). The description must be very concise (1-2 sentences). If no specific major events are found, you MUST return a helpful and concise message like 'No major special events are scheduled for your travel dates, but you can enjoy ongoing local experiences.'
-  13. **Currency Conversion (CRITICAL)**:
-    a. First, determine the primary local currency of the destination "${destination}".
-    b. Compare the local currency with the user's chosen currency: "${currency}".
-    c. If they are different, you MUST populate the 'currencyConversion' object in the JSON response. Provide a simple, clear text representation of the approximate exchange rate in the 'rateText' field. The format MUST be '1 [DESTINATION CURRENCY CODE] = [VALUE] [SOURCE CURRENCY CODE]'. For example, if the source currency is INR and the destination currency is USD, the text should be like '1 USD = 83 INR'. The 'fromCurrency' MUST be the user's chosen currency code (e.g., 'INR'), and 'toCurrency' MUST be the destination's local currency code (e.g., 'USD').
-    d. If the user's chosen currency is the same as the local currency, the 'currencyConversion' field MUST be omitted from the JSON response.
-  14. **CRITICAL JSON VALIDATION RULE**: Your entire response depends on this.
-      a. **NO UNESCAPED QUOTES**: Inside any JSON string value, you MUST NEVER use a double quote character ("). It will break the JSON parsing.
-      b. **HOW TO HANDLE QUOTES**: To include a quote inside a string, you MUST use single quotes (e.g., "Visit the 'Eiffel Tower' at night.") or escape the double quote with a backslash (e.g., "The guide said, \\"Welcome to Paris!\\"").
-      c. **FAILURE IS NOT AN OPTION**: You MUST double-check every string for unescaped quotes. Failure to follow this rule will make the entire response useless.
-  15. **ABSOLUTE FINAL INSTRUCTION**: Your entire response MUST be the raw JSON object. It MUST start with the character '{' and end with the character '}'. You MUST NOT wrap it in markdown (like \`\`\`json), and you MUST NOT add any introductory text. The response should be immediately parsable as JSON.
+  IMPORTANT RULES:
+  1. All strings must be in ${language}. 'plan' array must have exactly ${days} elements. 'coveredDestinations' is mandatory (populate for multi-location trips, single destination for single city).
+  2. **ACTIVITY TIMINGS:** Prefix each activity with time: "**09:00 AM - 11:00 AM:** Visit..." or "**01:00 PM:** Lunch...". Be realistic accounting for travel and duration.
+  3. **COST FORMATTING:** All cost fields (budgetSummary.*, approxCost, transport.cost) = strings with ONLY numbers (e.g., "1500", "250.50"). No currency symbols. All per-person costs in "${currency}".
+  4. **BOLDING:** Use **text** to highlight attractions, restaurants, hotels, timings, cultural items, travel advice.
+  5. **NO TECHNICAL JARGON:** User-facing text must be friendly and natural. NEVER mention JSON field names like 'budgetSummary.total' or 'approxCost' in user text. Use natural language instead.
+  6. **MEDICAL:** If includeMedical=true, list at least one hospital/pharmacy per day in 'medicalFacilities'.
+  7. **TRANSPORT:** Standard trips: tailor to budget. Car/Bike: follow vehicle instructions above.
+  8. **DESTINATION DETAILS:** For historicBackground, famousCulture, naturalPlaces, museums, specialOrnaments, recommendedRestaurants: 1-3 concise points (5-10 words each). Restaurants can be names only.
+  9. **SPECIAL EVENTS:** Find events happening ONLY during ${startDate} for ${days} days. 1-2 sentences. If none: "No major special events scheduled, but enjoy ongoing local experiences."
+  10. **CURRENCY CONVERSION:** Determine local currency of "${destination}". If different from "${currency}", add 'currencyConversion' object with format "1 [DEST_CURRENCY] = [VALUE] [USER_CURRENCY]" (e.g., "1 USD = 83 INR"). If same, omit this field.
+  11. **JSON VALIDATION:** NO unescaped double quotes (") in string values. Use single quotes or escape: \\". Check every string before responding.
+  12. **FINAL:** Response MUST be raw JSON starting with '{' and ending with '}'. No markdown wrapping, no intro text. Immediately parsable.
+  13. 'referenceBlogs' must be an empty array [].
   `;
   
     let fullText = '';
@@ -406,6 +403,8 @@ export const generateItinerary = async (
                 contents: prompt,
                 config: {
                     tools: [{ googleSearch: {} }],
+                    thinkingConfig: { thinkingBudget: 0 },
+                    // Note: responseMimeType may not be fully supported in streaming mode
                 }
             });
 
@@ -420,6 +419,8 @@ export const generateItinerary = async (
                 contents: prompt,
                 config: {
                     tools: [{ googleSearch: {} }],
+                    thinkingConfig: { thinkingBudget: 0 },
+                    responseMimeType: "application/json",
                 }
             });
             fullText = response.text;

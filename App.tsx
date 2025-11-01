@@ -687,7 +687,7 @@ const AppContent: React.FC = () => {
             console.error(`Attempt ${attempt} for itinerary failed:`, lastError);
             
             if (lastError.message === "Cancelled") break;
-            if (attempt < maxRetries) await new Promise(resolve => setTimeout(resolve, 1500));
+            if (attempt < maxRetries) await new Promise(resolve => setTimeout(resolve, 500)); // Reduced for faster recovery
         }
     }
     
@@ -815,7 +815,7 @@ const AppContent: React.FC = () => {
                     }
 
                     if (attempt < maxRetries) {
-                        await new Promise(resolve => setTimeout(resolve, 1500)); // wait before retrying
+                        await new Promise(resolve => setTimeout(resolve, 500)); // wait before retrying (reduced for faster recovery)
                     }
                 }
             }
