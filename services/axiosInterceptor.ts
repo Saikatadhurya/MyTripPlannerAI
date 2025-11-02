@@ -78,21 +78,14 @@ axios.interceptors.request.use(
     const token = authService.getToken();
     
     if (token) {
-      // Check if token is expired before making the request
-      if (TokenUtils.isTokenExpired(token)) {
-        console.warn('Token is expired, clearing session');
-        authService.logout();
-        triggerGlobalLogout();
-        showLogoutNotification('Your session has expired. Please sign in again.');
-        return Promise.reject(new Error('Token expired'));
-      }
-      
-      // Check if token will expire soon and show warning
+      // Check if token will expire soon and show warning (but don't block the request)
       if (TokenUtils.willExpireSoon(token, 5)) {
         console.warn('Token will expire soon');
         showLogoutNotification('Your session will expire soon. Please save your work.');
       }
       
+      // Always attach the token - let the backend validate it and return 401 if expired
+      // This prevents premature logout during long-running operations like plan generation
       config.headers.Authorization = `Bearer ${token}`;
     }
     
@@ -113,8 +106,20 @@ axios.interceptors.response.use(
       const errorMessage = (error.response.data as any)?.message || '';
       const errorMessageLower = errorMessage.toLowerCase();
       
+      // Check if the request had an authorization header (was authenticated)
+      const hadAuthHeader = error.config?.headers?.Authorization;
+      
+      // Explicitly exclude quota/rate limit errors
+      const isQuotaError = 
+        errorMessageLower.includes('quota') ||
+        errorMessageLower.includes('rate limit') ||
+        errorMessageLower.includes('429') ||
+        errorMessageLower.includes('billing') ||
+        errorMessageLower.includes('exceeded');
+      
       // Only logout for actual authentication/authorization errors
-      // Be specific to avoid logging out for quota/rate limit errors
+      // If we had an auth header and got 401, it's likely an auth issue
+      // But be specific about the error message to avoid false positives
       const isAuthError = 
         errorMessageLower.includes('not authorized') ||
         errorMessageLower.includes('token failed') ||
@@ -125,18 +130,12 @@ axios.interceptors.response.use(
         errorMessageLower.includes('authentication failed') ||
         errorMessageLower.includes('unauthorized') ||
         (errorMessageLower.includes('token') && (errorMessageLower.includes('expired') || errorMessageLower.includes('invalid'))) ||
-        (errorMessageLower.includes('user not found') && errorMessageLower.includes('authorized'));
-      
-      // Explicitly exclude quota/rate limit errors
-      const isQuotaError = 
-        errorMessageLower.includes('quota') ||
-        errorMessageLower.includes('rate limit') ||
-        errorMessageLower.includes('429') ||
-        errorMessageLower.includes('billing') ||
-        errorMessageLower.includes('exceeded');
+        (errorMessageLower.includes('user not found') && errorMessageLower.includes('authorized')) ||
+        // If we had an auth header and there's no specific quota error, assume it's an auth issue
+        (hadAuthHeader && !isQuotaError && errorMessageLower.length === 0);
       
       if (isAuthError && !isQuotaError) {
-        console.warn('Authentication failed, logging out user');
+        console.warn('Authentication failed, logging out user', { errorMessage, hadAuthHeader });
         authService.logout();
         triggerGlobalLogout();
         showLogoutNotification('Your session has expired. Please sign in again.');
