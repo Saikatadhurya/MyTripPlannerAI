@@ -108,7 +108,9 @@ export interface PackingListRequestData {
 }
 
 export interface PackingList {
-    clothingAndFootwear: string[];
+    maleClothing: string[];
+    femaleClothing: string[];
+    clothingAndFootwear?: string[]; // Deprecated: kept for backward compatibility
     toiletriesAndPersonalCare: string[];
     medicinesAndHealth: string[];
     electronicsAndGear: string[];

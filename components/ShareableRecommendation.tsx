@@ -296,7 +296,9 @@ const ShareableRecommendation: React.FC = () => {
         // Ensure the packing data has the expected structure with proper fallbacks
         const packingData = {
           destination: recommendationData.destination || rec.destination || 'Unknown Destination',
-          clothingAndFootwear: Array.isArray(recommendationData.clothingAndFootwear) ? recommendationData.clothingAndFootwear : [],
+          maleClothing: Array.isArray(recommendationData.maleClothing) ? recommendationData.maleClothing : [],
+          femaleClothing: Array.isArray(recommendationData.femaleClothing) ? recommendationData.femaleClothing : [],
+          clothingAndFootwear: Array.isArray(recommendationData.clothingAndFootwear) ? recommendationData.clothingAndFootwear : undefined, // For backward compatibility
           toiletriesAndPersonalCare: Array.isArray(recommendationData.toiletriesAndPersonalCare) ? recommendationData.toiletriesAndPersonalCare : [],
           medicinesAndHealth: Array.isArray(recommendationData.medicinesAndHealth) ? recommendationData.medicinesAndHealth : [],
           electronicsAndGear: Array.isArray(recommendationData.electronicsAndGear) ? recommendationData.electronicsAndGear : [],

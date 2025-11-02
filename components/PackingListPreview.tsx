@@ -88,8 +88,40 @@ const PackingListPreview: React.FC<PackingListPreviewProps> = ({ packingList, on
         }
     }, [isUnifiedView, requestData, packingList, savePackingRecommendation, hasBeenSaved, isHistoryView]);
     
-    const categoryDetails = {
-        clothingAndFootwear: { title: "Clothing & Footwear", items: packingList.clothingAndFootwear, icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>, color: "blue", className: "md:col-span-2" },
+    // Determine if we have new format (maleClothing/femaleClothing) or old format (clothingAndFootwear)
+    const hasNewFormat = (packingList.maleClothing && packingList.maleClothing.length > 0) || 
+                         (packingList.femaleClothing && packingList.femaleClothing.length > 0);
+    
+    const categoryDetails: {
+        [key: string]: {
+            title: string;
+            items: string[];
+            icon: React.ReactNode;
+            color: string;
+            className: string;
+        }
+    } = {
+        maleClothing: { 
+            title: "Male Clothing & Footwear", 
+            items: packingList.maleClothing || [], 
+            icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>, 
+            color: "blue", 
+            className: hasNewFormat ? "" : "md:col-span-2" 
+        },
+        femaleClothing: { 
+            title: "Female Clothing & Footwear", 
+            items: packingList.femaleClothing || [], 
+            icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>, 
+            color: "pink", 
+            className: "" 
+        },
+        clothingAndFootwear: { 
+            title: "Clothing & Footwear", 
+            items: packingList.clothingAndFootwear || [], 
+            icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>, 
+            color: "blue", 
+            className: "md:col-span-2" 
+        },
         adventureClothing: { title: "Adventure & Activity Gear", items: packingList.adventureClothing, icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 004 0 2 2 0 011.523-1.943A5.998 5.998 0 0116 10c0 .954-.225 1.852-.635 2.667a2.5 2.5 0 01-5.033 0 2.5 2.5 0 00-4.667 0c-.35-.74-.533-1.554-.533-2.394a6.01 6.01 0 011.567-4.243z" clipRule="evenodd" /></svg>, color: "green", className: "" },
         electronicsAndGear: { title: "Electronics & Gear", items: packingList.electronicsAndGear, icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M7 2a2 2 0 00-2 2v12a2 2 0 002 2h6a2 2 0 002-2V4a2 2 0 00-2-2H7zm3 14a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" /></svg>, color: "slate", className: "" },
         toiletriesAndPersonalCare: { title: "Toiletries & Personal Care", items: packingList.toiletriesAndPersonalCare, icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>, color: "pink", className: "" },
@@ -98,7 +130,10 @@ const PackingListPreview: React.FC<PackingListPreviewProps> = ({ packingList, on
         optionalComfortItems: { title: "Optional Comfort Items", items: packingList.optionalComfortItems, icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" /></svg>, color: "purple", className: "" },
     };
 
-    const displayOrder = Object.keys(categoryDetails) as Array<keyof typeof categoryDetails>;
+    // Display order: show new format if available, otherwise show old format
+    const displayOrder = hasNewFormat 
+        ? ['maleClothing', 'femaleClothing', 'adventureClothing', 'electronicsAndGear', 'toiletriesAndPersonalCare', 'medicinesAndHealth', 'documentsAndMoney', 'optionalComfortItems'] as Array<keyof typeof categoryDetails>
+        : (['clothingAndFootwear', 'adventureClothing', 'electronicsAndGear', 'toiletriesAndPersonalCare', 'medicinesAndHealth', 'documentsAndMoney', 'optionalComfortItems'] as Array<keyof typeof categoryDetails>);
 
     const formattedStartDate = new Date(packingList.startDate + 'T00:00:00').toLocaleDateString(undefined, {
         year: 'numeric',

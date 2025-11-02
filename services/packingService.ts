@@ -33,11 +33,12 @@ export const generatePackingList = async (data: PackingListRequestData, onChunk?
   const prompt = `
     Based on a ${days}-day trip to ${destinationsString} starting around ${startDate}, generate a smart, weather-aware packing list in ${language}.
     Consider the typical climate and weather for that location and time of year.
-    Provide practical advice. For clothing, suggest layers if the weather is variable.
+    Provide practical advice. For clothing, suggest layers if the weather is variable. You MUST provide separate clothing recommendations for male and female travelers, tailored to their specific needs.
     ${multiStopInstructions}
     The response MUST be a single, valid JSON object that strictly follows this structure and types, with all text content in ${language}:
     {
-      "clothingAndFootwear": string[],
+      "maleClothing": string[],
+      "femaleClothing": string[],
       "toiletriesAndPersonalCare": string[],
       "medicinesAndHealth": string[],
       "electronicsAndGear": string[],
@@ -48,6 +49,13 @@ export const generatePackingList = async (data: PackingListRequestData, onChunk?
       "locallyAvailableItems": string[],
       "approximateTemperature": string
     }
+
+    **CRITICAL CLOTHING SECTION INSTRUCTIONS:**
+    1. You MUST provide separate clothing lists for male and female travelers.
+    2. The 'maleClothing' array should contain clothing and footwear items specifically tailored for male travelers (e.g., men's shirts, men's pants, men's shoes, underwear, socks, etc.).
+    3. The 'femaleClothing' array should contain clothing and footwear items specifically tailored for female travelers (e.g., women's tops, women's bottoms, women's shoes, bras, underwear, etc.).
+    4. Both sections should consider the weather conditions, trip duration, and destination context.
+    5. Include appropriate footwear, undergarments, and accessories in each respective section.
 
     Important Rules:
     1. The 'approximateTemperature' must be a string representing the estimated temperature range in Celsius (e.g., "25-30°C"). If it's a multi-stop trip, you MUST follow the multi-stop instructions for this field.
