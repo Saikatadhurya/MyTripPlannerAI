@@ -1,4 +1,5 @@
 import { User } from './authService';
+import { getBackendUrl, isCapacitor } from '../utils/capacitorUtils';
 
 export interface ProfileUpdateData {
   full_name?: string;
@@ -20,7 +21,24 @@ export interface ProfileResponse {
 }
 
 class ProfileService {
-  private baseUrl = '/api/profile';
+  private get baseUrl(): string {
+    const backendUrl = getBackendUrl();
+    
+    // If in Capacitor (mobile app), use full production URL
+    if (isCapacitor()) {
+      return `${backendUrl}/api/profile`;
+    }
+    
+    // Check if we're in production (web deployment)
+    if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      // In production web, API is on the same domain
+      return '/api/profile';
+    }
+    
+    // Development fallback
+    return backendUrl.endsWith('/api/profile') ? backendUrl : `${backendUrl}/api/profile`;
+  }
+  
   private token: string | null = null;
 
   constructor() {
@@ -161,7 +179,8 @@ class ProfileService {
     // Redirect to Google OAuth with returnUrl and state parameters
     const currentUrl = window.location.href;
     const state = encodeURIComponent(JSON.stringify({ userId }));
-    const linkingUrl = `${process.env.REACT_APP_API_URL || process.env.VITE_API_URL || 'http://localhost:5000'}/auth/google/link?returnUrl=${encodeURIComponent(currentUrl)}&state=${state}`;
+    const backendUrl = getBackendUrl();
+    const linkingUrl = `${backendUrl}/auth/google/link?returnUrl=${encodeURIComponent(currentUrl)}&state=${state}`;
     window.location.href = linkingUrl;
   }
 

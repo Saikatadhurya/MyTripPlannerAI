@@ -1,0 +1,17 @@
+{
+  "appId": "com.planmytrip.app",
+  "appName": "PlanMyTrip AI",
+  "webDir": "dist",
+  "server": {
+    "url": "https://www.planmytripai.in",
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#ffffff",
+      "showSpinner": false
+    }
+  }
+}
+

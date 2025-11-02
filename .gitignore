@@ -24,4 +24,17 @@ dist-ssr
 *.sw?
 backend/.env
 .env
-.env
+.env.production
+.env.local
+
+# Android / Capacitor
+android/app/build/
+android/.gradle/
+android/local.properties
+android/*.iml
+android/.idea/
+android/app/release/
+android/app/debug/
+android/keystore.properties
+*.jks
+*.keystore

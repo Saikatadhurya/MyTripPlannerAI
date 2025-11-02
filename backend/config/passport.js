@@ -2,7 +2,9 @@ const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const userModel = require('../models/userModel');
 const { initUserLimits, ensureFeaturesSeeded } = require('../models/usageModel');
-require('dotenv').config();
+const path = require('path');
+// Load .env from root directory (parent of backend/)
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 
 // Get the backend URL, with fallback logic for production
 const backendUrl = process.env.BACKEND_URL || 

@@ -1,5 +1,7 @@
 const jwt = require('jsonwebtoken');
-require('dotenv').config();
+const path = require('path');
+// Load .env from root directory (parent of backend/)
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecretjwtkey'; // Fallback for development
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1h';

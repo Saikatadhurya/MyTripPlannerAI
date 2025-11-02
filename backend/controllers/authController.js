@@ -9,6 +9,46 @@ const frontendUrl = process.env.FRONTEND_URL ||
                      process.env.BASE_URL || 
                      (process.env.NODE_ENV === 'production' ? process.env.RENDER_URL : 'http://localhost:5000');
 
+// Android app deep link scheme
+const ANDROID_DEEP_LINK_SCHEME = 'com.planmytrip.app';
+
+/**
+ * Check if request is from Android app
+ */
+function isAndroidRequest(req) {
+    const userAgent = req.headers['user-agent'] || '';
+    const platform = req.query.platform;
+    return platform === 'android' || userAgent.includes('Android') || userAgent.includes('CapacitorHttp');
+}
+
+/**
+ * Get redirect URL - uses deep link for Android, regular URL for web
+ */
+function getRedirectUrl(req, token = null, user = null, error = null, message = null) {
+    const isAndroid = isAndroidRequest(req);
+    
+    // Build query parameters
+    const params = new URLSearchParams();
+    if (token) params.append('token', token);
+    if (user) params.append('user', user);
+    if (error) params.append('error', error);
+    if (message) params.append('message', message);
+
+    const queryString = params.toString();
+    
+    if (isAndroid) {
+        // Android deep link format: com.planmytrip.app://auth?token=...&user=...
+        const deepLinkPath = queryString 
+            ? `${ANDROID_DEEP_LINK_SCHEME}://auth?${queryString}` 
+            : `${ANDROID_DEEP_LINK_SCHEME}://auth`;
+        return deepLinkPath;
+    } else {
+        // Web redirect
+        const webUrl = queryString ? `${frontendUrl}?${queryString}` : frontendUrl;
+        return webUrl;
+    }
+}
+
 exports.signup = async (req, res) => {
     const { full_name, email, password } = req.body;
 
@@ -97,7 +137,8 @@ exports.signin = async (req, res) => {
 exports.socialAuthCallback = async (req, res) => {
     // Passport will attach user to req.user (minimal info)
     if (!req.user || !req.user.id) {
-        return res.redirect(`${frontendUrl}?error=${encodeURIComponent('Social authentication failed: user not found in request')}`);
+        const errorUrl = getRedirectUrl(req, null, null, 'Social authentication failed: user not found in request');
+        return res.redirect(errorUrl);
     }
 
     try {
@@ -105,13 +146,14 @@ exports.socialAuthCallback = async (req, res) => {
         const user = await userModel.findUserById(req.user.id);
 
         if (!user) {
-            return res.redirect(`${frontendUrl}?error=${encodeURIComponent('Social authentication failed: user not found in database')}`);
+            const errorUrl = getRedirectUrl(req, null, null, 'Social authentication failed: user not found in database');
+            return res.redirect(errorUrl);
         }
 
         const token = jwt.generateToken({ id: user.id, email: user.email });
         
-        // Set Gemini API key cookie if it exists
-        if (user.gemini_api_key) {
+        // Set Gemini API key cookie if it exists (only for web, not Android)
+        if (user.gemini_api_key && !isAndroidRequest(req)) {
             res.cookie('gemini_api_key', user.gemini_api_key, {
                 maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
                 path: '/',
@@ -121,13 +163,14 @@ exports.socialAuthCallback = async (req, res) => {
             });
         }
         
-        // Redirect to frontend with token and user data
+        // Redirect to frontend/Android app with token and user data
         const userData = encodeURIComponent(JSON.stringify(user));
-        const redirectUrl = `${frontendUrl}?token=${token}&user=${userData}`;
+        const redirectUrl = getRedirectUrl(req, token, userData);
         
         res.redirect(redirectUrl);
     } catch (error) {
-        res.redirect(`${frontendUrl}?error=${encodeURIComponent('Server error during social authentication')}`);
+        const errorUrl = getRedirectUrl(req, null, null, 'Server error during social authentication');
+        res.redirect(errorUrl);
     }
 };
 
@@ -137,11 +180,12 @@ exports.googleLinkingCallback = async (req, res) => {
         // Get profile info from authInfo (third parameter from Passport)
         const profileInfo = req.authInfo?.profile;
         if (!profileInfo || !profileInfo.id) {
-            return res.redirect(`${frontendUrl}?error=${encodeURIComponent('Google linking failed: profile not found in request')}`);
+            const errorUrl = getRedirectUrl(req, null, null, 'Google linking failed: profile not found in request');
+            return res.redirect(errorUrl);
         }
 
         // Get the return URL and state from query parameters
-        const returnUrl = req.query.returnUrl || frontendUrl;
+        // For Android, use deep link; for web, use frontendUrl
         const stateParam = req.query.state;
         let currentUserId = null;
         
@@ -157,20 +201,23 @@ exports.googleLinkingCallback = async (req, res) => {
         }
         
         if (!currentUserId) {
-            return res.redirect(`${frontendUrl}?error=${encodeURIComponent('Please sign in to link your Google account')}`);
+            const errorUrl = getRedirectUrl(req, null, null, 'Please sign in to link your Google account');
+            return res.redirect(errorUrl);
         }
         
         // Check if this Google account is already linked to another user
         const existingSocialAccount = await userModel.findSocialAccount('google', profileInfo.id);
         if (existingSocialAccount && existingSocialAccount.user_id !== currentUserId) {
-            return res.redirect(`${frontendUrl}?error=${encodeURIComponent('This Google account is already linked to another user')}`);
+            const errorUrl = getRedirectUrl(req, null, null, 'This Google account is already linked to another user');
+            return res.redirect(errorUrl);
         }
         
         // Check if current user already has a Google account linked
         const userSocialAccounts = await userModel.getSocialAccounts(currentUserId);
         const hasGoogleLinked = userSocialAccounts.data?.some(account => account.provider === 'google') || false;
         if (hasGoogleLinked) {
-            return res.redirect(`${frontendUrl}?error=${encodeURIComponent('You already have a Google account linked')}`);
+            const errorUrl = getRedirectUrl(req, null, null, 'You already have a Google account linked');
+            return res.redirect(errorUrl);
         }
 
         // Create the social account link
@@ -181,14 +228,15 @@ exports.googleLinkingCallback = async (req, res) => {
                 provider_id: profileInfo.id
             });
             
-            const successUrl = `${frontendUrl}?message=${encodeURIComponent('Google account linked successfully!')}`;
+            const successUrl = getRedirectUrl(req, null, null, null, 'Google account linked successfully!');
             res.redirect(successUrl);
         } catch (linkError) {
-            const errorUrl = `${frontendUrl}?error=${encodeURIComponent('Failed to link Google account. Please try again.')}`;
+            const errorUrl = getRedirectUrl(req, null, null, 'Failed to link Google account. Please try again.');
             res.redirect(errorUrl);
         }
     } catch (error) {
-        res.redirect(`${frontendUrl}?error=${encodeURIComponent('Server error during Google account linking')}`);
+        const errorUrl = getRedirectUrl(req, null, null, 'Server error during Google account linking');
+        res.redirect(errorUrl);
     }
 };
 

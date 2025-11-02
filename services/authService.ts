@@ -2,16 +2,25 @@ import axios from 'axios';
 import { TokenUtils } from './tokenUtils';
 import { startTokenMonitoring, stopTokenMonitoring } from './axiosInterceptor';
 import { CookieUtils } from './cookieUtils';
+import { getBackendUrl, isCapacitor } from '../utils/capacitorUtils';
 
 // Determine API URL based on environment
 const getApiUrl = () => {
-  // Check if we're in production (Render deployment)
-  if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-    // In production, API is on the same domain
+  const backendUrl = getBackendUrl();
+  
+  // If in Capacitor (mobile app), use full production URL
+  if (isCapacitor()) {
+    return `${backendUrl}/auth`;
+  }
+  
+  // Check if we're in production (web deployment)
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    // In production web, API is on the same domain
     return '/auth';
   }
-  // In development
-  return process.env.REACT_APP_API_URL || process.env.VITE_API_URL || 'http://localhost:5000/auth';
+  
+  // Development fallback
+  return backendUrl.endsWith('/auth') ? backendUrl : `${backendUrl}/auth`;
 };
 
 const API_URL = getApiUrl();
@@ -126,7 +135,17 @@ class AuthService {
 
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     try {
-      const response = await axios.post(`${API_URL}/signin`, credentials);
+      // Log for debugging (will be stripped in production builds)
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Login attempt to:', `${API_URL}/signin`);
+      }
+      
+      const response = await axios.post(`${API_URL}/signin`, credentials, {
+        timeout: 30000, // 30 seconds timeout
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
       
       const { user, token } = response.data;
       
@@ -158,8 +177,21 @@ class AuthService {
 
       return { user: authenticatedUser, token };
     } catch (error) {
-      if (axios.isAxiosError(error) && error.response) {
-        throw new Error(error.response.data.message || 'Login failed');
+      // Enhanced error handling with better messages
+      if (axios.isAxiosError(error)) {
+        if (error.response) {
+          // Server responded with error status
+          const message = error.response.data?.message || 'Login failed';
+          throw new Error(message);
+        } else if (error.request) {
+          // Request was made but no response received (network error)
+          console.error('Network error during login:', error.message);
+          throw new Error('Network error: Unable to reach the server. Please check your internet connection and try again.');
+        } else {
+          // Error setting up the request
+          console.error('Request setup error during login:', error.message);
+          throw new Error('Failed to send login request. Please try again.');
+        }
       } else if (error instanceof Error) {
         throw error;
       }
@@ -169,10 +201,20 @@ class AuthService {
 
   async signup(credentials: SignupCredentials): Promise<SignupResponse> {
     try {
+      // Log for debugging (will be stripped in production builds)
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Signup attempt to:', `${API_URL}/signup`);
+      }
+      
       const response = await axios.post(`${API_URL}/signup`, { 
         full_name: credentials.full_name, 
         email: credentials.email, 
         password: credentials.password 
+      }, {
+        timeout: 30000, // 30 seconds timeout
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
       
       return {
@@ -181,8 +223,21 @@ class AuthService {
         requiresVerification: response.data.requiresVerification
       };
     } catch (error) {
-      if (axios.isAxiosError(error) && error.response) {
-        throw new Error(error.response.data.message || 'Signup failed');
+      // Enhanced error handling with better messages
+      if (axios.isAxiosError(error)) {
+        if (error.response) {
+          // Server responded with error status
+          const message = error.response.data?.message || 'Signup failed';
+          throw new Error(message);
+        } else if (error.request) {
+          // Request was made but no response received (network error)
+          console.error('Network error during signup:', error.message);
+          throw new Error('Network error: Unable to reach the server. Please check your internet connection and try again.');
+        } else {
+          // Error setting up the request
+          console.error('Request setup error during signup:', error.message);
+          throw new Error('Failed to send signup request. Please try again.');
+        }
       } else if (error instanceof Error) {
         throw error;
       }
@@ -195,6 +250,11 @@ class AuthService {
       const response = await axios.post(`${API_URL}/verify-otp`, {
         email,
         otpCode
+      }, {
+        timeout: 30000, // 30 seconds for mobile networks
+        headers: {
+          'Content-Type': 'application/json',
+        }
       });
       
       const { user, token } = response.data;
@@ -237,7 +297,12 @@ class AuthService {
 
   async resendOTP(email: string): Promise<void> {
     try {
-      await axios.post(`${API_URL}/resend-otp`, { email });
+      await axios.post(`${API_URL}/resend-otp`, { email }, {
+        timeout: 30000, // 30 seconds for mobile networks
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
         throw new Error(error.response.data.message || 'Failed to resend OTP');
@@ -250,7 +315,17 @@ class AuthService {
 
   async forgotPassword(email: string): Promise<void> {
     try {
-      await axios.post(`${API_URL}/forgot-password`, { email });
+      // Debug logging for network issues
+      if (process.env.NODE_ENV === 'development' || isCapacitor()) {
+        console.log('Forgot Password API URL:', `${API_URL}/forgot-password`);
+      }
+      
+      await axios.post(`${API_URL}/forgot-password`, { email }, {
+        timeout: 30000, // 30 seconds for mobile networks
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
         throw new Error(error.response.data.message || 'Failed to send password reset OTP');

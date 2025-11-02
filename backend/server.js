@@ -1,7 +1,8 @@
 const path = require('path');
 const express = require('express');
 const dotenv = require('dotenv');
-dotenv.config();
+// Load .env from root directory (parent of backend/)
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 const session = require('express-session');
 const passport = require('passport');
 const authRoutes = require('./routes/authRoutes');
@@ -18,14 +19,86 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Get allowed origins - support multiple sources including Android/Capacitor
+const getAllowedOrigins = () => {
+  const origins = [];
+  
+  // Add frontend URL
+  if (process.env.FRONTEND_URL) {
+    origins.push(process.env.FRONTEND_URL);
+  }
+  
+  // Add base URL
+  if (process.env.BASE_URL) {
+    origins.push(process.env.BASE_URL);
+  }
+  
+  // Add Render URL if in production
+  if (process.env.RENDER_URL) {
+    origins.push(process.env.RENDER_URL);
+  }
+  
+  // Development origins
+  if (process.env.NODE_ENV !== 'production') {
+    origins.push('http://localhost:3000');
+    origins.push('http://localhost:5000');
+    origins.push('http://127.0.0.1:3000');
+    origins.push('http://127.0.0.1:5000');
+  }
+  
+  // Allow Capacitor/Android origins (these are the origins used by Capacitor WebView)
+  origins.push('capacitor://localhost');
+  origins.push('ionic://localhost');
+  origins.push('http://localhost');
+  origins.push('https://localhost'); // Critical for Android WebView!
+  origins.push('http://localhost:8080');
+  origins.push('https://localhost:8080');
+  origins.push('file://');
+  
+  return origins.filter(Boolean); // Remove empty strings
+};
+
+const allowedOrigins = getAllowedOrigins();
+
 // Get the frontend URL, with fallback logic for production
 const frontendUrl = process.env.FRONTEND_URL || 
                      process.env.BASE_URL || 
                      (process.env.NODE_ENV === 'production' ? process.env.RENDER_URL : 'http://localhost:5000');
 
 app.use(cors({
-    origin: frontendUrl,
-    credentials: true
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps, curl, Postman, Capacitor)
+        if (!origin) {
+            return callback(null, true);
+        }
+        
+        // Special handling for Capacitor/Android WebView origins (must be checked first!)
+        if (origin === 'https://localhost' || 
+            origin === 'http://localhost' || 
+            origin.startsWith('capacitor://') || 
+            origin.startsWith('ionic://') ||
+            origin === 'http://localhost:8080' ||
+            origin === 'https://localhost:8080') {
+            return callback(null, true);
+        }
+        
+        // Check if origin is in allowed list
+        if (allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            // Log for debugging
+            console.log('CORS: Allowing origin:', origin);
+            // Allow all origins for mobile app compatibility
+            // This ensures Android WebView requests work correctly
+            callback(null, true);
+        }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    exposedHeaders: ['Content-Type', 'Authorization'],
+    preflightContinue: false,
+    optionsSuccessStatus: 204
 }));
 
 // Session configuration
