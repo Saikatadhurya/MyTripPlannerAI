@@ -17,18 +17,60 @@ const parseBold = (text: string | undefined) => {
 const parseActivityTime = (text: string): { time?: string; description: string } => {
   if (!text) return { description: '' };
   
-  // Pattern to match time ranges like "02:00 PM - 03:00 PM", "09:00 PM onwards", etc.
-  const timePattern = /(\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)\s*-\s*\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)|\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)\s*onwards)/i;
-  const match = text.match(timePattern);
+  // Pattern to match time ranges with optional bold markers and colon separator
+  // Matches formats like: "**01:00 PM - 02:00 PM:**" or "**01:00 PM:**" or "01:00 PM - 02:00 PM:"
+  // The pattern matches the entire prefix including bold markers and colon
+  const timeRangePattern = /\*\*(\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)\s*-\s*\d{1,2}:\d{2}\s*(?:AM|PM|am|pm))\*\*\s*:\s*/i;
+  const singleTimePattern = /\*\*(\d{1,2}:\d{2}\s*(?:AM|PM|am|pm))\*\*\s*:\s*/i;
+  const onwardsPattern = /\*\*(\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)\s+onwards)\*\*\s*:\s*/i;
+  
+  // Also handle single asterisk bold or no bold
+  const timeRangePatternAlt = /(\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)\s*-\s*\d{1,2}:\d{2}\s*(?:AM|PM|am|pm))\s*:\s*/i;
+  const singleTimePatternAlt = /(\d{1,2}:\d{2}\s*(?:AM|PM|am|pm))\s*:\s*/i;
+  const onwardsPatternAlt = /(\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)\s+onwards)\s*:\s*/i;
+  
+  let match = text.match(timeRangePattern);
+  let time: string | undefined;
   
   if (match) {
-    const time = match[0];
-    const description = text.replace(match[0], '').replace(/^[:\-\s]+/, '').trim();
+    time = match[1];
+  } else {
+    match = text.match(singleTimePattern);
+    if (match) {
+      time = match[1];
+    } else {
+      match = text.match(onwardsPattern);
+      if (match) {
+        time = match[1];
+      } else {
+        match = text.match(timeRangePatternAlt);
+        if (match) {
+          time = match[1];
+        } else {
+          match = text.match(singleTimePatternAlt);
+          if (match) {
+            time = match[1];
+          } else {
+            match = text.match(onwardsPatternAlt);
+            if (match) {
+              time = match[1];
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  if (match && time) {
+    // Remove the entire matched pattern (including bold markers and colon) and clean up
+    let description = text.replace(match[0], '').trim();
+    // Strip any remaining leading colons, dashes, or whitespace as a safety measure
+    description = description.replace(/^[:–—\s\-]+/, '').trim();
     return { time, description };
   }
   
-  // If no time is found, still strip leading colons and trim
-  const cleanedDescription = text.replace(/^[:\-\s]+/, '').trim();
+  // If no time is found, still strip leading colons, dashes, and trim
+  const cleanedDescription = text.replace(/^[:–—\s\-]+/, '').trim();
   return { description: cleanedDescription };
 };
 
