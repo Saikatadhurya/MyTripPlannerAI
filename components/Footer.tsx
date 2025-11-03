@@ -18,7 +18,7 @@ const Footer: React.FC<FooterProps> = ({ className = '' }) => {
               © {new Date().getFullYear()} PlanMyTrip. Your AI-powered travel companion.
             </p>
             <div className="flex items-center gap-2 text-slate-600">
-              <span className="text-sm">Made with ❤️ in India</span>
+              <span className="text-sm">Made in India</span>
             </div>
           </div>
         </div>
