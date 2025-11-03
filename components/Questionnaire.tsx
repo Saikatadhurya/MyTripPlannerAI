@@ -19,7 +19,7 @@ interface QuestionnaireProps {
   onOpenAuthModal: () => void;
 }
 
-const budgets: Budget[] = ['Budget', 'Midrange', 'Luxury'];
+const budgets: Budget[] = ['Low Cost', 'Midrange', 'Luxury'];
 const foodPreferences: {label: FoodPreference, icon: string}[] = [
     {label: 'Veg', icon: '🥗'},
     {label: 'Non-Veg', icon: '🍗'},
@@ -613,7 +613,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
         <div className="space-y-6 bg-white/60 backdrop-blur-md p-6 rounded-2xl border border-slate-200/70 shadow-xl">
             <h2 className="flex items-center space-x-3 text-2xl font-bold text-slate-800 border-b pb-3">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-violet-600" viewBox="0 0 20 20" fill="currentColor"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" /><path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h.01a1 1 0 100-2H10zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h.01a1 1 0 100-2H10z" clipRule="evenodd" /></svg>
-                <span>Core Details</span>
+                <span>Journey Blueprint</span>
             </h2>
             <div className={`grid grid-cols-1 ${showStartPoint ? 'sm:grid-cols-2' : ''} gap-4`}>
                {showStartPoint && (

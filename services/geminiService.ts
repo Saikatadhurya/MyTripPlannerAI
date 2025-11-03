@@ -342,7 +342,7 @@ export const generateItinerary = async (
     "isRoundTrip": boolean,
     "days": number,
     "persons": number,
-    "budget": string ("Budget", "Midrange", "Luxury"),
+    "budget": string ("Low Cost", "Midrange", "Luxury"),
     "vibe": string[],
     "foodPreference": string ("Veg", "Non-Veg", "Vegan"),
     "startDate": string (format: "YYYY-MM-DD"),

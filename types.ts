@@ -1,4 +1,4 @@
-export type Budget = 'Budget' | 'Midrange' | 'Luxury';
+export type Budget = 'Low Cost' | 'Midrange' | 'Luxury';
 export type Vibe = 'Adventure & Thrill' | 'Relaxation & Wellness' | 'Cultural & Heritage' | 'Nature & Wildlife' | 'Food & Culinary' | 'Nightlife & Entertainment' | 'Luxury & Leisure' | 'Romantic & Family Getaways';
 export type FoodPreference = 'Veg' | 'Non-Veg' | 'Vegan';
 export type TripType = 'Standard' | 'Bike' | 'Car';
