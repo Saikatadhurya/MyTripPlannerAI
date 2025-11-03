@@ -63,9 +63,19 @@ const Toggle: React.FC<{ label: string; description: string; enabled: boolean; o
     </button>
 );
 
+// Helper function to format date as YYYY-MM-DD in local timezone
+const formatDateLocal = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 // FIX: Renamed component to UnifiedPlannerForm and updated props
 const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error, initialData, onBack, user, onOpenAuthModal }) => {
-  const defaultEndDate = new Date();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const defaultEndDate = new Date(today);
   defaultEndDate.setDate(defaultEndDate.getDate() + 2);
 
   const [formData, setFormData] = useState<QuestionnaireData>(initialData || {
@@ -77,8 +87,8 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
     vibe: ['Adventure & Thrill'],
     persons: 1,
     foodPreference: 'Non-Veg',
-    startDate: new Date().toISOString().split('T')[0],
-    endDate: defaultEndDate.toISOString().split('T')[0],
+    startDate: formatDateLocal(today),
+    endDate: formatDateLocal(defaultEndDate),
     includeMedical: false,
     language: 'English (en)',
     currency: 'India (INR) – ₹',

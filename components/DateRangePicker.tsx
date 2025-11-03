@@ -11,17 +11,41 @@ interface DateRangePickerProps {
 
 const DateRangePicker: React.FC<DateRangePickerProps> = ({ isOpen, onClose, onSelect, initialStartDate, initialEndDate }) => {
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-    const today = useMemo(() => new Date(new Date().setHours(0, 0, 0, 0)), []);
+    const today = useMemo(() => {
+        const d = new Date();
+        d.setHours(0, 0, 0, 0);
+        return d;
+    }, []);
     const [hoveredDate, setHoveredDate] = useState<Date | null>(null);
-    const [startDate, setStartDate] = useState<Date | null>(initialStartDate ? new Date(initialStartDate + 'T00:00:00') : null);
-    const [endDate, setEndDate] = useState<Date | null>(initialEndDate ? new Date(initialEndDate + 'T00:00:00') : null);
+    
+    // Parse date string to local date (avoiding timezone issues)
+    const parseDateLocal = (dateString: string): Date => {
+        const [year, month, day] = dateString.split('-').map(Number);
+        const date = new Date(year, month - 1, day);
+        date.setHours(0, 0, 0, 0);
+        return date;
+    };
+    
+    const [startDate, setStartDate] = useState<Date | null>(initialStartDate ? parseDateLocal(initialStartDate) : null);
+    const [endDate, setEndDate] = useState<Date | null>(initialEndDate ? parseDateLocal(initialEndDate) : null);
     
     const initialViewDate = useMemo(() => {
-        const d = initialStartDate ? new Date(initialStartDate + 'T00:00:00') : new Date();
+        const d = initialStartDate ? parseDateLocal(initialStartDate) : new Date();
+        d.setHours(0, 0, 0, 0);
         d.setDate(1);
         return d;
     }, [initialStartDate]);
     const [viewDate, setViewDate] = useState(initialViewDate);
+    
+    // Update dates when initial dates change
+    useEffect(() => {
+        if (initialStartDate) {
+            setStartDate(parseDateLocal(initialStartDate));
+        }
+        if (initialEndDate) {
+            setEndDate(parseDateLocal(initialEndDate));
+        }
+    }, [initialStartDate, initialEndDate]);
 
     useEffect(() => {
         const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -74,11 +98,19 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({ isOpen, onClose, onSe
         setHoveredDate(null);
     };
 
+    // Helper function to format date as YYYY-MM-DD in local timezone
+    const formatDateLocal = (date: Date): string => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
     const handleApply = () => {
         if (startDate && !endDate) {
-            onSelect(startDate.toISOString().split('T')[0], startDate.toISOString().split('T')[0]);
+            onSelect(formatDateLocal(startDate), formatDateLocal(startDate));
         } else if (startDate && endDate) {
-            onSelect(startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0]);
+            onSelect(formatDateLocal(startDate), formatDateLocal(endDate));
         }
         onClose();
     };
