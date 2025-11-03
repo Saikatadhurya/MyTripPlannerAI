@@ -14,6 +14,7 @@ interface FoodFinderFormProps {
   streamedText: string;
   initialData?: FoodFinderRequestData | null;
   user: User | null;
+  onOpenAuthModal: () => void;
 }
 
 const foodPreferences: {label: FoodPreference, icon: string}[] = [
@@ -45,7 +46,7 @@ const Toggle: React.FC<{ label: string; description: string; enabled: boolean; o
     </button>
 );
 
-const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, error, onBack, onCancel, streamedText, initialData, user }) => {
+const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, error, onBack, onCancel, streamedText, initialData, user, onOpenAuthModal }) => {
   const [formData, setFormData] = useState<FoodFinderRequestData>(initialData || {
     destination: '',
     startDate: new Date().toISOString().split('T')[0],
@@ -100,6 +101,11 @@ const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, er
     if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
 
     if (value.trim().length > 1) {
+      // Check if user is logged in before searching
+      if (!user) {
+        onOpenAuthModal();
+        return;
+      }
       setIsSuggestionsLoading(true);
       debounceTimeout.current = setTimeout(() => {
         if (!isSelectingSuggestion.current) {
@@ -195,6 +201,11 @@ const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, er
       setDestinationError(null);
       if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
       if (value.trim().length > 1) {
+        // Check if user is logged in before searching
+        if (!user) {
+          onOpenAuthModal();
+          return;
+        }
         setIsSuggestionsLoading(true);
         debounceTimeout.current = setTimeout(() => {
           getDestinationSuggestions(value, user?.gemini_api_key).then(results => {
@@ -223,6 +234,11 @@ const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, er
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    // Check if user is logged in before submitting
+    if (!user) {
+      onOpenAuthModal();
+      return;
+    }
     if (formData.destination.trim() === '') {
         setDestinationError("Please enter a destination.");
         return;

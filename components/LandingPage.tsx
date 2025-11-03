@@ -64,61 +64,55 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
       id: 'itinerary_planner',
       title: 'Itinerary Planner',
       description: 'Get a detailed, step-by-step plan',
-      onClick: user ? onPlanItinerary : onOpenAuthModal,
+      onClick: onPlanItinerary,
       color: 'blue' as const,
       icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 sm:h-8 sm:w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
       buttonText: 'Plan Itinerary',
-      locked: !user,
     },
     {
       id: 'packing',
       title: 'Smart Bag Packing',
       description: 'AI-powered packing tailored for your trip',
-      onClick: user ? onStartPacking : onOpenAuthModal,
+      onClick: onStartPacking,
       color: 'violet' as const,
       icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 sm:h-8 sm:w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 6h12a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2zm3-3a1 1 0 011-1h2a1 1 0 110 2H10a1 1 0 01-1-1z" /></svg>,
       buttonText: 'Pack My Bag',
-      locked: !user,
     },
     {
       id: 'food',
       title: 'Local Food Finder',
       description: 'Discover authentic local cuisine',
-      onClick: user ? onStartFoodFinder : onOpenAuthModal,
+      onClick: onStartFoodFinder,
       color: 'orange' as const,
       icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 sm:h-8 sm:w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
       buttonText: 'Find My Feast',
-      locked: !user,
     },
     {
       id: 'apps',
       title: 'Mobile App Finder',
       description: 'Find essential local apps for your trip',
-      onClick: user ? onStartAppFinder : onOpenAuthModal,
+      onClick: onStartAppFinder,
       color: 'teal' as const,
       icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 sm:h-8 sm:w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 18h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>,
       buttonText: 'Find My Apps',
-      locked: !user,
     },
     {
       id: 'music',
       title: 'Local Music Finder',
       description: 'Discover the soundtrack of your travels',
-      onClick: user ? onStartMusicFinder : onOpenAuthModal,
+      onClick: onStartMusicFinder,
       color: 'fuchsia' as const,
       icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 sm:h-8 sm:w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 18V5l12-2v13M9 18a3 3 0 11-6 0 3 3 0 016 0zm12-2a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
       buttonText: 'Discover Music',
-      locked: !user,
     },
     {
       id: 'lingo',
       title: 'Local Lingo Guide',
       description: 'Learn essential phrases for your trip',
-      onClick: user ? onStartLingoFinder : onOpenAuthModal,
+      onClick: onStartLingoFinder,
       color: 'sky' as const,
       icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 sm:h-8 sm:w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>,
       buttonText: 'Get Phrases',
-      locked: !user,
     },
   ];
   
@@ -163,37 +157,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
           From custom itineraries and smart packing lists to local food and music discovery, our AI crafts your complete travel experience. Just tell us where you want to go.
         </p>
          <div className="mt-8">
-          {user ? (
-            <>
-              <button
-                 onClick={onPlanUnifiedTrip}
-                 className="cta-pulse inline-block px-10 py-4 font-bold rounded-full text-lg shadow-lg transition-all duration-300 transform focus:outline-none focus:ring-4 bg-violet-600 text-white shadow-violet-500/30 hover:bg-violet-700 hover:shadow-xl hover:shadow-violet-500/40 hover:scale-105 focus:ring-violet-300"
-              >
-                 ✨ Build Your Ultimate Itinerary
-              </button>
-              <p className="mt-4 text-sm text-violet-700/80 font-medium tracking-wide">
-                Includes: Itinerary, Packing, Food, Apps & Music
-              </p>
-            </>
-          ) : (
-            <>
-              <button
-                disabled
-                className="inline-block px-10 py-4 bg-gray-400 text-gray-600 font-bold rounded-full text-lg shadow-lg cursor-not-allowed opacity-60"
-              >
-                🔒 Build Your Ultimate Itinerary
-              </button>
-              <p className="mt-4 text-sm text-gray-600 font-medium tracking-wide">
-                Sign in to unlock the full itinerary planner
-              </p>
-              <button
-                onClick={onOpenAuthModal}
-                className="mt-3 inline-block px-6 py-2 bg-violet-600 text-white font-semibold rounded-full text-sm shadow-lg shadow-violet-500/30 hover:bg-violet-700 hover:shadow-xl hover:shadow-violet-500/40 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-violet-300"
-              >
-                Sign In to Continue
-              </button>
-            </>
-          )}
+          <button
+            onClick={() => onPlanUnifiedTrip()}
+            className="cta-pulse inline-block px-10 py-4 font-bold rounded-full text-lg shadow-lg transition-all duration-300 transform focus:outline-none focus:ring-4 bg-violet-600 text-white shadow-violet-500/30 hover:bg-violet-700 hover:shadow-xl hover:shadow-violet-500/40 hover:scale-105 focus:ring-violet-300"
+          >
+            ✨ Build Your Ultimate Itinerary
+          </button>
+          <p className="mt-4 text-sm text-violet-700/80 font-medium tracking-wide">
+            Includes: Itinerary, Packing, Food, Apps & Music
+          </p>
         </div>
       </div>
 
@@ -236,15 +208,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
         <div className="mt-10 grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6">
           {miniApps.map((app, index) => {
             const colors = colorClasses[app.color];
-            const isLocked = app.locked;
             return (
               <div
                 key={app.id}
-                onClick={() => { if (!isLocked) app.onClick(); }}
+                onClick={() => app.onClick()}
                 onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
-                        if (!isLocked) app.onClick();
+                        app.onClick();
                     }
                 }}
                 role="button"
@@ -263,12 +234,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
                         </p>
                     </div>
                     <div className="mt-4 sm:mt-6 flex-shrink-0">
-                        <span className={`inline-block px-4 py-2 sm:px-6 sm:py-2.5 font-semibold rounded-full text-sm shadow-md transition-all duration-300 group-hover:shadow-lg ${
-                      isLocked 
-                        ? 'bg-gray-400 text-gray-600 cursor-not-allowed' 
-                        : colors.button
-                    }`}>
-                             {isLocked ? `🔒 ${app.buttonText}` : app.buttonText}
+                        <span className={`inline-block px-4 py-2 sm:px-6 sm:py-2.5 font-semibold rounded-full text-sm shadow-md transition-all duration-300 group-hover:shadow-lg ${colors.button}`}>
+                             {app.buttonText}
                         </span>
                     </div>
                 </div>
@@ -306,23 +273,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
           {destinations.map((dest, index) => (
             <button 
               key={dest.name} 
-              onClick={user ? () => onPlanUnifiedTrip(dest.name) : onOpenAuthModal} 
-              className={`animated-card text-left p-5 rounded-2xl border shadow-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-violet-400/50 ${
-                user 
-                  ? 'bg-white/50 backdrop-blur-lg border-white/60 hover:shadow-xl hover:border-violet-300/50' 
-                  : 'bg-gray-100/50 backdrop-blur-lg border-gray-200/60 hover:shadow-xl hover:border-gray-300/50 cursor-pointer'
-              }`} 
+              onClick={() => onPlanUnifiedTrip(dest.name)} 
+              className="animated-card text-left p-5 rounded-2xl border shadow-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-violet-400/50 bg-white/50 backdrop-blur-lg border-white/60 hover:shadow-xl hover:border-violet-300/50 cursor-pointer"
               style={{ animationDelay: `${1200 + index * 50}ms` }}
             >
               <span className="text-4xl" role="img" aria-label="destination">{dest.icon}</span>
               <h3 className="text-lg font-semibold mt-3 text-slate-800">{dest.name}</h3>
               <p className="text-slate-600 text-sm">{dest.description}</p>
-              {!user ? (
-                <div className="mt-2 flex items-center text-xs text-gray-500">
-                  <span className="mr-1">🔒</span>
-                  <span>Sign in to plan</span>
-                </div>
-              ) : null}
             </button>
           ))}
         </div>

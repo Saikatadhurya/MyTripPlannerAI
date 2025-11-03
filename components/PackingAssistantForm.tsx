@@ -15,6 +15,7 @@ interface PackingAssistantFormProps {
   streamedText: string;
   initialData?: PackingListRequestData | null;
   user: User | null;
+  onOpenAuthModal: () => void;
 }
 
 const languages = [
@@ -22,7 +23,7 @@ const languages = [
     'Bambara (bm)', 'Basque (eu)', 'Belarusian (be)', 'Bengali (bn)', 'Bhojpuri (bho)', 'Bosnian (bs)', 'Bulgarian (bg)', 'Catalan (ca)', 'Cebuano (ceb)', 'Chinese (Simplified) (zh-CN)', 'Chinese (Traditional) (zh-TW)', 'Corsican (co)', 'Croatian (hr)', 'Czech (cs)', 'Danish (da)', 'Dhivehi (dv)', 'Dogri (doi)', 'Dutch (nl)', 'English (en)', 'Esperanto (eo)', 'Estonian (et)', 'Ewe (ee)', 'Filipino (Tagalog) (fil)', 'Finnish (fi)', 'French (fr)', 'Frisian (fy)', 'Galician (gl)', 'Ganda (lg)', 'Georgian (ka)', 'German (de)', 'Goan Konkani (gom)', 'Greek (el)', 'Guarani (gn)', 'Gujarati (gu)', 'Haitian Creole (ht)', 'Hausa (ha)', 'Hawaiian (haw)', 'Hebrew (iw)', 'Hindi (hi)', 'Hmong (hmn)', 'Hungarian (hu)', 'Icelandic (is)', 'Igbo (ig)', 'Ilocano (ilo)', 'Indonesian (id)', 'Irish (ga)', 'Italian (it)', 'Japanese (ja)', 'Javanese (jv)', 'Kannada (kn)', 'Kazakh (kk)', 'Khmer (km)', 'Kinyarwanda (rw)', 'Korean (ko)', 'Krio (kri)', 'Kurdish (ku)', 'Kurdish (Sorani) (ckb)', 'Kyrgyz (ky)', 'Lao (lo)', 'Latin (la)', 'Latvian (lv)', 'Lingala (ln)', 'Lithuanian (lt)', 'Luganda (lg)', 'Luxembourgish (lb)', 'Macedonian (mk)', 'Maithili (mai)', 'Malagasy (mg)', 'Malay (ms)', 'Malayalam (ml)', 'Maltese (mt)', 'Maori (mi)', 'Marathi (mr)', 'Meiteilon (Manipuri) (mni-Mtei)', 'Mizo (lus)', 'Mongolian (mn)', 'Myanmar (Burmese) (my)', 'Nepali (ne)', 'Norwegian (no)', 'Nyanja (Chichewa) (ny)', 'Odia (Oriya) (or)', 'Oromo (om)', 'Pashto (ps)', 'Persian (fa)', 'Polish (pl)', 'Portuguese (Brazil) (pt-BR)', 'Portuguese (Portugal) (pt-PT)', 'Punjabi (pa)', 'Quechua (qu)', 'Romanian (ro)', 'Russian (ru)', 'Samoan (sm)', 'Sanskrit (sa)', 'Scots Gaelic (gd)', 'Sepedi (nso)', 'Serbian (sr)', 'Sesotho (st)', 'Shona (sn)', 'Sindhi (sd)', 'Sinhala (si)', 'Slovak (sk)', 'Slovenian (sl)', 'Somali (so)', 'Spanish (es)', 'Sundanese (su)', 'Swahili (sw)', 'Swedish (sv)', 'Tagalog (Filipino) (tl)', 'Tajik (tg)', 'Tamil (ta)', 'Tatar (tt)', 'Telugu (te)', 'Thai (th)', 'Tigrinya (ti)', 'Tsonga (ts)', 'Turkish (tr)', 'Turkmen (tk)', 'Ukrainian (uk)', 'Urdu (ur)', 'Uyghur (ug)', 'Uzbek (uz)', 'Vietnamese (vi)', 'Welsh (cy)', 'Xhosa (xh)', 'Yiddish (yi)', 'Yoruba (yo)', 'Zulu (zu)',
 ];
 
-const PackingAssistantForm: React.FC<PackingAssistantFormProps> = ({ onSubmit, isLoading, error, onBack, onCancel, streamedText, initialData, user }) => {
+const PackingAssistantForm: React.FC<PackingAssistantFormProps> = ({ onSubmit, isLoading, error, onBack, onCancel, streamedText, initialData, user, onOpenAuthModal }) => {
   const calculateEndDate = (start: string, days: number): string => {
     if (!start || !days) {
       const d = new Date();
@@ -102,6 +103,11 @@ const PackingAssistantForm: React.FC<PackingAssistantFormProps> = ({ onSubmit, i
     if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
 
     if (value.trim().length > 1) {
+      // Check if user is logged in before searching
+      if (!user) {
+        onOpenAuthModal();
+        return;
+      }
       setIsSuggestionsLoading(true);
       debounceTimeout.current = setTimeout(() => {
         if (!isSelectingSuggestion.current) {
@@ -197,6 +203,11 @@ const PackingAssistantForm: React.FC<PackingAssistantFormProps> = ({ onSubmit, i
       setDestinationError(null);
       if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
       if (value.trim().length > 1) {
+        // Check if user is logged in before searching
+        if (!user) {
+          onOpenAuthModal();
+          return;
+        }
         setIsSuggestionsLoading(true);
         debounceTimeout.current = setTimeout(() => {
           getDestinationSuggestions(value, user?.gemini_api_key).then(results => {
@@ -225,6 +236,11 @@ const PackingAssistantForm: React.FC<PackingAssistantFormProps> = ({ onSubmit, i
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    // Check if user is logged in before submitting
+    if (!user) {
+      onOpenAuthModal();
+      return;
+    }
     if (formData.destination.trim() === '') {
         setDestinationError("Please enter a destination.");
         return;

@@ -14,6 +14,7 @@ interface UnifiedPlannerFormProps {
   initialData?: QuestionnaireData | null;
   onBack: () => void;
   user: User | null;
+  onOpenAuthModal: () => void;
 }
 
 const budgets: Budget[] = ['Budget', 'Midrange', 'Luxury'];
@@ -63,7 +64,7 @@ const Toggle: React.FC<{ label: string; description: string; enabled: boolean; o
 );
 
 // FIX: Renamed component to UnifiedPlannerForm and updated props
-const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error, initialData, onBack, user }) => {
+const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error, initialData, onBack, user, onOpenAuthModal }) => {
   const defaultEndDate = new Date();
   defaultEndDate.setDate(defaultEndDate.getDate() + 2);
 
@@ -168,6 +169,11 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
     if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
 
     if (value.trim().length > 1) {
+        // Check if user is logged in before searching
+        if (!user) {
+          onOpenAuthModal();
+          return;
+        }
         setIsDestinationSuggestionsLoading(true);
         debounceTimeout.current = setTimeout(() => {
           if (!isSelectingSuggestion.current) {
@@ -224,6 +230,11 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
     if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
 
     if (value.trim().length > 1) {
+        // Check if user is logged in before searching
+        if (!user) {
+          onOpenAuthModal();
+          return;
+        }
         setIsStartPointSuggestionsLoading(true);
         debounceTimeout.current = setTimeout(() => {
           if (!isSelectingSuggestion.current) {
@@ -348,6 +359,11 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
         if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
 
         if (value.trim().length > 1) {
+            // Check if user is logged in before searching
+            if (!user) {
+              onOpenAuthModal();
+              return;
+            }
             const setLoading = field === 'destination' ? setIsDestinationSuggestionsLoading : setIsStartPointSuggestionsLoading;
             const setSuggestions = field === 'destination' ? setDestinationSuggestions : setStartPointSuggestions;
             setLoading(true);
@@ -384,6 +400,11 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    // Check if user is logged in before submitting
+    if (!user) {
+      onOpenAuthModal();
+      return;
+    }
     let hasError = false;
     if (formData.destination.trim() === '') {
         setDestinationError("Please enter a destination.");

@@ -199,7 +199,7 @@ const AppRouter: React.FC<AppRouterProps> = ({
       <Route 
         path="/plan" 
         element={
-          <ProtectedRoute user={user}>
+          <PublicRoute user={user}>
             <UnifiedPlannerForm 
               key={`unified-${user?.id}-${user?.gemini_api_key ? 'has-key' : 'no-key'}`}
               onSubmit={onGenerateUnifiedPlan}
@@ -207,15 +207,16 @@ const AppRouter: React.FC<AppRouterProps> = ({
               onBack={onBackToHome}
               error={formError}
               user={user}
+              onOpenAuthModal={onOpenAuthModal}
             />
-          </ProtectedRoute>
+          </PublicRoute>
         } 
       />
 
       <Route 
         path="/itinerary" 
         element={
-          <ProtectedRoute user={user}>
+          <PublicRoute user={user}>
             <Questionnaire 
               key={`questionnaire-${user?.id}-${user?.gemini_api_key ? 'has-key' : 'no-key'}`}
               onSubmit={onGenerateItinerary}
@@ -226,15 +227,16 @@ const AppRouter: React.FC<AppRouterProps> = ({
               onCancel={() => {}}
               streamedText={streamedText}
               user={user}
+              onOpenAuthModal={onOpenAuthModal}
             />
-          </ProtectedRoute>
+          </PublicRoute>
         } 
       />
 
       <Route 
         path="/packing" 
         element={
-          <ProtectedRoute user={user}>
+          <PublicRoute user={user}>
             <PackingAssistantForm 
               key={`packing-${user?.id}-${user?.gemini_api_key ? 'has-key' : 'no-key'}`}
               onSubmit={onGeneratePackingList}
@@ -245,15 +247,16 @@ const AppRouter: React.FC<AppRouterProps> = ({
               streamedText={streamedText}
               initialData={packingRequestData}
               user={user}
+              onOpenAuthModal={onOpenAuthModal}
             />
-          </ProtectedRoute>
+          </PublicRoute>
         } 
       />
 
       <Route 
         path="/food" 
         element={
-          <ProtectedRoute user={user}>
+          <PublicRoute user={user}>
             <FoodFinderForm 
               key={`food-${user?.id}-${user?.gemini_api_key ? 'has-key' : 'no-key'}`}
               onSubmit={onGenerateFoodRecommendations}
@@ -264,15 +267,16 @@ const AppRouter: React.FC<AppRouterProps> = ({
               streamedText={streamedText}
               initialData={foodRequestData}
               user={user}
+              onOpenAuthModal={onOpenAuthModal}
             />
-          </ProtectedRoute>
+          </PublicRoute>
         } 
       />
 
       <Route 
         path="/apps" 
         element={
-          <ProtectedRoute user={user}>
+          <PublicRoute user={user}>
             <AppFinderForm 
               key={`app-${user?.id}-${user?.gemini_api_key ? 'has-key' : 'no-key'}`}
               onSubmit={onGenerateAppRecommendations}
@@ -283,15 +287,16 @@ const AppRouter: React.FC<AppRouterProps> = ({
               streamedText={streamedText}
               initialData={appRequestData}
               user={user}
+              onOpenAuthModal={onOpenAuthModal}
             />
-          </ProtectedRoute>
+          </PublicRoute>
         } 
       />
 
       <Route 
         path="/music" 
         element={
-          <ProtectedRoute user={user}>
+          <PublicRoute user={user}>
             <MusicFinderForm 
               key={`music-${user?.id}-${user?.gemini_api_key ? 'has-key' : 'no-key'}`}
               onSubmit={onGenerateMusicRecommendations}
@@ -302,15 +307,16 @@ const AppRouter: React.FC<AppRouterProps> = ({
               streamedText={streamedText}
               initialData={musicRequestData}
               user={user}
+              onOpenAuthModal={onOpenAuthModal}
             />
-          </ProtectedRoute>
+          </PublicRoute>
         } 
       />
 
       <Route 
         path="/lingo" 
         element={
-          <ProtectedRoute user={user}>
+          <PublicRoute user={user}>
             <LingoFinderForm 
               key={`lingo-${user?.id}-${user?.gemini_api_key ? 'has-key' : 'no-key'}`}
               onSubmit={onGenerateLingoGuide}
@@ -321,8 +327,9 @@ const AppRouter: React.FC<AppRouterProps> = ({
               streamedText={streamedText}
               initialData={lingoRequestData}
               user={user}
+              onOpenAuthModal={onOpenAuthModal}
             />
-          </ProtectedRoute>
+          </PublicRoute>
         } 
       />
 

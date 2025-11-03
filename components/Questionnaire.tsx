@@ -16,6 +16,7 @@ interface QuestionnaireProps {
   onCancel: () => void;
   streamedText: string;
   user: User | null;
+  onOpenAuthModal: () => void;
 }
 
 const budgets: Budget[] = ['Budget', 'Midrange', 'Luxury'];
@@ -64,7 +65,7 @@ const Toggle: React.FC<{ label: string; description: string; enabled: boolean; o
     </button>
 );
 
-const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, error, initialData, onBack, onCancel, streamedText, user }) => {
+const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, error, initialData, onBack, onCancel, streamedText, user, onOpenAuthModal }) => {
   const defaultEndDate = new Date();
   defaultEndDate.setDate(defaultEndDate.getDate() + 2);
 
@@ -169,6 +170,11 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
     if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
 
     if (value.trim().length > 1) {
+        // Check if user is logged in before searching
+        if (!user) {
+          onOpenAuthModal();
+          return;
+        }
         setIsDestinationSuggestionsLoading(true);
         debounceTimeout.current = setTimeout(() => {
           if (!isSelectingSuggestion.current) {
@@ -225,6 +231,11 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
     if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
 
     if (value.trim().length > 1) {
+        // Check if user is logged in before searching
+        if (!user) {
+          onOpenAuthModal();
+          return;
+        }
         setIsStartPointSuggestionsLoading(true);
         debounceTimeout.current = setTimeout(() => {
           if (!isSelectingSuggestion.current) {
@@ -349,6 +360,11 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
         if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
 
         if (value.trim().length > 1) {
+            // Check if user is logged in before searching
+            if (!user) {
+              onOpenAuthModal();
+              return;
+            }
             const setLoading = field === 'destination' ? setIsDestinationSuggestionsLoading : setIsStartPointSuggestionsLoading;
             const setSuggestions = field === 'destination' ? setDestinationSuggestions : setStartPointSuggestions;
             setLoading(true);
@@ -385,6 +401,11 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    // Check if user is logged in before submitting
+    if (!user) {
+      onOpenAuthModal();
+      return;
+    }
     let hasError = false;
     if (formData.destination.trim() === '') {
         setDestinationError("Please enter a destination.");

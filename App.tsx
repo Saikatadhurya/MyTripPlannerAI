@@ -146,6 +146,7 @@ const AppContent: React.FC = () => {
   const [isOTPModalOpen, setIsOTPModalOpen] = useState(false);
   const [isForgotPasswordModalOpen, setIsForgotPasswordModalOpen] = useState(false);
   const [pendingVerificationEmail, setPendingVerificationEmail] = useState<string | null>(null);
+  const [redirectAfterAuth, setRedirectAfterAuth] = useState<string | null>(null);
 
   // Global logout handler for auto logout
   useEffect(() => {
@@ -244,7 +245,10 @@ const AppContent: React.FC = () => {
       }
       
       setIsAuthModalOpen(false);
-      navigate('/');
+      // Redirect to saved location or home
+      const redirectTo = redirectAfterAuth || '/';
+      setRedirectAfterAuth(null);
+      navigate(redirectTo);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Login failed. Please try again.';
       
@@ -282,19 +286,25 @@ const AppContent: React.FC = () => {
       // For new users, always fetch complete profile to get initial data
       const profileResponse = await profileService.getProfile();
       if (profileResponse.success && profileResponse.data?.user) {
-        const completeUser = {
-          ...response.user,
-          ...profileResponse.data.user
-        };
+        const completeUser = profileResponse.data.user;
         setUser(completeUser);
         localStorage.setItem('planora_user', JSON.stringify(completeUser));
       } else {
-        setUser(response.user);
-        localStorage.setItem('planora_user', JSON.stringify(response.user));
+        // If profile fetch fails, try to get user from authService
+        const existingUser = authService.getCurrentUser();
+        if (existingUser) {
+          setUser(existingUser);
+          localStorage.setItem('planora_user', JSON.stringify(existingUser));
+        } else {
+          throw new Error('Failed to get user information after signup. Please try logging in.');
+        }
       }
       
       setIsAuthModalOpen(false);
-      navigate('/');
+      // Redirect to saved location or home
+      const redirectTo = redirectAfterAuth || '/';
+      setRedirectAfterAuth(null);
+      navigate(redirectTo);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Signup failed. Please try again.';
       setAuthError(errorMessage);
@@ -330,7 +340,10 @@ const AppContent: React.FC = () => {
       
       setIsOTPModalOpen(false);
       setPendingVerificationEmail(null);
-      navigate('/');
+      // Redirect to saved location or home
+      const redirectTo = redirectAfterAuth || '/';
+      setRedirectAfterAuth(null);
+      navigate(redirectTo);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'OTP verification failed. Please try again.';
       setAuthError(errorMessage);
@@ -362,6 +375,13 @@ const AppContent: React.FC = () => {
 
   const handleForgotPasswordSuccess = () => {
     setIsForgotPasswordModalOpen(false);
+    setIsAuthModalOpen(true);
+    setAuthError(null);
+  };
+
+  const handleOpenAuthModal = () => {
+    // Store current location for redirect after auth
+    setRedirectAfterAuth(location.pathname);
     setIsAuthModalOpen(true);
     setAuthError(null);
   };
@@ -1404,7 +1424,7 @@ const AppContent: React.FC = () => {
       isLoading={isAuthLoading}
       authError={authError}
       isAuthModalOpen={isAuthModalOpen}
-      onOpenAuthModal={() => setIsAuthModalOpen(true)}
+      onOpenAuthModal={handleOpenAuthModal}
       onCloseAuthModal={() => setIsAuthModalOpen(false)}
       onPlanUnifiedTrip={handleStartUnifiedPlanner}
       onPlanItinerary={handleStartItineraryPlanner}
@@ -1458,14 +1478,14 @@ const AppContent: React.FC = () => {
         <Footer />
       </div>
       <BottomNavBar
-        onOpenAuthModal={() => setIsAuthModalOpen(true)}
+        onOpenAuthModal={handleOpenAuthModal}
         user={user}
       />
       
       {/* Quick Navigation Button (Menu Toggler) - Desktop only */}
       <QuickNavButton
         user={user}
-        onOpenAuthModal={() => setIsAuthModalOpen(true)}
+        onOpenAuthModal={handleOpenAuthModal}
       />
       
       {/* Scroll to Top Button */}
