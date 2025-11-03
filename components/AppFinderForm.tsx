@@ -144,6 +144,11 @@ const AppFinderForm: React.FC<AppFinderFormProps> = ({ onSubmit, isLoading, erro
 
   const handleOpenSelection = (field: keyof AppFinderRequestData, title: string) => {
     if (!isMobile) return;
+    // Check authentication for destination search
+    if (field === 'destination' && !user) {
+      onOpenAuthModal();
+      return;
+    }
     if (field === 'destination') setSearchQuery(formData.destination);
     else setSearchQuery('');
     setSelectionView({ field, title });

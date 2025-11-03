@@ -323,6 +323,11 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
 
   const handleOpenSelection = (field: keyof QuestionnaireData, title: string) => {
     if (!isMobile) return;
+    // Check authentication for destination and startPoint searches
+    if ((field === 'destination' || field === 'startPoint') && !user) {
+      onOpenAuthModal();
+      return;
+    }
     if (field === 'destination') setSearchQuery(formData.destination);
     else if (field === 'startPoint') setSearchQuery(formData.startPoint);
     else setSearchQuery('');

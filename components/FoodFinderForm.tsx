@@ -170,6 +170,11 @@ const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, er
 
   const handleOpenSelection = (field: keyof FoodFinderRequestData, title: string) => {
     if (!isMobile) return;
+    // Check authentication for destination search
+    if (field === 'destination' && !user) {
+      onOpenAuthModal();
+      return;
+    }
     if (field === 'destination') setSearchQuery(formData.destination);
     else setSearchQuery('');
     setSelectionView({ field, title });

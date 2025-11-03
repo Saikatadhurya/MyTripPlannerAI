@@ -144,6 +144,11 @@ const MusicFinderForm: React.FC<MusicFinderFormProps> = ({ onSubmit, isLoading, 
 
   const handleOpenSelection = (field: keyof MusicFinderRequestData, title: string) => {
     if (!isMobile) return;
+    // Check authentication for destination search
+    if (field === 'destination' && !user) {
+      onOpenAuthModal();
+      return;
+    }
     if (field === 'destination') setSearchQuery(formData.destination);
     else setSearchQuery('');
     setSelectionView({ field, title });
