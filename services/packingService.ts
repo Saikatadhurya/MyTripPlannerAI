@@ -52,10 +52,10 @@ export const generatePackingList = async (data: PackingListRequestData, onChunk?
 
     **CRITICAL CLOTHING SECTION INSTRUCTIONS:**
     1. You MUST provide separate clothing lists for male and female travelers.
-    2. The 'maleClothing' array should contain clothing and footwear items specifically tailored for male travelers (e.g., men's shirts, men's pants, men's shoes, underwear, socks, etc.).
-    3. The 'femaleClothing' array should contain clothing and footwear items specifically tailored for female travelers (e.g., women's tops, women's bottoms, women's shoes, bras, underwear, etc.).
+    2. The 'maleClothing' array should contain clothing and footwear items specifically tailored for male travelers (e.g., men's shirts, men's pants, men's shoes, socks, etc.). DO NOT include inner garments, underwear, or undergarments in the suggestions.
+    3. The 'femaleClothing' array should contain clothing and footwear items specifically tailored for female travelers (e.g., women's tops, women's bottoms, women's shoes, etc.). DO NOT include inner garments, underwear, bras, or undergarments in the suggestions.
     4. Both sections should consider the weather conditions, trip duration, and destination context.
-    5. Include appropriate footwear, undergarments, and accessories in each respective section.
+    5. Include appropriate footwear and accessories in each respective section. DO NOT suggest any inner garments or undergarments.
 
     Important Rules:
     1. The 'approximateTemperature' must be a string representing the estimated temperature range in Celsius (e.g., "25-30°C"). If it's a multi-stop trip, you MUST follow the multi-stop instructions for this field.

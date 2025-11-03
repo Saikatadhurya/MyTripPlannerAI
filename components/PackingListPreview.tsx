@@ -46,6 +46,19 @@ const CategoryCard: React.FC<{
     const accentStyle = accentClasses[accentColor] || 'border-gray-500 bg-gray-100 text-gray-600';
     const [borderColor, iconBgColor, iconTextColor] = accentStyle.split(' ');
 
+    // Filter out inner garment items from the list
+    const filteredItems = items.filter(item => {
+        const lowerItem = item.toLowerCase();
+        return !lowerItem.includes('underwear') && 
+               !lowerItem.includes('bra') && 
+               !lowerItem.includes('inner garment') &&
+               !lowerItem.includes('undergarment');
+    });
+
+    // Check if this is a male or female clothing section
+    const isMaleClothing = title.includes('Male');
+    const isFemaleClothing = title.includes('Female');
+
     return (
         <div className={`bg-white/20 backdrop-blur-xl border border-white/30 rounded-2xl p-6 transition-transform hover:scale-105 shadow-lg border-l-4 ${borderColor} ${className}`}>
             <div className="flex items-center space-x-3 mb-4">
@@ -55,12 +68,17 @@ const CategoryCard: React.FC<{
                 <h3 className="text-xl font-bold text-slate-800 break-words">{title}</h3>
             </div>
             <ul className="space-y-2 pl-2">
-                {items.map((item, index) => (
+                {filteredItems.map((item, index) => (
                     <li key={index} className="flex items-start">
                         <svg className="h-5 w-5 text-violet-500 mr-2 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         <span className="text-sm text-slate-700" dangerouslySetInnerHTML={parseBold(item)} />
                     </li>
                 ))}
+                {(isMaleClothing || isFemaleClothing) && (
+                    <li className="flex items-start mt-3 pt-3 border-t border-slate-300/50">
+                        <span className="text-sm text-slate-600 italic">Inner garments depends on you</span>
+                    </li>
+                )}
             </ul>
         </div>
     );
