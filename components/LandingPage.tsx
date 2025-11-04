@@ -19,6 +19,15 @@ interface LandingPageProps {
 const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPlanItinerary, onStartPacking, onStartFoodFinder, onStartAppFinder, onStartMusicFinder, onStartLingoFinder, onOpenAuthModal, onViewHistory }) => {
   const [destinations, setDestinations] = useState<PopularDestination[]>([]);
 
+  // Map of destination names to share links
+  const shareLinks: { [key: string]: string } = {
+    'Goa, India': '/share/2cf3d8b0-ca4a-41ae-8f63-b0c6372092b1',
+    'Rajasthan, India': '/share/6a8d939c-21b6-494c-8fb0-473bd59a1ed9',
+    'Dubai, UAE': '/share/f2300726-8744-4f8b-a689-cfcd65a1ee0f',
+    'Bangkok, Thailand': '/share/c56afa4b-fd73-4557-8f63-67e1027726fd',
+    'Singapore': '/share/49c4066d-948b-4ee6-a5fa-7d13d6e6ef04',
+  };
+
   useEffect(() => {
     const fetchDestinations = async () => {
       try {
@@ -269,19 +278,55 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
       {/* Popular Destinations Section */}
       <div>
         <h2 className="text-3xl font-bold text-center text-slate-900 mb-6 animated-card" style={{ animationDelay: '1100ms' }}>Popular Destinations</h2>
+        
+        {/* Destinations with share links */}
         <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
-          {destinations.map((dest, index) => (
-            <button 
-              key={dest.name} 
-              onClick={() => onPlanUnifiedTrip(dest.name)} 
-              className="animated-card text-left p-5 rounded-2xl border shadow-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-violet-400/50 bg-white/50 backdrop-blur-lg border-white/60 hover:shadow-xl hover:border-violet-300/50 cursor-pointer"
-              style={{ animationDelay: `${1200 + index * 50}ms` }}
-            >
-              <span className="text-4xl" role="img" aria-label="destination">{dest.icon}</span>
-              <h3 className="text-lg font-semibold mt-3 text-slate-800">{dest.name}</h3>
-              <p className="text-slate-600 text-sm">{dest.description}</p>
-            </button>
-          ))}
+          {destinations.map((dest, index) => {
+            const shareLink = shareLinks[dest.name];
+            
+            if (shareLink) {
+              return (
+                <a
+                  key={dest.name}
+                  href={shareLink}
+                  className="animated-card text-left p-5 rounded-2xl border shadow-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-violet-400/50 bg-white/50 backdrop-blur-lg border-white/60 hover:shadow-xl hover:border-violet-300/50 cursor-pointer block"
+                  style={{ animationDelay: `${1200 + index * 50}ms` }}
+                >
+                  <span className="text-4xl" role="img" aria-label="destination">{dest.icon}</span>
+                  <h3 className="text-lg font-semibold mt-3 text-slate-800">{dest.name}</h3>
+                  <p className="text-slate-600 text-sm">{dest.description}</p>
+                </a>
+              );
+            }
+            return null;
+          })}
+        </div>
+
+        {/* Try Yourself Subsection */}
+        <div className="mt-16">
+          <h3 className="text-2xl font-bold text-center text-slate-800 mb-6 animated-card" style={{ animationDelay: '1300ms' }}>Try Yourself</h3>
+          <p className="text-center text-slate-600 mb-6 animated-card" style={{ animationDelay: '1350ms' }}>Create your own personalized itinerary for these amazing destinations</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+            {destinations.map((dest, index) => {
+              const shareLink = shareLinks[dest.name];
+              
+              if (!shareLink) {
+                return (
+                  <button 
+                    key={dest.name} 
+                    onClick={() => onPlanUnifiedTrip(dest.name)} 
+                    className="animated-card text-left p-5 rounded-2xl border shadow-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-violet-400/50 bg-white/50 backdrop-blur-lg border-white/60 hover:shadow-xl hover:border-violet-300/50 cursor-pointer"
+                    style={{ animationDelay: `${1400 + index * 50}ms` }}
+                  >
+                    <span className="text-4xl" role="img" aria-label="destination">{dest.icon}</span>
+                    <h3 className="text-lg font-semibold mt-3 text-slate-800">{dest.name}</h3>
+                    <p className="text-slate-600 text-sm">{dest.description}</p>
+                  </button>
+                );
+              }
+              return null;
+            })}
+          </div>
         </div>
       </div>
 
