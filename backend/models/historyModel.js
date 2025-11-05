@@ -486,18 +486,32 @@ class HistoryModel {
       const offset = (page - 1) * limit;
       
       const query = `
+        WITH trip_tags AS (
+          SELECT 
+            trip_id,
+            ARRAY_AGG(DISTINCT tag) as unique_tags
+          FROM planora.recommendations_history,
+          LATERAL unnest(tags) AS tag
+          WHERE user_id = $1 
+            AND trip_id IS NOT NULL
+            AND tags IS NOT NULL
+            AND array_length(tags, 1) > 0
+          GROUP BY trip_id
+        )
         SELECT 
-          trip_id as "tripId",
-          trip_name as "tripName",
-          destination,
-          language,
-          MIN(created_at) as "created_at",
-          COUNT(*) as recommendation_count,
-          ARRAY_AGG(recommendation_type) as recommendation_types
-        FROM planora.recommendations_history
-        WHERE user_id = $1 AND trip_id IS NOT NULL
-        GROUP BY trip_id, trip_name, destination, language
-        ORDER BY MIN(created_at) DESC
+          rh.trip_id as "tripId",
+          rh.trip_name as "tripName",
+          rh.destination,
+          rh.language,
+          MIN(rh.created_at) as "created_at",
+          COUNT(DISTINCT rh.recommendation_type) as recommendation_count,
+          ARRAY_AGG(DISTINCT rh.recommendation_type) as recommendation_types,
+          COALESCE(tt.unique_tags, ARRAY[]::TEXT[]) as tags
+        FROM planora.recommendations_history rh
+        LEFT JOIN trip_tags tt ON rh.trip_id = tt.trip_id
+        WHERE rh.user_id = $1 AND rh.trip_id IS NOT NULL
+        GROUP BY rh.trip_id, rh.trip_name, rh.destination, rh.language, tt.unique_tags
+        ORDER BY MIN(rh.created_at) DESC
         LIMIT $2 OFFSET $3
       `;
       
