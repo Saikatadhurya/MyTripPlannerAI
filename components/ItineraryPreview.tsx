@@ -13,6 +13,23 @@ const parseBold = (text: string | undefined) => {
   return { __html: text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') };
 };
 
+// Helper to extract hotel name from formatted text (removes price info and bold markers)
+const extractHotelName = (text: string): string => {
+  if (!text) return '';
+  // Remove bold markers
+  let cleaned = text.replace(/\*\*/g, '');
+  // Remove price information (everything from "(" onwards)
+  cleaned = cleaned.replace(/\s*\(.*$/g, '');
+  // Trim whitespace
+  return cleaned.trim();
+};
+
+// Helper to generate Google search URL for a hotel
+const generateHotelSearchUrl = (hotelName: string, destination: string): string => {
+  const searchQuery = `${hotelName} ${destination}`.trim();
+  return `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`;
+};
+
 // Helper to parse time from activity text
 const parseActivityTime = (text: string): { time?: string; description: string } => {
   if (!text) return { description: '' };
@@ -770,18 +787,51 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
                   
                   <div className="grid gap-3">
                     {day.placesToStay && day.placesToStay.length > 0 && (
-                      day.placesToStay.map((item, index) => (
-                        <div key={index} className="bg-white/70 backdrop-blur-sm rounded-xl p-4 shadow-md border border-blue-100/50 hover:shadow-lg hover:border-blue-200 transition-all duration-300 hover:scale-[1.02] group">
-                          <div className="flex items-start space-x-3">
-                            <div className="flex-shrink-0 bg-blue-100 text-blue-600 rounded-full p-2 mt-0.5 group-hover:bg-blue-200 transition-colors">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                              </svg>
+                      day.placesToStay.map((item, index) => {
+                        const hotelName = extractHotelName(item);
+                        const searchUrl = generateHotelSearchUrl(hotelName, itinerary.destination);
+                        
+                        // Parse the item and make hotel name clickable
+                        // First, handle the case where hotel name is in bold: **Hotel Name**
+                        let itemWithLink = item;
+                        
+                        // Escape special regex characters in hotel name
+                        const hotelNameEscaped = hotelName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                        
+                        // Try to match bold hotel name first: **Hotel Name**
+                        const boldPattern = new RegExp(`\\*\\*${hotelNameEscaped}\\*\\*`, 'g');
+                        const hasBoldMatch = boldPattern.test(item);
+                        boldPattern.lastIndex = 0; // Reset regex state
+                        
+                        if (hasBoldMatch) {
+                          itemWithLink = item.replace(boldPattern, (match) => {
+                            const nameWithoutBold = match.replace(/\*\*/g, '');
+                            return `<a href="${searchUrl}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline font-semibold transition-colors"><strong>${nameWithoutBold}</strong></a>`;
+                          });
+                        } else {
+                          // If not in bold, match the hotel name directly (only at the start)
+                          const namePattern = new RegExp(`^(${hotelNameEscaped})`, '');
+                          itemWithLink = item.replace(namePattern, (match) => {
+                            return `<a href="${searchUrl}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline font-semibold transition-colors">${match}</a>`;
+                          });
+                        }
+                        
+                        // Now parse any remaining bold markdown
+                        itemWithLink = parseBold(itemWithLink).__html;
+                        
+                        return (
+                          <div key={index} className="bg-white/70 backdrop-blur-sm rounded-xl p-4 shadow-md border border-blue-100/50 hover:shadow-lg hover:border-blue-200 transition-all duration-300 hover:scale-[1.02] group">
+                            <div className="flex items-start space-x-3">
+                              <div className="flex-shrink-0 bg-blue-100 text-blue-600 rounded-full p-2 mt-0.5 group-hover:bg-blue-200 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                </svg>
+                              </div>
+                              <div className="text-gray-700 leading-relaxed flex-1" dangerouslySetInnerHTML={{ __html: itemWithLink }} />
                             </div>
-                            <div className="text-gray-700 leading-relaxed flex-1" dangerouslySetInnerHTML={parseBold(item)} />
                           </div>
-                        </div>
-                      ))
+                        );
+                      })
                     )}
                   </div>
               </div>
