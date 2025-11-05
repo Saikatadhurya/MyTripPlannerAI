@@ -109,13 +109,23 @@ axios.interceptors.response.use(
       // Check if the request had an authorization header (was authenticated)
       const hadAuthHeader = error.config?.headers?.Authorization;
       
-      // Explicitly exclude quota/rate limit errors
+      // Explicitly exclude quota/rate limit errors and login errors
       const isQuotaError = 
         errorMessageLower.includes('quota') ||
         errorMessageLower.includes('rate limit') ||
         errorMessageLower.includes('429') ||
         errorMessageLower.includes('billing') ||
         errorMessageLower.includes('exceeded');
+      
+      // Explicitly exclude login/signup errors (these should not trigger logout)
+      const isLoginError = 
+        errorMessageLower.includes('invalid credentials') ||
+        errorMessageLower.includes('invalid email') ||
+        errorMessageLower.includes('invalid password') ||
+        errorMessageLower.includes('user not found') ||
+        errorMessageLower.includes('email not found') ||
+        errorMessageLower.includes('incorrect password') ||
+        errorMessageLower.includes('wrong password');
       
       // Only logout for actual authentication/authorization errors
       // If we had an auth header and got 401, it's likely an auth issue
@@ -130,11 +140,10 @@ axios.interceptors.response.use(
         errorMessageLower.includes('authentication failed') ||
         errorMessageLower.includes('unauthorized') ||
         (errorMessageLower.includes('token') && (errorMessageLower.includes('expired') || errorMessageLower.includes('invalid'))) ||
-        (errorMessageLower.includes('user not found') && errorMessageLower.includes('authorized')) ||
-        // If we had an auth header and there's no specific quota error, assume it's an auth issue
-        (hadAuthHeader && !isQuotaError && errorMessageLower.length === 0);
+        // If we had an auth header and there's no specific quota/login error, assume it's an auth issue
+        (hadAuthHeader && !isQuotaError && !isLoginError && errorMessageLower.length === 0);
       
-      if (isAuthError && !isQuotaError) {
+      if (isAuthError && !isQuotaError && !isLoginError) {
         console.warn('Authentication failed, logging out user', { errorMessage, hadAuthHeader });
         authService.logout();
         triggerGlobalLogout();

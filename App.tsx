@@ -252,6 +252,9 @@ const AppContent: React.FC = () => {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Login failed. Please try again.';
       
+      // Ensure modal stays open when there's an error so user can see it
+      setIsAuthModalOpen(true);
+      
       // Check if the error is about email verification
       if (errorMessage.includes('verify your email') || errorMessage.includes('verification')) {
         // Extract email from error context or use a different approach
@@ -307,6 +310,9 @@ const AppContent: React.FC = () => {
       navigate(redirectTo);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Signup failed. Please try again.';
+      
+      // Ensure modal stays open when there's an error so user can see it
+      setIsAuthModalOpen(true);
       setAuthError(errorMessage);
     } finally {
       setIsAuthLoading(false);
@@ -402,6 +408,14 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     scrollToTop();
   }, [location.pathname, scrollToTop]);
+
+  // Reopen modal if it closes while there's an auth error (safeguard)
+  useEffect(() => {
+    if (authError && !isAuthModalOpen && !user) {
+      // If there's an error and modal is closed, reopen it to show the error
+      setIsAuthModalOpen(true);
+    }
+  }, [authError, isAuthModalOpen, user]);
 
   const handleViewChange = useCallback((newView: View) => {
     setError(null);
