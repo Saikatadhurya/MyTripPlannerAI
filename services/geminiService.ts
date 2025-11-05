@@ -279,6 +279,7 @@ export const generateItinerary = async (
   You have access to Google Search, but use it efficiently and strategically:
   1. **USE GOOGLE SEARCH ONLY FOR:**
      - **ACCOMMODATION SEARCH (MANDATORY):** For each day's 'placesToStay', you MUST search for hotels/hostels/guesthouses in the destination city with current prices. Search format: "budget hotels in [city] for [startDate] prices" or "hostels in [city] budget accommodation prices". Include the actual per-night cost in the accommodation name. Example: "**XYZ Hostel** (from ₹800/night)" or "**ABC Hotel** (from ₹2,500/night per person)". This is CRITICAL - always include pricing.
+     - **RESTAURANT SEARCH (MANDATORY):** For each day's 'food' field, you MUST search Google for specific restaurants, cafes, and eateries in the destination city. Search format: "best restaurants in [city] for [foodPreference] budget" or "popular restaurants [city] [vibe]". Include actual restaurant names (not just generic descriptions). Format: "**Restaurant Name** - [description]" or "**Restaurant Name** ([specialty/cuisine])". This is CRITICAL - always include specific restaurant names that can be searched.
      - Current entry prices and ticket costs for specific attractions
      - Real-time events, festivals, or special events happening during travel dates (${startDate})
      - Current exchange rates between currencies
@@ -288,15 +289,15 @@ export const generateItinerary = async (
   2. **USE YOUR TRAINING DATA FOR:**
      - Famous attractions, landmarks, and historical sites
      - Cultural information, traditions, and local customs
-     - Popular restaurants and dining recommendations
+     - General food culture and cuisine information
      - Natural places, museums, and tourist spots
      - Historical background and general travel information
   3. **SEARCH EFFICIENCY RULES:**
-     - Make maximum 3-4 targeted searches per request
-     - **MANDATORY: Search for accommodation prices for each destination city** - this is a priority
-     - Combine related searches: "Search for current prices and events together"
+     - Make maximum 4-5 targeted searches per request
+     - **MANDATORY: Search for accommodation prices AND restaurants for each destination city** - these are priorities
+     - Combine related searches: "Search for accommodation and restaurants together" or "Search for current prices and events together"
      - **For vehicle trips (Car/Bike): ALWAYS search for traffic patterns and peak hours for major routes**
-     - Prioritize: Search for accommodation prices, attraction prices, events, and traffic conditions first, then use knowledge base for everything else
+     - Prioritize: Search for accommodation prices, restaurant names, attraction prices, events, and traffic conditions first, then use knowledge base for everything else
      - Do NOT search for information already in your training data (attractions, culture, history)
   
   **CORE ITINERARY PHILOSOPHY: MAXIMALIST & EFFICIENT**
@@ -414,12 +415,22 @@ export const generateItinerary = async (
      - For Midrange: Search for 3-star hotels, comfortable guesthouses (mid-range prices)
      - For Luxury: Search for 4-5 star hotels, resorts (premium prices)
      - Example: "**Backpacker Hostel** (from ₹500/night per person)" or "**Grand Hotel** (from ₹3,500/night for double room)"
-  9. **DESTINATION DETAILS:** For historicBackground, famousCulture, naturalPlaces, museums, specialOrnaments, recommendedRestaurants: 1-3 concise points (5-10 words each). Restaurants can be names only.
-  10. **SPECIAL EVENTS:** Find events happening ONLY during ${startDate} for ${days} days. 1-2 sentences. If none: "No major special events scheduled, but enjoy ongoing local experiences."
-  11. **CURRENCY CONVERSION:** Determine local currency of "${destination}". If different from "${currency}", add 'currencyConversion' object with format "1 [DEST_CURRENCY] = [VALUE] [USER_CURRENCY]" (e.g., "1 USD = 83 INR"). If same, omit this field.
-  12. **JSON VALIDATION:** NO unescaped double quotes (") in string values. Use single quotes or escape: \\". Check every string before responding.
-  13. **FINAL:** Response MUST be raw JSON starting with '{' and ending with '}'. No markdown wrapping, no intro text. Immediately parsable.
-  14. 'referenceBlogs' must be an empty array [].
+  9. **FOOD & RESTAURANT RECOMMENDATIONS (CRITICAL):** For each day's 'food' field, you MUST:
+     - Search Google for specific restaurants, cafes, and eateries in that destination city
+     - Include actual restaurant names (not just generic descriptions like "local food" or "street food")
+     - Format each recommendation as: "**Restaurant Name** - [description/specialty]" or "**Restaurant Name** ([cuisine type])" or "**Restaurant Name** - [recommended dish]"
+     - Include 2-4 restaurant/food recommendations per day covering different meals (breakfast, lunch, dinner, snacks)
+     - For Low Budget: Search for street food stalls, local cafes, budget restaurants
+     - For Midrange: Search for popular mid-range restaurants, cafes, local favorites
+     - For Luxury: Search for fine dining restaurants, upscale cafes, premium eateries
+     - Always respect the food preference: ${foodPreference}
+     - Example: "**Joe's Pizza** - Authentic Italian pizza" or "**Spice Garden** (North Indian cuisine) - Try their butter chicken" or "**Local Market Street Food** - Famous for chaat"
+  10. **DESTINATION DETAILS:** For historicBackground, famousCulture, naturalPlaces, museums, specialOrnaments, recommendedRestaurants: 1-3 concise points (5-10 words each). Restaurants can be names only.
+  11. **SPECIAL EVENTS:** Find events happening ONLY during ${startDate} for ${days} days. 1-2 sentences. If none: "No major special events scheduled, but enjoy ongoing local experiences."
+  12. **CURRENCY CONVERSION:** Determine local currency of "${destination}". If different from "${currency}", add 'currencyConversion' object with format "1 [DEST_CURRENCY] = [VALUE] [USER_CURRENCY]" (e.g., "1 USD = 83 INR"). If same, omit this field.
+  13. **JSON VALIDATION:** NO unescaped double quotes (") in string values. Use single quotes or escape: \\". Check every string before responding.
+  14. **FINAL:** Response MUST be raw JSON starting with '{' and ending with '}'. No markdown wrapping, no intro text. Immediately parsable.
+  15. 'referenceBlogs' must be an empty array [].
   `;
   
     let fullText = '';

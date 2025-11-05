@@ -30,6 +30,24 @@ const generateHotelSearchUrl = (hotelName: string, destination: string): string 
   return `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`;
 };
 
+// Helper to extract restaurant name from formatted text (removes description and bold markers)
+const extractRestaurantName = (text: string): string => {
+  if (!text) return '';
+  // Remove bold markers
+  let cleaned = text.replace(/\*\*/g, '');
+  // Remove description after dash or colon or parenthesis
+  cleaned = cleaned.replace(/\s*[-–—:]\s*.*$/g, ''); // Remove after dash/colon
+  cleaned = cleaned.replace(/\s*\(.*$/g, ''); // Remove after parenthesis
+  // Trim whitespace
+  return cleaned.trim();
+};
+
+// Helper to generate Google search URL for a restaurant
+const generateRestaurantSearchUrl = (restaurantName: string, destination: string): string => {
+  const searchQuery = `${restaurantName} ${destination}`.trim();
+  return `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`;
+};
+
 // Helper to parse time from activity text
 const parseActivityTime = (text: string): { time?: string; description: string } => {
   if (!text) return { description: '' };
@@ -754,23 +772,57 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
                         <path strokeLinecap="round" strokeLinejoin="round" d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0c-.454-.303-.977-.454-1.5-.454V5.454c.523 0 1.046-.151 1.5-.454a2.704 2.704 0 013 0 2.704 2.704 0 003 0 2.704 2.704 0 013 0 2.704 2.704 0 003 0c.454.303.977.454 1.5.454v10.092zM15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
                     </div>
-                    <h3 className="text-2xl font-bold text-amber-900">Food Recommendations</h3>
+                    <h3 className="text-2xl font-bold text-amber-900">Food & Restaurant Recommendations</h3>
                   </div>
                   
                   <div className="grid gap-3">
                     {day.food && day.food.length > 0 && (
-                      day.food.map((item, index) => (
-                        <div key={index} className="bg-white/70 backdrop-blur-sm rounded-xl p-4 shadow-md border border-amber-100/50 hover:shadow-lg hover:border-amber-200 transition-all duration-300 hover:scale-[1.02] group">
-                          <div className="flex items-start space-x-3">
-                            <div className="flex-shrink-0 bg-amber-100 text-amber-600 rounded-full p-2 mt-0.5 group-hover:bg-amber-200 transition-colors">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                              </svg>
+                      day.food.map((item, index) => {
+                        const restaurantName = extractRestaurantName(item);
+                        const searchUrl = restaurantName ? generateRestaurantSearchUrl(restaurantName, itinerary.destination) : null;
+                        
+                        // Parse the item and make restaurant name clickable if it exists
+                        let itemWithLink = item;
+                        
+                        if (restaurantName && restaurantName.length > 0) {
+                          // Escape special regex characters in restaurant name
+                          const restaurantNameEscaped = restaurantName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                          
+                          // Try to match bold restaurant name first: **Restaurant Name**
+                          const boldPattern = new RegExp(`\\*\\*${restaurantNameEscaped}\\*\\*`, 'g');
+                          const hasBoldMatch = boldPattern.test(item);
+                          boldPattern.lastIndex = 0; // Reset regex state
+                          
+                          if (hasBoldMatch) {
+                            itemWithLink = item.replace(boldPattern, (match) => {
+                              const nameWithoutBold = match.replace(/\*\*/g, '');
+                              return `<a href="${searchUrl}" target="_blank" rel="noopener noreferrer" class="text-amber-600 hover:text-amber-800 underline font-semibold transition-colors"><strong>${nameWithoutBold}</strong></a>`;
+                            });
+                          } else {
+                            // If not in bold, match the restaurant name directly (only at the start)
+                            const namePattern = new RegExp(`^(${restaurantNameEscaped})`, '');
+                            itemWithLink = item.replace(namePattern, (match) => {
+                              return `<a href="${searchUrl}" target="_blank" rel="noopener noreferrer" class="text-amber-600 hover:text-amber-800 underline font-semibold transition-colors">${match}</a>`;
+                            });
+                          }
+                        }
+                        
+                        // Now parse any remaining bold markdown
+                        itemWithLink = parseBold(itemWithLink).__html;
+                        
+                        return (
+                          <div key={index} className="bg-white/70 backdrop-blur-sm rounded-xl p-4 shadow-md border border-amber-100/50 hover:shadow-lg hover:border-amber-200 transition-all duration-300 hover:scale-[1.02] group">
+                            <div className="flex items-start space-x-3">
+                              <div className="flex-shrink-0 bg-amber-100 text-amber-600 rounded-full p-2 mt-0.5 group-hover:bg-amber-200 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                                </svg>
+                              </div>
+                              <div className="text-gray-700 leading-relaxed flex-1" dangerouslySetInnerHTML={{ __html: itemWithLink }} />
                             </div>
-                            <div className="text-gray-700 leading-relaxed flex-1" dangerouslySetInnerHTML={parseBold(item)} />
                           </div>
-                        </div>
-                      ))
+                        );
+                      })
                     )}
                   </div>
               </div>
