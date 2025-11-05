@@ -19,7 +19,7 @@ interface QuestionnaireProps {
   onOpenAuthModal: () => void;
 }
 
-const budgets: Budget[] = ['Low Cost', 'Midrange', 'Luxury'];
+const budgets: Budget[] = ['Standard', 'Midrange', 'Luxury'];
 const foodPreferences: {label: FoodPreference, icon: string}[] = [
     {label: 'Veg', icon: '🥗'},
     {label: 'Non-Veg', icon: '🍗'},

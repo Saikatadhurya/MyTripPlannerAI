@@ -63,11 +63,52 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
         saveLingoRecommendation
     } = useSaveRecommendation();
     const mainContentRef = React.useRef<HTMLElement>(null);
+    const headerRef = React.useRef<HTMLElement>(null);
+    const containerRef = React.useRef<HTMLDivElement>(null);
     
     const isPlanComplete = Object.values(loadingStatus).every(status => status === 'done');
 
     useEffect(() => {
-        onTabChangeScrollToTop();
+        // Scroll to absolute top when tab changes - use multiple methods to ensure it works
+        const scrollToTop = () => {
+            // Force instant scroll to absolute top (0, 0) on all scrollable elements
+            window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+            window.scrollTo(0, 0);
+            
+            // Scroll document elements
+            if (document.documentElement) {
+                document.documentElement.scrollTop = 0;
+                document.documentElement.scrollLeft = 0;
+            }
+            if (document.body) {
+                document.body.scrollTop = 0;
+                document.body.scrollLeft = 0;
+            }
+            
+            // Scroll container if it exists
+            if (containerRef.current) {
+                containerRef.current.scrollTop = 0;
+                containerRef.current.scrollLeft = 0;
+            }
+            
+            // Scroll main content container if it exists
+            if (mainContentRef.current) {
+                mainContentRef.current.scrollTop = 0;
+                mainContentRef.current.scrollLeft = 0;
+            }
+            
+            // Call the parent scroll function (which also handles main content scroll in App.tsx)
+            onTabChangeScrollToTop();
+        };
+        
+        // Use double RAF to ensure DOM is fully rendered, then scroll
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                scrollToTop();
+                // Also scroll after a tiny delay to catch any layout shifts
+                setTimeout(scrollToTop, 10);
+            });
+        });
     }, [activeTab, onTabChangeScrollToTop]);
 
     // Incrementally save unified trip to history as each part becomes available
@@ -331,8 +372,8 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
     };
     
     return (
-        <div className="max-w-7xl mx-auto space-y-8 animated-card unified-interactive-view mb-16">
-            <header className="flex flex-col sm:flex-row justify-between items-center gap-4 py-4 no-print unified-header">
+        <div ref={containerRef} className="max-w-7xl mx-auto space-y-8 animated-card unified-interactive-view mb-16">
+            <header ref={headerRef} id="unified-plan-header" className="flex flex-col sm:flex-row justify-between items-center gap-4 py-4 no-print unified-header scroll-mt-0">
                  <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight text-center sm:text-left">
                     Your Unified Trip Plan to <span className="text-violet-700">{plan.itinerary?.destination || '...'}</span>
                 </h1>
@@ -398,22 +439,7 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
                                         key={tab.id}
                                         onClick={() => {
                                             setActiveTab(tab.id);
-                                            
-                                            // Scroll to top when tab is clicked
-                                            setTimeout(() => {
-                                                window.scrollTo({ top: 0, behavior: 'smooth' });
-                                                window.scrollTo(0, 0);
-                                                document.documentElement.scrollTop = 0;
-                                                document.body.scrollTop = 0;
-                                                
-                                                // Also scroll main content if it exists
-                                                if (mainContentRef.current) {
-                                                    mainContentRef.current.scrollTop = 0;
-                                                    mainContentRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                                                }
-                                            }, 0);
-                                            
-                                            onTabChangeScrollToTop();
+                                            // Scroll is handled by useEffect when activeTab changes
                                         }}
                                         className={`relative flex flex-col items-center justify-center flex-1 space-y-1 transition-colors duration-200 md:flex-row md:flex-none md:px-4 md:py-2 md:space-x-2 md:rounded-full
                                             ${activeTab === tab.id
