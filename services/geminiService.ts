@@ -231,7 +231,7 @@ export const generateItinerary = async (
               - **C. Route Design:** Based on the above, design a logical, sequential road trip circuit starting and ending at "${startPoint}". The route must maximize sightseeing of famous places based on the vibe: "${vibe.join(', ')}". The farthest point should be near "${destination}".
           - **IF NOT FEASIBLE**: Do NOT fail. You MUST plan a realistic road trip circuit to an alternative region or set of destinations reachable within the timeframe that still fits the user's vibe. The "destination" field in the JSON response MUST be updated to a more descriptive name for this new circuit (e.g., 'Rajasthan Heritage Circuit'). You MUST also add a note in the new 'planNote' field in the root of the JSON response, explaining the change clearly and starting with "NOTE:". For example: "NOTE: A road trip to ${destination} and back in ${days} days isn't feasible. I've created an alternative Coastal Karnataka Temple & Adventure Circuit that fits your timeline and preferences."
 
-      2.  **Distance & Time Accuracy (CRITICAL)**: You MUST use your search capabilities to get accurate driving distances (in kilometers) and realistic travel times between all stops in the circuit. These MUST be reflected in the daily 'activities' descriptions (e.g., "Drive from Jaipur to Udaipur (**approx. 395 km, 6-7 hours**)..."). Inaccurate distances are a critical failure.
+      2.  **Distance & Time Accuracy with Traffic (CRITICAL)**: You MUST use your search capabilities to get accurate driving distances (in kilometers) and realistic travel times between all stops in the circuit. **CRITICAL**: You MUST search for current traffic patterns, peak hours, and congestion levels for each route segment. Travel time estimates MUST account for traffic conditions, not just distance. For example, a 200 km drive might take 3 hours in ideal conditions but 4-5 hours with typical traffic. These realistic time estimates MUST be reflected in the daily 'activities' descriptions (e.g., "Drive from Jaipur to Udaipur (**approx. 395 km, 6-7 hours considering traffic**)..."). Additionally, suggest optimal departure times to avoid peak traffic (e.g., "Depart at 6:30 AM to avoid morning rush hour"). Inaccurate distances or ignoring traffic are critical failures.
 
       3.  **Structured Output - This is MANDATORY**:
           - **coveredDestinations**: This array must list each major city/stop of the road trip circuit *in the order they are visited*. For each stop, provide the detailed information (history, culture, etc.).
@@ -260,7 +260,7 @@ export const generateItinerary = async (
           -   **A. Itinerary Density & Maximization (CRITICAL):** Your primary goal is to **maximize the number of interesting and feasible places covered** within the given **${days} days**, using public transport, adhering to the MAXIMALIST & EFFICIENT philosophy outlined above. A longer duration MUST result in a richer, denser itinerary with more stops, not just more days in the same few cities. You MUST intelligently add relevant destinations to create a comprehensive tour circuit that makes full and enjoyable use of the time. For example, a 15-day trip should cover significantly more cities than a 5-day trip.
           -   **B. Route Design & Transport Details:** Design a logical, sequential tour circuit starting and ending at "${startPoint}". The route must maximize sightseeing of famous places based on the vibe: "${vibe.join(', ')}". The farthest point should be near "${destination}". Unlike a road trip, the travel between cities/stops MUST be planned using the most efficient and budget-appropriate public transport. Provide realistic options like **trains** (mentioning class options), **buses** (mentioning carrier types like Volvo/sleeper), **shared cars**, or **flights** if the distance is significant.
 
-      2.  **Distance & Time Accuracy (CRITICAL)**: You MUST use your search capabilities to get accurate travel distances and realistic travel times for the suggested mode of public transport (train, bus, etc.) between all stops in the circuit. These MUST be reflected in the daily 'activities' descriptions and 'transport' suggestions. Inaccurate details are a critical failure.
+      2.  **Distance & Time Accuracy with Traffic/Transport Delays (CRITICAL)**: You MUST use your search capabilities to get accurate travel distances and realistic travel times for the suggested mode of public transport (train, bus, etc.) between all stops in the circuit. **CRITICAL**: Account for potential delays due to traffic (for buses/road transport), train schedules, and typical public transport delays. For road-based public transport, research traffic patterns and peak hours that might affect bus/car travel times. These realistic time estimates MUST be reflected in the daily 'activities' descriptions and 'transport' suggestions. For example, mention "Travel by bus from City A to City B (**approx. 250 km, 5-6 hours including typical traffic delays**)". Inaccurate details or ignoring traffic/transport delays are critical failures.
 
       3.  **Structured Output - This is MANDATORY**:
           -   **coveredDestinations**: This array MUST list each major city/stop of the tour circuit *in the order they are visited*. For each stop, provide the detailed information (history, culture, etc.).
@@ -282,6 +282,8 @@ export const generateItinerary = async (
      - Real-time events, festivals, or special events happening during travel dates (${startDate})
      - Current exchange rates between currencies
      - Recent changes to attraction hours or availability
+     - **Traffic patterns, peak hours, and current traffic conditions** for routes between destinations and within cities
+     - **Real-time traffic forecasts** for planned travel routes during specific times and dates
   2. **USE YOUR TRAINING DATA FOR:**
      - Famous attractions, landmarks, and historical sites
      - Cultural information, traditions, and local customs
@@ -291,7 +293,8 @@ export const generateItinerary = async (
   3. **SEARCH EFFICIENCY RULES:**
      - Make maximum 2-3 targeted searches per request
      - Combine related searches: "Search for current prices and events together"
-     - Prioritize: Search for prices and events first, then use knowledge base for everything else
+     - **For vehicle trips (Car/Bike): ALWAYS search for traffic patterns and peak hours for major routes**
+     - Prioritize: Search for prices, events, and traffic conditions first, then use knowledge base for everything else
      - Do NOT search for information already in your training data (attractions, culture, history)
   
   **CORE ITINERARY PHILOSOPHY: MAXIMALIST & EFFICIENT**
@@ -300,6 +303,12 @@ export const generateItinerary = async (
   - **MAXIMIZE SIGHTSEEING:** For any given location, you must include not only the main attractions but also highly-rated secondary attractions, local experiences, and hidden gems.
   - **DAY TRIPS ARE ESSENTIAL:** For trips longer than 3-4 days to a single city, you MUST incorporate relevant and feasible day trips to nearby towns, natural parks, or historical sites to enrich the itinerary. For example, a 7-day trip to Paris should include a day trip to the Palace of Versailles.
   - **TRAVEL DAY EFFICIENCY:** On days that involve travel between cities, the itinerary should still include activities either in the departure city in the morning or in the arrival city in the afternoon/evening. A travel day should not be solely dedicated to transit unless the journey is exceptionally long (over 8 hours).
+  
+  **TRAFFIC-AWARE PLANNING (APPLIES TO ALL TRIP TYPES):**
+  - **Local Transport & City Navigation**: For ALL trip types, when planning activities within cities, account for local traffic patterns. Research typical traffic conditions in ${destination} and adjust activity schedules accordingly. For example, if moving between attractions in a major city during peak hours, add buffer time (15-30 minutes extra) for travel.
+  - **Peak Hours Consideration**: Be aware that traffic patterns vary by location. Research and account for local rush hours, weekend traffic patterns, and special events that might cause congestion. Schedule activities to minimize time lost to traffic.
+  - **Realistic Time Estimates**: All travel time estimates (whether by car, public transport, or local transport) MUST be realistic and account for typical traffic conditions. A 5 km drive in a busy city might take 20-30 minutes, not 5 minutes.
+  - **Strategic Scheduling**: When possible, schedule activities in the same area together to minimize travel time. Group nearby attractions to avoid unnecessary back-and-forth travel that wastes time in traffic.
 
   Trip Details:
   - Destination: ${destination}
@@ -326,8 +335,16 @@ export const generateItinerary = async (
   1.  **Vehicle Assumption**: Assume the user has a personal or rented vehicle. All 'transport' suggestions MUST be vehicle-centric (driving routes, times).
   2.  **Accommodation**: Prioritize hotels with secure and convenient parking for a ${tripType}.
   3.  **Realistic Pacing**: Limit daily driving: **300-400 km for a Car**, **150-250 km for a Bike**.
-  4.  **budgetSummary.fuel**: You MUST calculate an estimated total fuel cost for the trip. Use vehicle capacities (Car: max 5 people, Bike: max 2 people) to determine the number of vehicles needed for the group of ${persons} people. Estimate the total fuel cost for ALL vehicles for the ENTIRE trip and provide the final PER-PERSON average in this field.
-  5.  **plan.transport.cost**: This field is CRITICAL. It MUST represent the estimated fuel cost for driving **ONE SINGLE VEHICLE** for that specific day's travel leg. The frontend will use this to calculate group costs. If there's no inter-city travel, this should be "0". You are FORBIDDEN from returning any non-numeric text.
+  4.  **TRAFFIC-AWARE ROUTING (CRITICAL):**
+     - **MANDATORY**: You MUST use Google Search to check current traffic patterns, peak hours, and typical congestion levels for ALL planned routes between destinations.
+     - **Peak Hours Awareness**: Research and account for rush hours (typically 7-9 AM and 5-7 PM on weekdays) in major cities and on highways. Adjust departure times to avoid peak traffic when possible.
+     - **Real-Time Traffic Forecast**: For travel dates around ${startDate}, search for traffic forecasts and historical patterns to predict travel times accurately.
+     - **Time Estimates**: ALL travel time estimates MUST include realistic traffic delays. Base times on traffic conditions, not just distance. For example, a 100 km drive might take 2 hours in light traffic but 3-4 hours in heavy traffic.
+     - **Route Optimization**: Suggest departure times that minimize traffic exposure. For example, suggest leaving cities early morning (6-7 AM) or late morning (after 10 AM) to avoid rush hours.
+     - **Activity Scheduling**: When planning activities within cities, account for local traffic patterns. Avoid scheduling tight time slots during peak hours when moving between attractions.
+     - **Mention Traffic in Activities**: In activity descriptions, explicitly mention traffic conditions: "Drive from City A to City B (**approx. 200 km, 3-4 hours considering traffic**)" or "Leave early at 6:30 AM to avoid rush hour traffic".
+  5.  **budgetSummary.fuel**: You MUST calculate an estimated total fuel cost for the trip. Use vehicle capacities (Car: max 5 people, Bike: max 2 people) to determine the number of vehicles needed for the group of ${persons} people. Estimate the total fuel cost for ALL vehicles for the ENTIRE trip and provide the final PER-PERSON average in this field.
+  6.  **plan.transport.cost**: This field is CRITICAL. It MUST represent the estimated fuel cost for driving **ONE SINGLE VEHICLE** for that specific day's travel leg. The frontend will use this to calculate group costs. If there's no inter-city travel, this should be "0". You are FORBIDDEN from returning any non-numeric text.
   ` : ''}
 
   ${regionalTripInstructions}
@@ -380,7 +397,7 @@ export const generateItinerary = async (
 
   IMPORTANT RULES:
   1. All strings must be in ${language}. 'plan' array must have exactly ${days} elements. 'coveredDestinations' is mandatory (populate for multi-location trips, single destination for single city).
-  2. **ACTIVITY TIMINGS:** Prefix each activity with time: "**09:00 AM - 11:00 AM:** Visit..." or "**01:00 PM:** Lunch...". Be realistic accounting for travel and duration.
+  2. **ACTIVITY TIMINGS (TRAFFIC-AWARE):** Prefix each activity with time: "**09:00 AM - 11:00 AM:** Visit..." or "**01:00 PM:** Lunch...". Be realistic accounting for travel time, duration, AND traffic conditions. For vehicle trips (Car/Bike), account for peak traffic hours when scheduling activities. For example, if moving between attractions in a city during rush hour (7-9 AM or 5-7 PM), add extra buffer time. For inter-city travel, suggest departure times that avoid peak hours. Always include realistic travel time estimates that reflect traffic: "**06:30 AM:** Depart from Hotel (early departure to avoid rush hour traffic)" or "**10:00 AM - 12:00 PM:** Visit Museum (allowing 30 min for city traffic)".
   3. **COST FORMATTING:** All cost fields (budgetSummary.*, approxCost, transport.cost) = strings with ONLY numbers (e.g., "1500", "250.50"). No currency symbols. All per-person costs in "${currency}".
   4. **BOLDING:** Use **text** to highlight attractions, restaurants, hotels, timings, cultural items, travel advice.
   5. **NO TECHNICAL JARGON:** User-facing text must be friendly and natural. NEVER mention JSON field names like 'budgetSummary.total' or 'approxCost' in user text. Use natural language instead.
