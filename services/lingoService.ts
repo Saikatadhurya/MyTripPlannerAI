@@ -45,25 +45,35 @@ export const generateLingoGuide = async (data: LingoFinderRequestData, onChunk?:
     }
 
     **FINAL CRITICAL RULES:**
-    1.  **Language:** The entire JSON response MUST be in ${language}.
-    2.  **CRITICAL JSON VALIDATION RULE**: The output MUST be a perfectly valid JSON object. This is the single most important instruction.
-        a. **NO UNESCAPED QUOTES**: Inside any JSON string value, you MUST NEVER use a double quote character ("). It will break the JSON and cause an error.
-        b. **HOW TO HANDLE QUOTES**: Use single quotes or escape double quotes with a backslash (e.g., "The guide said, \\"Welcome!\\"").
-        c. **FAILURE TO FOLLOW THIS RULE WILL RENDER THE ENTIRE OUTPUT USELESS.** You must double-check every string value for unescaped double quotes.
-    3. **ABSOLUTE FINAL INSTRUCTION**: Your entire response MUST be the raw JSON object. It MUST start with the character '{' and end with the character '}'. You MUST NOT wrap it in markdown (like \`\`\`json), and you MUST NOT add any introductory text.
+    1. **Language:** The entire JSON response MUST be in ${language}.
+    2. **JSON VALIDATION:** The output MUST be a perfectly valid JSON object. NO unescaped double quotes (") in string values. Use single quotes or escape with \\". Check every string before finishing.
+    3. **FINAL INSTRUCTION:** Your entire response MUST be the raw JSON object starting with '{' and ending with '}'. NO markdown wrapping, NO introductory text. Immediately parsable as JSON.
   `;
 
   let fullText = '';
   try {
       if (onChunk) {
-        const stream = await ai.models.generateContentStream({ model: "gemini-2.5-flash", contents: prompt });
+        const stream = await ai.models.generateContentStream({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+                thinkingConfig: { thinkingBudget: 0 },
+            }
+        });
         for await (const chunk of stream) {
             const chunkText = chunk.text;
             fullText += chunkText;
             onChunk(chunkText);
         }
       } else {
-        const response = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+                thinkingConfig: { thinkingBudget: 0 },
+                responseMimeType: "application/json",
+            }
+        });
         fullText = response.text;
       }
 

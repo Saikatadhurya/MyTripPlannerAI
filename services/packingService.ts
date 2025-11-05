@@ -64,14 +64,9 @@ export const generatePackingList = async (data: PackingListRequestData, onChunk?
     4. The 'bagSuggestion' should recommend a type and size of bag (e.g., "A 40L backpack" or "A medium-sized suitcase").
     5. The 'locallyAvailableItems' list should include things the user might not need to pack because they are easy and cheap to buy at the destination.
     6. You MUST use bold markdown (**text**) to highlight key items or advice within the string arrays.
-    7. **CRITICAL JSON VALIDATION RULE**: The output MUST be a perfectly valid JSON object. This is the single most important instruction.
-        a. **NO UNESCAPED QUOTES**: Inside any JSON string value, you MUST NEVER use a double quote character ("). It will break the JSON and cause an error.
-        b. **HOW TO HANDLE QUOTES**: If you need to include a quote inside a description, you have two options:
-            i. **PREFERRED**: Use single quotes instead (e.g., "Don't forget your 'just-in-case' sweater.").
-            ii. **ALTERNATIVE**: If you absolutely must use a double quote, you MUST escape it with a backslash (e.g., "A bag that is described as \\"water-resistant\\" is ideal.").
-        c. **FAILURE TO FOLLOW THIS RULE WILL RENDER THE ENTIRE OUTPUT USELESS.** You must double-check every string value for unescaped double quotes before finishing your response.
+    7. **JSON VALIDATION:** The output MUST be a perfectly valid JSON object. NO unescaped double quotes (") in string values. Use single quotes or escape with \\". Check every string before finishing.
     8. The entire JSON response, including all string values, MUST be in ${language}.
-    9. **ABSOLUTE FINAL INSTRUCTION**: Your entire response MUST be the raw JSON object. It MUST start with the character '{' and end with the character '}'. You MUST NOT wrap it in markdown (like \`\`\`json), and you MUST NOT add any introductory text. The response must be immediately parsable as JSON.
+    9. **FINAL INSTRUCTION:** Your entire response MUST be the raw JSON object starting with '{' and ending with '}'. NO markdown wrapping, NO introductory text. Immediately parsable as JSON.
   `;
 
   let fullText = '';
@@ -80,6 +75,9 @@ export const generatePackingList = async (data: PackingListRequestData, onChunk?
         const stream = await ai.models.generateContentStream({
           model: "gemini-2.5-flash",
           contents: prompt,
+          config: {
+            thinkingConfig: { thinkingBudget: 0 },
+          }
         });
 
         for await (const chunk of stream) {
@@ -91,6 +89,10 @@ export const generatePackingList = async (data: PackingListRequestData, onChunk?
         const response = await ai.models.generateContent({
           model: "gemini-2.5-flash",
           contents: prompt,
+          config: {
+            thinkingConfig: { thinkingBudget: 0 },
+            responseMimeType: "application/json",
+          }
         });
         fullText = response.text;
       }

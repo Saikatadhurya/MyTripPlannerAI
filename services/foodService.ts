@@ -98,10 +98,8 @@ export const generateFoodRecommendations = async (data: FoodFinderRequestData, o
     - Prioritize populating 'iconicDishes', 'snacksAndStreetFood', 'lunch', and 'dinner'.
     - The 'drinksAndBeverages' array should always contain **non-alcoholic** options. If 'Include Alcoholic Drinks' is 'Yes', you MUST also add local alcoholic beverages. If 'No', the array MUST NOT contain any alcoholic drinks.
     - The ENTIRE response MUST be translated into ${language}.
-    - **CRITICAL JSON VALIDATION RULE**: The output MUST be a perfectly valid JSON object.
-        a. **NO UNESCAPED QUOTES**: Inside any JSON string value, you MUST NEVER use a double quote character ("). Use single quotes or escape them (\\").
-        b. **FAILURE TO FOLLOW THIS RULE WILL RENDER THE ENTIRE OUTPUT USELESS.**
-    - **ABSOLUTE FINAL INSTRUCTION**: Your entire response MUST be the raw JSON object. It MUST start with '{' and end with '}'. You MUST NOT wrap it in markdown or add any introductory text.
+    - **JSON VALIDATION:** The output MUST be a perfectly valid JSON object. NO unescaped double quotes (") in string values. Use single quotes or escape with \\". Check every string before finishing.
+    - **FINAL INSTRUCTION:** Your entire response MUST be the raw JSON object starting with '{' and ending with '}'. NO markdown wrapping, NO introductory text. Immediately parsable as JSON.
   `;
   
   let fullText = '';
@@ -112,6 +110,7 @@ export const generateFoodRecommendations = async (data: FoodFinderRequestData, o
             contents: prompt,
             config: {
                 tools: [{ googleSearch: {} }],
+                thinkingConfig: { thinkingBudget: 0 },
             }
         });
 
@@ -126,6 +125,8 @@ export const generateFoodRecommendations = async (data: FoodFinderRequestData, o
             contents: prompt,
             config: {
                 tools: [{ googleSearch: {} }],
+                thinkingConfig: { thinkingBudget: 0 },
+                responseMimeType: "application/json",
             }
         });
         fullText = response.text;
