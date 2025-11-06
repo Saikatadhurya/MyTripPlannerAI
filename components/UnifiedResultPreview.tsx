@@ -68,6 +68,21 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
     
     const isPlanComplete = Object.values(loadingStatus).every(status => status === 'done');
 
+    // Update page title based on the plan
+    useEffect(() => {
+        if (plan.itinerary?.destination) {
+            const destination = plan.itinerary.destination;
+            document.title = `Trip Plan to ${destination} | Plan My Trip AI`;
+        } else if (questionnaireData?.destination) {
+            document.title = `Planning Trip to ${questionnaireData.destination} | Plan My Trip AI`;
+        }
+        
+        // Cleanup: reset to default title when component unmounts
+        return () => {
+            document.title = 'Plan My Trip | Free AI Trip Planner - Create Perfect Travel Itinerary in Minutes';
+        };
+    }, [plan.itinerary?.destination, questionnaireData?.destination]);
+
     useEffect(() => {
         // Scroll to absolute top when tab changes - use multiple methods to ensure it works
         const scrollToTop = () => {

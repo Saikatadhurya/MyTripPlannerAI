@@ -70,6 +70,32 @@ const ShareableRecommendation: React.FC = () => {
     loadRecommendation();
   }, [id]);
 
+  // Update page title based on the loaded recommendation or trip
+  useEffect(() => {
+    if (unifiedTrip) {
+      // Use tripName if available, otherwise generate from destination
+      const title = unifiedTrip.tripName || 
+                   `Trip Plan to ${unifiedTrip.destination || 'Your Destination'}`;
+      document.title = `${title} | Plan My Trip AI`;
+    } else if (recommendation) {
+      // Use title if available, otherwise generate from type and destination
+      const typeName = recommendation.recommendationType.charAt(0).toUpperCase() + 
+                      recommendation.recommendationType.slice(1);
+      const title = recommendation.title || 
+                   `${typeName} Recommendation for ${recommendation.destination || 'Your Destination'}`;
+      document.title = `${title} | Plan My Trip AI`;
+    } else if (loading) {
+      document.title = 'Loading... | Plan My Trip AI';
+    } else if (error) {
+      document.title = 'Recommendation Not Found | Plan My Trip AI';
+    }
+    
+    // Cleanup: reset to default title when component unmounts
+    return () => {
+      document.title = 'Plan My Trip | Free AI Trip Planner - Create Perfect Travel Itinerary in Minutes';
+    };
+  }, [unifiedTrip, recommendation, loading, error]);
+
   const handleBackToHome = () => {
     navigate('/');
   };

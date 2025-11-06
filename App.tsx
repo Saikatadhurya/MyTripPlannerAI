@@ -417,6 +417,110 @@ const AppContent: React.FC = () => {
     }
   }, [authError, isAuthModalOpen, user]);
 
+  // Update page title based on current view and data
+  useEffect(() => {
+    const updatePageTitle = () => {
+      // Handle form pages
+      if (location.pathname === '/plan') {
+        document.title = 'Unified Trip Planner | Plan My Trip AI';
+        return;
+      }
+      if (location.pathname === '/itinerary') {
+        document.title = 'Itinerary Planner | Plan My Trip AI';
+        return;
+      }
+      if (location.pathname === '/packing') {
+        document.title = 'Packing Assistant | Plan My Trip AI';
+        return;
+      }
+      if (location.pathname === '/food') {
+        document.title = 'Food Finder | Plan My Trip AI';
+        return;
+      }
+      if (location.pathname === '/apps') {
+        document.title = 'App Finder | Plan My Trip AI';
+        return;
+      }
+      if (location.pathname === '/music') {
+        document.title = 'Music Finder | Plan My Trip AI';
+        return;
+      }
+      if (location.pathname === '/lingo') {
+        document.title = 'Lingo Finder | Plan My Trip AI';
+        return;
+      }
+      
+      // Handle unified result page
+      if (location.pathname === '/results/unified') {
+        if (unifiedPlan.itinerary?.destination) {
+          const destination = unifiedPlan.itinerary.destination;
+          document.title = `Trip Plan to ${destination} | Plan My Trip AI`;
+          return;
+        } else if (questionnaireDataForUnifiedPlan?.destination) {
+          document.title = `Planning Trip to ${questionnaireDataForUnifiedPlan.destination} | Plan My Trip AI`;
+          return;
+        }
+      }
+      
+      // Handle individual result pages
+      if (location.pathname === '/results/itinerary' && itinerary?.destination) {
+        document.title = `Itinerary for ${itinerary.destination} | Plan My Trip AI`;
+        return;
+      }
+      if (location.pathname === '/results/packing' && packingList?.destination) {
+        document.title = `Packing List for ${packingList.destination} | Plan My Trip AI`;
+        return;
+      }
+      if (location.pathname === '/results/food' && foodRecommendations?.destination) {
+        document.title = `Food Guide for ${foodRecommendations.destination} | Plan My Trip AI`;
+        return;
+      }
+      if (location.pathname === '/results/apps' && appRecommendations?.destination) {
+        document.title = `Local Apps for ${appRecommendations.destination} | Plan My Trip AI`;
+        return;
+      }
+      if (location.pathname === '/results/music' && musicRecommendations?.destination) {
+        document.title = `Music Playlist for ${musicRecommendations.destination} | Plan My Trip AI`;
+        return;
+      }
+      if (location.pathname === '/results/lingo' && lingoRecommendations?.destination) {
+        document.title = `Language Guide for ${lingoRecommendations.destination} | Plan My Trip AI`;
+        return;
+      }
+      
+      // Handle other pages
+      if (location.pathname === '/history') {
+        document.title = 'Trip History | Plan My Trip AI';
+        return;
+      }
+      if (location.pathname === '/profile') {
+        document.title = 'Edit Profile | Plan My Trip AI';
+        return;
+      }
+      if (location.pathname === '/contact') {
+        document.title = 'Contact Us | Plan My Trip AI';
+        return;
+      }
+      
+      // Default title for landing page and other pages (don't override shareable pages)
+      if (!location.pathname.startsWith('/share/')) {
+        document.title = 'Plan My Trip | Free AI Trip Planner - Create Perfect Travel Itinerary in Minutes';
+      }
+    };
+    
+    updatePageTitle();
+  }, [
+    location.pathname, 
+    unifiedPlan.itinerary?.destination, 
+    questionnaireDataForUnifiedPlan?.destination,
+    itinerary?.destination,
+    packingList?.destination,
+    foodRecommendations?.destination,
+    appRecommendations?.destination,
+    musicRecommendations?.destination,
+    lingoRecommendations?.destination
+  ]);
+
   const handleViewChange = useCallback((newView: View) => {
     setError(null);
     setStreamedText('');
