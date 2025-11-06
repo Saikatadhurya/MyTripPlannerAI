@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { PopularDestination } from '../types';
 import { User } from '../services/authService';
 import TestimonialsCarousel from './TestimonialsCarousel';
+import BlogCarousel from './BlogCarousel';
 
 interface LandingPageProps {
   user: User | null;
@@ -14,9 +15,10 @@ interface LandingPageProps {
   onStartLingoFinder: () => void;
   onOpenAuthModal: () => void;
   onViewHistory: () => void;
+  onGoToBlog: () => void;
 }
 
-const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPlanItinerary, onStartPacking, onStartFoodFinder, onStartAppFinder, onStartMusicFinder, onStartLingoFinder, onOpenAuthModal, onViewHistory }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPlanItinerary, onStartPacking, onStartFoodFinder, onStartAppFinder, onStartMusicFinder, onStartLingoFinder, onOpenAuthModal, onViewHistory, onGoToBlog }) => {
   const [destinations, setDestinations] = useState<PopularDestination[]>([]);
 
   // Map of destination names to share links
@@ -330,12 +332,25 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
         </div>
       </div>
 
-      {/* Testimonials Section */}
+      {/* Blog Carousel Section */}
       <section>
         <h2 className="text-3xl font-bold text-center text-slate-900 mb-8 animated-card" style={{ animationDelay: '1600ms' }}>
+          Travel Blog
+        </h2>
+        <p className="text-center text-slate-600 mb-8 animated-card" style={{ animationDelay: '1650ms' }}>
+          Discover expert travel tips, guides, and stories to inspire your next adventure
+        </p>
+        <div className="animated-card" style={{ animationDelay: '1700ms' }}>
+          <BlogCarousel onViewMore={onGoToBlog} />
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section>
+        <h2 className="text-3xl font-bold text-center text-slate-900 mb-8 animated-card" style={{ animationDelay: '1750ms' }}>
           What Our Travelers Say
         </h2>
-        <div className="animated-card" style={{ animationDelay: '1700ms' }}>
+        <div className="animated-card" style={{ animationDelay: '1800ms' }}>
           <TestimonialsCarousel />
         </div>
       </section>

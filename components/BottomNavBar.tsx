@@ -28,8 +28,9 @@ const MoreMenu: React.FC<{
     onStartMusicFinder: () => void;
     onStartLingoGuide: () => void;
     onGoToContact: () => void;
+    onGoToBlog: () => void;
     onClose: () => void;
-}> = ({ onStartAppFinder, onStartMusicFinder, onStartLingoGuide, onGoToContact, onClose }) => {
+}> = ({ onStartAppFinder, onStartMusicFinder, onStartLingoGuide, onGoToContact, onGoToBlog, onClose }) => {
     const handleAction = (action: () => void) => {
         action();
         onClose();
@@ -50,6 +51,10 @@ const MoreMenu: React.FC<{
                 <span>Lingo Guide</span>
             </button>
             <hr className="border-slate-200/80 mx-2 my-1" />
+            <button onClick={() => handleAction(onGoToBlog)} className="w-full flex items-center text-left px-3 py-2.5 rounded-lg text-slate-800 font-semibold transition-colors duration-200 hover:bg-violet-100/80">
+                <span className="text-xl w-8 text-center">📝</span>
+                <span>Travel Blogs</span>
+            </button>
             <button onClick={() => handleAction(onGoToContact)} className="w-full flex items-center text-left px-3 py-2.5 rounded-lg text-slate-800 font-semibold transition-colors duration-200 hover:bg-violet-100/80">
                 <span className="text-xl w-8 text-center">✉️</span>
                 <span>Contact Us</span>
@@ -117,7 +122,7 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const isMoreSectionActive = ['/contact', '/apps', '/music', '/lingo'].includes(location.pathname);
+  const isMoreSectionActive = ['/contact', '/blog', '/apps', '/music', '/lingo'].includes(location.pathname);
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-40 sm:hidden no-print">
@@ -138,6 +143,7 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({
                     onStartAppFinder={() => navigate('/apps')}
                     onStartMusicFinder={() => navigate('/music')}
                     onStartLingoGuide={() => navigate('/lingo')}
+                    onGoToBlog={() => navigate('/blog')}
                     onGoToContact={() => navigate('/contact')}
                     onClose={() => setIsMoreMenuOpen(false)}
                 />

@@ -25,7 +25,7 @@ import ForgotPassword from './components/ForgotPassword';
 
 
 
-type View = 'landing' | 'questionnaire' | 'itineraryResult' | 'packingAssistantForm' | 'packingAssistantResult' | 'foodFinderForm' | 'foodFinderResult' | 'appFinderForm' | 'appFinderResult' | 'musicFinderForm' | 'musicFinderResult' | 'lingoFinderForm' | 'lingoFinderResult' | 'contact' | 'unifiedPlannerForm' | 'unifiedResult' | 'editProfile' | 'history';
+type View = 'landing' | 'questionnaire' | 'itineraryResult' | 'packingAssistantForm' | 'packingAssistantResult' | 'foodFinderForm' | 'foodFinderResult' | 'appFinderForm' | 'appFinderResult' | 'musicFinderForm' | 'musicFinderResult' | 'lingoFinderForm' | 'lingoFinderResult' | 'contact' | 'blog' | 'unifiedPlannerForm' | 'unifiedResult' | 'editProfile' | 'history';
 
 // --- Loading State Constants ---
 const itineraryStages = [
@@ -501,6 +501,10 @@ const AppContent: React.FC = () => {
         document.title = 'Contact Us | Plan My Trip AI';
         return;
       }
+      if (location.pathname === '/blog') {
+        document.title = 'Travel Blogs | Plan My Trip AI';
+        return;
+      }
       
       // Default title for landing page and other pages (don't override shareable pages)
       if (!location.pathname.startsWith('/share/')) {
@@ -552,6 +556,9 @@ const AppContent: React.FC = () => {
         break;
       case 'contact':
         navigate('/contact');
+        break;
+      case 'blog':
+        navigate('/blog');
         break;
       case 'editProfile':
         navigate('/profile');
@@ -1623,6 +1630,7 @@ const AppContent: React.FC = () => {
       onStartLingoFinder={handleStartLingoFinder}
       onBackToHome={handleBackToHome}
       onViewHistory={() => navigate('/history')}
+      onGoToBlog={() => navigate('/blog')}
       onNavigateToResult={handleNavigateToResult}
       onProfileUpdate={handleProfileUpdate}
       onGenerateItinerary={handleGenerateItinerary}

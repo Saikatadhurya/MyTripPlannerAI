@@ -20,6 +20,8 @@ import UnifiedPlannerForm from './UnifiedPlannerForm';
 import UnifiedResultPreview from './UnifiedResultPreview';
 import ItineraryPreview from './ItineraryPreview';
 import ContactUs from './ContactUs';
+import TravelBlogs from './TravelBlogs';
+import BlogPost from './BlogPost';
 import EditProfile from './EditProfile';
 import History from './History';
 import AuthModal from './AuthModal';
@@ -52,6 +54,7 @@ interface AppRouterProps {
   onStartLingoFinder: () => void;
   onBackToHome: () => void;
   onViewHistory: () => void;
+  onGoToBlog: () => void;
   onNavigateToResult: (type: string, responseData: any, requestData: any, isHistoryView?: boolean) => void;
   onProfileUpdate: (updatedUser: User) => void;
   // Form submission handlers
@@ -108,6 +111,7 @@ const AppRouter: React.FC<AppRouterProps> = ({
   onStartLingoFinder,
   onBackToHome,
   onViewHistory,
+  onGoToBlog,
   onNavigateToResult,
   onProfileUpdate,
   onGenerateItinerary,
@@ -157,6 +161,7 @@ const AppRouter: React.FC<AppRouterProps> = ({
               onStartLingoFinder={onStartLingoFinder}
               onOpenAuthModal={onOpenAuthModal}
               onViewHistory={onViewHistory}
+              onGoToBlog={onGoToBlog}
             />
           </PublicRoute>
         } 
@@ -166,6 +171,20 @@ const AppRouter: React.FC<AppRouterProps> = ({
         path="/contact" 
         element={
           <ContactUs onBack={onBackToHome} />
+        } 
+      />
+      
+      <Route 
+        path="/blog" 
+        element={
+          <TravelBlogs onBack={onBackToHome} />
+        } 
+      />
+      
+      <Route 
+        path="/blog/:id" 
+        element={
+          <BlogPost />
         } 
       />
       
