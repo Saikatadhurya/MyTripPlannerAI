@@ -787,6 +787,69 @@ const AppContent: React.FC = () => {
         return map[step];
     };
 
+    // Effect to redirect if user reopens browser on result page without data
+    useEffect(() => {
+        // If we're on any result page but have no data, it means the browser was reopened and state was lost. Redirect to home.
+        const resultPages = [
+            '/results/unified',
+            '/results/itinerary',
+            '/results/packing',
+            '/results/food',
+            '/results/apps',
+            '/results/music',
+            '/results/lingo'
+        ];
+        
+        if (resultPages.includes(location.pathname)) {
+            let shouldRedirect = false;
+            
+            if (location.pathname === '/results/unified') {
+                // For unified result, check if we have no questionnaire data and no plan data
+                shouldRedirect = !questionnaireDataForUnifiedPlan && !unifiedPlan.itinerary && !isHistoryView;
+            } else if (location.pathname === '/results/itinerary') {
+                // For itinerary result, check if we have no itinerary data and no request data
+                shouldRedirect = !itinerary && !initialQuestionnaireData && !isHistoryView;
+            } else if (location.pathname === '/results/packing') {
+                shouldRedirect = !packingList && !packingRequestData && !isHistoryView;
+            } else if (location.pathname === '/results/food') {
+                shouldRedirect = !foodRecommendations && !foodRequestData && !isHistoryView;
+            } else if (location.pathname === '/results/apps') {
+                shouldRedirect = !appRecommendations && !appRequestData && !isHistoryView;
+            } else if (location.pathname === '/results/music') {
+                shouldRedirect = !musicRecommendations && !musicRequestData && !isHistoryView;
+            } else if (location.pathname === '/results/lingo') {
+                shouldRedirect = !lingoRecommendations && !lingoRequestData && !isHistoryView;
+            }
+            
+            if (shouldRedirect && !isLoading) {
+                // Only redirect if we're not currently loading (to avoid interrupting an active generation)
+                const timer = setTimeout(() => {
+                    navigate('/');
+                }, 100);
+                return () => clearTimeout(timer);
+            }
+        }
+    }, [
+        location.pathname, 
+        questionnaireDataForUnifiedPlan, 
+        unifiedPlan.itinerary, 
+        isHistoryView, 
+        navigate,
+        itinerary,
+        initialQuestionnaireData,
+        packingList,
+        packingRequestData,
+        foodRecommendations,
+        foodRequestData,
+        appRecommendations,
+        appRequestData,
+        musicRecommendations,
+        musicRequestData,
+        lingoRecommendations,
+        lingoRequestData,
+        isLoading
+    ]);
+
     // Effect for the first step of the pipeline: Itinerary Generation (Streaming)
     useEffect(() => {
         const runItineraryStep = async () => {
@@ -1396,7 +1459,9 @@ const AppContent: React.FC = () => {
     }
 
     if (currentView === 'unifiedResult') {
-        if (unifiedPlanLoadingStatus.itinerary === 'pending' || unifiedPlanLoadingStatus.itinerary === 'loading') {
+        // Don't show loader if there's no questionnaire data (state was lost on browser reopen)
+        if ((unifiedPlanLoadingStatus.itinerary === 'pending' || unifiedPlanLoadingStatus.itinerary === 'loading') && 
+            questionnaireDataForUnifiedPlan) {
             return (
                 <LoadingIndicator
                     streamedText={itineraryStreamedText}
@@ -1409,6 +1474,11 @@ const AppContent: React.FC = () => {
                     maxAttempts={3}
                 />
             );
+        }
+        // If we have no data and no questionnaire, redirect will happen via useEffect
+        // But in case it hasn't yet, show a message or empty state
+        if (!questionnaireDataForUnifiedPlan && !unifiedPlan.itinerary && !isHistoryView) {
+            return null; // useEffect will redirect
         }
         // If itinerary is done, error, or cancelled, show the result page.
         // The result page itself will handle loading states for other tabs.

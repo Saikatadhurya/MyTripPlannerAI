@@ -9,7 +9,7 @@ interface UseSaveRecommendationReturn {
   savePackingRecommendation: (requestData: any, responseData: any, destination: string, language?: string, tripContext?: any, tripId?: string, tripName?: string) => Promise<string | null>;
   saveFoodRecommendation: (requestData: any, responseData: any, destination: string, language?: string, tripContext?: any, tripId?: string, tripName?: string) => Promise<string | null>;
   saveItineraryRecommendation: (requestData: any, responseData: any, destination: string, language?: string, tripContext?: any, tripId?: string, tripName?: string) => Promise<string | null>;
-  saveUnifiedTripRecommendations: (recommendations: Array<{type: string, requestData: any, responseData: any}>, destination: string, language?: string, tripContext?: any, tripName?: string) => Promise<string>;
+  saveUnifiedTripRecommendations: (recommendations: Array<{type: string, requestData: any, responseData: any}>, destination: string, language?: string, tripContext?: any, tripName?: string) => Promise<{ tripId: string; successfulTypes: string[] }>;
 }
 
 export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
@@ -198,33 +198,53 @@ export const useSaveRecommendation = (): UseSaveRecommendationReturn => {
     language: string = 'en',
     tripContext?: any,
     tripName?: string
-  ): Promise<string> => {
+  ): Promise<{ tripId: string; successfulTypes: string[] }> => {
     // Generate a proper UUID for trip ID
     const tripId = crypto.randomUUID();
     
     // Save each recommendation with the same trip ID
-    for (const rec of recommendations) {
-      const title = historyService.generateDefaultTitle(rec.type as any, destination);
-      const tags = getTagsForType(rec.type);
-      // Extract prompt from responseData if it was attached
-      const prompt = (rec.responseData as any)?.__prompt;
-      
-      await saveRecommendation({
-        recommendationType: rec.type as any,
-        destination,
-        language,
-        requestData: rec.requestData,
-        responseData: rec.responseData,
-        title,
-        tags,
-        tripContext,
-        tripId,
-        tripName,
-        prompt
-      });
+    // Handle errors per item so one failure doesn't stop others
+    const savePromises = recommendations.map(async (rec) => {
+      try {
+        const title = historyService.generateDefaultTitle(rec.type as any, destination);
+        const tags = getTagsForType(rec.type);
+        // Extract prompt from responseData if it was attached
+        const prompt = (rec.responseData as any)?.__prompt;
+        
+        const result = await saveRecommendation({
+          recommendationType: rec.type as any,
+          destination,
+          language,
+          requestData: rec.requestData,
+          responseData: rec.responseData,
+          title,
+          tags,
+          tripContext,
+          tripId,
+          tripName,
+          prompt
+        });
+        
+        return { type: rec.type, success: !!result, id: result };
+      } catch (error) {
+        console.error(`Failed to save ${rec.type} recommendation:`, error);
+        return { type: rec.type, success: false, id: null, error };
+      }
+    });
+    
+    // Wait for all saves to complete (or fail)
+    const results = await Promise.all(savePromises);
+    
+    // Log any failures
+    const failures = results.filter(r => !r.success);
+    if (failures.length > 0) {
+      console.error(`Failed to save ${failures.length} out of ${recommendations.length} recommendations:`, failures);
     }
     
-    return tripId;
+    // Return tripId and list of successfully saved types
+    const successfulTypes = results.filter(r => r.success).map(r => r.type);
+    
+    return { tripId, successfulTypes };
   }, [saveRecommendation]);
 
   const getTagsForType = (type: string): string[] => {

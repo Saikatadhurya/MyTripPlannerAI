@@ -55,6 +55,7 @@ export interface UnifiedTrip {
   // For list view
   recommendation_count?: number;
   recommendation_types?: string[];
+  tags?: string[];
 }
 
 export interface SaveRecommendationRequest {

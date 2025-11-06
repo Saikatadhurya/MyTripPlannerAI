@@ -115,7 +115,7 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
     useEffect(() => {
         if (!questionnaireData || isHistoryView) return;
 
-        const availableTypes: Array<{ key: string; saver: () => Promise<void> }> = [];
+        const availableTypes: Array<{ key: string; saver: () => Promise<string | null> }> = [];
         const destination = questionnaireData.destination;
         const language = questionnaireData.language || 'en';
         const tripName = `${destination} Trip - ${new Date().toLocaleDateString()}`;
@@ -124,7 +124,7 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
             availableTypes.push({
                 key: 'itinerary',
                 saver: async () => {
-                    await saveItineraryRecommendation(
+                    return await saveItineraryRecommendation(
                         questionnaireData,
                         plan.itinerary,
                         destination,
@@ -140,7 +140,7 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
             availableTypes.push({
                 key: 'packing',
                 saver: async () => {
-                    await savePackingRecommendation(
+                    return await savePackingRecommendation(
                         questionnaireData,
                         plan.packingList,
                         destination,
@@ -156,7 +156,7 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
             availableTypes.push({
                 key: 'food',
                 saver: async () => {
-                    await saveFoodRecommendation(
+                    return await saveFoodRecommendation(
                         questionnaireData,
                         plan.foodRecommendations,
                         destination,
@@ -172,7 +172,7 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
             availableTypes.push({
                 key: 'apps',
                 saver: async () => {
-                    await saveAppRecommendation(
+                    return await saveAppRecommendation(
                         questionnaireData,
                         plan.appRecommendations,
                         destination,
@@ -188,7 +188,7 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
             availableTypes.push({
                 key: 'music',
                 saver: async () => {
-                    await saveMusicRecommendation(
+                    return await saveMusicRecommendation(
                         questionnaireData,
                         plan.musicRecommendations,
                         destination,
@@ -204,7 +204,7 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
             availableTypes.push({
                 key: 'lingo',
                 saver: async () => {
-                    await saveLingoRecommendation(
+                    return await saveLingoRecommendation(
                         questionnaireData,
                         plan.lingoRecommendations,
                         destination,
@@ -228,24 +228,47 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
                         const responseData = (plan as any)[type === 'packing' ? 'packingList' : type === 'apps' ? 'appRecommendations' : type === 'food' ? 'foodRecommendations' : type === 'music' ? 'musicRecommendations' : type === 'lingo' ? 'lingoRecommendations' : 'itinerary'];
                         return { type, requestData: questionnaireData, responseData };
                     });
-                    const createdTripId = await saveUnifiedTripRecommendations(
+                    const saveResult = await saveUnifiedTripRecommendations(
                         recs,
                         destination,
                         language,
                         questionnaireData,
                         tripName
                     );
-                    setSavedTripId(createdTripId);
-                    recs.forEach(r => savedTypesRef.current.add(r.type));
+                    if (saveResult && saveResult.tripId) {
+                        setSavedTripId(saveResult.tripId);
+                        // Only mark types that were successfully saved
+                        saveResult.successfulTypes.forEach(type => {
+                            savedTypesRef.current.add(type);
+                        });
+                        // Log any failures
+                        const failedTypes = recs.map(r => r.type).filter(type => !saveResult.successfulTypes.includes(type));
+                        if (failedTypes.length > 0) {
+                            console.warn(`Failed to save the following types, will retry: ${failedTypes.join(', ')}`);
+                        }
+                    }
                 } else {
                     // Append new recommendations to existing trip
+                    // Save each item individually and only mark as saved if successful
                     for (const item of availableTypes) {
-                        await item.saver();
-                        savedTypesRef.current.add(item.key);
+                        try {
+                            const result = await item.saver();
+                            // Only mark as saved if we got a result (non-null ID)
+                            // The saver functions return string | null, so check for truthy value
+                            if (result !== null && result !== undefined) {
+                                savedTypesRef.current.add(item.key);
+                            } else {
+                                console.warn(`Failed to save ${item.key} recommendation, will retry on next effect run`);
+                            }
+                        } catch (error) {
+                            console.error(`Failed to save ${item.key} recommendation:`, error);
+                            // Don't mark as saved, so it will retry on next effect run
+                        }
                     }
                 }
             } catch (error) {
                 console.error('Failed to save unified trip recommendation(s):', error);
+                // Don't mark anything as saved if the entire operation fails
             }
         };
 
