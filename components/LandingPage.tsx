@@ -47,26 +47,44 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
     blue: {
       iconBg: 'bg-blue-100', iconText: 'text-blue-600',
       button: 'bg-blue-600 hover:bg-blue-700 text-white',
+      hoverShadow: 'hover:shadow-blue-500/30',
+      hoverBorder: 'hover:border-blue-400/80',
+      hoverGradient: 'group-hover:from-blue-500/5 group-hover:via-blue-400/5 group-hover:to-blue-600/5',
     },
     violet: {
       iconBg: 'bg-violet-100', iconText: 'text-violet-600',
       button: 'bg-violet-600 hover:bg-violet-700 text-white',
+      hoverShadow: 'hover:shadow-violet-500/30',
+      hoverBorder: 'hover:border-violet-400/80',
+      hoverGradient: 'group-hover:from-violet-500/5 group-hover:via-purple-500/5 group-hover:to-pink-500/5',
     },
     orange: {
       iconBg: 'bg-orange-100', iconText: 'text-orange-500',
       button: 'bg-orange-500 hover:bg-orange-600 text-white',
+      hoverShadow: 'hover:shadow-orange-500/30',
+      hoverBorder: 'hover:border-orange-400/80',
+      hoverGradient: 'group-hover:from-orange-500/5 group-hover:via-orange-400/5 group-hover:to-amber-500/5',
     },
     teal: {
       iconBg: 'bg-teal-100', iconText: 'text-teal-500',
       button: 'bg-teal-500 hover:bg-teal-600 text-white',
+      hoverShadow: 'hover:shadow-teal-500/30',
+      hoverBorder: 'hover:border-teal-400/80',
+      hoverGradient: 'group-hover:from-teal-500/5 group-hover:via-cyan-500/5 group-hover:to-teal-600/5',
     },
     fuchsia: {
       iconBg: 'bg-fuchsia-100', iconText: 'text-fuchsia-500',
       button: 'bg-fuchsia-500 hover:bg-fuchsia-600 text-white',
+      hoverShadow: 'hover:shadow-fuchsia-500/30',
+      hoverBorder: 'hover:border-fuchsia-400/80',
+      hoverGradient: 'group-hover:from-fuchsia-500/5 group-hover:via-pink-500/5 group-hover:to-rose-500/5',
     },
     sky: {
       iconBg: 'bg-sky-100', iconText: 'text-sky-600',
       button: 'bg-sky-500 hover:bg-sky-600 text-white',
+      hoverShadow: 'hover:shadow-sky-500/30',
+      hoverBorder: 'hover:border-sky-400/80',
+      hoverGradient: 'group-hover:from-sky-500/5 group-hover:via-blue-400/5 group-hover:to-cyan-500/5',
     },
   };
   
@@ -127,33 +145,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
     },
   ];
   
-  const supportingFeatures = [
-    {
-      icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
-      title: 'Day-wise Planning',
-      description: 'Get a detailed, step-by-step plan for each day of your trip.'
-    },
-    {
-      icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" /></svg>,
-      title: 'Cultural Discovery',
-      description: 'Learn about the history, culture, and must-see sights.'
-    },
-    {
-      icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10.343 3.94c.09-.542.56-1.007 1.11-1.11a12.003 12.003 0 015.655 5.655c.103.55.568 1.02 1.11 1.11a11.97 11.97 0 010 2.828c-.542.09-1.007.56-1.11 1.11a12.003 12.003 0 01-5.655 5.655c-.55.103-1.02.568-1.11 1.11a11.97 11.97 0 01-2.828 0c-.09-.542-.56-1.007-1.11-1.11a12.003 12.003 0 01-5.655-5.655c-.103-.55-.568-1.02-1.11-1.11a11.97 11.97 0 010-2.828c.542-.09 1.007.56 1.11-1.11a12.003 12.003 0 015.655-5.655z" /><path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5a4.5 4.5 0 100-9 4.5 4.5 0 000 9z" /></svg>,
-      title: 'Smart Travel Tools',
-      description: 'Find packing lists, local apps, music, and food recommendations.'
-    },
-    {
-      icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>,
-      title: 'Budget Friendly',
-      description: 'Get cost estimates for your entire trip, from stay to food.'
-    }
-  ];
-  
   return (
-    <div className="space-y-20 pb-8">
+    <div className="space-y-20 pb-8 px-4 md:px-8 lg:px-12 xl:px-16 2xl:px-20">
       {/* Hero Section */}
-      <div className="animated-card text-center max-w-4xl mx-auto p-6 md:p-8 rounded-3xl bg-white/60 backdrop-blur-lg border border-slate-200/70 shadow-xl" style={{ animationDelay: '100ms' }}>
+      <div className="animated-card text-center max-w-4xl mx-auto p-6 md:p-8 rounded-3xl bg-gradient-to-br from-white via-violet-50/30 to-purple-50/40 backdrop-blur-xl border-2 border-violet-200/60 shadow-2xl shadow-violet-500/20 hover:shadow-3xl hover:shadow-violet-500/30 transition-all duration-500" style={{ animationDelay: '100ms' }}>
         {user && user.full_name && (
           <div className="mb-4">
             <h2 className="text-2xl md:text-3xl font-semibold text-violet-600 tracking-wide">
@@ -182,7 +177,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
 
       {/* History Section - Only show for authenticated users */}
       {user && (
-        <div className="animated-card text-center max-w-3xl mx-auto p-6 md:p-8 rounded-3xl bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 backdrop-blur-lg border border-indigo-200/70 shadow-xl" style={{ animationDelay: '150ms' }}>
+        <div className="animated-card text-center max-w-3xl mx-auto p-6 md:p-8 rounded-3xl bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 backdrop-blur-xl border-2 border-indigo-300/60 shadow-2xl shadow-indigo-500/25 hover:shadow-3xl hover:shadow-indigo-500/35 transition-all duration-500" style={{ animationDelay: '150ms' }}>
           <div className="flex items-center justify-center gap-3 mb-4">
             <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
               <span className="text-2xl text-white">📚</span>
@@ -231,12 +226,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
                 }}
                 role="button"
                 tabIndex={0}
-                className="animated-card h-full w-full bg-white/60 backdrop-blur-lg rounded-2xl border border-slate-200/70 shadow-xl group transition-transform duration-500 [transform-style:preserve-3d] hover:[transform:perspective(1000px)_rotateY(4deg)_rotateX(8deg)_scale(1.05)] focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-violet-400/50 cursor-pointer"
+                className={`animated-card h-full w-full bg-gradient-to-br from-white via-white to-slate-50/80 backdrop-blur-xl rounded-2xl border-2 border-slate-300/60 shadow-2xl shadow-slate-400/20 group transition-all duration-500 [transform-style:preserve-3d] hover:[transform:perspective(1000px)_rotateY(4deg)_rotateX(8deg)_scale(1.05)] hover:shadow-3xl ${colors.hoverShadow} ${colors.hoverBorder} focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-violet-400/50 cursor-pointer relative overflow-hidden`}
                 style={{ animationDelay: `${300 + index * 100}ms` }}
               >
-                <div className="p-4 sm:p-6 flex flex-col text-center h-full [transform:translateZ(40px)]">
-                    <div className="flex-grow">
-                        <div className={`mx-auto w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 ${colors.iconBg} ${colors.iconText}`}>
+                <div className="p-4 sm:p-6 flex flex-col text-center h-full [transform:translateZ(40px)] relative z-10">
+                    {/* Gradient overlay on hover */}
+                    <div className={`absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-transparent ${colors.hoverGradient} transition-all duration-500 rounded-2xl -z-0`}></div>
+                    <div className="flex-grow relative z-10">
+                        <div className={`mx-auto w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center transition-all duration-500 group-hover:scale-110 group-hover:shadow-lg ${colors.iconBg} ${colors.iconText}`}>
                             {app.icon}
                         </div>
                         <h3 className="text-lg sm:text-xl font-bold text-slate-900 mt-4 sm:mt-5">{app.title}</h3>
@@ -244,7 +241,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
                             {app.description}
                         </p>
                     </div>
-                    <div className="mt-4 sm:mt-6 flex-shrink-0">
+                    <div className="mt-4 sm:mt-6 flex-shrink-0 relative z-10">
                         <span className={`inline-block px-4 py-2 sm:px-6 sm:py-2.5 font-semibold rounded-full text-sm shadow-md transition-all duration-300 group-hover:shadow-lg ${colors.button}`}>
                              {app.buttonText}
                         </span>
@@ -256,26 +253,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
         </div>
       </div>
 
-
-      {/* Supporting Features Section */}
-      <div>
-        <h2 className="text-3xl font-bold text-center text-slate-900 animated-card" style={{ animationDelay: '600ms' }}>Your AI Travel Toolkit</h2>
-        <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {supportingFeatures.map((feature, index) => (
-            <div 
-              key={index} 
-              className="animated-card bg-slate-50/50 backdrop-blur-sm p-6 rounded-2xl border border-slate-200/70 text-center shadow-lg hover:shadow-xl transition-shadow" 
-              style={{ animationDelay: `${700 + index * 100}ms` }}
-            >
-              <div className="mx-auto w-16 h-16 flex items-center justify-center text-violet-500">
-                {feature.icon}
-              </div>
-              <h3 className="text-lg font-semibold text-slate-800 mt-4">{feature.title}</h3>
-              <p className="text-sm text-slate-600 mt-1">{feature.description}</p>
-            </div>
-          ))}
-        </div>
-      </div>
 
       {/* Popular Destinations Section */}
       <div>
@@ -291,12 +268,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
                 <a
                   key={dest.name}
                   href={shareLink}
-                  className="animated-card text-left p-5 rounded-2xl border shadow-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-violet-400/50 bg-white/50 backdrop-blur-lg border-white/60 hover:shadow-xl hover:border-violet-300/50 cursor-pointer block"
+                  className="animated-card text-left p-5 rounded-2xl border-2 shadow-xl transition-all duration-500 transform hover:scale-110 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-violet-400/50 bg-gradient-to-br from-white via-violet-50/40 to-purple-50/30 backdrop-blur-xl border-violet-200/60 hover:shadow-2xl hover:shadow-violet-500/25 hover:border-violet-400/80 cursor-pointer block relative overflow-hidden group"
                   style={{ animationDelay: `${1200 + index * 50}ms` }}
                 >
-                  <span className="text-4xl" role="img" aria-label="destination">{dest.icon}</span>
-                  <h3 className="text-lg font-semibold mt-3 text-slate-800">{dest.name}</h3>
-                  <p className="text-slate-600 text-sm">{dest.description}</p>
+                  {/* Gradient overlay on hover */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-violet-500/0 to-purple-500/0 group-hover:from-violet-500/10 group-hover:to-purple-500/10 transition-all duration-500 rounded-2xl"></div>
+                  <span className="text-4xl relative z-10 group-hover:scale-110 transition-transform duration-500 inline-block" role="img" aria-label="destination">{dest.icon}</span>
+                  <h3 className="text-lg font-semibold mt-3 text-slate-800 relative z-10">{dest.name}</h3>
+                  <p className="text-slate-600 text-sm relative z-10">{dest.description}</p>
                 </a>
               );
             }
@@ -317,12 +296,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
                   <button 
                     key={dest.name} 
                     onClick={() => onPlanUnifiedTrip(dest.name)} 
-                    className="animated-card text-left p-5 rounded-2xl border shadow-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-violet-400/50 bg-white/50 backdrop-blur-lg border-white/60 hover:shadow-xl hover:border-violet-300/50 cursor-pointer"
+                    className="animated-card text-left p-5 rounded-2xl border-2 shadow-xl transition-all duration-500 transform hover:scale-110 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-violet-400/50 bg-gradient-to-br from-white via-violet-50/40 to-purple-50/30 backdrop-blur-xl border-violet-200/60 hover:shadow-2xl hover:shadow-violet-500/25 hover:border-violet-400/80 cursor-pointer relative overflow-hidden group"
                     style={{ animationDelay: `${1400 + index * 50}ms` }}
                   >
-                    <span className="text-4xl" role="img" aria-label="destination">{dest.icon}</span>
-                    <h3 className="text-lg font-semibold mt-3 text-slate-800">{dest.name}</h3>
-                    <p className="text-slate-600 text-sm">{dest.description}</p>
+                    {/* Gradient overlay on hover */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-violet-500/0 to-purple-500/0 group-hover:from-violet-500/10 group-hover:to-purple-500/10 transition-all duration-500 rounded-2xl"></div>
+                    <span className="text-4xl relative z-10 group-hover:scale-110 transition-transform duration-500 inline-block" role="img" aria-label="destination">{dest.icon}</span>
+                    <h3 className="text-lg font-semibold mt-3 text-slate-800 relative z-10">{dest.name}</h3>
+                    <p className="text-slate-600 text-sm relative z-10">{dest.description}</p>
                   </button>
                 );
               }
