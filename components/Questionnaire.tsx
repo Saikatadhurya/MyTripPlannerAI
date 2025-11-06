@@ -542,58 +542,6 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
       )}
 
       <form onSubmit={handleSubmit} className="space-y-10">
-        <div className="space-y-6 bg-white/60 backdrop-blur-md p-6 rounded-2xl border border-slate-200/70 shadow-xl z-20 relative">
-             <h2 className="flex items-center space-x-3 text-2xl font-bold text-slate-800 border-b pb-3">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-violet-600" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 004 0 2 2 0 011.523-1.943A5.998 5.998 0 0116 10c0 .954-.225 1.852-.635 2.667a2.5 2.5 0 01-5.033 0 2.5 2.5 0 00-4.667 0c-.35-.74-.533-1.554-.533-2.394a6.01 6.01 0 011.567-4.243z" clipRule="evenodd" /></svg>
-                <span>Plan Language</span>
-            </h2>
-            <div className="relative">
-                {isMobile ? (
-                    <div onClick={() => handleOpenSelection('language', 'Select Language')} className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition flex justify-between items-center text-left cursor-pointer">
-                        <span className="truncate">{formData.language}</span>
-                        <svg className={`h-5 w-5 text-slate-400`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
-                    </div>
-                ) : (
-                    <div ref={langDropdownRef} className="relative">
-                        <input 
-                            type="text"
-                            value={isLangDropdownOpen ? langSearchTerm : formData.language}
-                            onChange={e => {
-                                setLangSearchTerm(e.target.value);
-                                if (!isLangDropdownOpen) {
-                                    setIsLangDropdownOpen(true);
-                                }
-                            }}
-                            onFocus={() => {
-                                setLangSearchTerm('');
-                                setIsLangDropdownOpen(true);
-                            }}
-                            className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
-                            placeholder="Search language..."
-                            autoComplete="off"
-                        />
-                        {isLangDropdownOpen && (
-                            <ul className="absolute z-20 w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg max-h-60 overflow-y-auto">
-                                {languages
-                                    .filter(l => l.toLowerCase().includes(langSearchTerm.toLowerCase()))
-                                    .map(lang => (
-                                        <li 
-                                            key={lang} 
-                                            onClick={() => {
-                                                handleInputChange('language', lang);
-                                                setIsLangDropdownOpen(false);
-                                            }}
-                                            className="px-4 py-3 cursor-pointer hover:bg-violet-100/60"
-                                        >
-                                            {lang}
-                                        </li>
-                                ))}
-                            </ul>
-                        )}
-                    </div>
-                )}
-            </div>
-        </div>
 
         <div className="space-y-6 bg-white/60 backdrop-blur-md p-6 rounded-2xl border border-slate-200/70 shadow-xl">
             <h2 className="flex items-center space-x-3 text-2xl font-bold text-slate-800 border-b pb-3">
@@ -739,52 +687,105 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                 <div className="grid grid-cols-3 gap-3">
                     {budgets.map(b => (<button key={b} type="button" onClick={() => handleInputChange('budget', b)} className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 border-2 ${formData.budget === b ? 'bg-violet-600 text-white border-violet-600' : 'bg-white/50 border-white/50 hover:border-violet-400'}`}>{b}</button>))}
                 </div>
-                <div className="pt-4 border-t border-violet-200/50">
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Currency for Plan</label>
-                     {isMobile ? (
-                        <div onClick={() => handleOpenSelection('currency', 'Select Currency')} className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition flex justify-between items-center text-left cursor-pointer">
-                            <span className="truncate">{formData.currency}</span>
-                            <svg className={`h-5 w-5 text-slate-400`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
-                        </div>
-                     ) : (
-                        <div ref={currencyDropdownRef} className="relative">
-                            <input 
-                                type="text"
-                                value={isCurrencyDropdownOpen ? currencySearchTerm : formData.currency}
-                                onChange={e => {
-                                    setCurrencySearchTerm(e.target.value);
-                                    if (!isCurrencyDropdownOpen) {
+            </div>
+
+            <div className="space-y-4 bg-slate-50/50 backdrop-blur-sm p-5 rounded-xl border border-slate-200/50 shadow-sm relative z-30">
+                <h3 className="text-base font-medium text-slate-700 mb-3">Plan Preferences</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-slate-600 mb-1.5">Plan Language</label>
+                        {isMobile ? (
+                            <div onClick={() => handleOpenSelection('language', 'Select Language')} className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition flex justify-between items-center text-left cursor-pointer">
+                                <span className="truncate text-sm">{formData.language}</span>
+                                <svg className={`h-5 w-5 text-slate-400`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+                            </div>
+                        ) : (
+                            <div ref={langDropdownRef} className="relative z-40">
+                                <input 
+                                    type="text"
+                                    value={isLangDropdownOpen ? langSearchTerm : formData.language}
+                                    onChange={e => {
+                                        setLangSearchTerm(e.target.value);
+                                        if (!isLangDropdownOpen) {
+                                            setIsLangDropdownOpen(true);
+                                        }
+                                    }}
+                                    onFocus={() => {
+                                        setLangSearchTerm('');
+                                        setIsLangDropdownOpen(true);
+                                    }}
+                                    className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition text-sm"
+                                    placeholder="Search language..."
+                                    autoComplete="off"
+                                />
+                                {isLangDropdownOpen && (
+                                    <ul className="absolute z-50 w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg max-h-60 overflow-y-auto">
+                                        {languages
+                                            .filter(l => l.toLowerCase().includes(langSearchTerm.toLowerCase()))
+                                            .map(lang => (
+                                                <li 
+                                                    key={lang} 
+                                                    onClick={() => {
+                                                        handleInputChange('language', lang);
+                                                        setIsLangDropdownOpen(false);
+                                                    }}
+                                                    className="px-4 py-3 cursor-pointer hover:bg-violet-100/60"
+                                                >
+                                                    {lang}
+                                                </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-slate-600 mb-1.5">Currency for Plan</label>
+                        {isMobile ? (
+                            <div onClick={() => handleOpenSelection('currency', 'Select Currency')} className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition flex justify-between items-center text-left cursor-pointer">
+                                <span className="truncate text-sm">{formData.currency}</span>
+                                <svg className={`h-5 w-5 text-slate-400`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+                            </div>
+                        ) : (
+                            <div ref={currencyDropdownRef} className="relative z-40">
+                                <input 
+                                    type="text"
+                                    value={isCurrencyDropdownOpen ? currencySearchTerm : formData.currency}
+                                    onChange={e => {
+                                        setCurrencySearchTerm(e.target.value);
+                                        if (!isCurrencyDropdownOpen) {
+                                            setIsCurrencyDropdownOpen(true);
+                                        }
+                                    }}
+                                    onFocus={() => {
+                                        setCurrencySearchTerm('');
                                         setIsCurrencyDropdownOpen(true);
-                                    }
-                                }}
-                                onFocus={() => {
-                                    setCurrencySearchTerm('');
-                                    setIsCurrencyDropdownOpen(true);
-                                }}
-                                className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
-                                placeholder="Search currency..."
-                                autoComplete="off"
-                            />
-                            {isCurrencyDropdownOpen && (
-                                <ul className="absolute z-20 w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg max-h-60 overflow-y-auto">
-                                    {currencies
-                                        .filter(c => c.toLowerCase().includes(currencySearchTerm.toLowerCase()))
-                                        .map(currency => (
-                                            <li 
-                                                key={currency} 
-                                                onClick={() => {
-                                                    handleInputChange('currency', currency);
-                                                    setIsCurrencyDropdownOpen(false);
-                                                }}
-                                                className="px-4 py-3 cursor-pointer hover:bg-violet-100/60"
-                                            >
-                                                {currency}
-                                            </li>
-                                    ))}
-                                </ul>
-                            )}
-                        </div>
-                     )}
+                                    }}
+                                    className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition text-sm"
+                                    placeholder="Search currency..."
+                                    autoComplete="off"
+                                />
+                                {isCurrencyDropdownOpen && (
+                                    <ul className="absolute z-50 w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg max-h-60 overflow-y-auto">
+                                        {currencies
+                                            .filter(c => c.toLowerCase().includes(currencySearchTerm.toLowerCase()))
+                                            .map(currency => (
+                                                <li 
+                                                    key={currency} 
+                                                    onClick={() => {
+                                                        handleInputChange('currency', currency);
+                                                        setIsCurrencyDropdownOpen(false);
+                                                    }}
+                                                    className="px-4 py-3 cursor-pointer hover:bg-violet-100/60"
+                                                >
+                                                    {currency}
+                                                </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 
