@@ -201,20 +201,7 @@
       }
     }
     </script>
-    <!-- Load Tailwind CSS first -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FIX: Added Tailwind CSS configuration script to properly set the Inter font family. -->
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            fontFamily: {
-              sans: ['Inter', 'sans-serif'],
-            },
-          }
-        }
-      }
-    </script>
+    <!-- Tailwind CSS is now loaded via PostCSS in index.tsx -->
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
       body {
