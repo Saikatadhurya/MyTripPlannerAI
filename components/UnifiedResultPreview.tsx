@@ -112,16 +112,37 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
                 mainContentRef.current.scrollLeft = 0;
             }
             
+            // Scroll header ref if it exists
+            if (headerRef.current) {
+                headerRef.current.scrollIntoView({ behavior: 'instant', block: 'start' });
+            }
+            
+            // Find and scroll all scrollable containers
+            const scrollableContainers = document.querySelectorAll('[style*="overflow"], .overflow-auto, .overflow-y-auto, .overflow-x-auto');
+            scrollableContainers.forEach((container) => {
+                if (container instanceof HTMLElement) {
+                    container.scrollTop = 0;
+                    container.scrollLeft = 0;
+                }
+            });
+            
             // Call the parent scroll function (which also handles main content scroll in App.tsx)
             onTabChangeScrollToTop();
         };
         
-        // Use double RAF to ensure DOM is fully rendered, then scroll
+        // Immediate scroll
+        scrollToTop();
+        
+        // Use multiple RAFs and timeouts to ensure DOM is fully rendered and layout is stable
         requestAnimationFrame(() => {
             requestAnimationFrame(() => {
                 scrollToTop();
-                // Also scroll after a tiny delay to catch any layout shifts
-                setTimeout(scrollToTop, 10);
+                // Additional delays to catch layout shifts and content rendering
+                setTimeout(() => {
+                    scrollToTop();
+                    setTimeout(scrollToTop, 50);
+                    setTimeout(scrollToTop, 100);
+                }, 10);
             });
         });
     }, [activeTab, onTabChangeScrollToTop]);
@@ -476,8 +497,13 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
                                     <button
                                         key={tab.id}
                                         onClick={() => {
+                                            // Immediate scroll before state update
+                                            window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+                                            document.documentElement.scrollTop = 0;
+                                            document.body.scrollTop = 0;
+                                            
                                             setActiveTab(tab.id);
-                                            // Scroll is handled by useEffect when activeTab changes
+                                            // Additional scroll is handled by useEffect when activeTab changes
                                         }}
                                         className={`relative flex flex-col items-center justify-center flex-1 space-y-1 transition-colors duration-200 md:flex-row md:flex-none md:px-4 md:py-2 md:space-x-2 md:rounded-full
                                             ${activeTab === tab.id

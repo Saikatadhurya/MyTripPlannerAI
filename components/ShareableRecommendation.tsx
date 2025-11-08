@@ -480,7 +480,12 @@ const ShareableRecommendation: React.FC = () => {
         }}
         onCancel={() => {}}
         onCancelStep={() => {}}
-        onTabChangeScrollToTop={() => {}}
+        onTabChangeScrollToTop={() => {
+          // Scroll to top when tab changes in shareable view
+          window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+          document.documentElement.scrollTop = 0;
+          document.body.scrollTop = 0;
+        }}
         itineraryStreamedText=""
         questionnaireData={trip.questionnaireData}
         isHistoryView={true}
