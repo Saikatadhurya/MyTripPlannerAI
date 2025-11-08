@@ -94,7 +94,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
       description: 'Get a detailed, step-by-step plan',
       onClick: onPlanItinerary,
       color: 'blue' as const,
-      icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 sm:h-8 sm:w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
+      icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 md:h-7 md:w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
       buttonText: 'Plan Itinerary',
     },
     {
@@ -103,7 +103,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
       description: 'AI-powered packing tailored for your trip',
       onClick: onStartPacking,
       color: 'violet' as const,
-      icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 sm:h-8 sm:w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 6h12a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2zm3-3a1 1 0 011-1h2a1 1 0 110 2H10a1 1 0 01-1-1z" /></svg>,
+      icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 md:h-7 md:w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 6h12a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2zm3-3a1 1 0 011-1h2a1 1 0 110 2H10a1 1 0 01-1-1z" /></svg>,
       buttonText: 'Pack My Bag',
     },
     {
@@ -112,7 +112,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
       description: 'Discover authentic local cuisine',
       onClick: onStartFoodFinder,
       color: 'orange' as const,
-      icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 sm:h-8 sm:w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
+      icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 md:h-7 md:w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
       buttonText: 'Find My Feast',
     },
     {
@@ -121,7 +121,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
       description: 'Find essential local apps for your trip',
       onClick: onStartAppFinder,
       color: 'teal' as const,
-      icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 sm:h-8 sm:w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 18h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>,
+      icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 md:h-7 md:w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 18h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>,
       buttonText: 'Find My Apps',
     },
     {
@@ -130,7 +130,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
       description: 'Discover the soundtrack of your travels',
       onClick: onStartMusicFinder,
       color: 'fuchsia' as const,
-      icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 sm:h-8 sm:w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 18V5l12-2v13M9 18a3 3 0 11-6 0 3 3 0 016 0zm12-2a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+      icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 md:h-7 md:w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 18V5l12-2v13M9 18a3 3 0 11-6 0 3 3 0 016 0zm12-2a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
       buttonText: 'Discover Music',
     },
     {
@@ -139,7 +139,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
       description: 'Learn essential phrases for your trip',
       onClick: onStartLingoFinder,
       color: 'sky' as const,
-      icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 sm:h-8 sm:w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>,
+      icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 md:h-7 md:w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>,
       buttonText: 'Get Phrases',
     },
   ];
@@ -147,7 +147,32 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
   return (
     <div className="space-y-8 md:space-y-16 lg:space-y-20 pb-8 px-4 md:px-8 lg:px-12 xl:px-16 2xl:px-20">
       {/* Hero Section */}
-      <div className="animated-card text-center max-w-4xl mx-auto p-5 sm:p-6 md:p-10 lg:p-12 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-violet-50 via-purple-50/50 to-pink-50/40 backdrop-blur-xl border-2 border-violet-300/80 shadow-xl sm:shadow-2xl shadow-violet-500/30 hover:shadow-2xl sm:hover:shadow-3xl hover:shadow-violet-500/40 transition-all duration-500 relative overflow-hidden" style={{ animationDelay: '100ms' }}>
+      <div 
+        onClick={(e) => {
+          // Only trigger on mobile (when button is full width)
+          // Check if click target is the button or its children
+          const target = e.target as HTMLElement;
+          if (target.closest('button')) {
+            return; // Let button handle its own click
+          }
+          // On mobile, clicking anywhere opens the form
+          if (window.innerWidth < 640) { // sm breakpoint
+            onPlanUnifiedTrip();
+          }
+        }}
+        className="animated-card text-center max-w-4xl mx-auto p-5 sm:p-6 md:p-10 lg:p-12 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-violet-50 via-purple-50/50 to-pink-50/40 backdrop-blur-xl border-2 border-violet-300/80 shadow-xl sm:shadow-2xl shadow-violet-500/30 hover:shadow-2xl sm:hover:shadow-3xl hover:shadow-violet-500/40 transition-all duration-500 relative overflow-hidden cursor-pointer sm:cursor-default" 
+        style={{ animationDelay: '100ms' }}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            if (window.innerWidth < 640) {
+              e.preventDefault();
+              onPlanUnifiedTrip();
+            }
+          }
+        }}
+      >
         {/* Decorative gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-br from-violet-100/20 via-transparent to-purple-100/20 pointer-events-none"></div>
         <div className="relative z-10">
@@ -166,7 +191,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
           </p>
            <div className="mt-6 sm:mt-8 md:mt-10">
             <button
-              onClick={() => onPlanUnifiedTrip()}
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent parent click handler
+                onPlanUnifiedTrip();
+              }}
               className="cta-pulse w-full sm:w-auto inline-block px-5 py-3 sm:px-6 sm:py-3.5 md:px-10 md:py-4 lg:px-12 lg:py-5 font-bold rounded-full text-sm sm:text-base md:text-lg lg:text-xl shadow-xl sm:shadow-2xl transition-all duration-300 transform focus:outline-none focus:ring-4 bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-violet-500/50 hover:from-violet-700 hover:to-purple-700 hover:shadow-xl sm:hover:shadow-2xl hover:shadow-violet-500/60 hover:scale-105 sm:hover:scale-110 focus:ring-violet-300 whitespace-nowrap"
             >
               ✨ Build Your Ultimate Itinerary
@@ -180,10 +208,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
 
       {/* Mini Apps Section */}
       <div className="text-center">
-        <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight animated-card px-2" style={{ animationDelay: '200ms' }}>
+        <h2 className="text-lg sm:text-xl md:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight animated-card px-2" style={{ animationDelay: '200ms' }}>
           Smart tools to make your trip <span className="text-violet-600">unforgettable.</span>
         </h2>
-        <div className="mt-6 sm:mt-8 md:mt-10 grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6">
+        <div className="mt-4 sm:mt-6 md:mt-10 grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4 md:gap-6">
           {miniApps.map((app, index) => {
             const colors = colorClasses[app.color];
             return (
@@ -198,23 +226,23 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
                 }}
                 role="button"
                 tabIndex={0}
-                className={`animated-card h-full w-full bg-gradient-to-br from-white via-white to-slate-50/80 backdrop-blur-xl rounded-2xl border-2 border-slate-300/60 shadow-2xl shadow-slate-400/20 group transition-all duration-500 [transform-style:preserve-3d] hover:[transform:perspective(1000px)_rotateY(4deg)_rotateX(8deg)_scale(1.05)] hover:shadow-3xl ${colors.hoverShadow} ${colors.hoverBorder} focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-violet-400/50 cursor-pointer relative overflow-hidden`}
+                className={`animated-card h-full w-full bg-gradient-to-br from-white via-white to-slate-50/80 backdrop-blur-xl rounded-xl sm:rounded-2xl border border-slate-300/50 sm:border-2 sm:border-slate-300/60 shadow-md sm:shadow-xl md:shadow-2xl shadow-slate-400/10 sm:shadow-slate-400/20 group transition-all duration-300 sm:duration-500 sm:[transform-style:preserve-3d] hover:scale-105 sm:hover:[transform:perspective(1000px)_rotateY(4deg)_rotateX(8deg)_scale(1.05)] hover:shadow-lg sm:hover:shadow-3xl ${colors.hoverShadow} ${colors.hoverBorder} focus:outline-none focus:ring-2 sm:focus:ring-4 focus:ring-offset-1 sm:focus:ring-offset-2 focus:ring-violet-400/50 cursor-pointer relative overflow-hidden`}
                 style={{ animationDelay: `${300 + index * 100}ms` }}
               >
-                <div className="p-4 sm:p-6 flex flex-col text-center h-full [transform:translateZ(40px)] relative z-10">
+                <div className="p-2 sm:p-4 md:p-6 flex flex-col text-center h-full sm:[transform:translateZ(40px)] relative z-10">
                     {/* Gradient overlay on hover */}
-                    <div className={`absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-transparent ${colors.hoverGradient} transition-all duration-500 rounded-2xl -z-0`}></div>
+                    <div className={`absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-transparent ${colors.hoverGradient} transition-all duration-300 sm:duration-500 rounded-xl sm:rounded-2xl -z-0`}></div>
                     <div className="flex-grow relative z-10">
-                        <div className={`mx-auto w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center transition-all duration-500 group-hover:scale-110 group-hover:shadow-lg ${colors.iconBg} ${colors.iconText}`}>
+                        <div className={`mx-auto w-10 h-10 sm:w-14 sm:h-14 md:w-20 md:h-20 rounded-lg sm:rounded-xl md:rounded-2xl flex items-center justify-center transition-all duration-300 sm:duration-500 group-hover:scale-110 group-hover:shadow-md sm:group-hover:shadow-lg ${colors.iconBg} ${colors.iconText}`}>
                             {app.icon}
                         </div>
-                        <h3 className="text-lg sm:text-xl font-bold text-slate-900 mt-4 sm:mt-5">{app.title}</h3>
-                        <p className="text-sm text-slate-600 mt-1">
+                        <h3 className="text-xs sm:text-sm md:text-lg lg:text-xl font-bold text-slate-900 mt-1.5 sm:mt-3 md:mt-5">{app.title}</h3>
+                        <p className="text-[10px] sm:text-xs md:text-sm text-slate-600 mt-0.5 sm:mt-1 line-clamp-2">
                             {app.description}
                         </p>
                     </div>
-                    <div className="mt-4 sm:mt-6 flex-shrink-0 relative z-10">
-                        <span className={`inline-block px-4 py-2 sm:px-6 sm:py-2.5 font-semibold rounded-full text-sm shadow-md transition-all duration-300 group-hover:shadow-lg ${colors.button}`}>
+                    <div className="mt-1.5 sm:mt-3 md:mt-6 flex-shrink-0 relative z-10">
+                        <span className={`inline-block px-2 py-1 sm:px-3 sm:py-1.5 md:px-4 md:py-2 lg:px-6 lg:py-2.5 font-semibold rounded-full text-[10px] sm:text-xs md:text-sm shadow-sm sm:shadow-md transition-all duration-300 group-hover:shadow-md sm:group-hover:shadow-lg ${colors.button}`}>
                              {app.buttonText}
                         </span>
                     </div>
