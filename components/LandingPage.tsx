@@ -14,11 +14,10 @@ interface LandingPageProps {
   onStartMusicFinder: () => void;
   onStartLingoFinder: () => void;
   onOpenAuthModal: () => void;
-  onViewHistory: () => void;
   onGoToBlog: () => void;
 }
 
-const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPlanItinerary, onStartPacking, onStartFoodFinder, onStartAppFinder, onStartMusicFinder, onStartLingoFinder, onOpenAuthModal, onViewHistory, onGoToBlog }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPlanItinerary, onStartPacking, onStartFoodFinder, onStartAppFinder, onStartMusicFinder, onStartLingoFinder, onOpenAuthModal, onGoToBlog }) => {
   const [destinations, setDestinations] = useState<PopularDestination[]>([]);
 
   // Map of destination names to share links
@@ -157,56 +156,24 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
           </div>
         )}
         <h1 className="text-4xl md:text-6xl font-extrabold text-slate-900 tracking-tight leading-tight">
-          AI-Powered Trip Planning, <span className="text-violet-600">Perfected.</span>
+          Your Dream Trip, <span className="text-violet-600">Planned to Perfection.</span>
         </h1>
-        <p className="mt-4 text-lg text-slate-600 max-w-2xl mx-auto">
-          From custom itineraries and smart packing lists to local food and music discovery, our AI crafts your complete travel experience. Just tell us where you want to go.
+        <p className="mt-4 text-sm md:text-lg text-slate-600 max-w-2xl mx-auto">
+          Complete travel planning made simple. Just tell us where you want to go.
         </p>
          <div className="mt-8">
           <button
             onClick={() => onPlanUnifiedTrip()}
-            className="cta-pulse inline-block px-10 py-4 font-bold rounded-full text-lg shadow-lg transition-all duration-300 transform focus:outline-none focus:ring-4 bg-violet-600 text-white shadow-violet-500/30 hover:bg-violet-700 hover:shadow-xl hover:shadow-violet-500/40 hover:scale-105 focus:ring-violet-300"
+            className="cta-pulse w-full sm:w-auto inline-block px-6 py-4 md:px-10 md:py-4 font-bold rounded-full text-base md:text-lg shadow-lg transition-all duration-300 transform focus:outline-none focus:ring-4 bg-violet-600 text-white shadow-violet-500/30 hover:bg-violet-700 hover:shadow-xl hover:shadow-violet-500/40 hover:scale-105 focus:ring-violet-300 whitespace-nowrap"
           >
             ✨ Build Your Ultimate Itinerary
           </button>
           <p className="mt-4 text-sm text-violet-700/80 font-medium tracking-wide">
-            Includes: Itinerary, Packing, Food, Apps & Music
+            Includes: Itinerary, Packing, Food, Apps, Music & Language Guides
           </p>
         </div>
       </div>
 
-      {/* History Section - Only show for authenticated users */}
-      {user && (
-        <div className="animated-card text-center max-w-3xl mx-auto p-6 md:p-8 rounded-3xl bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 backdrop-blur-xl border-2 border-indigo-300/60 shadow-2xl shadow-indigo-500/25 hover:shadow-3xl hover:shadow-indigo-500/35 transition-all duration-500" style={{ animationDelay: '150ms' }}>
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
-              <span className="text-2xl text-white">📚</span>
-            </div>
-            <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              Your Travel Archive
-            </h2>
-          </div>
-          <p className="text-lg text-slate-600 mb-6 max-w-2xl mx-auto">
-            Revisit your past adventures, rediscover old recommendations, and relive your favorite travel memories.
-          </p>
-          <button
-            onClick={onViewHistory}
-            className="group relative inline-flex items-center gap-2 md:gap-3 px-6 py-3 md:px-8 md:py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-2xl text-base md:text-lg shadow-lg transition-all duration-300 transform hover:scale-105 hover:shadow-xl hover:shadow-indigo-500/40 focus:outline-none focus:ring-4 focus:ring-indigo-300"
-          >
-            <div className="flex items-center gap-2">
-              <svg className="w-6 h-6 group-hover:rotate-12 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-              </svg>
-              <span className="text-sm md:text-base">📖 Journey Down Memory Lane</span>
-            </div>
-            <div className="absolute inset-0 bg-gradient-to-r from-indigo-700 to-purple-700 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10"></div>
-          </button>
-          <p className="mt-4 text-sm text-indigo-600/80 font-medium">
-            ✨ Browse your saved itineraries, packing lists, and travel discoveries
-          </p>
-        </div>
-      )}
-      
       {/* Mini Apps Section */}
       <div className="text-center">
         <h2 className="text-3xl font-bold text-slate-900 animated-card" style={{ animationDelay: '200ms' }}>Quick Tools for Your Journey</h2>
