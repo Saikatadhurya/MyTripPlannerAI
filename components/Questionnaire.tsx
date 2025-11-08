@@ -147,6 +147,9 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
     error: null,
   })) || []);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+  const touchStartIndex = useRef<number | null>(null);
+  const stopElementsRef = useRef<Map<number, HTMLDivElement>>(new Map());
   
   const stopsRefs = useRef<Map<string, { inputRef: HTMLInputElement | null, suggestionsRef: HTMLUListElement | null }>>(new Map());
   const stopsSelectingRef = useRef<Map<string, boolean>>(new Map());
@@ -395,6 +398,78 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
   const handleDragEnd = () => {
     setDraggedIndex(null);
   };
+
+  // Touch handlers for mobile drag and drop
+  const handleTouchStart = (e: TouchEvent, index: number) => {
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'INPUT' || target.closest('button[aria-label="Remove stop"]')) {
+      return;
+    }
+    touchStartY.current = e.touches[0].clientY;
+    touchStartIndex.current = index;
+    setDraggedIndex(index);
+  };
+
+  const handleTouchMove = (e: TouchEvent) => {
+    if (touchStartY.current === null || touchStartIndex.current === null) return;
+    
+    e.preventDefault();
+    const touchY = e.touches[0].clientY;
+    
+    // Find which stop item the touch is currently over
+    let targetIndex = touchStartIndex.current;
+    
+    stopElementsRef.current.forEach((stopElement, idx) => {
+      const rect = stopElement.getBoundingClientRect();
+      if (touchY >= rect.top && touchY <= rect.bottom) {
+        const midpoint = rect.top + rect.height / 2;
+        if (touchY < midpoint && touchStartIndex.current! > idx) {
+          targetIndex = idx;
+        } else if (touchY > midpoint && touchStartIndex.current! < idx) {
+          targetIndex = idx;
+        }
+      }
+    });
+    
+    if (targetIndex !== touchStartIndex.current) {
+      reorderStops(touchStartIndex.current, targetIndex);
+      touchStartIndex.current = targetIndex;
+      setDraggedIndex(targetIndex);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    touchStartY.current = null;
+    touchStartIndex.current = null;
+    setDraggedIndex(null);
+  };
+
+  // Add touch event listeners with passive: false
+  useEffect(() => {
+    const cleanupFunctions: Array<() => void> = [];
+    
+    stopElementsRef.current.forEach((element, index) => {
+      if (!element) return;
+      
+      const touchStartHandler = (e: TouchEvent) => handleTouchStart(e, index);
+      const touchMoveHandler = (e: TouchEvent) => handleTouchMove(e);
+      const touchEndHandler = () => handleTouchEnd();
+      
+      element.addEventListener('touchstart', touchStartHandler, { passive: true });
+      element.addEventListener('touchmove', touchMoveHandler, { passive: false });
+      element.addEventListener('touchend', touchEndHandler, { passive: true });
+      
+      cleanupFunctions.push(() => {
+        element.removeEventListener('touchstart', touchStartHandler);
+        element.removeEventListener('touchmove', touchMoveHandler);
+        element.removeEventListener('touchend', touchEndHandler);
+      });
+    });
+    
+    return () => {
+      cleanupFunctions.forEach(cleanup => cleanup());
+    };
+  }, [stops.length, draggedIndex]);
 
   const handleStopChange = (id: string, value: string) => {
     setStops(prev => {
@@ -812,6 +887,14 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                   {stops.map((stop, index) => (
                     <div 
                       key={stop.id} 
+                      ref={(el) => {
+                        if (el) {
+                          stopElementsRef.current.set(index, el);
+                        } else {
+                          stopElementsRef.current.delete(index);
+                        }
+                      }}
+                      data-stop-index={index}
                       className={`relative transition-all ${draggedIndex === index ? 'opacity-50 scale-95' : ''} ${draggedIndex !== null && draggedIndex !== index ? 'opacity-100' : ''}`}
                       draggable
                       onDragStart={(e) => {
