@@ -579,22 +579,30 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate
                       ) : (
                         <>
                           <input
-                            type={showPasswords.gemini ? 'text' : 'password'}
+                            type={
+                              !hasGeminiKey && formData.gemini_api_key.trim().length === 0
+                                ? 'text'
+                                : showPasswords.gemini
+                                ? 'text'
+                                : 'password'
+                            }
                             value={formData.gemini_api_key}
                             onChange={(e) => handleInputChange('gemini_api_key', e.target.value)}
-                            className={`w-full pl-10 pr-12 py-3 border rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-colors ${
+                            className={`w-full pl-10 ${(hasGeminiKey || formData.gemini_api_key.trim().length > 0) ? 'pr-12' : 'pr-4'} py-3 border rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-colors ${
                               errors.gemini_api_key ? 'border-red-300' : 'border-gray-300'
                             }`}
                             placeholder={hasGeminiKey ? 'Update your Gemini API key' : 'Enter your Gemini API key (optional)'}
                           />
-                          <button
-                            type="button"
-                            onClick={() => setShowPasswords(prev => ({ ...prev, gemini: !prev.gemini }))}
-                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                            title={showPasswords.gemini ? 'Hide API key' : 'Show API key'}
-                          >
-                            {showPasswords.gemini ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                          </button>
+                          {(hasGeminiKey || formData.gemini_api_key.trim().length > 0) && (
+                            <button
+                              type="button"
+                              onClick={() => setShowPasswords(prev => ({ ...prev, gemini: !prev.gemini }))}
+                              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                              title={showPasswords.gemini ? 'Hide API key' : 'Show API key'}
+                            >
+                              {showPasswords.gemini ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                            </button>
+                          )}
                         </>
                       )}
                     </div>
