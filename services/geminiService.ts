@@ -355,12 +355,26 @@ export const generateItinerary = async (
       CRITICAL INSTRUCTION - DETAILED ROAD TRIP CIRCUIT:
       This is a multi-stop road trip circuit request. The user wants to travel from "${startPoint}", cover a series of interesting locations, and return to "${startPoint}" within ${days} days. The main destination of interest is "${destination}".
 
-      1.  **Feasibility & Route Planning**: First, you MUST estimate if a meaningful road trip circuit that includes or goes towards "${destination}" is possible within ${days} days, using a ${tripType} with a daily driving limit of ${dailyLimit}.
-          - **IF FEASIBLE**:
+      1.  **Feasibility & Route Planning (MANDATORY TWO-STEP PROCESS)**: 
+          **STEP 1 - CALCULATE MINIMUM DAYS FIRST**: Before deciding feasibility, you MUST:
+             a. Use Google Search to get the ACTUAL distance (in km) from "${startPoint}" to "${destination}" and back (round trip distance)
+             b. Calculate the minimum days required using this EXACT formula:
+                - Total round trip distance ÷ daily limit (${tripType === 'Car' ? '350 km/day average' : '200 km/day average'}) = minimum travel days
+                - Add 1-2 days for sightseeing at the destination
+                - Add 1 day buffer for rest/traffic = FINAL MINIMUM DAYS
+                - Example: Gurgaon to Mumbai = ~1400 km round trip ÷ 350 km/day = 4 travel days + 2 sightseeing days + 1 buffer = 7 days minimum
+             c. LOCK this calculated minimum (e.g., if you calculate 7 days, it's ALWAYS 7 days for this route)
+          
+          **STEP 2 - COMPARE TO USER'S DAYS**: Now compare:
+             - If calculated minimum days <= ${days} (user's selected days): Trip IS FEASIBLE → proceed to plan
+             - If calculated minimum days > ${days} (user's selected days): Trip is NOT FEASIBLE → provide alternative
+          
+          - **IF FEASIBLE** (calculated minimum <= ${days}):
               - **A. Itinerary Density & Maximization (CRITICAL):** Your primary goal is to **maximize the number of interesting and feasible places covered** within the given **${days} days**, adhering to the MAXIMALIST & EFFICIENT philosophy outlined above. A longer duration MUST result in a richer, denser itinerary with more stops, not just a slower pace between fewer locations. You MUST intelligently add relevant destinations to create a comprehensive tour circuit that makes full and enjoyable use of the time. Do not leave days with minimal activity; fill them with travel to new locations or exploration.
               - **B. Example:** For a 15-day car trip from "Jaipur" with the main destination as "Jaisalmer", a simple route (Jaipur -> Jodhpur -> Jaisalmer -> Bikaner -> Jaipur) would be **too sparse**. A **correct, enriched itinerary** MUST include other logical and famous stops like **Udaipur, Chittorgarh, Kumbhalgarh, and Ranakpur** to create a full Rajasthan heritage circuit that properly utilizes the 15 days.
               - **C. Route Design:** Based on the above, design a logical, sequential road trip circuit starting and ending at "${startPoint}". The route must maximize sightseeing of famous places based on the vibe: "${vibe.join(', ')}". The farthest point should be near "${destination}".
-          - **IF NOT FEASIBLE**: Do NOT fail. You MUST plan a realistic road trip circuit to an alternative region or set of destinations reachable within the timeframe that still fits the user's vibe. The "destination" field in the JSON response MUST be updated to a more descriptive name for this new circuit (e.g., 'Rajasthan Heritage Circuit'). You MUST also add a note in the new 'planNote' field in the root of the JSON response, explaining the change clearly and starting with "NOTE:". For example: "NOTE: A road trip to ${destination} and back in ${days} days isn't feasible. I've created an alternative Coastal Karnataka Temple & Adventure Circuit that fits your timeline and preferences."
+          - **IF NOT FEASIBLE** (calculated minimum > ${days}): Do NOT fail. You MUST plan a realistic road trip circuit to an alternative region or set of destinations reachable within the timeframe that still fits the user's vibe. The "destination" field in the JSON response MUST be updated to a more descriptive name for this new circuit (e.g., 'Rajasthan Heritage Circuit'). You MUST also add a note in the new 'planNote' field in the root of the JSON response, explaining the change clearly and starting with "NOTE:". 
+             **CRITICAL**: Use the SAME minimum days you calculated in STEP 1 above. Do NOT recalculate or change it. The minimum days you calculated is FIXED. Explicitly mention this calculated minimum in the planNote. For example: "NOTE: A road trip to ${destination} and back in ${days} days isn't feasible. Based on the actual distance (approximately [X] km round trip) and travel time, this trip requires approximately [Y] days to complete comfortably (calculated: [X] km ÷ ${tripType === 'Car' ? '350' : '200'} km/day + 2 sightseeing days + 1 buffer day = [Y] days). I've created an alternative Coastal Karnataka Temple & Adventure Circuit that fits your ${days}-day timeline and preferences."
 
       2.  **Distance & Time Accuracy with Traffic (CRITICAL)**: You MUST use your search capabilities to get accurate driving distances (in kilometers) and realistic travel times between all stops in the circuit. **CRITICAL**: You MUST search for current traffic patterns, peak hours, and congestion levels for each route segment. Travel time estimates MUST account for traffic conditions, not just distance. For example, a 200 km drive might take 3 hours in ideal conditions but 4-5 hours with typical traffic. These realistic time estimates MUST be reflected in the daily 'activities' descriptions (e.g., "Drive from Jaipur to Udaipur (**approx. 395 km, 6-7 hours considering traffic**)..."). Additionally, suggest optimal departure times to avoid peak traffic (e.g., "Depart at 6:30 AM to avoid morning rush hour"). Inaccurate distances or ignoring traffic are critical failures.
 
@@ -582,9 +596,27 @@ export const generateItinerary = async (
   10. **DESTINATION DETAILS:** For historicBackground, famousCulture, naturalPlaces, museums, specialOrnaments, recommendedRestaurants: 1-3 concise points (5-10 words each). Restaurants can be names only.
   11. **SPECIAL EVENTS:** Find events happening ONLY during ${startDate} for ${days} days. 1-2 sentences. If none: "No major special events scheduled, but enjoy ongoing local experiences."
   12. **CURRENCY CONVERSION:** Determine local currency of "${destination}". If different from "${currency}", add 'currencyConversion' object with format "1 [DEST_CURRENCY] = [VALUE] [USER_CURRENCY]" (e.g., "1 USD = 83 INR"). If same, omit this field.
-  13. **JSON VALIDATION:** NO unescaped double quotes (") in string values. Use single quotes or escape: \\". Check every string before responding.
-  14. **FINAL:** Response MUST be raw JSON starting with '{' and ending with '}'. No markdown wrapping, no intro text. Immediately parsable.
-  15. 'referenceBlogs' must be an empty array [].
+  13. **FEASIBILITY CHECK PROCESS (CRITICAL - MANDATORY TWO-STEP PROCESS FOR ALL TRIP TYPES):** 
+     **STEP 1 - CALCULATE MINIMUM DAYS FIRST (ALWAYS DO THIS FIRST)**: Before deciding if a trip is feasible, you MUST:
+       - Use Google Search to get the ACTUAL distance (in km) between the start point and destination. If it's a round trip, calculate the total round trip distance.
+       - Calculate the minimum days using this EXACT formula (do this ONCE and LOCK the result):
+         * Total distance ÷ daily travel limit = minimum travel days
+           - Daily limits: ${tripType === 'Car' ? '300-400 km/day (use 350 km as average for calculation)' : tripType === 'Bike' ? '150-250 km/day (use 200 km as average for calculation)' : 'realistic public transport schedules - estimate based on actual travel time'}
+         * Add 1-2 days for sightseeing at the destination
+         * Add 1 day buffer for rest/traffic = FINAL MINIMUM DAYS
+         * Example: Gurgaon to Mumbai = ~700 km one way, ~1400 km round trip. With 350 km/day limit: 1400 ÷ 350 = 4 travel days + 2 sightseeing days + 1 buffer = 7 days minimum. This calculation is FIXED.
+       - LOCK this calculated minimum - it does NOT change based on user input.
+     
+     **STEP 2 - COMPARE TO USER'S DAYS**: Now compare the calculated minimum to the user's selected ${days}:
+       - If calculated minimum <= ${days}: Trip IS FEASIBLE → proceed with planning
+       - If calculated minimum > ${days}: Trip is NOT FEASIBLE → provide alternative and mention required days
+     
+     **ABSOLUTE RULE**: The minimum days you calculate in STEP 1 is FIXED for this route. It MUST be THE SAME regardless of whether the user selected 5 days, 7 days, or 10 days. For example, if Gurgaon to Mumbai requires 7 days, you MUST ALWAYS say 7 days, never 8-10 days or 9-11 days. The required days are based on the ROUTE distance and travel limits, NOT the USER INPUT.
+     
+     **WHEN NOT FEASIBLE**: If the trip is not feasible (calculated minimum > ${days}), include in the 'planNote' field: "NOTE: This trip is not feasible in ${days} days. Based on the actual distance (approximately [X] km round trip) and travel time, this trip requires approximately [Y] days to complete comfortably (calculated: [X] km ÷ [daily limit] km/day + 2 sightseeing days + 1 buffer day = [Y] days). [Then provide alternative solution]"
+  14. **JSON VALIDATION:** NO unescaped double quotes (") in string values. Use single quotes or escape: \\". Check every string before responding.
+  15. **FINAL:** Response MUST be raw JSON starting with '{' and ending with '}'. No markdown wrapping, no intro text. Immediately parsable.
+  16. 'referenceBlogs' must be an empty array [].
   `;
   
     let fullText = '';
