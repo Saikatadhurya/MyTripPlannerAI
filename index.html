@@ -535,6 +535,16 @@
       .body-scroll-lock {
         overflow: hidden;
       }
+      
+      /* Bottom Navbar Fix - Ensure it's always clickable */
+      #bottom-nav-bar {
+        pointer-events: auto !important;
+        touch-action: manipulation !important;
+        -webkit-tap-highlight-color: transparent;
+      }
+      #bottom-nav-bar * {
+        pointer-events: auto !important;
+      }
     </style>
   <script type="importmap">
 {

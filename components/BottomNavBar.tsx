@@ -12,16 +12,26 @@ const NavItem: React.FC<{
   label: string;
   onClick: () => void;
   isActive?: boolean;
-}> = ({ icon, label, onClick, isActive }) => (
-  <button
-    onClick={onClick}
-    title={label}
-    className={`flex flex-1 flex-col items-center justify-center pt-2 pb-1 transition-colors duration-200 ${isActive ? 'text-violet-600' : 'text-slate-500 hover:text-violet-600'}`}
-  >
-    {icon}
-    <span className="text-xs font-semibold mt-1 text-center">{label}</span>
-  </button>
-);
+}> = ({ icon, label, onClick, isActive }) => {
+  const handleClick = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onClick();
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      onTouchEnd={handleClick}
+      title={label}
+      style={{ pointerEvents: 'auto', touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
+      className={`flex flex-1 flex-col items-center justify-center pt-2 pb-1 transition-colors duration-200 ${isActive ? 'text-violet-600' : 'text-slate-500 hover:text-violet-600'}`}
+    >
+      {icon}
+      <span className="text-xs font-semibold mt-1 text-center">{label}</span>
+    </button>
+  );
+};
 
 const MoreMenu: React.FC<{
     onStartAppFinder: () => void;
@@ -37,25 +47,50 @@ const MoreMenu: React.FC<{
     };
 
     return (
-        <div className="absolute bottom-full right-0 mb-2 w-56 bg-white/95 backdrop-blur-xl border border-slate-200/70 rounded-xl shadow-lg p-2 flex flex-col z-40">
-            <button onClick={() => handleAction(onStartAppFinder)} className="w-full flex items-center text-left px-3 py-2.5 rounded-lg text-slate-800 font-semibold transition-colors duration-200 hover:bg-violet-100/80">
+        <div className="absolute bottom-full right-0 mb-2 w-56 bg-white/95 backdrop-blur-xl border border-slate-200/70 rounded-xl shadow-lg p-2 flex flex-col z-50" style={{ pointerEvents: 'auto' }}>
+            <button 
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleAction(onStartAppFinder); }}
+              onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleAction(onStartAppFinder); }}
+              style={{ pointerEvents: 'auto', touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
+              className="w-full flex items-center text-left px-3 py-2.5 rounded-lg text-slate-800 font-semibold transition-colors duration-200 hover:bg-violet-100/80"
+            >
                 <span className="text-xl w-8 text-center">📱</span>
                 <span>App Finder</span>
             </button>
-            <button onClick={() => handleAction(onStartMusicFinder)} className="w-full flex items-center text-left px-3 py-2.5 rounded-lg text-slate-800 font-semibold transition-colors duration-200 hover:bg-violet-100/80">
+            <button 
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleAction(onStartMusicFinder); }}
+              onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleAction(onStartMusicFinder); }}
+              style={{ pointerEvents: 'auto', touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
+              className="w-full flex items-center text-left px-3 py-2.5 rounded-lg text-slate-800 font-semibold transition-colors duration-200 hover:bg-violet-100/80"
+            >
                 <span className="text-xl w-8 text-center">🎶</span>
                 <span>Music Finder</span>
             </button>
-            <button onClick={() => handleAction(onStartLingoGuide)} className="w-full flex items-center text-left px-3 py-2.5 rounded-lg text-slate-800 font-semibold transition-colors duration-200 hover:bg-violet-100/80">
+            <button 
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleAction(onStartLingoGuide); }}
+              onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleAction(onStartLingoGuide); }}
+              style={{ pointerEvents: 'auto', touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
+              className="w-full flex items-center text-left px-3 py-2.5 rounded-lg text-slate-800 font-semibold transition-colors duration-200 hover:bg-violet-100/80"
+            >
                 <span className="text-xl w-8 text-center">🗣️</span>
                 <span>Lingo Guide</span>
             </button>
             <hr className="border-slate-200/80 mx-2 my-1" />
-            <button onClick={() => handleAction(onGoToBlog)} className="w-full flex items-center text-left px-3 py-2.5 rounded-lg text-slate-800 font-semibold transition-colors duration-200 hover:bg-violet-100/80">
+            <button 
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleAction(onGoToBlog); }}
+              onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleAction(onGoToBlog); }}
+              style={{ pointerEvents: 'auto', touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
+              className="w-full flex items-center text-left px-3 py-2.5 rounded-lg text-slate-800 font-semibold transition-colors duration-200 hover:bg-violet-100/80"
+            >
                 <span className="text-xl w-8 text-center">📝</span>
                 <span>Travel Blogs</span>
             </button>
-            <button onClick={() => handleAction(onGoToContact)} className="w-full flex items-center text-left px-3 py-2.5 rounded-lg text-slate-800 font-semibold transition-colors duration-200 hover:bg-violet-100/80">
+            <button 
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleAction(onGoToContact); }}
+              onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleAction(onGoToContact); }}
+              style={{ pointerEvents: 'auto', touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
+              className="w-full flex items-center text-left px-3 py-2.5 rounded-lg text-slate-800 font-semibold transition-colors duration-200 hover:bg-violet-100/80"
+            >
                 <span className="text-xl w-8 text-center">✉️</span>
                 <span>Contact Us</span>
             </button>
@@ -75,8 +110,13 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({
     const iconClass = "h-6 w-6";
 
   const handleAction = useCallback((action: () => void) => {
-    action();
-    setIsMoreMenuOpen(false); // Close menu on any action
+    try {
+      action();
+      setIsMoreMenuOpen(false); // Close menu on any action
+    } catch (error) {
+      console.error('Navigation action error:', error);
+      setIsMoreMenuOpen(false);
+    }
   }, []);
 
   const navItems = [
@@ -113,21 +153,25 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({
   ];
   
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
         if (moreMenuRef.current && !moreMenuRef.current.contains(event.target as Node)) {
             setIsMoreMenuOpen(false);
         }
     };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
   }, []);
 
   const isMoreSectionActive = ['/contact', '/blog', '/apps', '/music', '/lingo'].includes(location.pathname);
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 sm:hidden no-print">
-      <div className="w-full bg-white/80 backdrop-blur-xl border-t border-white/50 shadow-[0_-5px_15px_-5px_rgba(0,0,0,0.1)]">
-        <div className="flex items-stretch h-16">
+    <div id="bottom-nav-bar" className="fixed bottom-0 left-0 right-0 z-[45] sm:hidden no-print" style={{ pointerEvents: 'auto', touchAction: 'manipulation' }}>
+      <div className="w-full bg-white/80 backdrop-blur-xl border-t border-white/50 shadow-[0_-5px_15px_-5px_rgba(0,0,0,0.1)]" style={{ pointerEvents: 'auto' }}>
+        <div className="flex items-stretch h-16" style={{ pointerEvents: 'auto' }}>
           {navItems.map(item => (
             <NavItem
               key={item.label}
@@ -137,7 +181,7 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({
               isActive={item.ids.includes(location.pathname)}
             />
           ))}
-          <div ref={moreMenuRef} className="relative flex-1">
+          <div ref={moreMenuRef} className="relative flex-1" style={{ pointerEvents: 'auto' }}>
             {isMoreMenuOpen && (
                 <MoreMenu
                     onStartAppFinder={() => navigate('/apps')}
@@ -149,7 +193,17 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({
                 />
             )}
             <button
-                onClick={() => setIsMoreMenuOpen(prev => !prev)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setIsMoreMenuOpen(prev => !prev);
+                }}
+                onTouchEnd={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setIsMoreMenuOpen(prev => !prev);
+                }}
+                style={{ pointerEvents: 'auto', touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
                 className={`flex flex-col items-center justify-center w-full h-full pt-2 pb-1 transition-colors duration-200 ${isMoreMenuOpen || isMoreSectionActive ? 'text-violet-600' : 'text-slate-500 hover:text-violet-600'}`}
             >
                 <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor">
