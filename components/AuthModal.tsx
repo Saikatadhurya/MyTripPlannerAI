@@ -156,7 +156,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
         <form onSubmit={handleSubmit} className="space-y-4">
           {!isLoginMode && (
             <div>
-              <label htmlFor="full_name" className="block text-sm font-semibold text-slate-700 mb-2">
+              <label htmlFor="full_name" className="block text-xs sm:text-sm font-semibold text-slate-700 mb-2">
                 Full Name
               </label>
               <input
@@ -166,7 +166,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
                 value={formData.full_name}
                 onChange={handleInputChange}
                 required={!isLoginMode}
-                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm ${validationErrors.full_name ? 'border-red-500' : 'border-slate-200'}`}
+                className={`w-full px-4 py-3 text-sm sm:text-base border rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm ${validationErrors.full_name ? 'border-red-500' : 'border-slate-200'}`}
                 placeholder="Enter your full name"
               />
               {validationErrors.full_name && <p className="text-red-500 text-xs mt-1">{validationErrors.full_name}</p>}
@@ -174,7 +174,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
           )}
 
           <div>
-            <label htmlFor="email" className="block text-sm font-semibold text-slate-700 mb-2">
+            <label htmlFor="email" className="block text-xs sm:text-sm font-semibold text-slate-700 mb-2">
               Email Address
             </label>
             <input
@@ -184,14 +184,14 @@ const AuthModal: React.FC<AuthModalProps> = ({
               value={formData.email}
               onChange={handleInputChange}
               required
-              className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm ${validationErrors.email ? 'border-red-500' : 'border-slate-200'}`}
+              className={`w-full px-4 py-3 text-sm sm:text-base border rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm ${validationErrors.email ? 'border-red-500' : 'border-slate-200'}`}
               placeholder="Enter your email"
             />
             {validationErrors.email && <p className="text-red-500 text-xs mt-1">{validationErrors.email}</p>}
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-semibold text-slate-700 mb-2">
+            <label htmlFor="password" className="block text-xs sm:text-sm font-semibold text-slate-700 mb-2">
               Password
             </label>
             <input
@@ -201,7 +201,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
               value={formData.password}
               onChange={handleInputChange}
               required
-              className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm ${validationErrors.password ? 'border-red-500' : 'border-slate-200'}`}
+              className={`w-full px-4 py-3 text-sm sm:text-base border rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm ${validationErrors.password ? 'border-red-500' : 'border-slate-200'}`}
               placeholder="Enter your password"
             />
             {validationErrors.password && <p className="text-red-500 text-xs mt-1">{validationErrors.password}</p>}
@@ -221,7 +221,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
 
           {!isLoginMode && (
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-semibold text-slate-700 mb-2">
+              <label htmlFor="confirmPassword" className="block text-xs sm:text-sm font-semibold text-slate-700 mb-2">
                 Confirm Password
               </label>
               <input
@@ -231,7 +231,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
                 value={formData.confirmPassword}
                 onChange={handleInputChange}
                 required={!isLoginMode}
-                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm ${validationErrors.confirmPassword ? 'border-red-500' : 'border-slate-200'}`}
+                className={`w-full px-4 py-3 text-sm sm:text-base border rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm ${validationErrors.confirmPassword ? 'border-red-500' : 'border-slate-200'}`}
                 placeholder="Confirm your password"
               />
               {validationErrors.confirmPassword && <p className="text-red-500 text-xs mt-1">{validationErrors.confirmPassword}</p>}

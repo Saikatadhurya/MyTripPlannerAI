@@ -788,9 +788,9 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
     <div className="max-w-2xl mx-auto">
       <BackToHomeButton onClick={onBack} />
 
-      <div className="text-center mb-10">
-        <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Unified Trip Planner</h1>
-        <p className="mt-2 text-lg text-slate-600">Tell us about your dream trip to get a complete, AI-generated plan.</p>
+      <div className="text-center mb-6 sm:mb-8 md:mb-10">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">Unified Trip Planner</h1>
+        <p className="mt-2 text-sm sm:text-base md:text-lg text-slate-600">Tell us about your dream trip to get a complete, AI-generated plan.</p>
       </div>
 
       {error && (
@@ -808,20 +808,20 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-10">
+      <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8 md:space-y-10">
 
-        <div className="space-y-6 bg-white/60 backdrop-blur-md p-6 rounded-2xl border border-slate-200/70 shadow-xl">
-            <h2 className="flex items-center space-x-3 text-2xl font-bold text-slate-800 border-b pb-3">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <div className="space-y-4 sm:space-y-6 bg-white/60 backdrop-blur-md p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-200/70 shadow-xl">
+            <h2 className="flex items-center space-x-2 sm:space-x-3 text-lg sm:text-xl md:text-2xl font-bold text-slate-800 border-b pb-2 sm:pb-3">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 9m-6 3l6-3m0 0l6-3m-6 3v6.382" />
               </svg>
               <span>Trip Type</span>
             </h2>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
               {tripTypes.map(({ label, icon }) => (
-                <button key={label} type="button" onClick={() => handleInputChange('tripType', label)} className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 border-2 flex items-center justify-center space-x-2 ${formData.tripType === label ? 'bg-violet-600 text-white border-violet-600' : 'bg-white/50 border-white/50 hover:border-violet-400'}`}>
-                  <span>{icon}</span>
-                  <span>{label}</span>
+                <button key={label} type="button" onClick={() => handleInputChange('tripType', label)} className={`px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm md:text-base font-semibold transition-all duration-200 border-2 flex items-center justify-center space-x-1 sm:space-x-2 ${formData.tripType === label ? 'bg-violet-600 text-white border-violet-600' : 'bg-white/50 border-white/50 hover:border-violet-400'}`}>
+                  <span className="text-sm sm:text-base">{icon}</span>
+                  <span className="truncate">{label}</span>
                 </button>
               ))}
             </div>
@@ -835,20 +835,20 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
             </div>
         </div>
 
-        <div className="space-y-6 bg-white/60 backdrop-blur-md p-6 rounded-2xl border border-slate-200/70 shadow-xl">
-            <h2 className="flex items-center space-x-3 text-2xl font-bold text-slate-800 border-b pb-3">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-violet-600" viewBox="0 0 20 20" fill="currentColor"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" /><path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h.01a1 1 0 100-2H10zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h.01a1 1 0 100-2H10z" clipRule="evenodd" /></svg>
+        <div className="space-y-4 sm:space-y-6 bg-white/60 backdrop-blur-md p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-200/70 shadow-xl">
+            <h2 className="flex items-center space-x-2 sm:space-x-3 text-lg sm:text-xl md:text-2xl font-bold text-slate-800 border-b pb-2 sm:pb-3">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-violet-600" viewBox="0 0 20 20" fill="currentColor"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" /><path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h.01a1 1 0 100-2H10zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h.01a1 1 0 100-2H10z" clipRule="evenodd" /></svg>
                 <span>Where & When</span>
             </h2>
             <div className={`grid grid-cols-1 ${showStartPoint ? 'sm:grid-cols-2' : ''} gap-4`}>
                {showStartPoint && (
                     <div className="relative min-w-0">
-                        <label htmlFor="startPoint" className="block text-sm font-medium text-slate-700 mb-1">Starting Point</label>
+                        <label htmlFor="startPoint" className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">Starting Point</label>
                         <div className="relative">
                           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-1.172-8.243a.75.75 0 01.12-1.06l3-3a.75.75 0 011.06 1.06l-3 3a.75.75 0 01-1.18 0z" clipRule="evenodd" /></svg>
                           </div>
-                          <input id="startPoint" ref={startPointInputRef} type="text" value={formData.startPoint} onChange={handleStartPointChange} onBlur={handleStartPointBlur} placeholder="e.g., Mumbai, India" className="w-full pl-10 pr-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition" required autoComplete="off" />
+                          <input id="startPoint" ref={startPointInputRef} type="text" value={formData.startPoint} onChange={handleStartPointChange} onBlur={handleStartPointBlur} placeholder="e.g., Mumbai, India" className="w-full pl-10 pr-4 py-2 bg-white text-sm sm:text-base text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition" required autoComplete="off" />
                         </div>
                         {isStartPointSuggestionsLoading && <div className="absolute right-3 top-9"><svg className="animate-spin h-5 w-5 text-violet-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>}
                         {startPointSuggestions.length > 0 && (
@@ -877,7 +877,7 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
                 {/* Multiple Stops Section */}
                 <div className="space-y-3 mt-4">
                   <div className="flex items-center justify-between">
-                    <label className="block text-sm font-medium text-slate-700">Additional Stops (Optional)</label>
+                    <label className="block text-xs sm:text-sm font-medium text-slate-700">Additional Stops (Optional)</label>
                     <button
                       type="button"
                       onClick={addStop}
@@ -1015,12 +1015,12 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
                 
                 {/* Main Destination Field - After Stops */}
                 <div className="relative min-w-0">
-                    <label htmlFor="destination" className="block text-sm font-medium text-slate-700 mb-1">Main Destination{formData.tripType === 'Standard' && stops.length > 0 ? ' (Start & End Point)' : ''}</label>
+                    <label htmlFor="destination" className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">Main Destination{formData.tripType === 'Standard' && stops.length > 0 ? ' (Start & End Point)' : ''}</label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 20l-4.95-5.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
                       </div>
-                      <input id="destination" ref={destinationInputRef} type="text" value={formData.destination} onChange={handleDestinationChange} onBlur={handleDestinationBlur} placeholder="e.g., Paris, France" className="w-full pl-10 pr-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition" required autoComplete="off" />
+                      <input id="destination" ref={destinationInputRef} type="text" value={formData.destination} onChange={handleDestinationChange} onBlur={handleDestinationBlur} placeholder="e.g., Paris, France" className="w-full pl-10 pr-4 py-2 bg-white text-sm sm:text-base text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition" required autoComplete="off" />
                     </div>
                     {isDestinationSuggestionsLoading && <div className="absolute right-3 top-9"><svg className="animate-spin h-5 w-5 text-violet-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>}
                     {destinationSuggestions.length > 0 && (
@@ -1056,7 +1056,7 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="min-w-0">
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Trip Dates</label>
+                        <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">Trip Dates</label>
                         <button
                             type="button"
                             onClick={() => setIsDatePickerOpen(true)}
@@ -1072,7 +1072,7 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
                         </button>
                     </div>
                   <div>
-                    <label htmlFor="persons" className="block text-sm font-medium text-slate-700 mb-1">Travelers</label>
+                    <label htmlFor="persons" className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">Travelers</label>
                     <div className="flex items-center w-full bg-white border border-slate-300 rounded-lg focus-within:ring-2 focus-within:ring-violet-500 focus-within:border-violet-500 transition">
                       <button type="button" onClick={() => handleInputChange('persons', Math.max(1, formData.persons - 1))} disabled={formData.persons <= 1} className="p-3 text-violet-600 rounded-l-lg hover:bg-violet-50 transition disabled:text-slate-300 disabled:cursor-not-allowed" aria-label="Decrease number of travelers"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clipRule="evenodd" /></svg></button>
                       <input id="persons" type="text" inputMode="numeric" pattern="[0-9]*" value={formData.persons === 0 ? '' : formData.persons} onChange={handleTravelersChange} onBlur={handleTravelersBlur} className="font-semibold text-lg text-center flex-grow tabular-nums w-full bg-transparent border-none text-gray-800 focus:ring-0 focus:outline-none" aria-label="Number of travelers" />
@@ -1083,7 +1083,7 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
             </div>
 
             <div className="space-y-4 bg-white/60 backdrop-blur-md p-6 rounded-2xl border border-slate-200/70 shadow-xl relative z-10">
-                <h2 className="flex items-center space-x-3 text-2xl font-bold text-slate-800 border-b pb-3">
+                <h2 className="flex items-center space-x-2 sm:space-x-3 text-lg sm:text-xl md:text-2xl font-bold text-slate-800 border-b pb-2 sm:pb-3">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-violet-600" viewBox="0 0 20 20" fill="currentColor"><path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.5 2.5 0 00-1.168-.217c-1.36.0-2.5 1.119-2.5 2.5s1.14 2.5 2.5 2.5c.346 0 .682-.07.98-.2a2.5 2.5 0 001.52-2.3z" /><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.5 4.5 0 00-1.879.938.5.5 0 00-.22.643l.612 1.224a.5.5 0 00.643.22A3.49 3.49 0 0110 7.5v1.698a2.5 2.5 0 00-1.168-.217c-1.36.0-2.5 1.119-2.5 2.5s1.14 2.5 2.5 2.5c.346 0 .682-.07.98-.2a2.5 2.5 0 001.52-2.3V9.5a1 1 0 10-2 0v1a.5.5 0 01-1 0V9.5a.5.5 0 01.5-.5h1V8a1 1 0 10-2 0v.092a4.5 4.5 0 00-1.879.938.5.5 0 00-.22.643l.612 1.224a.5.5 0 00.643.22A3.49 3.49 0 0110 7.5v1.698a2.5 2.5 0 00-1.168-.217c-1.36.0-2.5 1.119-2.5 2.5s1.14 2.5 2.5 2.5c.346 0 .682-.07.98-.2a2.5 2.5 0 001.52-2.3V9.5a1 1 0 10-2 0v1a.5.5 0 01-1 0V9.5a.5.5 0 01.5-.5h1V8a1 1 0 00-2 0z" clipRule="evenodd" /></svg>
                   <span>Budget</span>
                 </h2>
@@ -1093,10 +1093,10 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
             </div>
 
             <div className="space-y-4 bg-slate-50/50 backdrop-blur-sm p-5 rounded-xl border border-slate-200/50 shadow-sm relative z-20">
-                <h3 className="text-base font-medium text-slate-700 mb-3">Plan Preferences</h3>
+                <h3 className="text-sm sm:text-base font-medium text-slate-700 mb-3">Plan Preferences</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-sm font-medium text-slate-600 mb-1.5">Plan Language</label>
+                        <label className="block text-xs sm:text-sm font-medium text-slate-600 mb-1.5">Plan Language</label>
                         <div ref={langDropdownRef} className="relative">
                                 <input 
                                     type="text"
@@ -1137,7 +1137,7 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
                             </div>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-slate-600 mb-1.5">Currency for Plan</label>
+                        <label className="block text-xs sm:text-sm font-medium text-slate-600 mb-1.5">Currency for Plan</label>
                         <div ref={currencyDropdownRef} className="relative">
                                 <input 
                                     type="text"
@@ -1215,7 +1215,7 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
             </div>
 
             <div className="space-y-4 bg-white/60 backdrop-blur-md p-6 rounded-2xl border border-slate-200/70 shadow-xl">
-                <h2 className="flex items-center space-x-3 text-2xl font-bold text-slate-800 border-b pb-3">
+                <h2 className="flex items-center space-x-2 sm:space-x-3 text-lg sm:text-xl md:text-2xl font-bold text-slate-800 border-b pb-2 sm:pb-3">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-violet-600" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" /></svg>
                   <span>Trip Add-ons</span>
                 </h2>

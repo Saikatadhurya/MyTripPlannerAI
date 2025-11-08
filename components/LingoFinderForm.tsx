@@ -298,9 +298,9 @@ const LingoFinderForm: React.FC<LingoFinderFormProps> = ({ onSubmit, isLoading, 
     <div className="max-w-xl mx-auto">
       <BackToHomeButton onClick={onBack} />
 
-      <div className="text-center mb-10">
-        <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Local Lingo Guide</h1>
-        <p className="mt-2 text-lg text-slate-600">Get essential phrases for your destination.</p>
+      <div className="text-center mb-6 sm:mb-8 md:mb-10">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">Local Lingo Guide</h1>
+        <p className="mt-2 text-sm sm:text-base md:text-lg text-slate-600">Get essential phrases for your destination.</p>
       </div>
 
       {error && (
@@ -318,14 +318,14 @@ const LingoFinderForm: React.FC<LingoFinderFormProps> = ({ onSubmit, isLoading, 
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-8 bg-white/60 backdrop-blur-md p-8 rounded-2xl border border-slate-200/70 shadow-xl">
+      <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8 bg-white/60 backdrop-blur-md p-4 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl border border-slate-200/70 shadow-xl">
         <div className="relative">
-          <label htmlFor="destination" className="block text-sm font-medium text-slate-700 mb-1">Destination</label>
+          <label htmlFor="destination" className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">Destination</label>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 20l-4.95-5.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
             </div>
-            <input id="destination" ref={inputRef} type="text" value={formData.destination} onChange={handleDestinationChange} onBlur={handleDestinationBlur} placeholder="e.g., Madrid, Spain" className="w-full pl-10 pr-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition" required autoComplete="off" />
+            <input id="destination" ref={inputRef} type="text" value={formData.destination} onChange={handleDestinationChange} onBlur={handleDestinationBlur} placeholder="e.g., Madrid, Spain" className="w-full pl-10 pr-4 py-2 bg-white text-sm sm:text-base text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition" required autoComplete="off" />
           </div>
           {isSuggestionsLoading && <div className="absolute right-3 top-9"><svg className="animate-spin h-5 w-5 text-sky-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>}
           {suggestions.length > 0 && (
@@ -360,7 +360,7 @@ const LingoFinderForm: React.FC<LingoFinderFormProps> = ({ onSubmit, isLoading, 
         </div>
         
         <div className="relative">
-            <label className="block text-sm font-medium text-slate-700 mb-1">Language for Translations</label>
+            <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">Language for Translations</label>
             <div ref={langDropdownRef} className="relative">
                     <input 
                         type="text"

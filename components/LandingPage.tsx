@@ -183,10 +183,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
               </h2>
             </div>
           )}
-          <h1 className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl xl:text-7xl font-extrabold text-slate-900 tracking-tight leading-tight px-2">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-extrabold text-slate-900 tracking-tight leading-tight px-2">
             Your Dream Trip, <span className="text-violet-600">Planned to Perfection.</span>
           </h1>
-          <p className="mt-3 sm:mt-4 md:mt-6 text-sm sm:text-base md:text-lg lg:text-xl text-slate-700 max-w-2xl mx-auto font-medium px-2">
+          <p className="mt-3 sm:mt-4 md:mt-6 text-base sm:text-lg md:text-lg lg:text-xl text-slate-700 max-w-2xl mx-auto font-medium px-2">
             Complete travel planning made simple. Just tell us where you want to go.
           </p>
            <div className="mt-6 sm:mt-8 md:mt-10">
@@ -195,11 +195,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
                 e.stopPropagation(); // Prevent parent click handler
                 onPlanUnifiedTrip();
               }}
-              className="cta-pulse w-full sm:w-auto inline-block px-5 py-3 sm:px-6 sm:py-3.5 md:px-10 md:py-4 lg:px-12 lg:py-5 font-bold rounded-full text-sm sm:text-base md:text-lg lg:text-xl shadow-xl sm:shadow-2xl transition-all duration-300 transform focus:outline-none focus:ring-4 bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-violet-500/50 hover:from-violet-700 hover:to-purple-700 hover:shadow-xl sm:hover:shadow-2xl hover:shadow-violet-500/60 hover:scale-105 sm:hover:scale-110 focus:ring-violet-300 whitespace-nowrap"
+              className="cta-pulse w-full sm:w-auto inline-block px-5 py-3 sm:px-6 sm:py-3.5 md:px-10 md:py-4 lg:px-12 lg:py-5 font-bold rounded-full text-base sm:text-lg md:text-lg lg:text-xl shadow-xl sm:shadow-2xl transition-all duration-300 transform focus:outline-none focus:ring-4 bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-violet-500/50 hover:from-violet-700 hover:to-purple-700 hover:shadow-xl sm:hover:shadow-2xl hover:shadow-violet-500/60 hover:scale-105 sm:hover:scale-110 focus:ring-violet-300 whitespace-nowrap"
             >
               ✨ Build Your Ultimate Itinerary
             </button>
-            <p className="mt-3 sm:mt-4 md:mt-5 text-xs sm:text-sm md:text-base text-violet-700 font-semibold tracking-wide px-2">
+            <p className="mt-3 sm:mt-4 md:mt-5 text-sm sm:text-base md:text-base text-violet-700 font-semibold tracking-wide px-2">
               Includes: Itinerary, Packing, Food, Apps, Music & Language Guides
             </p>
           </div>
@@ -208,7 +208,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
 
       {/* Mini Apps Section */}
       <div className="text-center">
-        <h2 className="text-lg sm:text-xl md:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight animated-card px-2" style={{ animationDelay: '200ms' }}>
+        <h2 className="text-2xl sm:text-3xl md:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight animated-card px-2" style={{ animationDelay: '200ms' }}>
           Smart tools to make your trip <span className="text-violet-600">unforgettable.</span>
         </h2>
         <div className="mt-4 sm:mt-6 md:mt-10 grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4 md:gap-6">
@@ -236,13 +236,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
                         <div className={`mx-auto w-10 h-10 sm:w-14 sm:h-14 md:w-20 md:h-20 rounded-lg sm:rounded-xl md:rounded-2xl flex items-center justify-center transition-all duration-300 sm:duration-500 group-hover:scale-110 group-hover:shadow-md sm:group-hover:shadow-lg ${colors.iconBg} ${colors.iconText}`}>
                             {app.icon}
                         </div>
-                        <h3 className="text-xs sm:text-sm md:text-lg lg:text-xl font-bold text-slate-900 mt-1.5 sm:mt-3 md:mt-5">{app.title}</h3>
-                        <p className="text-[10px] sm:text-xs md:text-sm text-slate-600 mt-0.5 sm:mt-1 line-clamp-2">
+                        <h3 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-slate-900 mt-2 sm:mt-3 md:mt-5">{app.title}</h3>
+                        <p className="text-xs sm:text-sm md:text-sm text-slate-600 mt-1 sm:mt-1.5 line-clamp-2">
                             {app.description}
                         </p>
                     </div>
-                    <div className="mt-1.5 sm:mt-3 md:mt-6 flex-shrink-0 relative z-10">
-                        <span className={`inline-block px-2 py-1 sm:px-3 sm:py-1.5 md:px-4 md:py-2 lg:px-6 lg:py-2.5 font-semibold rounded-full text-[10px] sm:text-xs md:text-sm shadow-sm sm:shadow-md transition-all duration-300 group-hover:shadow-md sm:group-hover:shadow-lg ${colors.button}`}>
+                    <div className="mt-2 sm:mt-3 md:mt-6 flex-shrink-0 relative z-10">
+                        <span className={`inline-block px-3 py-1.5 sm:px-4 sm:py-2 md:px-4 md:py-2 lg:px-6 lg:py-2.5 font-semibold rounded-full text-xs sm:text-sm md:text-sm shadow-sm sm:shadow-md transition-all duration-300 group-hover:shadow-md sm:group-hover:shadow-lg ${colors.button}`}>
                              {app.buttonText}
                         </span>
                     </div>
@@ -256,10 +256,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
 
       {/* Popular Destinations Section */}
       <div>
-        <h2 className="text-3xl font-bold text-center text-slate-900 mb-6 animated-card" style={{ animationDelay: '1100ms' }}>Popular Destinations</h2>
+        <h2 className="text-2xl sm:text-3xl font-bold text-center text-slate-900 mb-4 sm:mb-6 animated-card" style={{ animationDelay: '1100ms' }}>Popular Destinations</h2>
         
         {/* Destinations with share links */}
-        <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+        <div className="mt-6 sm:mt-8 md:mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6">
           {destinations.map((dest, index) => {
             const shareLink = shareLinks[dest.name];
             
@@ -268,14 +268,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
                 <a
                   key={dest.name}
                   href={shareLink}
-                  className="animated-card text-left p-5 rounded-2xl border-2 shadow-xl transition-all duration-500 transform hover:scale-110 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-violet-400/50 bg-gradient-to-br from-white via-violet-50/40 to-purple-50/30 backdrop-blur-xl border-violet-200/60 hover:shadow-2xl hover:shadow-violet-500/25 hover:border-violet-400/80 cursor-pointer block relative overflow-hidden group"
+                  className="animated-card text-left p-4 sm:p-5 rounded-xl sm:rounded-2xl border-2 shadow-xl transition-all duration-500 transform hover:scale-110 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-violet-400/50 bg-gradient-to-br from-white via-violet-50/40 to-purple-50/30 backdrop-blur-xl border-violet-200/60 hover:shadow-2xl hover:shadow-violet-500/25 hover:border-violet-400/80 cursor-pointer block relative overflow-hidden group"
                   style={{ animationDelay: `${1200 + index * 50}ms` }}
                 >
                   {/* Gradient overlay on hover */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-violet-500/0 to-purple-500/0 group-hover:from-violet-500/10 group-hover:to-purple-500/10 transition-all duration-500 rounded-2xl"></div>
-                  <span className="text-4xl relative z-10 group-hover:scale-110 transition-transform duration-500 inline-block" role="img" aria-label="destination">{dest.icon}</span>
-                  <h3 className="text-lg font-semibold mt-3 text-slate-800 relative z-10">{dest.name}</h3>
-                  <p className="text-slate-600 text-sm relative z-10">{dest.description}</p>
+                  <div className="absolute inset-0 bg-gradient-to-br from-violet-500/0 to-purple-500/0 group-hover:from-violet-500/10 group-hover:to-purple-500/10 transition-all duration-500 rounded-xl sm:rounded-2xl"></div>
+                  <span className="text-3xl sm:text-4xl relative z-10 group-hover:scale-110 transition-transform duration-500 inline-block" role="img" aria-label="destination">{dest.icon}</span>
+                  <h3 className="text-base sm:text-lg font-semibold mt-2 sm:mt-3 text-slate-800 relative z-10">{dest.name}</h3>
+                  <p className="text-xs sm:text-sm text-slate-600 relative z-10 mt-1">{dest.description}</p>
                 </a>
               );
             }
@@ -284,10 +284,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
         </div>
 
         {/* Try Yourself Subsection */}
-        <div className="mt-16">
-          <h3 className="text-2xl font-bold text-center text-slate-800 mb-6 animated-card" style={{ animationDelay: '1300ms' }}>Try Yourself</h3>
-          <p className="text-center text-slate-600 mb-6 animated-card" style={{ animationDelay: '1350ms' }}>Create your own personalized itinerary for these amazing destinations</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+        <div className="mt-10 sm:mt-12 md:mt-16">
+          <h3 className="text-xl sm:text-2xl font-bold text-center text-slate-800 mb-4 sm:mb-6 animated-card" style={{ animationDelay: '1300ms' }}>Try Yourself</h3>
+          <p className="text-sm sm:text-base text-center text-slate-600 mb-4 sm:mb-6 px-2 animated-card" style={{ animationDelay: '1350ms' }}>Create your own personalized itinerary for these amazing destinations</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6">
             {destinations.map((dest, index) => {
               const shareLink = shareLinks[dest.name];
               
@@ -296,14 +296,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
                   <button 
                     key={dest.name} 
                     onClick={() => onPlanUnifiedTrip(dest.name)} 
-                    className="animated-card text-left p-5 rounded-2xl border-2 shadow-xl transition-all duration-500 transform hover:scale-110 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-violet-400/50 bg-gradient-to-br from-white via-violet-50/40 to-purple-50/30 backdrop-blur-xl border-violet-200/60 hover:shadow-2xl hover:shadow-violet-500/25 hover:border-violet-400/80 cursor-pointer relative overflow-hidden group"
+                    className="animated-card text-left p-4 sm:p-5 rounded-xl sm:rounded-2xl border-2 shadow-xl transition-all duration-500 transform hover:scale-110 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-violet-400/50 bg-gradient-to-br from-white via-violet-50/40 to-purple-50/30 backdrop-blur-xl border-violet-200/60 hover:shadow-2xl hover:shadow-violet-500/25 hover:border-violet-400/80 cursor-pointer relative overflow-hidden group"
                     style={{ animationDelay: `${1400 + index * 50}ms` }}
                   >
                     {/* Gradient overlay on hover */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-violet-500/0 to-purple-500/0 group-hover:from-violet-500/10 group-hover:to-purple-500/10 transition-all duration-500 rounded-2xl"></div>
-                    <span className="text-4xl relative z-10 group-hover:scale-110 transition-transform duration-500 inline-block" role="img" aria-label="destination">{dest.icon}</span>
-                    <h3 className="text-lg font-semibold mt-3 text-slate-800 relative z-10">{dest.name}</h3>
-                    <p className="text-slate-600 text-sm relative z-10">{dest.description}</p>
+                    <div className="absolute inset-0 bg-gradient-to-br from-violet-500/0 to-purple-500/0 group-hover:from-violet-500/10 group-hover:to-purple-500/10 transition-all duration-500 rounded-xl sm:rounded-2xl"></div>
+                    <span className="text-3xl sm:text-4xl relative z-10 group-hover:scale-110 transition-transform duration-500 inline-block" role="img" aria-label="destination">{dest.icon}</span>
+                    <h3 className="text-base sm:text-lg font-semibold mt-2 sm:mt-3 text-slate-800 relative z-10">{dest.name}</h3>
+                    <p className="text-xs sm:text-sm text-slate-600 relative z-10 mt-1">{dest.description}</p>
                   </button>
                 );
               }
@@ -315,10 +315,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
 
       {/* Blog Carousel Section */}
       <section>
-        <h2 className="text-3xl font-bold text-center text-slate-900 mb-8 animated-card" style={{ animationDelay: '1600ms' }}>
+        <h2 className="text-2xl sm:text-3xl font-bold text-center text-slate-900 mb-4 sm:mb-6 md:mb-8 animated-card" style={{ animationDelay: '1600ms' }}>
           Travel Blog
         </h2>
-        <p className="text-center text-slate-600 mb-8 animated-card" style={{ animationDelay: '1650ms' }}>
+        <p className="text-sm sm:text-base text-center text-slate-600 mb-6 sm:mb-8 px-2 animated-card" style={{ animationDelay: '1650ms' }}>
           Discover expert travel tips, guides, and stories to inspire your next adventure
         </p>
         <div className="animated-card" style={{ animationDelay: '1700ms' }}>
@@ -328,7 +328,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
 
       {/* Testimonials Section */}
       <section>
-        <h2 className="text-3xl font-bold text-center text-slate-900 mb-8 animated-card" style={{ animationDelay: '1750ms' }}>
+        <h2 className="text-2xl sm:text-3xl font-bold text-center text-slate-900 mb-4 sm:mb-6 md:mb-8 animated-card" style={{ animationDelay: '1750ms' }}>
           What Our Travelers Say
         </h2>
         <div className="animated-card" style={{ animationDelay: '1800ms' }}>
