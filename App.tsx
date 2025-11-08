@@ -881,7 +881,20 @@ const AppContent: React.FC = () => {
         }
       }
   
-      const message = lastError ? `After ${maxRetries} attempts, generation failed. Error: ${lastError.message}` : `An unknown error occurred after ${maxRetries} attempts during ${step} generation.`;
+      // Check if it's a quota/API key error - preserve the original message
+      const errorMessage = lastError?.message || '';
+      const isQuotaOrApiKeyError = errorMessage.includes('[429]') || 
+                                   errorMessage.toLowerCase().includes('quota') || 
+                                   errorMessage.toLowerCase().includes('api key') ||
+                                   errorMessage.toLowerCase().includes('limit') ||
+                                   errorMessage.toLowerCase().includes('exceeded');
+      
+      // For quota/API key errors, use the original message directly
+      // For other errors, wrap with retry information
+      const message = isQuotaOrApiKeyError 
+        ? errorMessage 
+        : (lastError ? `After ${maxRetries} attempts, generation failed. Error: ${lastError.message}` : `An unknown error occurred after ${maxRetries} attempts during ${step} generation.`);
+      
       setUnifiedStepErrors(prev => ({ ...prev, [step]: message }));
       setUnifiedPlanLoadingStatus(prev => ({ ...prev, [step]: 'error' }));
       return false; // Failure
@@ -1031,7 +1044,20 @@ const AppContent: React.FC = () => {
             }
 
             // If loop finishes, it means all retries failed.
-            const message = lastError ? `After ${maxRetries} attempts, itinerary generation failed. Error: ${lastError.message}` : `An unknown error occurred after ${maxRetries} attempts during itinerary generation.`;
+            // Check if it's a quota/API key error - preserve the original message
+            const errorMessage = lastError?.message || '';
+            const isQuotaOrApiKeyError = errorMessage.includes('[429]') || 
+                                       errorMessage.toLowerCase().includes('quota') || 
+                                       errorMessage.toLowerCase().includes('api key') ||
+                                       errorMessage.toLowerCase().includes('limit') ||
+                                       errorMessage.toLowerCase().includes('exceeded');
+            
+            // For quota/API key errors, use the original message directly
+            // For other errors, wrap with retry information
+            const message = isQuotaOrApiKeyError 
+              ? errorMessage 
+              : (lastError ? `After ${maxRetries} attempts, itinerary generation failed. Error: ${lastError.message}` : `An unknown error occurred after ${maxRetries} attempts during itinerary generation.`);
+            
             setUnifiedStepErrors(prev => ({ ...prev, itinerary: message }));
             setUnifiedPlanLoadingStatus(prev => ({ ...prev, itinerary: 'error' }));
             setItineraryAttemptCount(0);

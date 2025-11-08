@@ -378,7 +378,18 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
             );
         }
         
-        const renderActionCard = (title: string, message: string) => (
+        const renderActionCard = (title: string, message: string) => {
+            // Check if it's a quota/API key error
+            const isQuotaOrApiKeyError = message.includes('[429]') || 
+                                        message.toLowerCase().includes('quota') || 
+                                        message.toLowerCase().includes('api key') ||
+                                        message.toLowerCase().includes('limit') ||
+                                        message.toLowerCase().includes('exceeded');
+            
+            // Extract the message without [429] prefix if present
+            const displayMessage = message.replace(/^\[429\]\s*/, '');
+            
+            return (
              <div className={`backdrop-blur-sm p-6 rounded-2xl my-8 shadow-lg animated-card ${currentStatus === 'error' ? 'bg-red-100/60 border-l-4 border-red-500 text-red-800' : 'bg-yellow-100/60 border-l-4 border-yellow-500 text-yellow-800'}`}>
                 <div className="flex items-start space-x-4">
                     <div className="flex-shrink-0 pt-1">
@@ -389,18 +400,48 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
                     </div>
                     <div className="flex-1">
                         <p className="font-bold text-lg">{title}</p>
-                        <p className="mt-1 text-sm whitespace-pre-wrap">{message}</p>
-                        <button
-                            onClick={() => onRegenerateStep(activeTab)}
-                            className="mt-4 inline-flex items-center px-4 py-2 bg-violet-600 text-white font-semibold rounded-full hover:bg-violet-700 transition-all duration-300 shadow-md text-sm"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.898 2.566l-1.581.53a5.002 5.002 0 00-8.917-1.789v.962a1 1 0 01-2 0V3a1 1 0 011-1zm12 15a1 1 0 01-1-1v-2.101a7.002 7.002 0 01-11.898-2.566l1.581-.53a5.002 5.002 0 008.917 1.789v-.962a1 1 0 012 0V17a1 1 0 01-1 1z" clipRule="evenodd" /></svg>
-                            Regenerate {tabName}
-                        </button>
+                        <div className="mt-1 text-sm whitespace-pre-wrap">
+                            {isQuotaOrApiKeyError && displayMessage.includes('profile settings') ? (
+                                <div className="space-y-2">
+                                    <p>{displayMessage.split('profile settings')[0]}</p>
+                                    <p className="flex items-center flex-wrap gap-1">
+                                        <span>Please set your own Gemini API key in</span>
+                                        <a 
+                                            href="/profile" 
+                                            className="font-semibold underline hover:text-red-900 text-red-700"
+                                        >
+                                            your profile settings
+                                        </a>
+                                        <span>to continue.</span>
+                                    </p>
+                                </div>
+                            ) : (
+                                <p>{displayMessage}</p>
+                            )}
+                        </div>
+                        {!isQuotaOrApiKeyError && (
+                            <button
+                                onClick={() => onRegenerateStep(activeTab)}
+                                className="mt-4 inline-flex items-center px-4 py-2 bg-violet-600 text-white font-semibold rounded-full hover:bg-violet-700 transition-all duration-300 shadow-md text-sm"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.898 2.566l-1.581.53a5.002 5.002 0 00-8.917-1.789v.962a1 1 0 01-2 0V3a1 1 0 011-1zm12 15a1 1 0 01-1-1v-2.101a7.002 7.002 0 01-11.898-2.566l1.581-.53a5.002 5.002 0 008.917 1.789v-.962a1 1 0 012 0V17a1 1 0 01-1 1z" clipRule="evenodd" /></svg>
+                                Regenerate {tabName}
+                            </button>
+                        )}
+                        {isQuotaOrApiKeyError && (
+                            <a
+                                href="/profile"
+                                className="mt-4 inline-flex items-center px-4 py-2 bg-violet-600 text-white font-semibold rounded-full hover:bg-violet-700 transition-all duration-300 shadow-md text-sm"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" /></svg>
+                                Go to Profile Settings
+                            </a>
+                        )}
                     </div>
                 </div>
             </div>
         );
+        };
 
         if (currentStatus === 'error') {
             return renderActionCard(`Failed to Generate ${tabName}`, stepErrors[activeTab] || `An unknown error occurred.`);
