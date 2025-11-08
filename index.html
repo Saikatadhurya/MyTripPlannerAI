@@ -490,33 +490,6 @@
         }
       }
 
-      /* Floating Icons Background */
-      .floating-icon-container {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        z-index: -1;
-        overflow: hidden;
-        pointer-events: none;
-      }
-      .floating-icon {
-        position: absolute;
-        color: #e2e8f0; /* Light gray */
-        animation: float 20s ease-in-out infinite;
-        opacity: 0.08; /* More faded for a subtle background effect */
-        user-select: none;
-      }
-
-      @keyframes float {
-        0% { transform: translateY(0px) rotate(0deg); }
-        25% { transform: translateY(-25px) translateX(10px) rotate(5deg); }
-        50% { transform: translateY(0px) rotate(0deg); }
-        75% { transform: translateY(25px) translateX(-10px) rotate(-5deg); }
-        100% { transform: translateY(0px) rotate(0deg); }
-      }
-
       /* CTA Pulse Animation */
       @keyframes pulse-shadow {
         0% {
@@ -559,20 +532,6 @@
 </script>
 </head>
   <body class="font-sans text-gray-800">
-    <div class="floating-icon-container" aria-hidden="true">
-      <div class="floating-icon" style="font-size: 2.5rem; top: 10%; left: 5%; animation-duration: 25s;">✈️</div>
-      <div class="floating-icon" style="font-size: 1.5rem; top: 20%; left: 80%; animation-duration: 18s; animation-delay: 2s;">🌍</div>
-      <div class="floating-icon" style="font-size: 3rem; top: 70%; left: 10%; animation-duration: 22s; animation-delay: 4s;">🗺️</div>
-      <div class="floating-icon" style="font-size: 2rem; top: 85%; left: 90%; animation-duration: 28s; animation-delay: 1s;">📸</div>
-      <div class="floating-icon" style="font-size: 1.25rem; top: 50%; left: 50%; animation-duration: 15s; animation-delay: 5s;">🏨</div>
-      <div class="floating-icon" style="font-size: 2.5rem; top: 5%; left: 40%; animation-duration: 20s; animation-delay: 3s;">🎟️</div>
-      <div class="floating-icon" style="font-size: 1.75rem; top: 40%; left: 15%; animation-duration: 23s; animation-delay: 6s;">🧭</div>
-      <div class="floating-icon" style="font-size: 2rem; top: 60%; left: 70%; animation-duration: 19s;">☀️</div>
-      <div class="floating-icon" style="font-size: 1.75rem; top: 80%; left: 25%; animation-duration: 26s; animation-delay: 7s;">🧳</div>
-      <div class="floating-icon" style="font-size: 2rem; top: 15%; left: 65%; animation-duration: 17s; animation-delay: 8s;">🍔</div>
-      <div class="floating-icon" style="font-size: 1.5rem; top: 55%; left: 30%; animation-duration: 24s;">🎶</div>
-      <div class="floating-icon" style="font-size: 1.75rem; top: 30%; left: 90%; animation-duration: 21s; animation-delay: 5s;">📱</div>
-    </div>
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
     
