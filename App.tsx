@@ -813,7 +813,8 @@ const AppContent: React.FC = () => {
                     if (simplePlanCancellationFlag.current) throw new Error("Cancelled");
                     setStreamedText(prev => prev + chunk);
                 },
-                user?.gemini_api_key
+                user?.gemini_api_key,
+                data.stops
             );
             
             if (simplePlanCancellationFlag.current) break;
@@ -998,7 +999,8 @@ const AppContent: React.FC = () => {
                             }
                             setItineraryStreamedText(prev => prev + chunk);
                         },
-                        user?.gemini_api_key
+                        user?.gemini_api_key,
+                        data.stops
                     );
                     
                     if (cancellationFlags.current.itinerary) {
@@ -1405,7 +1407,7 @@ const AppContent: React.FC = () => {
                 },
                 lingo: {
                     generator: () => {
-                       const lingoData: LingoFinderRequestData = { destination: data.destination, language: data.language };
+                       const lingoData: LingoFinderRequestData = { destination: data.destination, language: data.language, coveredDestinations: isMultiStop ? currentItinerary!.coveredDestinations : undefined };
                        return handleGenerateLingoGuide(lingoData, true);
                     },
                     onSuccess: (result) => { if (result) setUnifiedPlan(prev => ({ ...prev, lingoRecommendations: result })); },

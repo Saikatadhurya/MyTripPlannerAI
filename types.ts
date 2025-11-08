@@ -19,6 +19,7 @@ export interface QuestionnaireData {
     language: string;
     currency: string;
     includeAlcoholicDrinks: boolean;
+    stops?: string[]; // Array of additional stops/destinations
 }
 
 export interface DayPlan {
@@ -217,6 +218,7 @@ export interface MusicRecommendations {
 export interface LingoFinderRequestData {
     destination: string;
     language: string;
+    coveredDestinations?: DestinationDetails[];
 }
 
 export interface Phrase {

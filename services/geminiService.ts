@@ -196,7 +196,8 @@ export const generateItinerary = async (
   isRoundTrip: boolean | undefined,
   currency: string,
   onChunk?: (chunk: string) => void,
-  userApiKey?: string
+  userApiKey?: string,
+  stops?: string[]
 ): Promise<{result: Itinerary, prompt: string}> => {
 
   const { apiKey, isUsingDefaultKey } = await CookieUtils.getApiKeyWithSource(userApiKey);
@@ -208,6 +209,136 @@ export const generateItinerary = async (
   const cleanApiKey = apiKey.trim();
 
   const ai = new GoogleGenAI({ apiKey: cleanApiKey });
+  
+  // Build list of all destinations including stops
+  // For Standard trips, include startPoint as a destination to visit if it's not a Car/Bike trip
+  const shouldIncludeStartPoint = tripType === 'Standard' && startPoint && startPoint.trim().length > 0;
+  
+  // For Standard trips with multiple stops, destination should be both start and end point
+  const isStandardMultiStop = tripType === 'Standard' && stops && stops.length > 0;
+  
+  let allDestinations: string[] = [];
+  if (stops && stops.length > 0) {
+    if (isStandardMultiStop) {
+      // For Standard trips with stops: destination → stops → destination (circular)
+      allDestinations = [destination, ...stops, destination].filter(d => d && d.trim().length > 0);
+    } else if (isRoundTrip) {
+      // For round trips (Car/Bike): stops → destination (farthest point)
+      allDestinations = [...stops, destination].filter(d => d && d.trim().length > 0);
+    } else {
+      // For other cases: destination → stops
+      allDestinations = [destination, ...stops].filter(d => d && d.trim().length > 0);
+    }
+  } else {
+    allDestinations = [destination];
+  }
+  
+  // Add startPoint as a destination for Standard trips (not Car/Bike) when there are no stops
+  // This ensures the source destination is also planned if it's a Standard trip without stops
+  // StartPoint should be at the beginning of the route
+  if (shouldIncludeStartPoint && !allDestinations.includes(startPoint) && (!stops || stops.length === 0)) {
+    allDestinations = [startPoint, ...allDestinations];
+  }
+  
+  const destinationsString = allDestinations.join(', ');
+  const isMultiStop = allDestinations.length > 1;
+  
+  // Determine if user only provided source and destination (no stops)
+  // For round trips, roundTripInstructions already handle intermediate destinations comprehensively
+  // So we only need this for non-round trips
+  const hasOnlySourceAndDestination = startPoint && startPoint.trim().length > 0 && 
+    destination && destination.trim().length > 0 && 
+    (!stops || stops.length === 0) &&
+    startPoint.toLowerCase().trim() !== destination.toLowerCase().trim() &&
+    !isRoundTrip;
+  
+  // Determine if this should be a circular trip
+  // Circular trip: round trip is true AND destination is the farthest point (last in the route)
+  const isCircularTrip = isRoundTrip && isMultiStop && destination && 
+    allDestinations[allDestinations.length - 1] === destination;
+  
+  let intermediateDestinationsInstructions = '';
+  if (hasOnlySourceAndDestination) {
+    const dailyLimit = tripType === 'Car' ? '300-400 km/day' : tripType === 'Bike' ? '150-250 km/day' : 'varies by transport';
+    const transportMode = tripType === 'Car' ? 'driving' : tripType === 'Bike' ? 'riding' : 'public transport';
+    
+    intermediateDestinationsInstructions = `
+    CRITICAL INSTRUCTION - AUTOMATIC INTERMEDIATE DESTINATIONS:
+    The user has only specified a starting point "${startPoint}" and destination "${destination}" without any intermediate stops.
+    You MUST automatically discover and include logical intermediate destinations along the route if it's feasible within the ${days}-day timeframe.
+    
+    1. **Route Analysis & Intermediate Discovery (MANDATORY)**:
+       - Use Google Search to find the distance and travel time between "${startPoint}" and "${destination}" using ${transportMode}.
+       - Identify famous cities, towns, attractions, or points of interest that lie along or near the logical route between these two points.
+       - Consider the user's vibe/interests: "${vibe.join(', ')}" when selecting intermediate destinations.
+       - For ${tripType === 'Standard' ? 'public transport' : tripType === 'Car' ? 'car' : 'bike'} trips, consider realistic travel times and connections.
+       - Daily travel limits: ${dailyLimit}
+    
+    2. **Feasibility Assessment**:
+       - If the direct journey from "${startPoint}" to "${destination}" is short (e.g., < 200 km for ${tripType === 'Car' ? 'car' : tripType === 'Bike' ? 'bike' : 'public transport'}), you may not need intermediate stops, but still consider nearby attractions or day trips.
+       - If the journey is long, you MUST break it down with intermediate destinations that:
+         * Are logically positioned along the route
+         * Can be reached within the daily travel limits
+         * Offer interesting attractions matching the vibe: "${vibe.join(', ')}"
+         * Allow proper exploration time at each location
+         * Fit within the ${days}-day timeframe
+    
+    3. **Implementation**:
+       - The 'coveredDestinations' array MUST include ALL destinations: ${shouldIncludeStartPoint ? `"${startPoint}", ` : ''}intermediate destinations (if any), and "${destination}".
+       - If intermediate destinations are added, the route should be: ${shouldIncludeStartPoint ? `"${startPoint}"` : 'Start'} → [Intermediate Destinations] → "${destination}"${isRoundTrip ? ` → Return to "${startPoint}"` : ''}.
+       - Each intermediate destination should have at least half a day or a full day allocated for exploration, depending on its significance.
+       - The daily 'plan' MUST reflect travel to and exploration of these intermediate destinations.
+       - Search for specific attractions, restaurants, and accommodations in each intermediate destination.
+    
+    4. **Examples**:
+       - For a 7-day trip from "Mumbai" to "Goa" by car: Include stops like "Pune", "Kolhapur", or "Ratnagiri" if they fit the route and vibe.
+       - For a 10-day trip from "Delhi" to "Manali" by car: Include stops like "Chandigarh", "Shimla", or "Kullu" along the route.
+       - For a 5-day trip from "Paris" to "Nice" by Standard transport: Include stops like "Lyon" or "Marseille" if feasible.
+    
+    5. **Output Requirements**:
+       - List all intermediate destinations in the 'coveredDestinations' array in the order they will be visited.
+       - Provide detailed information (history, culture, attractions) for each intermediate destination.
+       - Ensure the itinerary makes efficient use of all ${days} days, with activities planned for each day.
+    `;
+  }
+  
+  let multiStopInstructions = '';
+  if (isMultiStop) {
+    const standardMultiStopInstructions = isStandardMultiStop ? `
+    6.  **STANDARD MULTI-STOP ROUTING (CRITICAL)**: This is a Standard trip with multiple stops. The main destination "${destination}" MUST be both the STARTING and ENDING point of the journey:
+        - The route MUST start from "${destination}"
+        - Visit all intermediate stops (${stops?.join(', ') || ''}) in logical order
+        - Return to "${destination}" at the end
+        - The 'coveredDestinations' array should reflect this circular path: "${destination}" → [stops] → "${destination}"
+        - The first day should include activities in "${destination}" (starting point)
+        - The final days MUST include the return journey back to "${destination}" and activities there (ending point)
+        - This creates a circular route where "${destination}" serves as both the departure and return point.
+    ` : '';
+    
+    const circularInstructions = isCircularTrip && !isStandardMultiStop ? `
+    6.  **CIRCULAR TRIP ROUTING**: This is a circular/round trip where the main destination "${destination}" is the farthest point. The route MUST be planned as a circular circuit:
+        - Start from ${shouldIncludeStartPoint ? `"${startPoint}"` : 'the first stop'}
+        - Visit all intermediate stops in logical order
+        - Reach "${destination}" as the farthest point
+        - Return via a different route or the same route back to ${shouldIncludeStartPoint ? `"${startPoint}"` : 'the starting point'}
+        - The final days MUST include the return journey, completing the circular route.
+        - The 'coveredDestinations' array should reflect this circular path, with the destination being the farthest point before returning.
+    ` : '';
+    
+    multiStopInstructions = `
+    CRITICAL MULTI-STOP INSTRUCTION:
+    The user has specified multiple destinations for this trip: ${destinationsString}
+    ${shouldIncludeStartPoint && !isStandardMultiStop ? `Note: The starting point "${startPoint}" is included as a destination to visit (Standard trip).` : ''}
+    ${isStandardMultiStop ? `Note: For this Standard trip with multiple stops, "${destination}" is both the starting and ending point.` : ''}
+    1.  The 'coveredDestinations' array MUST be populated with detailed information for EACH destination listed, in the order they should be visited.
+    2.  The 'destination' field in the JSON response should be a descriptive name for this multi-destination trip (e.g., '${destinationsString} Tour' or 'Multi-City ${destinationsString} Adventure').
+    3.  The daily 'plan' MUST logically reflect travel between these destinations, ensuring each destination is properly explored.
+    4.  You MUST create a logical route that efficiently connects all destinations, minimizing backtracking and travel time.
+    5.  For each destination in the 'coveredDestinations' array, provide comprehensive information (history, culture, natural places, museums, etc.).
+    ${standardMultiStopInstructions}
+    ${circularInstructions}
+    `;
+  }
   
   const regionalTripInstructions = `
   REGIONAL TRAVEL INSTRUCTION:
@@ -273,13 +404,29 @@ export const generateItinerary = async (
       `;
     }
   
-  const prompt = `Create a detailed travel itinerary in ${language}. The user wants to plan a ${days}-day trip to ${destination} with a ${budget} budget.
+  const prompt = `Create a detailed travel itinerary in ${language}. The user wants to plan a ${days}-day trip${isMultiStop ? ` covering multiple destinations: ${destinationsString}` : ` to ${destination}`} with a ${budget} budget.
   
   **GOOGLE SEARCH OPTIMIZATION (CRITICAL FOR SPEED):**
   You have access to Google Search, but use it efficiently and strategically:
   1. **USE GOOGLE SEARCH ONLY FOR:**
-     - **ACCOMMODATION SEARCH (MANDATORY):** For each day's 'placesToStay', you MUST search for hotels/hostels/guesthouses in the destination city with current prices. Search format: "budget hotels in [city] for [startDate] prices" or "hostels in [city] budget accommodation prices". Include the actual per-night cost in the accommodation name. Example: "**XYZ Hostel** (from ₹800/night)" or "**ABC Hotel** (from ₹2,500/night per person)". This is CRITICAL - always include pricing.
-     - **RESTAURANT SEARCH (MANDATORY):** For each day's 'food' field, you MUST search Google for specific restaurants, cafes, and eateries in the destination city. Search format: "best restaurants in [city] for [foodPreference] budget" or "popular restaurants [city] [vibe]". Include actual restaurant names (not just generic descriptions). Format: "**Restaurant Name** - [description]" or "**Restaurant Name** ([specialty/cuisine])". This is CRITICAL - always include specific restaurant names that can be searched.
+     - **ACCOMMODATION SEARCH (MANDATORY):** For each day's 'placesToStay', you MUST search for REAL, SPECIFIC hotels/hostels/guesthouses in the destination city with current prices. Search format: "budget hotels in [city] for [startDate] prices" or "hostels in [city] budget accommodation prices". 
+       **CRITICAL REQUIREMENTS:**
+       - You MUST provide ACTUAL, REAL hotel/hostel names that exist and can be found on Google Search
+       - DO NOT use generic names like "Budget Hotel", "Local Guesthouse", "City Hotel", "Downtown Inn" - these are TOO VAGUE
+       - Use SPECIFIC, SEARCHABLE names like "**Taj Mahal Hotel**", "**OYO Rooms**", "**Zostel Hostel**", "**Hilton Garden Inn**"
+       - Include the actual per-night cost in the format: "**Real Hotel Name** (from ₹800/night)" or "**Actual Hostel Name** (from ₹2,500/night per person)"
+       - If you cannot find a specific name, search more thoroughly - vague names are NOT acceptable
+       - Example of CORRECT format: "**Taj Palace Hotel** (from ₹3,500/night)" or "**Zostel Mumbai** (from ₹600/night)"
+       - Example of INCORRECT format: "Budget hotel" or "Local accommodation" or "City center hotel"
+     - **RESTAURANT SEARCH (MANDATORY):** For each day's 'food' field, you MUST search Google for REAL, SPECIFIC restaurants, cafes, and eateries in the destination city. Search format: "best restaurants in [city] for [foodPreference] budget" or "popular restaurants [city] [vibe]". 
+       **CRITICAL REQUIREMENTS:**
+       - You MUST provide ACTUAL, REAL restaurant names that exist and can be found on Google Search
+       - DO NOT use generic names like "Local Restaurant", "Street Food Stall", "Cafe", "Restaurant" - these are TOO VAGUE
+       - Use SPECIFIC, SEARCHABLE names like "**McDonald's**", "**Cafe Coffee Day**", "**Saravana Bhavan**", "**Karim's Restaurant**", "**Leopold Cafe**"
+       - Format: "**Real Restaurant Name** - [description]" or "**Actual Restaurant Name** ([specialty/cuisine])"
+       - If you cannot find a specific name, search more thoroughly - vague names are NOT acceptable
+       - Example of CORRECT format: "**Saravana Bhavan** - Authentic South Indian vegetarian cuisine" or "**Karim's** (Mughlai specialties)"
+       - Example of INCORRECT format: "Local restaurant" or "Street food" or "Cafe near hotel"
      - Current entry prices and ticket costs for specific attractions
      - Real-time events, festivals, or special events happening during travel dates (${startDate})
      - Current exchange rates between currencies
@@ -314,7 +461,9 @@ export const generateItinerary = async (
   - **Strategic Scheduling**: When possible, schedule activities in the same area together to minimize travel time. Group nearby attractions to avoid unnecessary back-and-forth travel that wastes time in traffic.
 
   Trip Details:
-  - Destination: ${destination}
+  - Main Destination: ${destination}
+  ${isMultiStop ? `- Additional Stops: ${stops?.join(', ') || ''}` : ''}
+  - All Destinations to Visit: ${destinationsString}
   - Starting Point: ${startPoint || 'Not specified'}
   - Trip Type: ${tripType}
   - Is Round Trip: ${isRoundTrip ? 'Yes' : 'No'}
@@ -349,6 +498,10 @@ export const generateItinerary = async (
   5.  **budgetSummary.fuel**: You MUST calculate an estimated total fuel cost for the trip. Use vehicle capacities (Car: max 5 people, Bike: max 2 people) to determine the number of vehicles needed for the group of ${persons} people. Estimate the total fuel cost for ALL vehicles for the ENTIRE trip and provide the final PER-PERSON average in this field.
   6.  **plan.transport.cost**: This field is CRITICAL. It MUST represent the estimated fuel cost for driving **ONE SINGLE VEHICLE** for that specific day's travel leg. The frontend will use this to calculate group costs. If there's no inter-city travel, this should be "0". You are FORBIDDEN from returning any non-numeric text.
   ` : ''}
+
+  ${intermediateDestinationsInstructions}
+
+  ${multiStopInstructions}
 
   ${regionalTripInstructions}
 
@@ -388,8 +541,8 @@ export const generateItinerary = async (
         "day": number,
         "title": string,
         "activities": string[],
-        "food": string[],
-        "placesToStay": string[],
+        "food": string[], // MUST contain REAL restaurant names in format: "**Restaurant Name** - description" (NO generic names like "Local restaurant")
+        "placesToStay": string[], // MUST contain REAL hotel/hostel names in format: "**Hotel Name** (from price/night)" (NO generic names like "Budget hotel")
         "approxCost": string,
         "medicalFacilities"?: string[],
         "transport"?: { "suggestions": string[], "cost": string }

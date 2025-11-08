@@ -16,12 +16,37 @@ const parseBold = (text: string | undefined) => {
 // Helper to extract hotel name from formatted text (removes price info and bold markers)
 const extractHotelName = (text: string): string => {
   if (!text) return '';
-  // Remove bold markers
+  
+  // First, try to extract bold text (most common format: **Hotel Name**)
+  const boldMatch = text.match(/\*\*([^*]+)\*\*/);
+  if (boldMatch && boldMatch[1]) {
+    let name = boldMatch[1].trim();
+    // Remove price info if present in the bold text
+    name = name.replace(/\s*\(.*$/g, '').trim();
+    if (name.length > 0) return name;
+  }
+  
+  // Fallback: remove bold markers and extract first meaningful part
   let cleaned = text.replace(/\*\*/g, '');
+  
   // Remove price information (everything from "(" onwards)
   cleaned = cleaned.replace(/\s*\(.*$/g, '');
-  // Trim whitespace
-  return cleaned.trim();
+  
+  // Remove common prefixes/suffixes
+  cleaned = cleaned.replace(/^(from|starting|at)\s+/i, '');
+  
+  // Extract first part (before dash, colon, or comma)
+  const firstPart = cleaned.split(/[-–—:,\n]/)[0].trim();
+  
+  // If first part is too short or looks like a number, try next part
+  if (firstPart.length < 3 || /^\d+/.test(firstPart)) {
+    const parts = cleaned.split(/[-–—:,\n]/);
+    if (parts.length > 1) {
+      return parts[1].trim();
+    }
+  }
+  
+  return firstPart || cleaned.trim();
 };
 
 // Helper to generate Google search URL for a hotel
@@ -33,13 +58,39 @@ const generateHotelSearchUrl = (hotelName: string, destination: string): string 
 // Helper to extract restaurant name from formatted text (removes description and bold markers)
 const extractRestaurantName = (text: string): string => {
   if (!text) return '';
-  // Remove bold markers
+  
+  // First, try to extract bold text (most common format: **Restaurant Name**)
+  const boldMatch = text.match(/\*\*([^*]+)\*\*/);
+  if (boldMatch && boldMatch[1]) {
+    let name = boldMatch[1].trim();
+    // Remove description after dash, colon, or parenthesis
+    name = name.replace(/\s*[-–—:]\s*.*$/g, '');
+    name = name.replace(/\s*\(.*$/g, '');
+    if (name.length > 0) return name;
+  }
+  
+  // Fallback: remove bold markers and extract first meaningful part
   let cleaned = text.replace(/\*\*/g, '');
+  
   // Remove description after dash or colon or parenthesis
   cleaned = cleaned.replace(/\s*[-–—:]\s*.*$/g, ''); // Remove after dash/colon
   cleaned = cleaned.replace(/\s*\(.*$/g, ''); // Remove after parenthesis
-  // Trim whitespace
-  return cleaned.trim();
+  
+  // Remove common prefixes
+  cleaned = cleaned.replace(/^(at|visit|try|enjoy)\s+/i, '');
+  
+  // Extract first part (before dash, colon, comma, or newline)
+  const firstPart = cleaned.split(/[-–—:,\n]/)[0].trim();
+  
+  // If first part is too short, try next part
+  if (firstPart.length < 3) {
+    const parts = cleaned.split(/[-–—:,\n]/);
+    if (parts.length > 1) {
+      return parts[1].trim();
+    }
+  }
+  
+  return firstPart || cleaned.trim();
 };
 
 // Helper to generate Google search URL for a restaurant
@@ -779,31 +830,59 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
                     {day.food && day.food.length > 0 && (
                       day.food.map((item, index) => {
                         const restaurantName = extractRestaurantName(item);
-                        const searchUrl = restaurantName ? generateRestaurantSearchUrl(restaurantName, itinerary.destination) : null;
-                        
-                        // Parse the item and make restaurant name clickable if it exists
                         let itemWithLink = item;
                         
-                        if (restaurantName && restaurantName.length > 0) {
-                          // Escape special regex characters in restaurant name
-                          const restaurantNameEscaped = restaurantName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                        // Always try to create a link - use extracted name or fallback to first bold text
+                        let searchName = restaurantName;
+                        let searchUrl = '';
+                        
+                        if (searchName && searchName.length > 0) {
+                          searchUrl = generateRestaurantSearchUrl(searchName, itinerary.destination);
+                        } else {
+                          // Fallback: extract first bold text or first few words
+                          const boldMatch = item.match(/\*\*([^*]+)\*\*/);
+                          if (boldMatch && boldMatch[1]) {
+                            searchName = boldMatch[1].split(/[-–—:]/)[0].trim();
+                          } else {
+                            const words = item.split(/\s+/);
+                            searchName = words.slice(0, Math.min(3, words.length)).join(' ').split(/[-–—:]/)[0].trim();
+                          }
+                          if (searchName && searchName.length > 0) {
+                            searchUrl = generateRestaurantSearchUrl(searchName, itinerary.destination);
+                          }
+                        }
+                        
+                        // Create link if we have a search URL
+                        if (searchUrl) {
+                          // Try to find and replace the restaurant name in the text
+                          const escapedName = (searchName || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                           
-                          // Try to match bold restaurant name first: **Restaurant Name**
-                          const boldPattern = new RegExp(`\\*\\*${restaurantNameEscaped}\\*\\*`, 'g');
-                          const hasBoldMatch = boldPattern.test(item);
-                          boldPattern.lastIndex = 0; // Reset regex state
-                          
-                          if (hasBoldMatch) {
+                          // Strategy 1: Replace bold version
+                          const boldPattern = new RegExp(`\\*\\*${escapedName}\\*\\*`, 'gi');
+                          if (boldPattern.test(item)) {
+                            boldPattern.lastIndex = 0;
                             itemWithLink = item.replace(boldPattern, (match) => {
                               const nameWithoutBold = match.replace(/\*\*/g, '');
                               return `<a href="${searchUrl}" target="_blank" rel="noopener noreferrer" class="text-amber-600 hover:text-amber-800 underline font-semibold transition-colors"><strong>${nameWithoutBold}</strong></a>`;
                             });
                           } else {
-                            // If not in bold, match the restaurant name directly (only at the start)
-                            const namePattern = new RegExp(`^(${restaurantNameEscaped})`, '');
-                            itemWithLink = item.replace(namePattern, (match) => {
-                              return `<a href="${searchUrl}" target="_blank" rel="noopener noreferrer" class="text-amber-600 hover:text-amber-800 underline font-semibold transition-colors">${match}</a>`;
-                            });
+                            // Strategy 2: Replace non-bold version (case-insensitive, anywhere)
+                            const namePattern = new RegExp(`(${escapedName})`, 'gi');
+                            if (namePattern.test(item)) {
+                              namePattern.lastIndex = 0;
+                              itemWithLink = item.replace(namePattern, (match) => {
+                                return `<a href="${searchUrl}" target="_blank" rel="noopener noreferrer" class="text-amber-600 hover:text-amber-800 underline font-semibold transition-colors">${match}</a>`;
+                              });
+                            } else {
+                              // Strategy 3: Wrap first bold section
+                              const firstBold = item.match(/\*\*([^*]+)\*\*/);
+                              if (firstBold) {
+                                itemWithLink = item.replace(firstBold[0], `<a href="${searchUrl}" target="_blank" rel="noopener noreferrer" class="text-amber-600 hover:text-amber-800 underline font-semibold transition-colors"><strong>${firstBold[1]}</strong></a>`);
+                              } else {
+                                // Strategy 4: Wrap entire item as last resort
+                                itemWithLink = `<a href="${searchUrl}" target="_blank" rel="noopener noreferrer" class="text-amber-600 hover:text-amber-800 underline font-semibold transition-colors">${item}</a>`;
+                              }
+                            }
                           }
                         }
                         
@@ -841,31 +920,60 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
                     {day.placesToStay && day.placesToStay.length > 0 && (
                       day.placesToStay.map((item, index) => {
                         const hotelName = extractHotelName(item);
-                        const searchUrl = generateHotelSearchUrl(hotelName, itinerary.destination);
-                        
-                        // Parse the item and make hotel name clickable
-                        // First, handle the case where hotel name is in bold: **Hotel Name**
                         let itemWithLink = item;
                         
-                        // Escape special regex characters in hotel name
-                        const hotelNameEscaped = hotelName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                        // Always try to create a link - use extracted name or fallback to first bold text
+                        let searchName = hotelName;
+                        let searchUrl = '';
                         
-                        // Try to match bold hotel name first: **Hotel Name**
-                        const boldPattern = new RegExp(`\\*\\*${hotelNameEscaped}\\*\\*`, 'g');
-                        const hasBoldMatch = boldPattern.test(item);
-                        boldPattern.lastIndex = 0; // Reset regex state
-                        
-                        if (hasBoldMatch) {
-                          itemWithLink = item.replace(boldPattern, (match) => {
-                            const nameWithoutBold = match.replace(/\*\*/g, '');
-                            return `<a href="${searchUrl}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline font-semibold transition-colors"><strong>${nameWithoutBold}</strong></a>`;
-                          });
+                        if (searchName && searchName.length > 0) {
+                          searchUrl = generateHotelSearchUrl(searchName, itinerary.destination);
                         } else {
-                          // If not in bold, match the hotel name directly (only at the start)
-                          const namePattern = new RegExp(`^(${hotelNameEscaped})`, '');
-                          itemWithLink = item.replace(namePattern, (match) => {
-                            return `<a href="${searchUrl}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline font-semibold transition-colors">${match}</a>`;
-                          });
+                          // Fallback: extract first bold text or first few words
+                          const boldMatch = item.match(/\*\*([^*]+)\*\*/);
+                          if (boldMatch && boldMatch[1]) {
+                            searchName = boldMatch[1].replace(/\s*\(.*$/g, '').trim();
+                          } else {
+                            const words = item.split(/\s+/);
+                            searchName = words.slice(0, Math.min(3, words.length)).join(' ').replace(/\s*\(.*$/g, '').trim();
+                          }
+                          if (searchName && searchName.length > 0) {
+                            searchUrl = generateHotelSearchUrl(searchName, itinerary.destination);
+                          }
+                        }
+                        
+                        // Create link if we have a search URL
+                        if (searchUrl) {
+                          // Try to find and replace the hotel name in the text
+                          const escapedName = (searchName || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                          
+                          // Strategy 1: Replace bold version
+                          const boldPattern = new RegExp(`\\*\\*${escapedName}\\*\\*`, 'gi');
+                          if (boldPattern.test(item)) {
+                            boldPattern.lastIndex = 0;
+                            itemWithLink = item.replace(boldPattern, (match) => {
+                              const nameWithoutBold = match.replace(/\*\*/g, '');
+                              return `<a href="${searchUrl}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline font-semibold transition-colors"><strong>${nameWithoutBold}</strong></a>`;
+                            });
+                          } else {
+                            // Strategy 2: Replace non-bold version (case-insensitive, anywhere)
+                            const namePattern = new RegExp(`(${escapedName})`, 'gi');
+                            if (namePattern.test(item)) {
+                              namePattern.lastIndex = 0;
+                              itemWithLink = item.replace(namePattern, (match) => {
+                                return `<a href="${searchUrl}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline font-semibold transition-colors">${match}</a>`;
+                              });
+                            } else {
+                              // Strategy 3: Wrap first bold section
+                              const firstBold = item.match(/\*\*([^*]+)\*\*/);
+                              if (firstBold) {
+                                itemWithLink = item.replace(firstBold[0], `<a href="${searchUrl}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline font-semibold transition-colors"><strong>${firstBold[1]}</strong></a>`);
+                              } else {
+                                // Strategy 4: Wrap entire item as last resort
+                                itemWithLink = `<a href="${searchUrl}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline font-semibold transition-colors">${item}</a>`;
+                              }
+                            }
+                          }
                         }
                         
                         // Now parse any remaining bold markdown

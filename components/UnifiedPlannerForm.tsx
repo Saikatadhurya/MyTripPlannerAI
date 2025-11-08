@@ -94,6 +94,7 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
     currency: 'India (INR) – ₹',
     isRoundTrip: false,
     includeAlcoholicDrinks: false,
+    stops: [],
   });
   
   const [destinationSuggestions, setDestinationSuggestions] = useState<LocationSuggestion[]>([]);
@@ -127,6 +128,27 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
   const [isCurrencyDropdownOpen, setIsCurrencyDropdownOpen] = useState(false);
   const langDropdownRef = useRef<HTMLDivElement>(null);
   const currencyDropdownRef = useRef<HTMLDivElement>(null);
+
+  // State for multiple stops
+  const [stops, setStops] = useState<Array<{
+    id: string;
+    value: string;
+    isSelected: boolean;
+    suggestions: LocationSuggestion[];
+    isLoading: boolean;
+    error: string | null;
+  }>>(initialData?.stops?.map((stop, idx) => ({
+    id: `stop-${idx}`,
+    value: stop,
+    isSelected: true,
+    suggestions: [],
+    isLoading: false,
+    error: null,
+  })) || []);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  
+  const stopsRefs = useRef<Map<string, { inputRef: HTMLInputElement | null, suggestionsRef: HTMLUListElement | null }>>(new Map());
+  const stopsSelectingRef = useRef<Map<string, boolean>>(new Map());
 
   useEffect(() => {
     fetch('/data/destinations.json')
@@ -306,6 +328,146 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
   };
   
 
+  const addStop = () => {
+    const newId = `stop-${Date.now()}`;
+    setStops(prev => [...prev, {
+      id: newId,
+      value: '',
+      isSelected: false,
+      suggestions: [],
+      isLoading: false,
+      error: null,
+    }]);
+  };
+
+  const removeStop = (id: string) => {
+    setStops(prev => prev.filter(stop => stop.id !== id));
+    stopsRefs.current.delete(id);
+    stopsSelectingRef.current.delete(id);
+    // Update formData stops array
+    setFormData(prev => ({
+      ...prev,
+      stops: prev.stops?.filter((_, idx) => stops.findIndex(s => s.id === id) !== idx) || []
+    }));
+  };
+
+  const reorderStops = (fromIndex: number, toIndex: number) => {
+    if (fromIndex === toIndex) return;
+    
+    setStops(prev => {
+      const newStops = [...prev];
+      const [moved] = newStops.splice(fromIndex, 1);
+      newStops.splice(toIndex, 0, moved);
+      
+      // Update formData stops array to match the new order
+      setFormData(prevFormData => ({
+        ...prevFormData,
+        stops: newStops.map(s => s.value)
+      }));
+      
+      return newStops;
+    });
+  };
+
+  const handleDragStart = (index: number) => {
+    setDraggedIndex(index);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (draggedIndex === null || draggedIndex === index) return;
+    
+    const draggedOverElement = e.currentTarget as HTMLElement;
+    const rect = draggedOverElement.getBoundingClientRect();
+    const midpoint = rect.top + rect.height / 2;
+    const mouseY = e.clientY;
+    
+    if (mouseY < midpoint && draggedIndex > index) {
+      reorderStops(draggedIndex, index);
+      setDraggedIndex(index);
+    } else if (mouseY > midpoint && draggedIndex < index) {
+      reorderStops(draggedIndex, index);
+      setDraggedIndex(index);
+    }
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+  };
+
+  const handleStopChange = (id: string, value: string) => {
+    setStops(prev => {
+      const updated = prev.map(stop => 
+        stop.id === id ? { ...stop, value, isSelected: false, error: null } : stop
+      );
+      // Update formData with updated stops
+      setFormData(formData => ({
+        ...formData,
+        stops: updated.filter(s => s.isSelected && s.value.trim().length > 0).map(s => s.value)
+      }));
+      return updated;
+    });
+
+    if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
+    stopsSelectingRef.current.set(id, false);
+
+    if (value.trim().length > 1) {
+      if (!user) {
+        onOpenAuthModal();
+        return;
+      }
+      setStops(prev => prev.map(stop => 
+        stop.id === id ? { ...stop, isLoading: true } : stop
+      ));
+      debounceTimeout.current = setTimeout(() => {
+        if (!stopsSelectingRef.current.get(id)) {
+          getDestinationSuggestions(value, user?.gemini_api_key).then(results => {
+            setStops(prev => prev.map(stop => 
+              stop.id === id ? { ...stop, suggestions: results, isLoading: false } : stop
+            ));
+          }).catch(() => {
+            setStops(prev => prev.map(stop => 
+              stop.id === id ? { ...stop, suggestions: [], isLoading: false } : stop
+            ));
+          });
+        }
+      }, 500);
+    } else {
+      setStops(prev => prev.map(stop => 
+        stop.id === id ? { ...stop, suggestions: [], isLoading: false } : stop
+      ));
+    }
+  };
+
+  const handleStopSuggestionClick = (id: string, suggestion: LocationSuggestion) => {
+    stopsSelectingRef.current.set(id, true);
+    const fullName = suggestion.parentHierarchy ? `${suggestion.name}, ${suggestion.parentHierarchy}` : suggestion.name;
+    setStops(prev => {
+      const updated = prev.map(stop => 
+        stop.id === id ? { ...stop, value: fullName, isSelected: true, error: null, suggestions: [] } : stop
+      );
+      // Update formData with updated stops
+      setFormData(formData => ({
+        ...formData,
+        stops: updated.filter(s => s.isSelected && s.value.trim().length > 0).map(s => s.value)
+      }));
+      return updated;
+    });
+    if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
+  };
+
+  const handleStopBlur = (id: string) => {
+    setTimeout(() => {
+      const stop = stops.find(s => s.id === id);
+      if (!stopsSelectingRef.current.get(id) && stop && stop.value.trim().length > 0 && !stop.isSelected) {
+        setStops(prev => prev.map(s => 
+          s.id === id ? { ...s, error: "Please pick a location from the list to lock it in! 🗺️" } : s
+        ));
+      }
+    }, 200);
+  };
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
         if (
@@ -320,6 +482,18 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
         ) {
             setStartPointSuggestions([]);
         }
+        // Handle stops suggestions
+        stops.forEach(stop => {
+          const refs = stopsRefs.current.get(stop.id);
+          if (refs) {
+            if (refs.suggestionsRef && !refs.suggestionsRef.contains(event.target as Node) &&
+                refs.inputRef && !refs.inputRef.contains(event.target as Node)) {
+              setStops(prev => prev.map(s => 
+                s.id === stop.id ? { ...s, suggestions: [] } : s
+              ));
+            }
+          }
+        });
         if (langDropdownRef.current && !langDropdownRef.current.contains(event.target as Node)) {
             setIsLangDropdownOpen(false);
         }
@@ -329,7 +503,7 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [stops]);
 
   const handleOpenSelection = (field: keyof QuestionnaireData, title: string) => {
     if (!isMobile) return;
@@ -438,13 +612,30 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
             hasError = true;
         }
     }
+
+    // Validate stops
+    const invalidStops = stops.filter(stop => stop.value.trim().length > 0 && !stop.isSelected);
+    if (invalidStops.length > 0) {
+      invalidStops.forEach(stop => {
+        setStops(prev => prev.map(s => 
+          s.id === stop.id ? { ...s, error: "Please pick a location from the list to lock it in! 🗺️" } : s
+        ));
+      });
+      hasError = true;
+    }
     
     if (apiKeyError) {
         hasError = true;
     }
     
     if (hasError) return;
-    onSubmit(formData);
+    
+    // Update formData with final stops values
+    const finalFormData = {
+      ...formData,
+      stops: stops.filter(s => s.isSelected && s.value.trim().length > 0).map(s => s.value)
+    };
+    onSubmit(finalFormData);
   };
 
   const renderSelectionPage = () => {
@@ -604,8 +795,142 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
                         )}
                     </div>
                 )}
-                <div className={`relative min-w-0 ${!showStartPoint ? 'col-span-1 sm:col-span-2' : ''}`}>
-                    <label htmlFor="destination" className="block text-sm font-medium text-slate-700 mb-1">Destination</label>
+            </div>
+                
+                {/* Multiple Stops Section */}
+                <div className="space-y-3 mt-4">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-sm font-medium text-slate-700">Additional Stops (Optional)</label>
+                    <button
+                      type="button"
+                      onClick={addStop}
+                      className="text-sm px-3 py-1.5 bg-violet-100 text-violet-700 rounded-lg hover:bg-violet-200 transition flex items-center space-x-1"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
+                      </svg>
+                      <span>Add Stop</span>
+                    </button>
+                  </div>
+                  {stops.map((stop, index) => (
+                    <div 
+                      key={stop.id} 
+                      className={`relative transition-all ${draggedIndex === index ? 'opacity-50 scale-95' : ''} ${draggedIndex !== null && draggedIndex !== index ? 'opacity-100' : ''}`}
+                      draggable
+                      onDragStart={(e) => {
+                        // Only allow drag if not clicking on input or remove button
+                        const target = e.target as HTMLElement;
+                        if (target.tagName === 'INPUT' || target.closest('button[aria-label="Remove stop"]')) {
+                          e.preventDefault();
+                          return;
+                        }
+                        handleDragStart(index);
+                        e.dataTransfer.effectAllowed = 'move';
+                        e.dataTransfer.setData('text/html', '');
+                      }}
+                      onDragOver={(e) => handleDragOver(e, index)}
+                      onDragEnd={handleDragEnd}
+                    >
+                      <div className="flex items-start space-x-2">
+                        <div
+                          className="mt-2 p-1.5 text-slate-400 hover:text-slate-600 cursor-move transition-colors select-none"
+                          aria-label="Drag to reorder"
+                          title="Drag to reorder"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M7 2a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0zM7 18a2 2 0 11-4 0 2 2 0 014 0zM15 2a2 2 0 11-4 0 2 2 0 014 0zM15 10a2 2 0 11-4 0 2 2 0 014 0zM15 18a2 2 0 11-4 0 2 2 0 014 0z" />
+                          </svg>
+                        </div>
+                        <div className="flex-1 relative">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 20l-4.95-5.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                          <input
+                            type="text"
+                            ref={(el) => {
+                              if (el) {
+                                const refs = stopsRefs.current.get(stop.id) || { inputRef: null, suggestionsRef: null };
+                                refs.inputRef = el;
+                                stopsRefs.current.set(stop.id, refs);
+                              }
+                            }}
+                            value={stop.value}
+                            onChange={(e) => handleStopChange(stop.id, e.target.value)}
+                            onBlur={() => handleStopBlur(stop.id)}
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onDragStart={(e) => e.preventDefault()}
+                            placeholder={`Stop ${index + 1} (e.g., Paris, France)`}
+                            className="w-full pl-10 pr-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
+                            autoComplete="off"
+                            draggable={false}
+                          />
+                          {stop.isLoading && (
+                            <div className="absolute right-3 top-2.5">
+                              <svg className="animate-spin h-5 w-5 text-violet-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                            </div>
+                          )}
+                          {!isMobile && stop.suggestions.length > 0 && (
+                            <ul
+                              ref={(el) => {
+                                if (el) {
+                                  const refs = stopsRefs.current.get(stop.id) || { inputRef: null, suggestionsRef: null };
+                                  refs.suggestionsRef = el;
+                                  stopsRefs.current.set(stop.id, refs);
+                                }
+                              }}
+                              className="absolute z-10 w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg max-h-60 overflow-y-auto"
+                            >
+                              {stop.suggestions.map((s, i) => (
+                                <li
+                                  key={i}
+                                  onClick={() => handleStopSuggestionClick(stop.id, s)}
+                                  className="px-4 py-3 cursor-pointer hover:bg-violet-100/60 flex justify-between items-center transition-colors"
+                                >
+                                  <div>
+                                    <span className="font-semibold text-slate-800">{s.name}</span>
+                                    {s.parentHierarchy && <span className="text-sm text-slate-600">, {s.parentHierarchy}</span>}
+                                  </div>
+                                  <span className="text-xs bg-slate-200 text-slate-700 font-medium px-2 py-0.5 rounded-full">{s.type}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeStop(stop.id)}
+                          className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                          aria-label="Remove stop"
+                          onMouseDown={(e) => e.stopPropagation()}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                          </svg>
+                        </button>
+                      </div>
+                      {stop.error && (
+                        <div style={{ animation: 'validation-fade-in 0.3s ease' }} className="mt-2 text-sm text-rose-700 bg-rose-100/60 p-2 rounded-md flex items-center space-x-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                          </svg>
+                          <span>{stop.error}</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  {stops.length > 0 && (
+                    <p className="text-xs text-slate-500 mt-2">Add multiple stops to create a multi-destination itinerary</p>
+                  )}
+                </div>
+                
+                {/* Main Destination Field - After Stops */}
+                <div className="relative min-w-0">
+                    <label htmlFor="destination" className="block text-sm font-medium text-slate-700 mb-1">Main Destination{formData.tripType === 'Standard' && stops.length > 0 ? ' (Start & End Point)' : ''}</label>
                     <div className="relative" onClick={() => handleOpenSelection('destination', 'Select Destination')}>
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 20l-4.95-5.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
@@ -642,8 +967,8 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
                               </span>
                           </div>
                         )}
-                    </div>
                 </div>
+                
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="min-w-0">
                         <label className="block text-sm font-medium text-slate-700 mb-1">Trip Dates</label>
@@ -836,7 +1161,7 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
               <button
                 type="submit"
                 className="w-full sm:w-auto px-10 py-4 bg-violet-600 text-white font-bold rounded-full hover:bg-violet-700 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-violet-500/30 disabled:bg-violet-400/80 disabled:cursor-not-allowed disabled:shadow-md disabled:scale-100"
-                disabled={!user || !isDestinationSelected || !!destinationError || !!apiKeyError || (showStartPoint && (!isStartPointSelected || !!startPointError)) || formData.vibe.length === 0}
+                disabled={!user || !isDestinationSelected || !!destinationError || !!apiKeyError || (showStartPoint && (!isStartPointSelected || !!startPointError)) || formData.vibe.length === 0 || stops.some(s => s.value.trim().length > 0 && !s.isSelected)}
               >
                 ✨ Plan My Adventure
               </button>

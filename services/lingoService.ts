@@ -12,16 +12,34 @@ export const generateLingoGuide = async (data: LingoFinderRequestData, onChunk?:
   }
   const cleanApiKey = apiKey.trim();
 
-  const { destination, language } = data;
+  const { destination, language, coveredDestinations } = data;
   const ai = new GoogleGenAI({ apiKey: cleanApiKey });
 
+  const isMultiStop = coveredDestinations && coveredDestinations.length > 1;
+  const destinationsString = isMultiStop 
+    ? coveredDestinations.map(d => d.name).join(', ')
+    : destination;
+  
+  let multiStopInstructions = '';
+  if (isMultiStop) {
+    multiStopInstructions = `
+    **MULTI-STOP TRIP INSTRUCTION:**
+    This is a multi-destination trip covering: ${destinationsString}.
+    You MUST create a comprehensive phrasebook that is useful across ALL these destinations.
+    - Identify the PRIMARY language(s) spoken across these destinations. If multiple languages are spoken, prioritize the most common one, but include phrases that work across the region.
+    - The phrasebook should be practical for travelers moving between these locations.
+    - The 'destination' field should reflect the multi-destination nature (e.g., "${destinationsString} Tour" or "Multi-City ${destinationsString} Guide").
+    `;
+  }
+
   const prompt = `
-    You are an expert Linguist and Local Guide AI. Your mission is to create a practical, helpful, and culturally aware phrasebook for a traveler visiting "${destination}".
+    You are an expert Linguist and Local Guide AI. Your mission is to create a practical, helpful, and culturally aware phrasebook for a traveler visiting ${isMultiStop ? `multiple destinations: ${destinationsString}` : `"${destination}"`}.
     The output language for the entire JSON response must be in ${language}.
+    ${multiStopInstructions}
 
     **CRITICAL INSTRUCTIONS & PROTOCOL:**
 
-    1.  **Identify Local Language:** First, you MUST determine the primary local language spoken in "${destination}". This will be used for the translations.
+    1.  **Identify Local Language:** First, you MUST determine the primary local language(s) spoken ${isMultiStop ? `across these destinations: ${destinationsString}` : `in "${destination}"`}. This will be used for the translations.
     2.  **Curate Essential Categories:** Create a list of essential phrase categories. You MUST include at least the following five categories: "Greetings & Basics", "Dining & Ordering Food", "Shopping & Bargaining", "Directions & Transportation", and "Emergencies". You may add 1-2 other relevant categories if applicable to the destination (e.g., "Beach Phrases" for a coastal city).
     3.  **Generate Phrases:** For each category, provide 5-8 useful phrases. Each phrase object MUST contain three fields:
         - \`english\`: The phrase in English.
@@ -32,8 +50,8 @@ export const generateLingoGuide = async (data: LingoFinderRequestData, onChunk?:
     The response MUST be ONLY a single, valid JSON object that strictly follows this structure. All text content must be in ${language}.
 
     {
-      "destination": "${destination}",
-      "localLanguage": "The name of the local language you identified (e.g., 'Japanese', 'Hindi', 'Spanish')",
+      "destination": "${isMultiStop ? destinationsString : destination}",
+      "localLanguage": "The name of the primary local language you identified ${isMultiStop ? 'across these destinations' : 'for this destination'} (e.g., 'Japanese', 'Hindi', 'Spanish')",
       "categories": [
         {
           "categoryName": "Greetings & Basics",
