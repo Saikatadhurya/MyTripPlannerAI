@@ -503,6 +503,8 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
   }, [stops]);
 
   const handleOpenSelection = (field: keyof QuestionnaireData, title: string) => {
+    // Disabled - mobile now uses inline suggestions instead of SelectionPage
+    return;
     if (!isMobile) return;
     // Check authentication for destination and startPoint searches
     if ((field === 'destination' || field === 'startPoint') && !user) {
@@ -762,14 +764,14 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                {showStartPoint && (
                     <div className="relative min-w-0">
                         <label htmlFor="startPoint" className="block text-sm font-medium text-slate-700 mb-1">Starting Point</label>
-                        <div className="relative" onClick={() => handleOpenSelection('startPoint', 'Select Starting Point')}>
+                        <div className="relative">
                           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-1.172-8.243a.75.75 0 01.12-1.06l3-3a.75.75 0 011.06 1.06l-3 3a.75.75 0 01-1.18 0z" clipRule="evenodd" /></svg>
                           </div>
-                          <input id="startPoint" ref={startPointInputRef} type="text" value={formData.startPoint} onChange={isMobile ? undefined : handleStartPointChange} onBlur={isMobile ? undefined : handleStartPointBlur} placeholder="e.g., Mumbai, India" className="w-full pl-10 pr-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition" required autoComplete="off" readOnly={isMobile} />
+                          <input id="startPoint" ref={startPointInputRef} type="text" value={formData.startPoint} onChange={handleStartPointChange} onBlur={handleStartPointBlur} placeholder="e.g., Mumbai, India" className="w-full pl-10 pr-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition" required autoComplete="off" />
                         </div>
-                        {isStartPointSuggestionsLoading && !isMobile && <div className="absolute right-3 top-9"><svg className="animate-spin h-5 w-5 text-violet-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>}
-                        {!isMobile && startPointSuggestions.length > 0 && (
+                        {isStartPointSuggestionsLoading && <div className="absolute right-3 top-9"><svg className="animate-spin h-5 w-5 text-violet-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>}
+                        {startPointSuggestions.length > 0 && (
                             <ul ref={startPointSuggestionsRef} className="absolute z-10 w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg max-h-60 overflow-y-auto">
                                 {startPointSuggestions.map((s, i) => (
                                     <li key={i} onClick={() => handleStartPointSuggestionClick(s)} className="px-4 py-3 cursor-pointer hover:bg-violet-100/60 flex justify-between items-center transition-colors">
@@ -869,7 +871,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                               </svg>
                             </div>
                           )}
-                          {!isMobile && stop.suggestions.length > 0 && (
+                          {stop.suggestions.length > 0 && (
                             <ul
                               ref={(el) => {
                                 if (el) {
@@ -926,14 +928,14 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                 {/* Main Destination Field - After Stops */}
                 <div className="relative min-w-0">
                     <label htmlFor="destination" className="block text-sm font-medium text-slate-700 mb-1">Main Destination{formData.tripType === 'Standard' && stops.length > 0 ? ' (Start & End Point)' : ''}</label>
-                    <div className="relative" onClick={() => handleOpenSelection('destination', 'Select Destination')}>
+                    <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 20l-4.95-5.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
                       </div>
-                      <input id="destination" ref={destinationInputRef} type="text" value={formData.destination} onChange={isMobile ? undefined : handleDestinationChange} onBlur={isMobile ? undefined : handleDestinationBlur} placeholder="e.g., Paris, France" className="w-full pl-10 pr-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition" required autoComplete="off" readOnly={isMobile} />
+                      <input id="destination" ref={destinationInputRef} type="text" value={formData.destination} onChange={handleDestinationChange} onBlur={handleDestinationBlur} placeholder="e.g., Paris, France" className="w-full pl-10 pr-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition" required autoComplete="off" />
                     </div>
-                    {isDestinationSuggestionsLoading && !isMobile && <div className="absolute right-3 top-9"><svg className="animate-spin h-5 w-5 text-violet-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>}
-                    {!isMobile && destinationSuggestions.length > 0 && (
+                    {isDestinationSuggestionsLoading && <div className="absolute right-3 top-9"><svg className="animate-spin h-5 w-5 text-violet-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>}
+                    {destinationSuggestions.length > 0 && (
                          <ul ref={destinationSuggestionsRef} className="absolute z-10 w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg max-h-60 overflow-y-auto">
                             {destinationSuggestions.map((s, i) => (
                                 <li key={i} onClick={() => handleDestinationSuggestionClick(s)} className="px-4 py-3 cursor-pointer hover:bg-violet-100/60 flex justify-between items-center transition-colors">
@@ -1008,18 +1010,12 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                 </div>
             </div>
 
-            <div className="space-y-4 bg-slate-50/50 backdrop-blur-sm p-5 rounded-xl border border-slate-200/50 shadow-sm relative z-30">
+            <div className="space-y-4 bg-slate-50/50 backdrop-blur-sm p-5 rounded-xl border border-slate-200/50 shadow-sm relative z-20">
                 <h3 className="text-base font-medium text-slate-700 mb-3">Plan Preferences</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm font-medium text-slate-600 mb-1.5">Plan Language</label>
-                        {isMobile ? (
-                            <div onClick={() => handleOpenSelection('language', 'Select Language')} className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition flex justify-between items-center text-left cursor-pointer">
-                                <span className="truncate text-sm">{formData.language}</span>
-                                <svg className={`h-5 w-5 text-slate-400`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
-                            </div>
-                        ) : (
-                            <div ref={langDropdownRef} className="relative z-40">
+                        <div ref={langDropdownRef} className="relative">
                                 <input 
                                     type="text"
                                     value={isLangDropdownOpen ? langSearchTerm : formData.language}
@@ -1032,13 +1028,14 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                                     onFocus={() => {
                                         setLangSearchTerm('');
                                         setIsLangDropdownOpen(true);
+                                        setIsCurrencyDropdownOpen(false); // Close currency dropdown when language opens
                                     }}
                                     className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition text-sm"
                                     placeholder="Search language..."
                                     autoComplete="off"
                                 />
                                 {isLangDropdownOpen && (
-                                    <ul className="absolute z-50 w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg max-h-60 overflow-y-auto">
+                                    <ul className="absolute z-[100] w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg max-h-60 overflow-y-auto">
                                         {languages
                                             .filter(l => l.toLowerCase().includes(langSearchTerm.toLowerCase()))
                                             .map(lang => (
@@ -1056,17 +1053,10 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                                     </ul>
                                 )}
                             </div>
-                        )}
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-slate-600 mb-1.5">Currency for Plan</label>
-                        {isMobile ? (
-                            <div onClick={() => handleOpenSelection('currency', 'Select Currency')} className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition flex justify-between items-center text-left cursor-pointer">
-                                <span className="truncate text-sm">{formData.currency}</span>
-                                <svg className={`h-5 w-5 text-slate-400`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
-                            </div>
-                        ) : (
-                            <div ref={currencyDropdownRef} className="relative z-40">
+                        <div ref={currencyDropdownRef} className="relative">
                                 <input 
                                     type="text"
                                     value={isCurrencyDropdownOpen ? currencySearchTerm : formData.currency}
@@ -1079,13 +1069,14 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                                     onFocus={() => {
                                         setCurrencySearchTerm('');
                                         setIsCurrencyDropdownOpen(true);
+                                        setIsLangDropdownOpen(false); // Close language dropdown when currency opens
                                     }}
                                     className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition text-sm"
                                     placeholder="Search currency..."
                                     autoComplete="off"
                                 />
                                 {isCurrencyDropdownOpen && (
-                                    <ul className="absolute z-50 w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg max-h-60 overflow-y-auto">
+                                    <ul className="absolute z-[100] w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg max-h-60 overflow-y-auto">
                                         {currencies
                                             .filter(c => c.toLowerCase().includes(currencySearchTerm.toLowerCase()))
                                             .map(currency => (
@@ -1103,7 +1094,6 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                                     </ul>
                                 )}
                             </div>
-                        )}
                     </div>
                 </div>
             </div>
@@ -1175,7 +1165,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
             initialStartDate={formData.startDate}
             initialEndDate={formData.endDate}
           />
-          {renderSelectionPage()}
+          {/* SelectionPage disabled - mobile now uses inline suggestions */}
         </div>
       );
 };
