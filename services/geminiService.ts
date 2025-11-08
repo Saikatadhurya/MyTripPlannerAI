@@ -409,6 +409,7 @@ export const generateItinerary = async (
   8. **ACCOMMODATION WITH COSTS (CRITICAL):** For each day's 'placesToStay' field, you MUST:
      - Search Google for current hotel/hostel/guesthouse prices in that destination for the travel dates
      - Include 2-3 accommodation options per day
+     - **CRITICAL - VARIETY REQUIREMENT:** If the user is staying in the same location/city for multiple consecutive days, you MUST provide DIFFERENT accommodation options for EACH day. Do NOT repeat the same hotels across days. This gives users maximum variety and options to choose from. For example, if staying 3 days in Paris, Day 1 might suggest hotels in the Latin Quarter, Day 2 in Montmartre, Day 3 in Le Marais - all different properties.
      - Format each option as: "**Hotel/Hostel Name** (from [price]/night per person)" or "**Hotel Name** (from [price]/night for double room)"
      - Prices must be in ${currency} (convert if needed)
      - For Low Budget: Search for hostels, guesthouses, budget lodges (from lowest prices)
