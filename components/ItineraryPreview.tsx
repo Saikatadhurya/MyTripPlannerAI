@@ -668,63 +668,6 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
         </section>
       )}
 
-      {isLoadingBlogs ? (
-        <section>
-          <h2 className="text-3xl font-bold text-slate-800 mb-6 animated-card flex items-center space-x-3" style={{ animationDelay: '900ms' }}>
-             <svg className="animate-spin h-6 w-6 text-violet-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-             <span>Finding helpful blogs...</span>
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {Array(2).fill(0).map((_, i) => (
-              <div key={i} className="bg-white/40 p-5 rounded-xl border border-white/50 shadow-lg animate-pulse">
-                <div className="h-4 bg-slate-200/50 rounded w-1/4"></div>
-                <div className="h-5 bg-slate-200/50 rounded mt-2 w-3/4"></div>
-                <div className="h-4 bg-slate-200/50 rounded mt-3 w-full"></div>
-                <div className="h-4 bg-slate-200/50 rounded mt-1 w-5/6"></div>
-              </div>
-            ))}
-          </div>
-        </section>
-      ) : (
-        blogs && blogs.length > 0 && (
-        <section>
-          <h2 className="text-3xl font-bold text-slate-800 mb-6 animated-card" style={{ animationDelay: '900ms' }}>Reference Blog Posts</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {blogs.map((blog, index) => {
-               const isTransport = isTransportBlog(blog);
-               return (
-                <a 
-                  key={index}
-                  href={blog.url} target="_blank" rel="noopener noreferrer"
-                  className={`block p-5 rounded-xl shadow-lg border transition-all duration-300 hover:shadow-xl hover:-translate-y-1 animated-card ${
-                    isTransport 
-                      ? 'bg-sky-50/40 backdrop-blur-lg border-sky-300/50 hover:border-sky-400/50' 
-                      : 'bg-white/40 backdrop-blur-lg border-white/50 hover:border-violet-300/50'
-                  }`}
-                   style={{ animationDelay: `${950 + index * 100}ms` }}
-                >
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      {blog.source && <p className={`text-xs font-semibold uppercase tracking-wider ${isTransport ? 'text-sky-600' : 'text-violet-600'}`}>{blog.source}</p>}
-                      <h4 className="text-lg font-bold text-slate-800 mt-1 hover:underline break-words">{blog.title}</h4>
-                    </div>
-                    {isTransport && (
-                      <div className="flex-shrink-0 ml-4 bg-sky-100 text-sky-600 rounded-full p-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M18.562 6.077C18.238 5.437 17.562 5 16.808 5H3.192c-.754 0-1.43.437-1.754 1.077L.05 9.423A.5.5 0 00.5 10h19a.5.5 0 00.45-.577l-1.388-3.346zM2 11v4a1 1 0 001 1h1a1 1 0 001-1v-4H2zm15 0v4a1 1 0 001 1h1a1 1 0 001-1v-4h-3zM5 11v4a1 1 0 001 1h8a1 1 0 001-1v-4H5z" clipRule="evenodd" />
-                        </svg>
-                      </div>
-                    )}
-                  </div>
-                  <p className="text-sm text-slate-600 mt-2">{blog.description}</p>
-                </a>
-              );
-            })}
-          </div>
-        </section>
-        )
-      )}
-      
       <section>
         <h2 className="text-3xl font-bold text-slate-800 mb-6 animated-card" style={{ animationDelay: '1050ms' }}>About the Destinations</h2>
         <div className="space-y-10">
@@ -1072,6 +1015,63 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
           </div>
         )})}
       </section>
+
+      {isLoadingBlogs ? (
+        <section>
+          <h2 className="text-3xl font-bold text-slate-800 mb-6 animated-card flex items-center space-x-3" style={{ animationDelay: '1400ms' }}>
+             <svg className="animate-spin h-6 w-6 text-violet-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+             <span>Finding helpful blogs...</span>
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {Array(2).fill(0).map((_, i) => (
+              <div key={i} className="bg-white/40 p-5 rounded-xl border border-white/50 shadow-lg animate-pulse">
+                <div className="h-4 bg-slate-200/50 rounded w-1/4"></div>
+                <div className="h-5 bg-slate-200/50 rounded mt-2 w-3/4"></div>
+                <div className="h-4 bg-slate-200/50 rounded mt-3 w-full"></div>
+                <div className="h-4 bg-slate-200/50 rounded mt-1 w-5/6"></div>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : (
+        blogs && blogs.length > 0 && (
+        <section>
+          <h2 className="text-3xl font-bold text-slate-800 mb-6 animated-card" style={{ animationDelay: '1400ms' }}>Reference Blog Posts</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {blogs.map((blog, index) => {
+               const isTransport = isTransportBlog(blog);
+               return (
+                <a 
+                  key={index}
+                  href={blog.url} target="_blank" rel="noopener noreferrer"
+                  className={`block p-5 rounded-xl shadow-lg border transition-all duration-300 hover:shadow-xl hover:-translate-y-1 animated-card ${
+                    isTransport 
+                      ? 'bg-sky-50/40 backdrop-blur-lg border-sky-300/50 hover:border-sky-400/50' 
+                      : 'bg-white/40 backdrop-blur-lg border-white/50 hover:border-violet-300/50'
+                  }`}
+                   style={{ animationDelay: `${1450 + index * 100}ms` }}
+                >
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      {blog.source && <p className={`text-xs font-semibold uppercase tracking-wider ${isTransport ? 'text-sky-600' : 'text-violet-600'}`}>{blog.source}</p>}
+                      <h4 className="text-lg font-bold text-slate-800 mt-1 hover:underline break-words">{blog.title}</h4>
+                    </div>
+                    {isTransport && (
+                      <div className="flex-shrink-0 ml-4 bg-sky-100 text-sky-600 rounded-full p-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M18.562 6.077C18.238 5.437 17.562 5 16.808 5H3.192c-.754 0-1.43.437-1.754 1.077L.05 9.423A.5.5 0 00.5 10h19a.5.5 0 00.45-.577l-1.388-3.346zM2 11v4a1 1 0 001 1h1a1 1 0 001-1v-4H2zm15 0v4a1 1 0 001 1h1a1 1 0 001-1v-4h-3zM5 11v4a1 1 0 001 1h8a1 1 0 001-1v-4H5z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-sm text-slate-600 mt-2">{blog.description}</p>
+                </a>
+              );
+            })}
+          </div>
+        </section>
+        )
+      )}
 
       <div className="pt-8 text-center no-print">
         {!isUnifiedView && (
