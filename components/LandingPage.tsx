@@ -145,40 +145,45 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
   ];
   
   return (
-    <div className="space-y-20 pb-8 px-4 md:px-8 lg:px-12 xl:px-16 2xl:px-20">
+    <div className="space-y-8 md:space-y-16 lg:space-y-20 pb-8 px-4 md:px-8 lg:px-12 xl:px-16 2xl:px-20">
       {/* Hero Section */}
-      <div className="animated-card text-center max-w-4xl mx-auto p-6 md:p-8 rounded-3xl bg-gradient-to-br from-white via-violet-50/30 to-purple-50/40 backdrop-blur-xl border-2 border-violet-200/60 shadow-2xl shadow-violet-500/20 hover:shadow-3xl hover:shadow-violet-500/30 transition-all duration-500" style={{ animationDelay: '100ms' }}>
-        {user && user.full_name && (
-          <div className="mb-4">
-            <h2 className="text-2xl md:text-3xl font-semibold text-violet-600 tracking-wide">
-              Welcome, {user.full_name}! 👋
-            </h2>
-          </div>
-        )}
-        <h1 className="text-4xl md:text-6xl font-extrabold text-slate-900 tracking-tight leading-tight">
-          Your Dream Trip, <span className="text-violet-600">Planned to Perfection.</span>
-        </h1>
-        <p className="mt-4 text-sm md:text-lg text-slate-600 max-w-2xl mx-auto">
-          Complete travel planning made simple. Just tell us where you want to go.
-        </p>
-         <div className="mt-8">
-          <button
-            onClick={() => onPlanUnifiedTrip()}
-            className="cta-pulse w-full sm:w-auto inline-block px-6 py-4 md:px-10 md:py-4 font-bold rounded-full text-base md:text-lg shadow-lg transition-all duration-300 transform focus:outline-none focus:ring-4 bg-violet-600 text-white shadow-violet-500/30 hover:bg-violet-700 hover:shadow-xl hover:shadow-violet-500/40 hover:scale-105 focus:ring-violet-300 whitespace-nowrap"
-          >
-            ✨ Build Your Ultimate Itinerary
-          </button>
-          <p className="mt-4 text-sm text-violet-700/80 font-medium tracking-wide">
-            Includes: Itinerary, Packing, Food, Apps, Music & Language Guides
+      <div className="animated-card text-center max-w-4xl mx-auto p-5 sm:p-6 md:p-10 lg:p-12 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-violet-50 via-purple-50/50 to-pink-50/40 backdrop-blur-xl border-2 border-violet-300/80 shadow-xl sm:shadow-2xl shadow-violet-500/30 hover:shadow-2xl sm:hover:shadow-3xl hover:shadow-violet-500/40 transition-all duration-500 relative overflow-hidden" style={{ animationDelay: '100ms' }}>
+        {/* Decorative gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-violet-100/20 via-transparent to-purple-100/20 pointer-events-none"></div>
+        <div className="relative z-10">
+          {user && user.full_name && (
+            <div className="mb-3 sm:mb-4 md:mb-6">
+              <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold text-violet-600 tracking-wide">
+                Welcome, {user.full_name}! 👋
+              </h2>
+            </div>
+          )}
+          <h1 className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl xl:text-7xl font-extrabold text-slate-900 tracking-tight leading-tight px-2">
+            Your Dream Trip, <span className="text-violet-600">Planned to Perfection.</span>
+          </h1>
+          <p className="mt-3 sm:mt-4 md:mt-6 text-sm sm:text-base md:text-lg lg:text-xl text-slate-700 max-w-2xl mx-auto font-medium px-2">
+            Complete travel planning made simple. Just tell us where you want to go.
           </p>
+           <div className="mt-6 sm:mt-8 md:mt-10">
+            <button
+              onClick={() => onPlanUnifiedTrip()}
+              className="cta-pulse w-full sm:w-auto inline-block px-5 py-3 sm:px-6 sm:py-3.5 md:px-10 md:py-4 lg:px-12 lg:py-5 font-bold rounded-full text-sm sm:text-base md:text-lg lg:text-xl shadow-xl sm:shadow-2xl transition-all duration-300 transform focus:outline-none focus:ring-4 bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-violet-500/50 hover:from-violet-700 hover:to-purple-700 hover:shadow-xl sm:hover:shadow-2xl hover:shadow-violet-500/60 hover:scale-105 sm:hover:scale-110 focus:ring-violet-300 whitespace-nowrap"
+            >
+              ✨ Build Your Ultimate Itinerary
+            </button>
+            <p className="mt-3 sm:mt-4 md:mt-5 text-xs sm:text-sm md:text-base text-violet-700 font-semibold tracking-wide px-2">
+              Includes: Itinerary, Packing, Food, Apps, Music & Language Guides
+            </p>
+          </div>
         </div>
       </div>
 
       {/* Mini Apps Section */}
       <div className="text-center">
-        <h2 className="text-3xl font-bold text-slate-900 animated-card" style={{ animationDelay: '200ms' }}>Quick Tools for Your Journey</h2>
-        <p className="text-slate-600 mt-2 animated-card" style={{ animationDelay: '250ms' }}>Smart tools to make your trip unforgettable.</p>
-        <div className="mt-10 grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6">
+        <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight animated-card px-2" style={{ animationDelay: '200ms' }}>
+          Smart tools to make your trip <span className="text-violet-600">unforgettable.</span>
+        </h2>
+        <div className="mt-6 sm:mt-8 md:mt-10 grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6">
           {miniApps.map((app, index) => {
             const colors = colorClasses[app.color];
             return (
