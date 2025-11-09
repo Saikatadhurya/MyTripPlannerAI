@@ -758,7 +758,7 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
                 value={searchTerm}
                 onChange={(e) => handleSearchTermChange(e.target.value)}
                 placeholder="Search..."
-                className="w-full pl-10 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm transition-all duration-200"
+                className="w-full pl-10 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base transition-all duration-200"
               />
             </div>
             
@@ -767,7 +767,7 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
               <select
                 value={selectedDestination}
                 onChange={(e) => handleDestinationChange(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm transition-all duration-200"
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base transition-all duration-200"
               >
                 <option value="">All destinations</option>
                 {destinations.map(dest => (
@@ -781,7 +781,7 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
               <select
                 value={selectedType}
                 onChange={(e) => handleTypeChange(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm transition-all duration-200"
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base transition-all duration-200"
               >
                 <option value="">All types</option>
                 {recommendationTypes.map(type => (
