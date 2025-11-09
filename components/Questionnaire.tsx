@@ -221,18 +221,31 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
               setDestinationSuggestions([]);
               setIsDestinationSuggestionsLoading(false);
               
-              // Check if it's a quota/API key error
-              const errorMessage = error?.message || '';
-              const isQuotaError = errorMessage.includes('[429]') || 
-                                  errorMessage.toLowerCase().includes('quota') || 
-                                  errorMessage.toLowerCase().includes('rate limit') ||
-                                  errorMessage.toLowerCase().includes('limit') ||
-                                  errorMessage.toLowerCase().includes('exceeded');
+              // Check if it's a quota/API key error - handle ApiError format
+              const errorMessage = error?.message || error?.error?.message || '';
+              const errorString = JSON.stringify(error || {});
+              const nestedError = error?.error;
+              const nestedErrorCode = nestedError?.code;
+              const nestedErrorStatus = nestedError?.status;
+              
+              // Extract error code from nested structure (ApiError format)
+              const errorCode = nestedErrorCode || error?.code || (nestedErrorStatus === 'RESOURCE_EXHAUSTED' ? 429 : null);
+              
+              // Check for quota/exhaustion errors
+              const combinedErrorText = (errorMessage + errorString).toLowerCase();
+              const isQuotaError = errorCode === 429 || 
+                                  nestedErrorStatus === 'RESOURCE_EXHAUSTED' ||
+                                  errorMessage.includes('[429]') || 
+                                  combinedErrorText.includes('quota') || 
+                                  combinedErrorText.includes('rate limit') ||
+                                  combinedErrorText.includes('limit') ||
+                                  combinedErrorText.includes('exceeded') ||
+                                  combinedErrorText.includes('resource_exhausted');
               
               if (isQuotaError) {
                 // Extract message without [429] prefix
                 const cleanMessage = errorMessage.replace(/^\[429\]\s*/, '');
-                setApiKeyError(cleanMessage || 'The API key has reached its quota limit. Please set your own Gemini API key in your profile settings to continue.');
+                setApiKeyError(cleanMessage || 'Your Gemini API key has reached its quota limit. Please set a new Gemini API key in your profile settings to continue.');
               } else if (errorMessage.includes('Gemini key not set') || errorMessage.includes('API key not valid')) {
                 setApiKeyError('API key not valid. Please provide a valid Gemini API key in your profile settings to search for destinations.');
               } else {
@@ -511,19 +524,32 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
               stop.id === id ? { ...stop, suggestions: results, isLoading: false, error: null } : stop
             ));
           }).catch(error => {
-            // Check if it's a quota/API key error
-            const errorMessage = error?.message || '';
-            const isQuotaError = errorMessage.includes('[429]') || 
-                                errorMessage.toLowerCase().includes('quota') || 
-                                errorMessage.toLowerCase().includes('rate limit') ||
-                                errorMessage.toLowerCase().includes('limit') ||
-                                errorMessage.toLowerCase().includes('exceeded');
+            // Check if it's a quota/API key error - handle ApiError format
+            const errorMessage = error?.message || error?.error?.message || '';
+            const errorString = JSON.stringify(error || {});
+            const nestedError = error?.error;
+            const nestedErrorCode = nestedError?.code;
+            const nestedErrorStatus = nestedError?.status;
+            
+            // Extract error code from nested structure (ApiError format)
+            const errorCode = nestedErrorCode || error?.code || (nestedErrorStatus === 'RESOURCE_EXHAUSTED' ? 429 : null);
+            
+            // Check for quota/exhaustion errors
+            const combinedErrorText = (errorMessage + errorString).toLowerCase();
+            const isQuotaError = errorCode === 429 || 
+                                nestedErrorStatus === 'RESOURCE_EXHAUSTED' ||
+                                errorMessage.includes('[429]') || 
+                                combinedErrorText.includes('quota') || 
+                                combinedErrorText.includes('rate limit') ||
+                                combinedErrorText.includes('limit') ||
+                                combinedErrorText.includes('exceeded') ||
+                                combinedErrorText.includes('resource_exhausted');
             
             let errorText = null;
             if (isQuotaError) {
               // Extract message without [429] prefix
               const cleanMessage = errorMessage.replace(/^\[429\]\s*/, '');
-              errorText = cleanMessage || 'The API key has reached its quota limit. Please set your own Gemini API key in your profile settings to continue.';
+              errorText = cleanMessage || 'Your Gemini API key has reached its quota limit. Please set a new Gemini API key in your profile settings to continue.';
             } else if (errorMessage.includes('Gemini key not set') || errorMessage.includes('API key not valid')) {
               errorText = 'API key not valid. Please provide a valid Gemini API key in your profile settings to search for destinations.';
             }

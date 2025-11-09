@@ -75,13 +75,29 @@ export const getDestinationSuggestions = async (query: string, userApiKey?: stri
     const errorString = JSON.stringify(error || {});
     const nestedError = error?.error;
     const nestedErrorMessage = nestedError?.message || '';
+    const nestedErrorCode = nestedError?.code;
+    const nestedErrorStatus = nestedError?.status;
     
-    // Check for quota/exhaustion errors when using default key
+    // Extract error code from nested structure (ApiError format)
+    const errorCode = nestedErrorCode || error?.code || (nestedErrorStatus === 'RESOURCE_EXHAUSTED' ? 429 : null);
+    
+    // Check for quota/exhaustion errors - check both default key and user's own key
     const combinedErrorText = (errorMessage + errorString + nestedErrorMessage).toLowerCase();
-    const isQuotaError = combinedErrorText.includes("quota") || combinedErrorText.includes("rate limit") || combinedErrorText.includes("429") || combinedErrorText.includes("exceeded");
+    const isQuotaError = errorCode === 429 || 
+                        nestedErrorStatus === 'RESOURCE_EXHAUSTED' ||
+                        combinedErrorText.includes("quota") || 
+                        combinedErrorText.includes("rate limit") || 
+                        combinedErrorText.includes("429") || 
+                        combinedErrorText.includes("exceeded") ||
+                        combinedErrorText.includes("resource_exhausted");
     
-    if (isQuotaError && isUsingDefaultKey) {
-      throw new Error('The default API key has reached its quota limit. Please set your own Gemini API key in your profile settings to continue.');
+    if (isQuotaError) {
+      if (isUsingDefaultKey) {
+        throw new Error('The default API key has reached its quota limit. Please set your own Gemini API key in your profile settings to continue.');
+      } else {
+        // User's own API key has quota exceeded
+        throw new Error('Your Gemini API key has reached its quota limit. Please set a new Gemini API key in your profile settings to continue.');
+      }
     }
     
     // Check for various API key error patterns

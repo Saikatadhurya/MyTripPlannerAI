@@ -611,7 +611,21 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate
                     )}
                     <div className="mt-2 flex items-center justify-between">
                       <p className="text-sm text-gray-500">
-                        {hasGeminiKey ? 'Your Gemini API key is displayed above. Update it to change, or delete it below.' : 'Add your Gemini API key to use your own quota.'}
+                        {hasGeminiKey ? (
+                          <>
+                            Your Gemini API key is displayed above.{' '}
+                            <button
+                              type="button"
+                              onClick={() => navigate('/get-api-key')}
+                              className="text-violet-600 hover:text-violet-700 font-medium underline"
+                            >
+                              Get your API key
+                            </button>
+                            {' '}to update it, or delete it below.
+                          </>
+                        ) : (
+                          'Add your Gemini API key to use your own quota.'
+                        )}
                       </p>
                       {!isLoadingGeminiKey && hasGeminiKey && (
                         <button
