@@ -1224,7 +1224,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                                         setIsLangDropdownOpen(true);
                                         setIsCurrencyDropdownOpen(false); // Close currency dropdown when language opens
                                     }}
-                                    className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition text-sm"
+                                    className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition text-base"
                                     placeholder="Search language..."
                                     autoComplete="off"
                                 />
@@ -1265,7 +1265,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                                         setIsCurrencyDropdownOpen(true);
                                         setIsLangDropdownOpen(false); // Close language dropdown when currency opens
                                     }}
-                                    className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition text-sm"
+                                    className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition text-base"
                                     placeholder="Search currency..."
                                     autoComplete="off"
                                 />
