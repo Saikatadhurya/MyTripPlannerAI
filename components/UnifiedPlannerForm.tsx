@@ -108,6 +108,7 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
   const [isStartPointSuggestionsLoading, setIsStartPointSuggestionsLoading] = useState(false);
   const [isStartPointSelected, setIsStartPointSelected] = useState(!!initialData?.startPoint);
   const [startPointError, setStartPointError] = useState<string | null>(null);
+  const [startPointApiKeyError, setStartPointApiKeyError] = useState<string | null>(null);
 
   const debounceTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isSelectingSuggestion = useRef(false);
@@ -176,8 +177,8 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
                 newState.isRoundTrip = false; // Reset when switching to standard
                 setIsStartPointSelected(false);
                 setStartPointError(null);
-            } else if (prev.tripType === 'Standard') {
-                // When switching from Standard to Car/Bike, enable round trip by default
+            } else if (value === 'Car' || value === 'Bike') {
+                // Car and Bike trips are always round trips by default
                 newState.isRoundTrip = true;
             }
         }
@@ -283,6 +284,7 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
     handleInputChange('startPoint', value);
     setIsStartPointSelected(false);
     setStartPointError(null);
+    setStartPointApiKeyError(null);
     isSelectingSuggestion.current = false;
 
     if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
@@ -299,6 +301,41 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
             getDestinationSuggestions(value, user?.gemini_api_key).then(results => {
               setStartPointSuggestions(results);
               setIsStartPointSuggestionsLoading(false);
+              setStartPointApiKeyError(null); // Clear any previous API key errors
+            }).catch(error => {
+              setStartPointSuggestions([]);
+              setIsStartPointSuggestionsLoading(false);
+              
+              // Check if it's a quota/API key error - handle ApiError format
+              const errorMessage = error?.message || error?.error?.message || '';
+              const errorString = JSON.stringify(error || {});
+              const nestedError = error?.error;
+              const nestedErrorCode = nestedError?.code;
+              const nestedErrorStatus = nestedError?.status;
+              
+              // Extract error code from nested structure (ApiError format)
+              const errorCode = nestedErrorCode || error?.code || (nestedErrorStatus === 'RESOURCE_EXHAUSTED' ? 429 : null);
+              
+              // Check for quota/exhaustion errors
+              const combinedErrorText = (errorMessage + errorString).toLowerCase();
+              const isQuotaError = errorCode === 429 || 
+                                  nestedErrorStatus === 'RESOURCE_EXHAUSTED' ||
+                                  errorMessage.includes('[429]') || 
+                                  combinedErrorText.includes('quota') || 
+                                  combinedErrorText.includes('rate limit') ||
+                                  combinedErrorText.includes('limit') ||
+                                  combinedErrorText.includes('exceeded') ||
+                                  combinedErrorText.includes('resource_exhausted');
+              
+              if (isQuotaError) {
+                // Extract message without [429] prefix
+                const cleanMessage = errorMessage.replace(/^\[429\]\s*/, '');
+                setStartPointApiKeyError(cleanMessage || 'Your Gemini API key has reached its quota limit. Please set a new Gemini API key in your profile settings to continue.');
+              } else if (errorMessage.includes('Gemini key not set') || errorMessage.includes('API key not valid')) {
+                setStartPointApiKeyError('API key not valid. Please provide a valid Gemini API key in your profile settings to search for destinations.');
+              } else {
+                setStartPointApiKeyError('Failed to fetch destination suggestions. Please try again.');
+              }
             });
           }
         }, 500);
@@ -742,6 +779,10 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
             hasError = true;
         }
     }
+    
+    if (startPointApiKeyError) {
+        hasError = true;
+    }
 
     // Validate stops
     const invalidStops = stops.filter(stop => stop.value.trim().length > 0 && !stop.isSelected);
@@ -878,14 +919,16 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
                 </button>
               ))}
             </div>
-            <div className="mt-4 pt-4 border-t border-violet-200/50">
-              <Toggle
-                label="Round Trip"
-                description={formData.tripType === 'Standard' ? "Plan a multi-stop circuit using public transport" : "Create a road trip circuit back to the start"}
-                enabled={formData.isRoundTrip ?? false}
-                onChange={(enabled) => handleInputChange('isRoundTrip', enabled)}
-              />
-            </div>
+            {formData.tripType === 'Standard' && (
+              <div className="mt-4 pt-4 border-t border-violet-200/50">
+                <Toggle
+                  label="Round Trip"
+                  description="Plan a multi-stop circuit using public transport"
+                  enabled={formData.isRoundTrip ?? false}
+                  onChange={(enabled) => handleInputChange('isRoundTrip', enabled)}
+                />
+              </div>
+            )}
         </div>
 
         <div className="space-y-4 sm:space-y-6 bg-white/60 backdrop-blur-md p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-200/70 shadow-xl">
@@ -921,6 +964,39 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
                           <div style={{ animation: 'validation-fade-in 0.3s ease' }} className="mt-2 text-sm text-rose-700 bg-rose-100/60 p-2 rounded-md flex items-center space-x-2">
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
                               <span>{startPointError}</span>
+                          </div>
+                        )}
+                        {startPointApiKeyError && (
+                          <div style={{ animation: 'validation-fade-in 0.3s ease' }} className="mt-2 text-sm text-amber-700 bg-amber-100/60 p-2 rounded-md flex items-center space-x-2">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+                              <span className="flex items-center flex-wrap gap-1">
+                                {startPointApiKeyError.includes('quota') || startPointApiKeyError.includes('limit') || startPointApiKeyError.includes('exceeded') ? (
+                                  <>
+                                    {startPointApiKeyError.includes('profile settings') ? (
+                                      <>
+                                        {startPointApiKeyError.split('profile settings')[0]}
+                                        <a href="/profile" className="font-semibold underline hover:text-amber-800">your profile settings</a>
+                                        {startPointApiKeyError.split('profile settings')[1]}
+                                      </>
+                                    ) : (
+                                      <>
+                                        {startPointApiKeyError}
+                                        {' '}Please set your own Gemini API key in{' '}
+                                        <a href="/profile" className="font-semibold underline hover:text-amber-800">your profile settings</a>
+                                        {' '}to continue.
+                                      </>
+                                    )}
+                                  </>
+                                ) : startPointApiKeyError.includes('API key not valid') || startPointApiKeyError.includes('Gemini key not set') ? (
+                                  <>
+                                    API key not valid. Please provide a valid Gemini API key in{' '}
+                                    <a href="/profile" className="font-semibold underline hover:text-amber-800">Edit Profile</a>
+                                    {' '}to search for destinations.
+                                  </>
+                                ) : (
+                                  startPointApiKeyError
+                                )}
+                              </span>
                           </div>
                         )}
                     </div>
@@ -1341,7 +1417,7 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
               <button
                 type="submit"
                 className="w-full sm:w-auto px-10 py-4 bg-violet-600 text-white font-bold rounded-full hover:bg-violet-700 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-violet-500/30 disabled:bg-violet-400/80 disabled:cursor-not-allowed disabled:shadow-md disabled:scale-100"
-                disabled={!user || !isDestinationSelected || !!destinationError || !!apiKeyError || (showStartPoint && (!isStartPointSelected || !!startPointError)) || formData.vibe.length === 0 || stops.some(s => s.value.trim().length > 0 && !s.isSelected)}
+                disabled={!user || !isDestinationSelected || !!destinationError || !!apiKeyError || (showStartPoint && (!isStartPointSelected || !!startPointError || !!startPointApiKeyError)) || formData.vibe.length === 0 || stops.some(s => s.value.trim().length > 0 && !s.isSelected)}
               >
                 ✨ Plan My Adventure
               </button>
