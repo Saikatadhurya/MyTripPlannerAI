@@ -255,7 +255,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
         </div>
 
         {/* Mini Apps Section */}
-        <div className="text-center lg:flex lg:flex-col pb-20 sm:pb-8 lg:pb-0">
+        <div className="text-center lg:flex lg:flex-col pb-10 sm:pb-8 lg:pb-0">
           <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-xl xl:text-2xl 2xl:text-3xl font-extrabold text-slate-900 tracking-tight animated-card px-2 mb-3 sm:mb-4 md:mb-6 lg:mb-2 xl:mb-3 2xl:mb-4" style={{ animationDelay: '200ms' }}>
             Smart tools to make your trip <span className="text-violet-600">unforgettable.</span>
           </h2>
@@ -304,7 +304,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
 
 
       {/* Popular Destinations Section */}
-      <div className="mt-4 sm:mt-8 md:mt-16 lg:mt-20">
+      <div className="sm:mt-6 md:mt-12 lg:mt-16">
         <h2 className="text-2xl sm:text-3xl font-bold text-center text-slate-900 mb-4 sm:mb-6 animated-card" style={{ animationDelay: '1100ms' }}>Popular Destinations</h2>
         
         {/* Destinations with share links */}

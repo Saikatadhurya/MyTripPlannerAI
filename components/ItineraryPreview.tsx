@@ -501,7 +501,7 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
 
 
   return (
-    <div className="max-w-4xl mx-auto space-y-12 mb-16" id="itinerary-preview-content">
+    <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8 md:space-y-12 mb-16 px-2 sm:px-4" id="itinerary-preview-content">
        {!isUnifiedView && (
        <div className="flex justify-start items-center no-print animated-card">
         <button
@@ -511,39 +511,39 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
             e.stopPropagation();
             onRegenerate();
           }}
-          className="inline-flex items-center px-6 py-2 my-2 bg-white/60 text-slate-800 font-bold rounded-full hover:bg-white/80 transition-all duration-300 shadow-md border border-white/50"
+          className="inline-flex items-center px-4 py-1.5 sm:px-6 sm:py-2 my-2 bg-white/60 text-slate-800 font-bold rounded-full hover:bg-white/80 transition-all duration-300 shadow-md border border-white/50 text-xs sm:text-sm"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.898 2.566l-1.581.53a5.002 5.002 0 00-8.917-1.789v.962a1 1 0 01-2 0V3a1 1 0 011-1zm12 15a1 1 0 01-1-1v-2.101a7.002 7.002 0 01-11.898-2.566l1.581-.53a5.002 5.002 0 008.917 1.789v-.962a1 1 0 012 0V17a1 1 0 01-1 1z" clipRule="evenodd" />
           </svg>
           <span>Plan Another Trip</span>
         </button>
       </div>
       )}
-      <header className="space-y-4 animated-card">
+      <header className="space-y-2 sm:space-y-4 animated-card">
         <div className="text-center">
-            <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight break-words" dangerouslySetInnerHTML={parseBold(`Trip to ${itinerary.destination}`)} />
-            <p className="text-lg text-gray-700 mt-2 break-words">Your amazing {itinerary.days}-day {itinerary.isRoundTrip ? 'round trip ' : ''}itinerary</p>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-gray-900 tracking-tight break-words px-2" dangerouslySetInnerHTML={parseBold(`Trip to ${itinerary.destination}`)} />
+            <p className="text-sm sm:text-base md:text-lg text-gray-700 mt-1 sm:mt-2 break-words px-2">Your amazing {itinerary.days}-day {itinerary.isRoundTrip ? 'round trip ' : ''}itinerary</p>
         </div>
       </header>
       
       {/* Share buttons - Only show when saved and not in history view */}
       {savedId && !isHistoryView && !isUnifiedView && (
-        <div className="flex items-center justify-center gap-3 py-4 no-print animated-card">
+        <div className="flex items-center justify-center gap-2 sm:gap-3 py-3 sm:py-4 no-print animated-card">
           <button
             onClick={handleCopyLink}
-            className="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-violet-600 to-violet-700 text-white font-semibold rounded-full hover:from-violet-700 hover:to-violet-800 transition-all duration-300 shadow-md text-sm"
+            className="inline-flex items-center px-4 py-2 sm:px-5 sm:py-2.5 bg-gradient-to-r from-violet-600 to-violet-700 text-white font-semibold rounded-full hover:from-violet-700 hover:to-violet-800 transition-all duration-300 shadow-md text-xs sm:text-sm"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
             </svg>
             Copy Link
           </button>
           <button
             onClick={handleShare}
-            className="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-full hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-md text-sm"
+            className="inline-flex items-center px-4 py-2 sm:px-5 sm:py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-full hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-md text-xs sm:text-sm"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
             </svg>
             Share
@@ -552,8 +552,8 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
       )}
       
       <section>
-        <h2 className="text-3xl font-bold text-slate-800 mb-6 animated-card" style={{ animationDelay: '100ms' }}>Trip Summary</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 mb-4 sm:mb-6 animated-card px-2" style={{ animationDelay: '100ms' }}>Trip Summary</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           <div className="animated-card" style={{ animationDelay: '200ms' }}>
             <SummaryItem icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>} label="Start Date">
               {formattedStartDate}
@@ -602,9 +602,9 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
       </section>
 
       <section>
-        <h2 className="text-3xl font-bold text-slate-800 mb-6 animated-card" style={{ animationDelay: '500ms' }}>Budget Overview <span className="text-base font-normal text-slate-600">(Est. Per Person)</span></h2>
+        <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 mb-4 sm:mb-6 animated-card px-2" style={{ animationDelay: '500ms' }}>Budget Overview <span className="text-sm sm:text-base font-normal text-slate-600">(Est. Per Person)</span></h2>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
           {budgetItemsForGrid.map((item, index) => {
             const isLastItem = index === budgetItemsForGrid.length - 1;
             // Span the last item if the total number of items is odd
@@ -680,8 +680,8 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
         </div>
       </section>
 
-      <section className="space-y-8">
-        <h2 className="text-3xl font-bold text-slate-800 animated-card" style={{ animationDelay: '1200ms' }}>Daily Itinerary</h2>
+      <section className="space-y-6 sm:space-y-8">
+        <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 animated-card px-2" style={{ animationDelay: '1200ms' }}>Daily Itinerary</h2>
         {itinerary.plan.map((day, index) => {
           let dailyFuelCostPerPerson = 0;
           let totalDailyCostPerPerson = parseFloat(day.approxCost) || 0;
