@@ -275,7 +275,7 @@ export const generateItinerary = async (
   
   let intermediateDestinationsInstructions = '';
   if (hasOnlySourceAndDestination) {
-    const dailyLimit = tripType === 'Car' ? '300-400 km/day' : tripType === 'Bike' ? '150-250 km/day' : 'varies by transport';
+    const dailyLimit = tripType === 'Car' ? 'MAXIMUM 350 km/day (5-6 hours driving max)' : tripType === 'Bike' ? '150-250 km/day' : 'varies by transport';
     const transportMode = tripType === 'Car' ? 'driving' : tripType === 'Bike' ? 'riding' : 'public transport';
     
     intermediateDestinationsInstructions = `
@@ -288,7 +288,7 @@ export const generateItinerary = async (
        - Identify famous cities, towns, attractions, or points of interest that lie along or near the logical route between these two points.
        - Consider the user's vibe/interests: "${vibe.join(', ')}" when selecting intermediate destinations.
        - For ${tripType === 'Standard' ? 'public transport' : tripType === 'Car' ? 'car' : 'bike'} trips, consider realistic travel times and connections.
-       - Daily travel limits: ${dailyLimit}
+       - Daily travel limits (STRICT - DO NOT EXCEED): ${dailyLimit}
     
     2. **Feasibility Assessment**:
        - If the direct journey from "${startPoint}" to "${destination}" is short (e.g., < 200 km for ${tripType === 'Car' ? 'car' : tripType === 'Bike' ? 'bike' : 'public transport'}), you may not need intermediate stops, but still consider nearby attractions or day trips.
@@ -366,7 +366,7 @@ export const generateItinerary = async (
 
   let roundTripInstructions = '';
   if ((tripType === 'Car' || tripType === 'Bike') && isRoundTrip && startPoint) {
-      const dailyLimit = tripType === 'Car' ? '300-400 km/day' : '150-250 km/day';
+      const dailyLimit = tripType === 'Car' ? 'MAXIMUM 350 km/day (5-6 hours driving max - STRICT LIMIT)' : '150-250 km/day';
       roundTripInstructions = `
       CRITICAL INSTRUCTION - DETAILED ROAD TRIP CIRCUIT:
       This is a multi-stop road trip circuit request. The user wants to travel from "${startPoint}", cover a series of interesting locations, and return to "${startPoint}" within ${days} days. The main destination of interest is "${destination}".
@@ -375,7 +375,7 @@ export const generateItinerary = async (
           **STEP 1 - CALCULATE MINIMUM DAYS FIRST**: Before deciding feasibility, you MUST:
              a. Use Google Search to get the ACTUAL distance (in km) from "${startPoint}" to "${destination}" and back (round trip distance)
              b. Calculate the minimum days required using this EXACT formula:
-                - Total round trip distance ÷ daily limit (${tripType === 'Car' ? '350 km/day average' : '200 km/day average'}) = minimum travel days
+                - Total round trip distance ÷ daily limit (${tripType === 'Car' ? '350 km/day MAXIMUM (5-6 hours driving max - STRICT LIMIT)' : '200 km/day average'}) = minimum travel days
                 - Add 1-2 days for sightseeing at the destination
                 - Add 1 day buffer for rest/traffic = FINAL MINIMUM DAYS
                 - Example: Gurgaon to Mumbai = ~1400 km round trip ÷ 350 km/day = 4 travel days + 2 sightseeing days + 1 buffer = 7 days minimum
@@ -390,9 +390,9 @@ export const generateItinerary = async (
               - **B. Example:** For a 15-day car trip from "Jaipur" with the main destination as "Jaisalmer", a simple route (Jaipur -> Jodhpur -> Jaisalmer -> Bikaner -> Jaipur) would be **too sparse**. A **correct, enriched itinerary** MUST include other logical and famous stops like **Udaipur, Chittorgarh, Kumbhalgarh, and Ranakpur** to create a full Rajasthan heritage circuit that properly utilizes the 15 days.
               - **C. Route Design:** Based on the above, design a logical, sequential road trip circuit starting and ending at "${startPoint}". The route must maximize sightseeing of famous places based on the vibe: "${vibe.join(', ')}". The farthest point should be near "${destination}".
           - **IF NOT FEASIBLE** (calculated minimum > ${days}): Do NOT fail. You MUST plan a realistic road trip circuit to an alternative region or set of destinations reachable within the timeframe that still fits the user's vibe. The "destination" field in the JSON response MUST be updated to a more descriptive name for this new circuit (e.g., 'Rajasthan Heritage Circuit'). You MUST also add a note in the new 'planNote' field in the root of the JSON response, explaining the change clearly and starting with "NOTE:". 
-             **CRITICAL**: Use the SAME minimum days you calculated in STEP 1 above. Do NOT recalculate or change it. The minimum days you calculated is FIXED. Explicitly mention this calculated minimum in the planNote. For example: "NOTE: A road trip to ${destination} and back in ${days} days isn't feasible. Based on the actual distance (approximately [X] km round trip) and travel time, this trip requires approximately [Y] days to complete comfortably (calculated: [X] km ÷ ${tripType === 'Car' ? '350' : '200'} km/day + 2 sightseeing days + 1 buffer day = [Y] days). I've created an alternative Coastal Karnataka Temple & Adventure Circuit that fits your ${days}-day timeline and preferences."
+             **CRITICAL**: Use the SAME minimum days you calculated in STEP 1 above. Do NOT recalculate or change it. The minimum days you calculated is FIXED. Explicitly mention this calculated minimum in the planNote. For example: "NOTE: A road trip to ${destination} and back in ${days} days isn't feasible. Based on the actual distance (approximately [X] km round trip) and travel time, this trip requires approximately [Y] days to complete comfortably (calculated: [X] km ÷ ${tripType === 'Car' ? '350' : '200'} km/day MAXIMUM + 2 sightseeing days + 1 buffer day = [Y] days). I've created an alternative Coastal Karnataka Temple & Adventure Circuit that fits your ${days}-day timeline and preferences."
 
-      2.  **Distance & Time Accuracy with Traffic (CRITICAL)**: You MUST use your search capabilities to get accurate driving distances (in kilometers) and realistic travel times between all stops in the circuit. **CRITICAL**: You MUST search for current traffic patterns, peak hours, and congestion levels for each route segment. Travel time estimates MUST account for traffic conditions, not just distance. For example, a 200 km drive might take 3 hours in ideal conditions but 4-5 hours with typical traffic. These realistic time estimates MUST be reflected in the daily 'activities' descriptions (e.g., "Drive from Jaipur to Udaipur (**approx. 395 km, 6-7 hours considering traffic**)..."). Additionally, suggest optimal departure times to avoid peak traffic (e.g., "Depart at 6:30 AM to avoid morning rush hour"). Inaccurate distances or ignoring traffic are critical failures.
+      2.  **Distance & Time Accuracy with Traffic (CRITICAL)**: You MUST use your search capabilities to get accurate driving distances (in kilometers) and realistic travel times between all stops in the circuit. **CRITICAL**: You MUST search for current traffic patterns, peak hours, and congestion levels for each route segment. Travel time estimates MUST account for traffic conditions, not just distance. For example, a 200 km drive might take 3 hours in ideal conditions but 4-5 hours with typical traffic. **STRICT LIMIT ENFORCEMENT**: NO SINGLE DAY can exceed 350 km of driving (5-6 hours max) for Car trips. If any route segment exceeds this, you MUST break it into multiple days. These realistic time estimates MUST be reflected in the daily 'activities' descriptions (e.g., "Drive from Jaipur to Udaipur (**approx. 395 km, 6-7 hours considering traffic**)" - but this example would be TOO LONG for one day and MUST be split). Additionally, suggest optimal departure times to avoid peak traffic (e.g., "Depart at 6:30 AM to avoid morning rush hour"). Inaccurate distances, ignoring traffic, or exceeding daily limits are critical failures.
 
       3.  **Structured Output - This is MANDATORY**:
           - **coveredDestinations**: This array must list each major city/stop of the road trip circuit *in the order they are visited*. For each stop, provide the detailed information (history, culture, etc.).
@@ -516,7 +516,11 @@ export const generateItinerary = async (
   CRITICAL VEHICLE-SPECIFIC INSTRUCTIONS:
   1.  **Vehicle Assumption**: Assume the user has a personal or rented vehicle. All 'transport' suggestions MUST be vehicle-centric (driving routes, times).
   2.  **Accommodation**: Search Google for hotels/hostels/guesthouses with secure and convenient parking for a ${tripType}. Include current prices in the 'placesToStay' field. Format: "**Hotel Name** (from [price]/night, parking available)".
-  3.  **Realistic Pacing**: Limit daily driving: **300-400 km for a Car**, **150-250 km for a Bike**.
+  3.  **STRICT DAILY DRIVING LIMITS (MANDATORY - DO NOT EXCEED)**:
+     - **For Car trips**: MAXIMUM 350 km per day, which translates to MAXIMUM 5-6 hours of driving per day. This is a HARD LIMIT - you MUST NOT plan any day that exceeds this. If a route segment is longer than 350 km, you MUST break it into multiple days with intermediate stops.
+     - **For Bike trips**: MAXIMUM 150-250 km per day (approximately 3-5 hours of riding).
+     - **CRITICAL**: When planning daily routes, you MUST verify that NO SINGLE DAY exceeds these limits. If you find a route segment that would require more than 350 km (for Car) or 250 km (for Bike) in one day, you MUST add an intermediate destination to break up the journey.
+     - **Time Calculation**: When estimating driving time, account for traffic, rest stops, and realistic road conditions. A 350 km drive typically takes 5-6 hours in normal conditions with traffic, which is the maximum acceptable for a single day.
   4.  **TRAFFIC-AWARE ROUTING (CRITICAL):**
      - **MANDATORY**: You MUST use Google Search to check current traffic patterns, peak hours, and typical congestion levels for ALL planned routes between destinations.
      - **Peak Hours Awareness**: Research and account for rush hours (typically 7-9 AM and 5-7 PM on weekdays) in major cities and on highways. Adjust departure times to avoid peak traffic when possible.
@@ -617,7 +621,7 @@ export const generateItinerary = async (
        - Use Google Search to get the ACTUAL distance (in km) between the start point and destination. If it's a round trip, calculate the total round trip distance.
        - Calculate the minimum days using this EXACT formula (do this ONCE and LOCK the result):
          * Total distance ÷ daily travel limit = minimum travel days
-           - Daily limits: ${tripType === 'Car' ? '300-400 km/day (use 350 km as average for calculation)' : tripType === 'Bike' ? '150-250 km/day (use 200 km as average for calculation)' : 'realistic public transport schedules - estimate based on actual travel time'}
+           - Daily limits (STRICT MAXIMUM - DO NOT EXCEED): ${tripType === 'Car' ? 'MAXIMUM 350 km/day (5-6 hours driving max - use 350 km as the strict limit for calculation)' : tripType === 'Bike' ? '150-250 km/day (use 200 km as average for calculation)' : 'realistic public transport schedules - estimate based on actual travel time'}
          * Add 1-2 days for sightseeing at the destination
          * Add 1 day buffer for rest/traffic = FINAL MINIMUM DAYS
          * Example: Gurgaon to Mumbai = ~700 km one way, ~1400 km round trip. With 350 km/day limit: 1400 ÷ 350 = 4 travel days + 2 sightseeing days + 1 buffer = 7 days minimum. This calculation is FIXED.
