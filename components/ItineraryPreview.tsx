@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Itinerary } from '../types';
 import { getReferenceBlogs } from '../services/geminiService';
 import { useSaveRecommendation } from '../hooks/useSaveRecommendation';
@@ -329,6 +329,13 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const { saveItineraryRecommendation } = useSaveRecommendation();
   
+  // Day indicator state
+  const [currentDay, setCurrentDay] = useState<number>(1);
+  const [isEditingDay, setIsEditingDay] = useState(false);
+  const [dayInputValue, setDayInputValue] = useState<string>('1');
+  const dayRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  
   useEffect(() => {
     const fetchBlogs = async () => {
       setIsLoadingBlogs(true);
@@ -358,6 +365,208 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
       saveRecommendation();
     }
   }, [isUnifiedView, requestData, itinerary, saveItineraryRecommendation, hasBeenSaved, isHistoryView]);
+
+  // Initialize current day
+  useEffect(() => {
+    if (itinerary.plan && itinerary.plan.length > 0) {
+      setCurrentDay(1);
+      setDayInputValue('1');
+    }
+  }, [itinerary.plan]);
+
+  // Set up IntersectionObserver to track current day based on scroll position
+  useEffect(() => {
+    // Clean up previous observer
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+    }
+
+    // Create new observer
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        // Find the entry with the highest intersection ratio that's in the upper portion of viewport
+        let mostVisible: { day: number; ratio: number; top: number } | null = null;
+
+        entries.forEach((entry) => {
+          const dayNumber = parseInt(entry.target.getAttribute('data-day') || '1');
+          const rect = entry.boundingClientRect;
+          const viewportCenter = window.innerHeight / 2;
+          
+          // Prefer elements that are in the upper portion of the viewport
+          const distanceFromTop = Math.max(0, rect.top);
+          const isInUpperPortion = rect.top < viewportCenter * 0.6;
+          
+          if (entry.isIntersecting) {
+            // Calculate score: higher intersection ratio and closer to top gets higher score
+            const ratioScore = entry.intersectionRatio;
+            const positionScore = isInUpperPortion ? 1 - (distanceFromTop / (viewportCenter * 0.6)) : 0.5;
+            const score = ratioScore * 0.7 + positionScore * 0.3;
+            
+            if (!mostVisible || score > mostVisible.ratio) {
+              mostVisible = {
+                day: dayNumber,
+                ratio: score,
+                top: rect.top,
+              };
+            }
+          }
+        });
+
+        if (mostVisible) {
+          setCurrentDay(mostVisible.day);
+          if (!isEditingDay) {
+            setDayInputValue(mostVisible.day.toString());
+          }
+        }
+      },
+      {
+        root: null,
+        rootMargin: '-10% 0px -70% 0px', // Trigger when day is in upper portion of viewport
+        threshold: [0, 0.1, 0.25, 0.5, 0.75, 1],
+      }
+    );
+
+    // Small delay to ensure refs are set
+    const timeoutId = setTimeout(() => {
+      // Observe all day elements
+      Object.values(dayRefs.current).forEach((ref) => {
+        if (ref && observerRef.current) {
+          observerRef.current.observe(ref);
+        }
+      });
+    }, 100);
+
+    // Cleanup
+    return () => {
+      clearTimeout(timeoutId);
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+    };
+  }, [itinerary.plan, isEditingDay]);
+
+  // Scroll to specific day
+  const scrollToDay = useCallback((dayNumber: number) => {
+    console.log(`Scrolling to day ${dayNumber}`);
+    
+    // Use requestAnimationFrame and setTimeout to ensure DOM is updated and refs are available
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        // First try to find by ref
+        let dayRef = dayRefs.current[dayNumber];
+        console.log(`Day ref for ${dayNumber}:`, dayRef);
+        
+        // If not found, try to find by id
+        if (!dayRef) {
+          dayRef = document.getElementById(`day-${dayNumber}`) as HTMLElement;
+          console.log(`Day element by id day-${dayNumber}:`, dayRef);
+        }
+        
+        // If not found, try to find by data attribute
+        if (!dayRef) {
+          const dayElement = document.querySelector(`[data-day="${dayNumber}"]`) as HTMLElement;
+          if (dayElement) {
+            dayRef = dayElement;
+            console.log(`Day element by data-day="${dayNumber}":`, dayRef);
+          }
+        }
+        
+        // If still not found, try to find by index (dayNumber - 1, since days are 1-indexed)
+        if (!dayRef && itinerary.plan && itinerary.plan.length > 0) {
+          const dayIndex = dayNumber - 1;
+          if (dayIndex >= 0 && dayIndex < itinerary.plan.length) {
+            const dayFromPlan = itinerary.plan[dayIndex];
+            console.log(`Trying to find day by index ${dayIndex}:`, dayFromPlan);
+            if (dayFromPlan) {
+              dayRef = dayRefs.current[dayFromPlan.day] || 
+                       document.getElementById(`day-${dayFromPlan.day}`) ||
+                       (document.querySelector(`[data-day="${dayFromPlan.day}"]`) as HTMLElement);
+              console.log(`Day ref found by plan index:`, dayRef);
+            }
+          }
+        }
+        
+        if (dayRef) {
+          console.log(`Found day element, scrolling to it`);
+          
+          // Use scrollIntoView first for reliability
+          dayRef.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+            inline: 'nearest'
+          });
+          
+          // Then adjust for header offset
+          setTimeout(() => {
+            const rect = dayRef!.getBoundingClientRect();
+            const headerOffset = 120; // Offset for navbar and day indicator
+            
+            // If element is behind the header, adjust scroll
+            if (rect.top < headerOffset) {
+              const adjustment = headerOffset - rect.top;
+              window.scrollBy({
+                top: adjustment,
+                behavior: 'smooth'
+              });
+              console.log(`Adjusted scroll by ${adjustment}px for header`);
+            }
+          }, 400);
+          
+          // Update state
+          setCurrentDay(dayNumber);
+          setDayInputValue(dayNumber.toString());
+          setIsEditingDay(false);
+        } else {
+          // If still not found, just update the state
+          console.warn(`Day ${dayNumber} not found. Available refs:`, Object.keys(dayRefs.current));
+          console.warn(`Available plan days:`, itinerary.plan?.map(d => d.day));
+          setCurrentDay(dayNumber);
+          setDayInputValue(dayNumber.toString());
+          setIsEditingDay(false);
+        }
+      }, 150);
+    });
+  }, [itinerary.plan]);
+
+  // Handle day input change
+  const handleDayInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setDayInputValue(value);
+  };
+
+  // Handle day input submit
+  const handleDayInputSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const dayNumber = parseInt(dayInputValue, 10);
+    if (!isNaN(dayNumber) && dayNumber >= 1 && dayNumber <= itinerary.days) {
+      scrollToDay(dayNumber);
+    } else {
+      setDayInputValue(currentDay.toString());
+      setIsEditingDay(false);
+    }
+  };
+
+  // Handle day input blur
+  const handleDayInputBlur = () => {
+    const dayNumber = parseInt(dayInputValue, 10);
+    if (!isNaN(dayNumber) && dayNumber >= 1 && dayNumber <= itinerary.days) {
+      scrollToDay(dayNumber);
+    } else {
+      setDayInputValue(currentDay.toString());
+      setIsEditingDay(false);
+    }
+  };
+
+  // Handle day input key down
+  const handleDayInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleDayInputSubmit(e);
+    } else if (e.key === 'Escape') {
+      setDayInputValue(currentDay.toString());
+      setIsEditingDay(false);
+    }
+  };
   
   const handleCopyLink = async () => {
     if (!savedId) {
@@ -502,6 +711,51 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8 md:space-y-12 mb-16 px-2 sm:px-4" id="itinerary-preview-content">
+      {/* Day Indicator - Fixed position for better visibility */}
+      {itinerary.days && itinerary.days > 0 && (
+        <div className="fixed top-20 right-2 sm:top-24 sm:right-4 md:top-24 md:right-6 z-[100] no-print">
+          <div className="bg-white backdrop-blur-md rounded-full shadow-lg sm:shadow-xl border border-violet-400/60 px-2 py-1.5 sm:px-3 sm:py-2 flex items-center space-x-1.5 sm:space-x-2 ring-1 ring-violet-200/50">
+            {isEditingDay ? (
+              <form onSubmit={handleDayInputSubmit} className="flex items-center space-x-1 sm:space-x-1.5">
+                <input
+                  type="number"
+                  min="1"
+                  max={itinerary.days}
+                  value={dayInputValue}
+                  onChange={handleDayInputChange}
+                  onBlur={handleDayInputBlur}
+                  onKeyDown={handleDayInputKeyDown}
+                  className="w-8 sm:w-10 text-center text-xs sm:text-sm font-semibold text-slate-800 bg-violet-50 border border-violet-400 rounded-md focus:outline-none focus:ring-1 focus:ring-violet-500 focus:border-violet-500"
+                  autoFocus
+                />
+                <span className="text-xs sm:text-sm text-slate-600 font-medium whitespace-nowrap">of {itinerary.days}</span>
+              </form>
+            ) : (
+              <button
+                onClick={() => setIsEditingDay(true)}
+                className="flex items-center space-x-1.5 sm:space-x-2 hover:bg-violet-50 rounded-full px-1 sm:px-2 py-0.5 transition-colors group"
+                aria-label={`Current day ${currentDay} of ${itinerary.days}. Click to edit and jump to a specific day.`}
+              >
+                <span className="text-xs sm:text-sm font-semibold text-slate-800 bg-violet-100 px-2 py-0.5 sm:px-3 sm:py-1 rounded-md border border-violet-200 group-hover:bg-violet-200 transition-colors min-w-[1.5rem] sm:min-w-[2rem] text-center">
+                  {currentDay}
+                </span>
+                <span className="text-xs sm:text-sm text-slate-600 font-medium whitespace-nowrap">of {itinerary.days}</span>
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  className="h-3 w-3 sm:h-4 sm:w-4 text-slate-500 group-hover:text-violet-600 transition-colors flex-shrink-0" 
+                  fill="none" 
+                  viewBox="0 0 24 24" 
+                  stroke="currentColor" 
+                  strokeWidth={2}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+      
        {!isUnifiedView && (
        <div className="flex justify-start items-center no-print animated-card">
         <button
@@ -681,7 +935,8 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
       </section>
 
       <section className="space-y-6 sm:space-y-8">
-        <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 animated-card px-2" style={{ animationDelay: '1200ms' }}>Daily Itinerary</h2>
+        <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 animated-card px-2 mb-4 sm:mb-6" style={{ animationDelay: '1200ms' }}>Daily Itinerary</h2>
+        
         {itinerary.plan.map((day, index) => {
           let dailyFuelCostPerPerson = 0;
           let totalDailyCostPerPerson = parseFloat(day.approxCost) || 0;
@@ -697,7 +952,14 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
           }
 
           return (
-          <div key={day.day} className="bg-white/40 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/50 transition-all duration-300 hover:shadow-2xl hover:border-violet-300/50 hover:-translate-y-1 animated-card" style={{ animationDelay: `${1250 + index * 100}ms` }}>
+          <div 
+            key={day.day} 
+            id={`day-${day.day}`}
+            ref={(el) => { dayRefs.current[day.day] = el; }}
+            data-day={day.day}
+            className="bg-white/40 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/50 transition-all duration-300 hover:shadow-2xl hover:border-violet-300/50 hover:-translate-y-1 animated-card" 
+            style={{ animationDelay: `${1250 + index * 100}ms` }}
+          >
             <div className="flex justify-between items-start">
               <div className="flex-1">
                 <p className="text-sm font-semibold text-violet-700">Day {day.day}</p>
