@@ -3,7 +3,6 @@ import { PackingListRequestData, LocationSuggestion, PopularDestination } from '
 import { getDestinationSuggestions } from '../services/geminiService';
 import { User } from '../services/authService';
 import BackToHomeButton from './BackToHomeButton';
-import DateRangePicker from './DateRangePicker';
 import SelectionPage from './SelectionPage';
 
 interface PackingAssistantFormProps {
@@ -72,7 +71,6 @@ const PackingAssistantForm: React.FC<PackingAssistantFormProps> = ({ onSubmit, i
   const [isMobile, setIsMobile] = useState(false);
   const [selectionView, setSelectionView] = useState<{ field: keyof typeof formData, title: string } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   
   const [langSearchTerm, setLangSearchTerm] = useState('');
   const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
@@ -92,18 +90,102 @@ const PackingAssistantForm: React.FC<PackingAssistantFormProps> = ({ onSubmit, i
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // Ensure days don't exceed 45 on initialization
+  useEffect(() => {
+    if (days > 45) {
+      const startDate = new Date(formData.startDate + 'T00:00:00');
+      const maxEndDate = new Date(startDate);
+      maxEndDate.setDate(maxEndDate.getDate() + 44); // 45 days total (inclusive)
+      const maxEndDateString = formatDateLocal(maxEndDate);
+      setFormData(prev => ({ 
+        ...prev, 
+        endDate: maxEndDateString
+      }));
+      setDays(45);
+    }
+  }, []); // Only run on mount
+
+  // Helper function to calculate days between two dates
+  const calculateDays = (start: string, end: string): number => {
+    if (!start || !end) return 0;
+    const startDate = new Date(start + 'T00:00:00');
+    const endDate = new Date(end + 'T00:00:00');
+    const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    return Math.min(diffDays, 45); // Cap at 45 days
+  };
+
   const handleInputChange = (field: keyof typeof formData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
   
-  const handleDateSelect = (start: string, end: string) => {
-      const startDate = new Date(start + 'T00:00:00');
-      const endDate = new Date(end + 'T00:00:00');
-      const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+  const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newStartDate = e.target.value;
+    if (!newStartDate) return;
+    
+    const startDate = new Date(newStartDate + 'T00:00:00');
+    const endDate = new Date(formData.endDate + 'T00:00:00');
+    
+    // Ensure start date is not after end date
+    if (startDate > endDate) {
+      // If start date is after end date, set end date to start date + current days (capped at 45)
+      const currentDays = Math.min(days, 45);
+      const newEndDate = new Date(startDate);
+      newEndDate.setDate(newEndDate.getDate() + currentDays - 1);
+      const newEndDateString = formatDateLocal(newEndDate);
+      const calculatedDays = calculateDays(newStartDate, newEndDateString);
+      
+      setFormData(prev => ({ 
+        ...prev, 
+        startDate: newStartDate,
+        endDate: newEndDateString
+      }));
+      setDays(calculatedDays);
+    } else {
+      // Recalculate days based on new start date and existing end date
+      let calculatedDays = calculateDays(newStartDate, formData.endDate);
+      
+      // Limit to max 45 days
+      if (calculatedDays > 45) {
+        calculatedDays = 45;
+        const maxEndDate = new Date(startDate);
+        maxEndDate.setDate(maxEndDate.getDate() + 44); // 45 days total (inclusive)
+        const maxEndDateString = formatDateLocal(maxEndDate);
+        setFormData(prev => ({ 
+          ...prev, 
+          startDate: newStartDate,
+          endDate: maxEndDateString
+        }));
+        setDays(45);
+      } else {
+        setFormData(prev => ({ 
+          ...prev, 
+          startDate: newStartDate
+        }));
+        setDays(calculatedDays);
+      }
+    }
+  };
 
-      setFormData(prev => ({ ...prev, startDate: start, endDate: end }));
-      setDays(diffDays);
+  const handleEndDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newEndDate = e.target.value;
+    if (!newEndDate) return;
+    
+    const startDate = new Date(formData.startDate + 'T00:00:00');
+    const endDate = new Date(newEndDate + 'T00:00:00');
+    
+    // Ensure end date is not before start date
+    if (endDate < startDate) {
+      return;
+    }
+    
+    const calculatedDays = calculateDays(formData.startDate, newEndDate);
+    
+    setFormData(prev => ({ 
+      ...prev, 
+      endDate: newEndDate
+    }));
+    setDays(calculatedDays);
   };
   
   const handleDestinationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -383,6 +465,15 @@ const PackingAssistantForm: React.FC<PackingAssistantFormProps> = ({ onSubmit, i
         />
     );
   };
+
+  // Calculate max end date (45 days from start date)
+  const maxEndDate = useMemo(() => {
+    if (!formData.startDate) return '';
+    const startDate = new Date(formData.startDate + 'T00:00:00');
+    const maxDate = new Date(startDate);
+    maxDate.setDate(maxDate.getDate() + 44); // 45 days total (inclusive)
+    return formatDateLocal(maxDate);
+  }, [formData.startDate]);
   
   return (
     <div className="max-w-xl mx-auto">
@@ -473,21 +564,49 @@ const PackingAssistantForm: React.FC<PackingAssistantFormProps> = ({ onSubmit, i
         </div>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="min-w-0">
+          <div className="space-y-2">
               <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">Trip Dates</label>
-              <button
-                  type="button"
-                  onClick={() => setIsDatePickerOpen(true)}
-                  className="w-full flex justify-between items-center text-left p-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
-              >
-                  <div className="flex items-center space-x-2">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" /></svg>
-                      <span className="font-semibold text-slate-800">
-                          {new Date(formData.startDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {formData.endDate ? new Date(formData.endDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '...'}
-                      </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+                          </svg>
+                      </div>
+                      <input
+                          type="date"
+                          value={formData.startDate}
+                          onChange={handleStartDateChange}
+                          min={formatDateLocal(today)}
+                          className="w-full pl-10 pr-3 py-2 bg-white text-base text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
+                          required
+                      />
                   </div>
-                  <span className="bg-violet-100 text-violet-700 font-bold px-2 py-0.5 rounded-full text-sm">{days} {days === 1 ? 'day' : 'days'}</span>
-              </button>
+                  <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+                          </svg>
+                      </div>
+                      <input
+                          type="date"
+                          value={formData.endDate}
+                          onChange={handleEndDateChange}
+                          min={formData.startDate}
+                          max={maxEndDate}
+                          className="w-full pl-10 pr-3 py-2 bg-white text-base text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
+                          required
+                      />
+                  </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                  <span className="bg-violet-100 text-violet-700 font-bold px-3 py-1 rounded-full text-sm">
+                      {days} {days === 1 ? 'day' : 'days'}
+                  </span>
+                  {days >= 45 && (
+                      <span className="text-xs text-amber-600 font-medium">(Max 45 days)</span>
+                  )}
+              </div>
           </div>
           <div className="relative">
                 <label className="block text-sm font-medium text-slate-700 mb-1">Language</label>
@@ -541,13 +660,6 @@ const PackingAssistantForm: React.FC<PackingAssistantFormProps> = ({ onSubmit, i
           </button>
         </div>
       </form>
-      <DateRangePicker 
-        isOpen={isDatePickerOpen}
-        onClose={() => setIsDatePickerOpen(false)}
-        onSelect={handleDateSelect}
-        initialStartDate={formData.startDate}
-        initialEndDate={formData.endDate}
-      />
       {/* SelectionPage disabled - mobile now uses inline suggestions */}
     </div>
   );
