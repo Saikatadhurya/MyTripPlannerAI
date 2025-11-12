@@ -392,7 +392,23 @@ export const generateItinerary = async (
           - **IF NOT FEASIBLE** (calculated minimum > ${days}): Do NOT fail. You MUST plan a realistic road trip circuit to an alternative region or set of destinations reachable within the timeframe that still fits the user's vibe. The "destination" field in the JSON response MUST be updated to a more descriptive name for this new circuit (e.g., 'Rajasthan Heritage Circuit'). You MUST also add a note in the new 'planNote' field in the root of the JSON response, explaining the change clearly and starting with "NOTE:". 
              **CRITICAL**: Use the SAME minimum days you calculated in STEP 1 above. Do NOT recalculate or change it. The minimum days you calculated is FIXED. Explicitly mention this calculated minimum in the planNote. For example: "NOTE: A road trip to ${destination} and back in ${days} days isn't feasible. Based on the actual distance (approximately [X] km round trip) and travel time, this trip requires approximately [Y] days to complete comfortably (calculated: [X] km ÷ ${tripType === 'Car' ? '350' : '200'} km/day MAXIMUM + 2 sightseeing days + 1 buffer day = [Y] days). I've created an alternative Coastal Karnataka Temple & Adventure Circuit that fits your ${days}-day timeline and preferences."
 
-      2.  **Distance & Time Accuracy with Traffic (CRITICAL)**: You MUST use your search capabilities to get accurate driving distances (in kilometers) and realistic travel times between all stops in the circuit. **CRITICAL**: You MUST search for current traffic patterns, peak hours, and congestion levels for each route segment. Travel time estimates MUST account for traffic conditions, not just distance. For example, a 200 km drive might take 3 hours in ideal conditions but 4-5 hours with typical traffic. **STRICT LIMIT ENFORCEMENT**: NO SINGLE DAY can exceed 350 km of driving (5-6 hours max) for Car trips. If any route segment exceeds this, you MUST break it into multiple days. These realistic time estimates MUST be reflected in the daily 'activities' descriptions (e.g., "Drive from Jaipur to Udaipur (**approx. 395 km, 6-7 hours considering traffic**)" - but this example would be TOO LONG for one day and MUST be split). Additionally, suggest optimal departure times to avoid peak traffic (e.g., "Depart at 6:30 AM to avoid morning rush hour"). Inaccurate distances, ignoring traffic, or exceeding daily limits are critical failures.
+      2.  **Distance & Time Accuracy with Traffic (CRITICAL)**: You MUST use your search capabilities to get accurate driving distances (in kilometers) and realistic travel times between all stops in the circuit. **CRITICAL**: You MUST search for current traffic patterns, peak hours, and congestion levels for each route segment. Travel time estimates MUST account for traffic conditions, not just distance. For example, a 200 km drive might take 3 hours in ideal conditions but 4-5 hours with typical traffic. 
+       
+       **🚫 ABSOLUTE LIMIT ENFORCEMENT - CRITICAL VALIDATION:**
+       - **FOR CAR TRIPS: NO SINGLE DAY CAN EXCEED 350 KM OF DRIVING. THIS IS ABSOLUTE.**
+       - **VALIDATION REQUIRED**: For EACH day in the plan, you MUST:
+         1. Calculate the total driving distance for that day
+         2. Verify it is ≤ 350 km
+         3. If it exceeds 350 km, you MUST split it into multiple days with intermediate stops
+       - **INVALID EXAMPLES (DO NOT DO THIS):**
+         - "Drive from Jaipur to Udaipur (**approx. 395 km, 6-7 hours**)" ❌ (395 km EXCEEDS 350 km limit - MUST SPLIT)
+         - "Drive from Delhi to Mumbai (**approx. 600 km, 10 hours**)" ❌ (600 km EXCEEDS 350 km limit - MUST SPLIT INTO 2+ DAYS)
+       - **CORRECT APPROACH**: If a route is 395 km, you MUST break it into 2 days:
+         - Day X: "Drive from Jaipur to [Intermediate City] (**approx. 200 km, 3-4 hours**)" ✅
+         - Day X+1: "Drive from [Intermediate City] to Udaipur (**approx. 195 km, 3-4 hours**)" ✅
+       - These realistic time estimates MUST be reflected in the daily 'activities' descriptions
+       - Additionally, suggest optimal departure times to avoid peak traffic (e.g., "Depart at 6:30 AM to avoid morning rush hour")
+       - **CRITICAL**: Inaccurate distances, ignoring traffic, or exceeding daily limits are ABSOLUTE FAILURES that make the entire response invalid
 
       3.  **Structured Output - This is MANDATORY**:
           - **coveredDestinations**: This array must list each major city/stop of the road trip circuit *in the order they are visited*. For each stop, provide the detailed information (history, culture, etc.).
@@ -513,13 +529,39 @@ export const generateItinerary = async (
   3. **plan.approxCost**: Realistic per-person daily cost for that day's activities and food ONLY. CRITICAL: Calculate dynamically by searching for actual entry fees of attractions listed, then add food estimate. DO NOT average the total budget. Example: Louvre Museum day costs more than a free walking tour day. Exclude fuel and miscellaneous.
   
   ${(tripType === 'Car' || tripType === 'Bike') ? `
-  CRITICAL VEHICLE-SPECIFIC INSTRUCTIONS:
+  ⚠️⚠️⚠️ CRITICAL VEHICLE-SPECIFIC INSTRUCTIONS - ABSOLUTE MANDATORY LIMITS ⚠️⚠️⚠️
+  
+  **🚫 ABSOLUTE PROHIBITION - CAR DAILY DISTANCE LIMIT:**
+  **FOR CAR TRIPS: NO SINGLE DAY CAN EXCEED 350 KM. THIS IS AN ABSOLUTE, NON-NEGOTIABLE HARD LIMIT.**
+  - **MAXIMUM 350 km per day** = **MAXIMUM 5-6 hours of driving per day**
+  - **CRITICAL FAILURE EXAMPLES TO AVOID:**
+    ❌ DO NOT plan 400 km, 500 km, 600 km, or any distance over 350 km in a single day
+    ❌ DO NOT combine multiple long route segments into one day
+    ❌ DO NOT ignore this limit even if the route seems "straightforward"
+  - **MANDATORY ACTION**: If ANY route segment exceeds 350 km, you MUST:
+    1. Break it into multiple days
+    2. Add intermediate stops/destinations to split the journey
+    3. Verify EACH day's total driving distance is ≤ 350 km before finalizing
+  
   1.  **Vehicle Assumption**: Assume the user has a personal or rented vehicle. All 'transport' suggestions MUST be vehicle-centric (driving routes, times).
   2.  **Accommodation**: Search Google for hotels/hostels/guesthouses with secure and convenient parking for a ${tripType}. Include current prices in the 'placesToStay' field. Format: "**Hotel Name** (from [price]/night, parking available)".
-  3.  **STRICT DAILY DRIVING LIMITS (MANDATORY - DO NOT EXCEED)**:
-     - **For Car trips**: MAXIMUM 350 km per day, which translates to MAXIMUM 5-6 hours of driving per day. This is a HARD LIMIT - you MUST NOT plan any day that exceeds this. If a route segment is longer than 350 km, you MUST break it into multiple days with intermediate stops.
-     - **For Bike trips**: MAXIMUM 150-250 km per day (approximately 3-5 hours of riding).
-     - **CRITICAL**: When planning daily routes, you MUST verify that NO SINGLE DAY exceeds these limits. If you find a route segment that would require more than 350 km (for Car) or 250 km (for Bike) in one day, you MUST add an intermediate destination to break up the journey.
+  3.  **STRICT DAILY DRIVING LIMITS (ABSOLUTE MANDATORY - CRITICAL VALIDATION REQUIRED)**:
+     - **For Car trips**: 
+       * **MAXIMUM 350 km per day** = **MAXIMUM 5-6 hours of driving per day**
+       * **THIS IS A HARD LIMIT - ABSOLUTELY NO EXCEPTIONS**
+       * **VALIDATION CHECK**: Before finalizing the itinerary, you MUST verify that EVERY SINGLE DAY has ≤ 350 km of driving
+       * **IF ANY DAY EXCEEDS 350 KM, THE ENTIRE RESPONSE IS INVALID AND MUST BE REJECTED**
+       * If a route segment is longer than 350 km, you MUST break it into multiple days with intermediate stops
+       * **Examples of INVALID plans:**
+         - Day 3: Drive 600 km from City A to City B ❌ (EXCEEDS LIMIT - MUST SPLIT)
+         - Day 5: Drive 450 km from City C to City D ❌ (EXCEEDS LIMIT - MUST SPLIT)
+         - Day 7: Drive 380 km from City E to City F ❌ (EXCEEDS LIMIT - MUST SPLIT)
+       * **Examples of VALID plans:**
+         - Day 3: Drive 300 km from City A to City B ✅ (WITHIN LIMIT)
+         - Day 4: Drive 280 km from City B to City C ✅ (WITHIN LIMIT)
+         - Day 5: Drive 320 km from City C to City D ✅ (WITHIN LIMIT)
+     - **For Bike trips**: MAXIMUM 150-250 km per day (approximately 3-5 hours of riding). Same validation applies - NO day can exceed 250 km.
+     - **CRITICAL VALIDATION STEP**: After planning each day, explicitly calculate and verify the driving distance. If any day exceeds the limit, you MUST add an intermediate stop to break up the journey.
      - **Time Calculation**: When estimating driving time, account for traffic, rest stops, and realistic road conditions. A 350 km drive typically takes 5-6 hours in normal conditions with traffic, which is the maximum acceptable for a single day.
   4.  **TRAFFIC-AWARE ROUTING (CRITICAL):**
      - **MANDATORY**: You MUST use Google Search to check current traffic patterns, peak hours, and typical congestion levels for ALL planned routes between destinations.
@@ -587,13 +629,28 @@ export const generateItinerary = async (
 
   IMPORTANT RULES:
   1. All strings must be in ${language}. 'plan' array must have exactly ${days} elements. 'coveredDestinations' is mandatory (populate for multi-location trips, single destination for single city).
-  2. **ACTIVITY TIMINGS (TRAFFIC-AWARE):** Prefix each activity with time: "**09:00 AM - 11:00 AM:** Visit..." or "**01:00 PM:** Lunch...". Be realistic accounting for travel time, duration, AND traffic conditions. For vehicle trips (Car/Bike), account for peak traffic hours when scheduling activities. For example, if moving between attractions in a city during rush hour (7-9 AM or 5-7 PM), add extra buffer time. For inter-city travel, suggest departure times that avoid peak hours. Always include realistic travel time estimates that reflect traffic: "**06:30 AM:** Depart from Hotel (early departure to avoid rush hour traffic)" or "**10:00 AM - 12:00 PM:** Visit Museum (allowing 30 min for city traffic)".
-  3. **COST FORMATTING:** All cost fields (budgetSummary.*, approxCost, transport.cost) = strings with ONLY numbers (e.g., "1500", "250.50"). No currency symbols. All per-person costs in "${currency}".
-  4. **BOLDING:** Use **text** to highlight attractions, restaurants, hotels, timings, cultural items, travel advice.
-  5. **NO TECHNICAL JARGON:** User-facing text must be friendly and natural. NEVER mention JSON field names like 'budgetSummary.total' or 'approxCost' in user text. Use natural language instead.
-  6. **MEDICAL:** If includeMedical=true, list at least one hospital/pharmacy per day in 'medicalFacilities'.
-  7. **TRANSPORT:** Standard trips: tailor to budget. Car/Bike: follow vehicle instructions above.
-  8. **ACCOMMODATION WITH COSTS (CRITICAL):** For each day's 'placesToStay' field, you MUST:
+  2. **🚫 CRITICAL VALIDATION - DAILY DRIVING DISTANCE LIMIT (FOR CAR TRIPS):**
+     - **BEFORE FINALIZING THE RESPONSE, YOU MUST VALIDATE:**
+       * Calculate the driving distance for EACH day in the 'plan' array
+       * Verify that NO SINGLE DAY exceeds 350 km of driving
+       * If ANY day exceeds 350 km, the response is INVALID and you MUST:
+         - Split that day's travel into multiple days
+         - Add intermediate stops/destinations
+         - Recalculate all distances
+         - Verify again that all days are ≤ 350 km
+     - **THIS IS A MANDATORY VALIDATION STEP - DO NOT SKIP IT**
+     - **EXAMPLES OF INVALID RESPONSES:**
+       * Any day with "Drive... (**approx. 400 km**)" or more ❌
+       * Any day with "Drive... (**approx. 500 km**)" or more ❌
+       * Any day with "Drive... (**approx. 600 km**)" or more ❌
+     - **ONLY RESPONSES WHERE ALL DAYS HAVE ≤ 350 KM ARE VALID**
+  3. **ACTIVITY TIMINGS (TRAFFIC-AWARE):** Prefix each activity with time: "**09:00 AM - 11:00 AM:** Visit..." or "**01:00 PM:** Lunch...". Be realistic accounting for travel time, duration, AND traffic conditions. For vehicle trips (Car/Bike), account for peak traffic hours when scheduling activities. For example, if moving between attractions in a city during rush hour (7-9 AM or 5-7 PM), add extra buffer time. For inter-city travel, suggest departure times that avoid peak hours. Always include realistic travel time estimates that reflect traffic: "**06:30 AM:** Depart from Hotel (early departure to avoid rush hour traffic)" or "**10:00 AM - 12:00 PM:** Visit Museum (allowing 30 min for city traffic)". **CRITICAL**: When mentioning driving distances in activities, ensure they never exceed 350 km per day.
+  4. **COST FORMATTING:** All cost fields (budgetSummary.*, approxCost, transport.cost) = strings with ONLY numbers (e.g., "1500", "250.50"). No currency symbols. All per-person costs in "${currency}".
+  5. **BOLDING:** Use **text** to highlight attractions, restaurants, hotels, timings, cultural items, travel advice.
+  6. **NO TECHNICAL JARGON:** User-facing text must be friendly and natural. NEVER mention JSON field names like 'budgetSummary.total' or 'approxCost' in user text. Use natural language instead.
+  7. **MEDICAL:** If includeMedical=true, list at least one hospital/pharmacy per day in 'medicalFacilities'.
+  8. **TRANSPORT:** Standard trips: tailor to budget. Car/Bike: follow vehicle instructions above.
+  9. **ACCOMMODATION WITH COSTS (CRITICAL):** For each day's 'placesToStay' field, you MUST:
      - Search Google for current hotel/hostel/guesthouse prices in that destination for the travel dates
      - Include 2-3 accommodation options per day
      - **CRITICAL - VARIETY REQUIREMENT:** If the user is staying in the same location/city for multiple consecutive days, you MUST provide DIFFERENT accommodation options for EACH day. Do NOT repeat the same hotels across days. This gives users maximum variety and options to choose from. For example, if staying 3 days in Paris, Day 1 might suggest hotels in the Latin Quarter, Day 2 in Montmartre, Day 3 in Le Marais - all different properties.
