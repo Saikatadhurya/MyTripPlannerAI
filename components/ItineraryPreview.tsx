@@ -49,9 +49,57 @@ const extractHotelName = (text: string): string => {
   return firstPart || cleaned.trim();
 };
 
+// Helper to extract location from day title or activities
+const extractLocationFromDay = (day: Itinerary['plan'][0], itinerary: Itinerary): string => {
+  // Try to extract from day title (e.g., "Day 3: Travel from Chittorgarh to Udaipur" -> "Udaipur")
+  if (day.title) {
+    // Look for patterns like "to [Location]", "in [Location]", "at [Location]"
+    const toMatch = day.title.match(/(?:to|in|at)\s+([A-Z][a-zA-Z\s]+?)(?:\s|$|&|,)/);
+    if (toMatch && toMatch[1]) {
+      const location = toMatch[1].trim();
+      // Filter out common words
+      if (!['Day', 'Travel', 'Sightseeing', 'Local', 'Explore'].includes(location)) {
+        return location;
+      }
+    }
+    
+    // Try to find city names from coveredDestinations in the title
+    if (itinerary.coveredDestinations) {
+      for (const dest of itinerary.coveredDestinations) {
+        if (day.title.includes(dest.name)) {
+          return dest.name;
+        }
+      }
+    }
+  }
+  
+  // Try to extract from activities (look for city names)
+  if (day.activities && day.activities.length > 0) {
+    const activitiesText = day.activities.join(' ');
+    if (itinerary.coveredDestinations) {
+      for (const dest of itinerary.coveredDestinations) {
+        if (activitiesText.includes(dest.name)) {
+          return dest.name;
+        }
+      }
+    }
+  }
+  
+  // Fallback: use the first covered destination or main destination
+  if (itinerary.coveredDestinations && itinerary.coveredDestinations.length > 0) {
+    return itinerary.coveredDestinations[0].name;
+  }
+  
+  // Last resort: extract city name from main destination (if it's a simple city name)
+  const mainDest = itinerary.destination;
+  // If destination is something like "Rajasthan Heritage Tour", try to find a city
+  // For now, just return the destination as-is, but we'll try to improve this
+  return mainDest.split(/[,\s]+/).find(part => part.length > 3 && /^[A-Z]/.test(part)) || mainDest;
+};
+
 // Helper to generate Google search URL for a hotel
-const generateHotelSearchUrl = (hotelName: string, destination: string): string => {
-  const searchQuery = `${hotelName} ${destination}`.trim();
+const generateHotelSearchUrl = (hotelName: string, location: string): string => {
+  const searchQuery = `${hotelName} ${location}`.trim();
   return `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`;
 };
 
@@ -94,8 +142,8 @@ const extractRestaurantName = (text: string): string => {
 };
 
 // Helper to generate Google search URL for a restaurant
-const generateRestaurantSearchUrl = (restaurantName: string, destination: string): string => {
-  const searchQuery = `${restaurantName} ${destination}`.trim();
+const generateRestaurantSearchUrl = (restaurantName: string, location: string): string => {
+  const searchQuery = `${restaurantName} ${location}`.trim();
   return `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`;
 };
 
@@ -1035,6 +1083,7 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
                     {day.food && day.food.length > 0 && (
                       day.food.map((item, index) => {
                         const restaurantName = extractRestaurantName(item);
+                        const dayLocation = extractLocationFromDay(day, itinerary);
                         let itemWithLink = item;
                         
                         // Always try to create a link - use extracted name or fallback to first bold text
@@ -1042,7 +1091,7 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
                         let searchUrl = '';
                         
                         if (searchName && searchName.length > 0) {
-                          searchUrl = generateRestaurantSearchUrl(searchName, itinerary.destination);
+                          searchUrl = generateRestaurantSearchUrl(searchName, dayLocation);
                         } else {
                           // Fallback: extract first bold text or first few words
                           const boldMatch = item.match(/\*\*([^*]+)\*\*/);
@@ -1053,7 +1102,7 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
                             searchName = words.slice(0, Math.min(3, words.length)).join(' ').split(/[-–—:]/)[0].trim();
                           }
                           if (searchName && searchName.length > 0) {
-                            searchUrl = generateRestaurantSearchUrl(searchName, itinerary.destination);
+                            searchUrl = generateRestaurantSearchUrl(searchName, dayLocation);
                           }
                         }
                         
@@ -1125,6 +1174,7 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
                     {day.placesToStay && day.placesToStay.length > 0 && (
                       day.placesToStay.map((item, index) => {
                         const hotelName = extractHotelName(item);
+                        const dayLocation = extractLocationFromDay(day, itinerary);
                         let itemWithLink = item;
                         
                         // Always try to create a link - use extracted name or fallback to first bold text
@@ -1132,7 +1182,7 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
                         let searchUrl = '';
                         
                         if (searchName && searchName.length > 0) {
-                          searchUrl = generateHotelSearchUrl(searchName, itinerary.destination);
+                          searchUrl = generateHotelSearchUrl(searchName, dayLocation);
                         } else {
                           // Fallback: extract first bold text or first few words
                           const boldMatch = item.match(/\*\*([^*]+)\*\*/);
@@ -1143,7 +1193,7 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
                             searchName = words.slice(0, Math.min(3, words.length)).join(' ').replace(/\s*\(.*$/g, '').trim();
                           }
                           if (searchName && searchName.length > 0) {
-                            searchUrl = generateHotelSearchUrl(searchName, itinerary.destination);
+                            searchUrl = generateHotelSearchUrl(searchName, dayLocation);
                           }
                         }
                         
