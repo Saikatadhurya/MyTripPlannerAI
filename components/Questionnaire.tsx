@@ -37,7 +37,7 @@ const vibes: { label: Vibe; icon: string; description: string }[] = [
     { label: 'Nature & Wildlife', icon: '🌿', description: 'mountains, forests, safaris, eco-travel' },
     { label: 'Food & Culinary', icon: '🍲', description: 'local cuisines, street food, fine dining' },
     { label: 'Nightlife & Entertainment', icon: '🎶', description: 'parties, clubs, festivals, concerts' },
-    { label: 'Luxury & Leisure', icon: '💎', description: 'resorts, cruises, premium experiences' },
+    { label: 'Shopping & Style', icon: '🛍️', description: 'markets, malls, boutiques, fashion districts' },
     { label: 'Romantic & Family Getaways', icon: '❤️', description: 'honeymoons, bonding trips, safe family travel' },
 ];
 
