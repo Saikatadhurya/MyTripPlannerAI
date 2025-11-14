@@ -83,7 +83,7 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
     tripType: 'Standard',
     days: 3,
     budget: 'Midrange',
-    vibe: ['Adventure & Thrill'],
+    vibe: ['Food & Culinary'],
     persons: 1,
     foodPreference: 'Non-Veg',
     startDate: formatDateLocal(today),
@@ -1515,8 +1515,8 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
                 <span>What's your vibe?</span>
               </h2>
               <p className="text-xs sm:text-sm text-slate-600">Select one or more vibes that best describe your ideal trip.</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {vibes.map(v => (<button key={v.label} type="button" onClick={() => handleVibeToggle(v.label)} className={`p-4 rounded-lg text-left transition-all duration-200 border-2 flex items-start space-x-3 ${formData.vibe.includes(v.label) ? 'bg-violet-100/70 border-violet-500' : 'bg-white/40 border-white/40 hover:bg-white/60'}`}><span className="text-2xl mt-1">{v.icon}</span><div><p className="font-semibold text-slate-800">{v.label}</p><p className="text-xs text-slate-500">{v.description}</p></div></button>))}
+              <div className="grid grid-cols-2 gap-2 sm:gap-4">
+                {vibes.map(v => (<button key={v.label} type="button" onClick={() => handleVibeToggle(v.label)} className={`p-2 sm:p-4 rounded-lg text-left transition-all duration-200 border-2 flex items-start space-x-2 sm:space-x-3 ${formData.vibe.includes(v.label) ? 'bg-violet-100/70 border-violet-500' : 'bg-white/40 border-white/40 hover:bg-white/60'}`}><span className="text-xl sm:text-2xl mt-1 flex-shrink-0">{v.icon}</span><div className="min-w-0 flex-1"><p className="font-semibold text-slate-800 text-xs sm:text-sm">{v.label}</p><p className="text-[10px] sm:text-xs text-slate-500">{v.description}</p></div></button>))}
               </div>
             </div>
             
