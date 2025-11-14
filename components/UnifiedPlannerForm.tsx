@@ -1411,13 +1411,13 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
                 </div>
             </div>
 
-            <div className="space-y-4 bg-white/60 backdrop-blur-md p-6 rounded-2xl border border-slate-200/70 shadow-xl relative z-10">
+            <div className="space-y-4 sm:space-y-6 bg-white/60 backdrop-blur-md p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-200/70 shadow-xl">
                 <h2 className="flex items-center space-x-2 sm:space-x-3 text-lg sm:text-xl md:text-2xl font-bold text-slate-800 border-b pb-2 sm:pb-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-violet-600" viewBox="0 0 20 20" fill="currentColor"><path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.5 2.5 0 00-1.168-.217c-1.36.0-2.5 1.119-2.5 2.5s1.14 2.5 2.5 2.5c.346 0 .682-.07.98-.2a2.5 2.5 0 001.52-2.3z" /><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.5 4.5 0 00-1.879.938.5.5 0 00-.22.643l.612 1.224a.5.5 0 00.643.22A3.49 3.49 0 0110 7.5v1.698a2.5 2.5 0 00-1.168-.217c-1.36.0-2.5 1.119-2.5 2.5s1.14 2.5 2.5 2.5c.346 0 .682-.07.98-.2a2.5 2.5 0 001.52-2.3V9.5a1 1 0 10-2 0v1a.5.5 0 01-1 0V9.5a.5.5 0 01.5-.5h1V8a1 1 0 10-2 0v.092a4.5 4.5 0 00-1.879.938.5.5 0 00-.22.643l.612 1.224a.5.5 0 00.643.22A3.49 3.49 0 0110 7.5v1.698a2.5 2.5 0 00-1.168-.217c-1.36.0-2.5 1.119-2.5 2.5s1.14 2.5 2.5 2.5c.346 0 .682-.07.98-.2a2.5 2.5 0 001.52-2.3V9.5a1 1 0 10-2 0v1a.5.5 0 01-1 0V9.5a.5.5 0 01.5-.5h1V8a1 1 0 00-2 0z" clipRule="evenodd" /></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-violet-600" viewBox="0 0 20 20" fill="currentColor"><path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.5 2.5 0 00-1.168-.217c-1.36.0-2.5 1.119-2.5 2.5s1.14 2.5 2.5 2.5c.346 0 .682-.07.98-.2a2.5 2.5 0 001.52-2.3z" /><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.5 4.5 0 00-1.879.938.5.5 0 00-.22.643l.612 1.224a.5.5 0 00.643.22A3.49 3.49 0 0110 7.5v1.698a2.5 2.5 0 00-1.168-.217c-1.36.0-2.5 1.119-2.5 2.5s1.14 2.5 2.5 2.5c.346 0 .682-.07.98-.2a2.5 2.5 0 001.52-2.3V9.5a1 1 0 10-2 0v1a.5.5 0 01-1 0V9.5a.5.5 0 01.5-.5h1V8a1 1 0 10-2 0v.092a4.5 4.5 0 00-1.879.938.5.5 0 00-.22.643l.612 1.224a.5.5 0 00.643.22A3.49 3.49 0 0110 7.5v1.698a2.5 2.5 0 00-1.168-.217c-1.36.0-2.5 1.119-2.5 2.5s1.14 2.5 2.5 2.5c.346 0 .682-.07.98-.2a2.5 2.5 0 001.52-2.3V9.5a1 1 0 10-2 0v1a.5.5 0 01-1 0V9.5a.5.5 0 01.5-.5h1V8a1 1 0 00-2 0z" clipRule="evenodd" /></svg>
                   <span>Budget</span>
                 </h2>
-                <div className="grid grid-cols-3 gap-3">
-                    {budgets.map(b => (<button key={b} type="button" onClick={() => handleInputChange('budget', b)} className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 border-2 ${formData.budget === b ? 'bg-violet-600 text-white border-violet-600' : 'bg-white/50 border-white/50 hover:border-violet-400'}`}>{b}</button>))}
+                <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                    {budgets.map(b => (<button key={b} type="button" onClick={() => handleInputChange('budget', b)} className={`px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm md:text-base font-semibold transition-all duration-200 border-2 ${formData.budget === b ? 'bg-violet-600 text-white border-violet-600' : 'bg-white/50 border-white/50 hover:border-violet-400'}`}>{b}</button>))}
                 </div>
             </div>
 
@@ -1509,27 +1509,27 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
                 </div>
             </div>
 
-            <div className="space-y-4 bg-white/60 backdrop-blur-md p-6 rounded-2xl border border-slate-200/70 shadow-xl">
-              <h2 className="flex items-center space-x-3 text-2xl font-bold text-slate-800 border-b pb-3">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-violet-600" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" /></svg>
+            <div className="space-y-4 bg-white/60 backdrop-blur-md p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-200/70 shadow-xl">
+              <h2 className="flex items-center space-x-2 sm:space-x-3 text-lg sm:text-xl md:text-2xl font-bold text-slate-800 border-b pb-2 sm:pb-3">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-violet-600" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" /></svg>
                 <span>What's your vibe?</span>
               </h2>
-              <p className="text-sm text-slate-600">Select one or more vibes that best describe your ideal trip.</p>
+              <p className="text-xs sm:text-sm text-slate-600">Select one or more vibes that best describe your ideal trip.</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {vibes.map(v => (<button key={v.label} type="button" onClick={() => handleVibeToggle(v.label)} className={`p-4 rounded-lg text-left transition-all duration-200 border-2 flex items-start space-x-3 ${formData.vibe.includes(v.label) ? 'bg-violet-100/70 border-violet-500' : 'bg-white/40 border-white/40 hover:bg-white/60'}`}><span className="text-2xl mt-1">{v.icon}</span><div><p className="font-semibold text-slate-800">{v.label}</p><p className="text-xs text-slate-500">{v.description}</p></div></button>))}
               </div>
             </div>
             
-            <div className="space-y-4 bg-white/60 backdrop-blur-md p-6 rounded-2xl border border-slate-200/70 shadow-xl">
-               <h2 className="flex items-center space-x-3 text-2xl font-bold text-slate-800 border-b pb-3">
-                 <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-violet-600" viewBox="0 0 20 20" fill="currentColor"><path d="M11 3a1 1 0 10-2 0v1.088A7 7 0 004.53 10.756.5.5 0 005 11h10a.5.5 0 00.47-.244A7 7 0 0011 4.088V3z" /><path fillRule="evenodd" d="M15 13a.5.5 0 01.5.5v2a.5.5 0 01-.5.5H5a.5.5 0 01-.5-.5v-2a.5.5 0 01.5-.5h10z" clipRule="evenodd" /></svg>
+            <div className="space-y-4 bg-white/60 backdrop-blur-md p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-200/70 shadow-xl">
+               <h2 className="flex items-center space-x-2 sm:space-x-3 text-lg sm:text-xl md:text-2xl font-bold text-slate-800 border-b pb-2 sm:pb-3">
+                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-violet-600" viewBox="0 0 20 20" fill="currentColor"><path d="M11 3a1 1 0 10-2 0v1.088A7 7 0 004.53 10.756.5.5 0 005 11h10a.5.5 0 00.47-.244A7 7 0 0011 4.088V3z" /><path fillRule="evenodd" d="M15 13a.5.5 0 01.5.5v2a.5.5 0 01-.5.5H5a.5.5 0 01-.5-.5v-2a.5.5 0 01.5-.5h10z" clipRule="evenodd" /></svg>
                  <span>Food & Drink</span>
                </h2>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-3 gap-2 sm:gap-3">
                     {foodPreferences.map(({ label, icon }) => (
-                        <button key={label} type="button" onClick={() => handleInputChange('foodPreference', label)} className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 border-2 flex items-center justify-center space-x-2 ${formData.foodPreference === label ? 'bg-violet-600 text-white border-violet-600' : 'bg-white/50 border-white/50 hover:border-violet-400'}`}>
-                            <span className="text-xl">{icon}</span>
-                            <span>{label}</span>
+                        <button key={label} type="button" onClick={() => handleInputChange('foodPreference', label)} className={`px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm md:text-base font-semibold transition-all duration-200 border-2 flex items-center justify-center space-x-1 sm:space-x-2 ${formData.foodPreference === label ? 'bg-violet-600 text-white border-violet-600' : 'bg-white/50 border-white/50 hover:border-violet-400'}`}>
+                            <span className="text-base sm:text-xl">{icon}</span>
+                            <span className="truncate">{label}</span>
                         </button>
                     ))}
                 </div>
@@ -1543,12 +1543,12 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
                 </div>
             </div>
 
-            <div className="space-y-4 bg-white/60 backdrop-blur-md p-6 rounded-2xl border border-slate-200/70 shadow-xl">
+            <div className="space-y-4 bg-white/60 backdrop-blur-md p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-200/70 shadow-xl">
                 <h2 className="flex items-center space-x-2 sm:space-x-3 text-lg sm:text-xl md:text-2xl font-bold text-slate-800 border-b pb-2 sm:pb-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-violet-600" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" /></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-violet-600" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" /></svg>
                   <span>Trip Add-ons</span>
                 </h2>
-                <p className="text-sm text-slate-600">Add extra details to your plan for a more comprehensive experience.</p>
+                <p className="text-xs sm:text-sm text-slate-600">Add extra details to your plan for a more comprehensive experience.</p>
                 <div className="space-y-4">
                   <Toggle
                     label="Medical Facilities"
@@ -1559,7 +1559,7 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
                 </div>
             </div>
 
-            <div className="text-center pt-4 mb-24 pb-24">
+            <div className="text-center pt-4 mb-48 pb-16">
               <button
                 type="submit"
                 className="w-full sm:w-auto px-10 py-4 bg-violet-600 text-white font-bold rounded-full hover:bg-violet-700 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-violet-500/30 disabled:bg-violet-400/80 disabled:cursor-not-allowed disabled:shadow-md disabled:scale-100"
