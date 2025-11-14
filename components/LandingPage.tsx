@@ -197,27 +197,22 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
         {/* Hero Section */}
         <div 
           onClick={(e) => {
-            // Only trigger on mobile (when button is full width)
             // Check if click target is the button or its children
             const target = e.target as HTMLElement;
             if (target.closest('button')) {
               return; // Let button handle its own click
             }
-            // On mobile, clicking anywhere opens the form
-            if (window.innerWidth < 640) { // sm breakpoint
-              onPlanUnifiedTrip();
-            }
+            // Clicking anywhere on the hero section opens the unified planner
+            onPlanUnifiedTrip();
           }}
-          className="animated-card text-center max-w-4xl mx-auto lg:max-w-none lg:mx-0 p-5 sm:p-6 md:p-10 lg:p-6 xl:p-8 2xl:p-10 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-violet-50 via-purple-50/50 to-pink-50/40 backdrop-blur-xl border-2 border-violet-300/80 shadow-xl sm:shadow-2xl shadow-violet-500/30 hover:shadow-2xl sm:hover:shadow-3xl hover:shadow-violet-500/40 transition-all duration-500 relative overflow-y-auto cursor-pointer sm:cursor-default lg:h-full lg:flex lg:flex-col lg:justify-center lg:items-center mb-4 sm:mb-6 lg:mb-0" 
+          className="animated-card text-center max-w-4xl mx-auto lg:max-w-none lg:mx-0 p-5 sm:p-6 md:p-10 lg:p-6 xl:p-8 2xl:p-10 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-violet-50 via-purple-50/50 to-pink-50/40 backdrop-blur-xl border-2 border-violet-300/80 shadow-xl sm:shadow-2xl shadow-violet-500/30 hover:shadow-2xl sm:hover:shadow-3xl hover:shadow-violet-500/40 transition-all duration-500 relative overflow-y-auto cursor-pointer lg:h-full lg:flex lg:flex-col lg:justify-center lg:items-center mb-4 sm:mb-6 lg:mb-0" 
           style={{ animationDelay: '100ms' }}
           role="button"
           tabIndex={0}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
-              if (window.innerWidth < 640) {
-                e.preventDefault();
-                onPlanUnifiedTrip();
-              }
+              e.preventDefault();
+              onPlanUnifiedTrip();
             }
           }}
         >
