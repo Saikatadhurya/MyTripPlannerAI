@@ -174,20 +174,35 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
     if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
 
     if (value.trim().length > 1) {
-      if (!user) {
-        onOpenAuthModal();
-        return;
-      }
       setIsStartPointSuggestionsLoading(true);
       debounceTimeout.current = setTimeout(() => {
         if (!isSelectingSuggestion.current) {
-          getDestinationSuggestions(value, user?.gemini_api_key).then(results => {
+          // Check for user only when making the API call, not during typing
+          if (!user || !user.gemini_api_key) {
+            setStartPointSuggestions([]);
+            setIsStartPointSuggestionsLoading(false);
+            // Only show auth modal if user is definitely not logged in (not just loading)
+            // Check localStorage to see if user might be loading
+            const storedUser = localStorage.getItem('planora_user');
+            if (!storedUser) {
+              onOpenAuthModal();
+            }
+            return;
+          }
+          getDestinationSuggestions(value, user.gemini_api_key).then(results => {
             setStartPointSuggestions(results);
             setIsStartPointSuggestionsLoading(false);
           }).catch(error => {
             setStartPointSuggestions([]);
             setIsStartPointSuggestionsLoading(false);
             console.error('Error fetching start point suggestions:', error);
+            // If it's an auth error, check if user needs to login
+            if (error?.message?.toLowerCase().includes('api key') || error?.message?.toLowerCase().includes('unauthorized')) {
+              const storedUser = localStorage.getItem('planora_user');
+              if (!storedUser) {
+                onOpenAuthModal();
+              }
+            }
           });
         }
       }, 500);
@@ -198,14 +213,14 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
   };
 
   const handleStartPointSelect = (suggestion: LocationSuggestion) => {
-    setStartPoint(suggestion.name);
-    setIsStartPointSelected(true);
-    setStartPointSuggestions([]);
-    setStartPointError(null);
     isSelectingSuggestion.current = true;
-    setTimeout(() => {
-      isSelectingSuggestion.current = false;
-    }, 100);
+    const fullName = suggestion.parentHierarchy ? `${suggestion.name}, ${suggestion.parentHierarchy}` : suggestion.name;
+    setStartPoint(fullName);
+    setIsStartPointSelected(true);
+    setStartPointError(null);
+    setStartPointSuggestions([]);
+    setIsStartPointSuggestionsLoading(false);
+    if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
   };
 
   const handleStartPointBlur = () => {
@@ -213,6 +228,7 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
       if (!isSelectingSuggestion.current && startPoint.trim().length > 0 && !isStartPointSelected) {
         setStartPointError("Please select your starting point from the list. 📍");
       }
+      isSelectingSuggestion.current = false;
     }, 200);
   };
 
@@ -495,10 +511,15 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
                       <li
                         key={index}
                         onClick={() => handleStartPointSelect(suggestion)}
-                        className="px-4 py-3 hover:bg-violet-50 cursor-pointer border-b border-slate-100 last:border-b-0"
+                        className="px-4 py-3 cursor-pointer hover:bg-violet-100/60 flex justify-between items-center transition-colors border-b border-slate-100 last:border-b-0"
                       >
-                        <div className="font-medium text-slate-800">{suggestion.name}</div>
-                        <div className="text-sm text-slate-500">{suggestion.parentHierarchy}</div>
+                        <div>
+                          <span className="font-semibold text-slate-800">{suggestion.name}</span>
+                          {suggestion.parentHierarchy && <span className="text-sm text-slate-600">, {suggestion.parentHierarchy}</span>}
+                        </div>
+                        {suggestion.type && (
+                          <span className="text-xs bg-slate-200 text-slate-700 font-medium px-2 py-0.5 rounded-full">{suggestion.type}</span>
+                        )}
                       </li>
                     ))}
                   </ul>
