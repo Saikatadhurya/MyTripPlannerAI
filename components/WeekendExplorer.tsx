@@ -122,6 +122,7 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
   const [isStartPointSuggestionsLoading, setIsStartPointSuggestionsLoading] = useState(false);
   const [isStartPointSelected, setIsStartPointSelected] = useState(savedState?.isStartPointSelected || false);
   const [startPointError, setStartPointError] = useState<string | null>(null);
+  const [startPointApiKeyError, setStartPointApiKeyError] = useState<string | null>(null);
   const [language, setLanguage] = useState(savedState?.language || 'English (en)');
   const [currency, setCurrency] = useState(savedState?.currency || 'India (INR) – ₹');
   const [startDate, setStartDate] = useState(savedState?.startDate || formatDateLocal(getNextSaturday()));
@@ -169,32 +170,71 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
     setStartPoint(value);
     setIsStartPointSelected(false);
     setStartPointError(null);
+    setStartPointApiKeyError(null);
     isSelectingSuggestion.current = false;
 
     if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
 
     if (value.trim().length > 1) {
-      // Check if user is logged in before searching (iOS needs immediate check)
-      if (!user) {
+      // Check if user is logged in before searching
+      // Use user from state, or try to get from localStorage as fallback (for Google OAuth)
+      let currentUser = user;
+      if (!currentUser) {
+        try {
+          const storedUser = localStorage.getItem('planora_user');
+          if (storedUser) {
+            currentUser = JSON.parse(storedUser);
+          }
+        } catch (e) {
+          console.error('Error parsing stored user:', e);
+        }
+      }
+      
+      if (!currentUser) {
         onOpenAuthModal();
         return;
       }
+      
       setIsStartPointSuggestionsLoading(true);
       debounceTimeout.current = setTimeout(() => {
         if (!isSelectingSuggestion.current) {
-          getDestinationSuggestions(value, user?.gemini_api_key).then(results => {
+          getDestinationSuggestions(value, currentUser?.gemini_api_key).then(results => {
             setStartPointSuggestions(results);
             setIsStartPointSuggestionsLoading(false);
+            setStartPointApiKeyError(null); // Clear any previous API key errors
           }).catch(error => {
             setStartPointSuggestions([]);
             setIsStartPointSuggestionsLoading(false);
-            console.error('Error fetching start point suggestions:', error);
-            // If it's an auth error, check if user needs to login
-            if (error?.message?.toLowerCase().includes('api key') || error?.message?.toLowerCase().includes('unauthorized')) {
-              const storedUser = localStorage.getItem('planora_user');
-              if (!storedUser) {
-                onOpenAuthModal();
-              }
+            
+            // Check if it's a quota/API key error - handle ApiError format
+            const errorMessage = error?.message || error?.error?.message || '';
+            const errorString = JSON.stringify(error || {});
+            const nestedError = error?.error;
+            const nestedErrorCode = nestedError?.code;
+            const nestedErrorStatus = nestedError?.status;
+            
+            // Extract error code from nested structure (ApiError format)
+            const errorCode = nestedErrorCode || error?.code || (nestedErrorStatus === 'RESOURCE_EXHAUSTED' ? 429 : null);
+            
+            // Check for quota/exhaustion errors
+            const combinedErrorText = (errorMessage + errorString).toLowerCase();
+            const isQuotaError = errorCode === 429 || 
+                                nestedErrorStatus === 'RESOURCE_EXHAUSTED' ||
+                                errorMessage.includes('[429]') || 
+                                combinedErrorText.includes('quota') || 
+                                combinedErrorText.includes('rate limit') ||
+                                combinedErrorText.includes('limit') ||
+                                combinedErrorText.includes('exceeded') ||
+                                combinedErrorText.includes('resource_exhausted');
+            
+            if (isQuotaError) {
+              // Extract message without [429] prefix
+              const cleanMessage = errorMessage.replace(/^\[429\]\s*/, '');
+              setStartPointApiKeyError(cleanMessage || 'Your Gemini API key has reached its quota limit. Please set a new Gemini API key in your profile settings to continue.');
+            } else if (errorMessage.includes('Gemini key not set') || errorMessage.includes('API key not valid')) {
+              setStartPointApiKeyError('API key not valid. Please provide a valid Gemini API key in your profile settings to search for destinations.');
+            } else {
+              setStartPointApiKeyError('Failed to fetch destination suggestions. Please try again.');
             }
           });
         }
@@ -211,6 +251,7 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
     setStartPoint(fullName);
     setIsStartPointSelected(true);
     setStartPointError(null);
+    setStartPointApiKeyError(null);
     setStartPointSuggestions([]);
     setIsStartPointSuggestionsLoading(false);
     if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
@@ -287,7 +328,21 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
       return;
     }
 
-    if (!user?.gemini_api_key) {
+    // Check user from state or localStorage (for Google OAuth cases)
+    let currentUser = user;
+    if (!currentUser) {
+      try {
+        const storedUser = localStorage.getItem('planora_user');
+        if (storedUser) {
+          currentUser = JSON.parse(storedUser);
+        }
+      } catch (e) {
+        console.error('Error parsing stored user:', e);
+      }
+    }
+    
+    // Only show auth modal if there's no user at all
+    if (!currentUser) {
       onOpenAuthModal();
       return;
     }
@@ -320,7 +375,7 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
         startDate,
       };
 
-      const results = await searchWeekendPackages(request, user.gemini_api_key);
+      const results = await searchWeekendPackages(request, currentUser?.gemini_api_key);
       setPackages(results);
       
       // Save results to sessionStorage
@@ -345,7 +400,14 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
       }
     } catch (err: any) {
       console.error('Error searching for weekend packages:', err);
-      setError(err.message || 'Failed to search for weekend packages. Please try again.');
+      const errorMessage = err?.message || err?.error?.message || '';
+      
+      // Check if it's an API key error
+      if (errorMessage.toLowerCase().includes('api key') || errorMessage.toLowerCase().includes('invalid api key')) {
+        setError('Please set your Gemini API key in your profile settings to search for weekend packages.');
+      } else {
+        setError(errorMessage || 'Failed to search for weekend packages. Please try again.');
+      }
       setPackages([]);
     } finally {
       setIsLoading(false);
@@ -477,64 +539,99 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
 
             {/* Starting Point (always shown since all trips are round trips) */}
             <div className="md:col-span-2">
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Starting Point *
+              <label htmlFor="startPoint" className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">
+                Starting Point
               </label>
               <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 20l-4.95-5.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                  </svg>
+                </div>
                 <input
+                  id="startPoint"
                   ref={startPointInputRef}
                   type="text"
                   value={startPoint}
                   onChange={handleStartPointChange}
                   onBlur={handleStartPointBlur}
-                  onFocus={() => {
-                    // On iOS, ensure suggestions are visible when input is focused
-                    if (startPointSuggestions.length > 0 && startPointInputRef.current) {
-                      startPointInputRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                    }
-                  }}
                   placeholder="e.g., Mumbai, India"
-                  className="w-full px-4 py-3 rounded-lg border-2 border-slate-300 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-200"
+                  className="w-full pl-10 pr-4 py-2 bg-white text-base text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
+                  required
                   autoComplete="off"
-                  autoCapitalize="off"
-                  autoCorrect="off"
-                  spellCheck="false"
                 />
                 {isStartPointSuggestionsLoading && (
-                  <div className="absolute right-3 top-3">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-violet-600"></div>
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                    <svg className="animate-spin h-5 w-5 text-violet-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
                   </div>
                 )}
-                {startPointSuggestions.length > 0 && !isStartPointSelected && (
-                  <ul
-                    ref={startPointSuggestionsRef}
-                    className="absolute z-[100] w-full mt-1 bg-white border-2 border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
-                    style={{ WebkitOverflowScrolling: 'touch' }}
-                  >
-                    {startPointSuggestions.map((suggestion, index) => (
-                      <li
-                        key={index}
-                        onClick={() => handleStartPointSelect(suggestion)}
-                        className="px-4 py-3 cursor-pointer hover:bg-violet-100/60 flex justify-between items-center transition-colors border-b border-slate-100 last:border-b-0"
-                      >
-                        <div>
-                          <span className="font-semibold text-slate-800">{suggestion.name}</span>
-                          {suggestion.parentHierarchy && <span className="text-sm text-slate-600">, {suggestion.parentHierarchy}</span>}
-                        </div>
-                        {suggestion.type && (
-                          <span className="text-xs bg-slate-200 text-slate-700 font-medium px-2 py-0.5 rounded-full">{suggestion.type}</span>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                )}
               </div>
+              {startPointSuggestions.length > 0 && !isStartPointSelected && (
+                <ul
+                  ref={startPointSuggestionsRef}
+                  className="absolute z-10 w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg max-h-60 overflow-y-auto"
+                >
+                  {startPointSuggestions.map((suggestion, index) => (
+                    <li
+                      key={index}
+                      onClick={() => handleStartPointSelect(suggestion)}
+                      className="px-4 py-3 cursor-pointer hover:bg-violet-100/60 flex justify-between items-center transition-colors"
+                    >
+                      <div>
+                        <span className="font-semibold text-slate-800">{suggestion.name}</span>
+                        {suggestion.parentHierarchy && <span className="text-sm text-slate-600">, {suggestion.parentHierarchy}</span>}
+                      </div>
+                      {suggestion.type && (
+                        <span className="text-xs bg-slate-200 text-slate-700 font-medium px-2 py-0.5 rounded-full">{suggestion.type}</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
               {startPointError && (
-                <div className="mt-2 text-sm text-rose-700 bg-rose-100/60 p-2 rounded-md flex items-center space-x-2">
+                <div style={{ animation: 'validation-fade-in 0.3s ease' }} className="mt-2 text-sm text-rose-700 bg-rose-100/60 p-2 rounded-md flex items-center space-x-2">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                   </svg>
                   <span>{startPointError}</span>
+                </div>
+              )}
+              {startPointApiKeyError && (
+                <div style={{ animation: 'validation-fade-in 0.3s ease' }} className="mt-2 text-sm text-amber-700 bg-amber-100/60 p-2 rounded-md flex items-center space-x-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  <span className="flex items-center flex-wrap gap-1">
+                    {startPointApiKeyError.includes('quota') || startPointApiKeyError.includes('limit') || startPointApiKeyError.includes('exceeded') ? (
+                      <>
+                        {startPointApiKeyError.includes('profile settings') ? (
+                          <>
+                            {startPointApiKeyError.split('profile settings')[0]}
+                            <a href="/profile" className="font-semibold underline hover:text-amber-800">your profile settings</a>
+                            {startPointApiKeyError.split('profile settings')[1]}
+                          </>
+                        ) : (
+                          <>
+                            {startPointApiKeyError}
+                            {' '}Please set your own Gemini API key in{' '}
+                            <a href="/profile" className="font-semibold underline hover:text-amber-800">your profile settings</a>
+                            {' '}to continue.
+                          </>
+                        )}
+                      </>
+                    ) : startPointApiKeyError.includes('API key not valid') || startPointApiKeyError.includes('Gemini key not set') ? (
+                      <>
+                        API key not valid. Please provide a valid Gemini API key in{' '}
+                        <a href="/profile" className="font-semibold underline hover:text-amber-800">Edit Profile</a>
+                        {' '}to search for destinations.
+                      </>
+                    ) : (
+                      startPointApiKeyError
+                    )}
+                  </span>
                 </div>
               )}
             </div>
