@@ -1,14 +1,22 @@
 import React from 'react';
 
 interface BackToHomeButtonProps {
-    onClick: () => void;
+    onClick?: () => void;
+    onBack?: () => void;
 }
 
-const BackToHomeButton: React.FC<BackToHomeButtonProps> = ({ onClick }) => {
+const BackToHomeButton: React.FC<BackToHomeButtonProps> = ({ onClick, onBack }) => {
+    const handleClick = onClick || onBack;
+    
+    if (!handleClick) {
+        console.warn('BackToHomeButton: No onClick or onBack prop provided');
+        return null;
+    }
+    
     return (
         <div className="mb-6">
             <button 
-                onClick={onClick} 
+                onClick={handleClick} 
                 className="inline-flex items-center px-6 py-2 my-2 bg-white/60 text-slate-800 font-bold rounded-full hover:bg-white/80 transition-all duration-300 shadow-md border border-white/50"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">

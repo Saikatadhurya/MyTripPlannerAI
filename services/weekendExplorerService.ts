@@ -1,7 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { extractJson, cleanCitations } from './jsonUtils';
 import { CookieUtils } from './cookieUtils';
-import { Vibe } from '../types';
+import { Vibe, Budget, TripType } from '../types';
 
 export interface WeekendPackage {
   id: string;
@@ -21,6 +21,10 @@ export interface WeekendExplorerRequest {
   location: string;
   travelers: number;
   vibes: Vibe[];
+  budget: Budget;
+  tripType: TripType;
+  isRoundTrip: boolean;
+  startPoint?: string;
   language: string;
   currency: string;
   startDate: string;
@@ -42,20 +46,23 @@ export const searchWeekendPackages = async (
   const vibeText = request.vibes.join(', ');
   const startDateObj = new Date(request.startDate);
   const dayOfWeek = startDateObj.toLocaleDateString('en-US', { weekday: 'long' });
+  const tripTypeText = `Trip Type: ${request.tripType} (Round Trip - will return to starting point)`;
   
-  const prompt = `You are an expert travel planner specializing in weekend getaways. Search for nearby outdoor weekend getaway destinations and packages from "${request.location}" that can be covered in 2-4 days (including Saturday and Sunday).
+  const prompt = `You are an expert travel planner specializing in weekend getaways. Search for nearby outdoor weekend getaway destinations and packages from "${request.location}" (starting point) that can be covered in 2-4 days (including Saturday and Sunday).
 
 **User Requirements:**
-- Starting Location: ${request.location}
+- Starting Point: ${request.location}
+- ${tripTypeText}
 - Number of Travelers: ${request.travelers}
 - Preferred Vibes: ${vibeText}
+- Budget Preference: ${request.budget}
 - Start Date: ${request.startDate} (${dayOfWeek})
 - Language: ${request.language}
 - Currency: ${request.currency}
 
 **Search Criteria:**
 1. Find 4-6 weekend getaway destinations/packages that are:
-   - Within reasonable driving distance (max 6-8 hours) from ${request.location}
+   - Within reasonable driving distance (max 6-8 hours) from ${request.location} (starting point)
    - Suitable for 2-4 day trips (including Saturday and Sunday)
    - Outdoor-focused destinations (hill stations, beaches, nature reserves, adventure spots, etc.)
    - Perfect for weekend escapes
@@ -68,10 +75,12 @@ export const searchWeekendPackages = async (
    - Top 3-5 highlights/attractions
    - Estimated budget range in ${request.currency}
    - Best suited for (based on vibes: ${vibeText})
-   - Approximate distance from ${request.location}
+   - Approximate distance from ${request.location} (starting point)
    - Approximate travel time
 
 3. Prioritize destinations that match the vibes: ${vibeText}
+4. Consider the budget preference: ${request.budget} - ensure estimated budgets align with this preference
+5. The destination should be different from the starting point (${request.location}) - suggest places to visit/explore for a weekend getaway.
 
 **Response Format:**
 Return a JSON array of packages. Each package must have:
@@ -96,8 +105,9 @@ Return a JSON array of packages. Each package must have:
 - Ensure all destinations are outdoor gateways suitable for weekend trips
 - Budget should be realistic and in ${request.currency}
 - Distance and travel time should be accurate
+- All destinations should be different from the starting point (${request.location})
 
-Search for current weekend packages and popular weekend destinations near ${request.location}.`;
+Search for current weekend packages and popular weekend destinations near ${request.location} (starting point).`;
 
   try {
     const response = await ai.models.generateContent({

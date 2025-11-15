@@ -1,11 +1,36 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Vibe, QuestionnaireData, Budget, FoodPreference } from '../types';
+import { Vibe, QuestionnaireData, Budget, FoodPreference, TripType } from '../types';
 import { User } from '../services/authService';
 import { searchWeekendPackages, WeekendPackage, WeekendExplorerRequest } from '../services/weekendExplorerService';
 import { getDestinationSuggestions } from '../services/geminiService';
 import { LocationSuggestion } from '../types';
 import { currencies } from '../data/currencies';
 import BackToHomeButton from './BackToHomeButton';
+
+const budgets: Budget[] = ['Low Budget', 'Midrange', 'Luxury'];
+const tripTypes: { label: TripType; icon: string }[] = [
+  { label: 'Standard', icon: '✈️' },
+  { label: 'Car', icon: '🚗' },
+  { label: 'Bike', icon: '🏍️' },
+];
+
+const Toggle: React.FC<{ label: string; description: string; enabled: boolean; onChange: (enabled: boolean) => void; }> = ({ label, description, enabled, onChange }) => (
+  <button 
+    type="button"
+    onClick={() => onChange(!enabled)}
+    className={`w-full flex items-center justify-between p-4 rounded-lg cursor-pointer transition-all duration-200 border-2 ${enabled ? 'bg-violet-100/70 border-violet-500' : 'bg-white/40 border-white/40 hover:bg-white/60'}`}
+    role="switch"
+    aria-checked={enabled}
+  >
+    <div className="text-left">
+      <p className="font-semibold text-slate-800">{label}</p>
+      <p className="text-xs sm:text-sm text-slate-600">{description}</p>
+    </div>
+    <div className={`w-12 h-6 flex items-center rounded-full transition-colors duration-300 ${enabled ? 'bg-violet-500' : 'bg-slate-300'}`}>
+      <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${enabled ? 'translate-x-6' : 'translate-x-1'}`}></div>
+    </div>
+  </button>
+);
 
 interface WeekendExplorerProps {
   user: User | null;
@@ -57,10 +82,13 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
       if (saved) {
         const parsed = JSON.parse(saved);
         return {
-          location: parsed.location || '',
-          isLocationSelected: parsed.isLocationSelected || false,
           travelers: parsed.travelers || 2,
           selectedVibes: parsed.selectedVibes || ['Adventure & Thrill'],
+          budget: parsed.budget || 'Midrange',
+          tripType: parsed.tripType || 'Standard',
+          isRoundTrip: parsed.isRoundTrip !== undefined ? parsed.isRoundTrip : true, // Default to true for round trip
+          startPoint: parsed.startPoint || '',
+          isStartPointSelected: parsed.isStartPointSelected || false,
           language: parsed.language || 'English (en)',
           currency: parsed.currency || 'India (INR) – ₹',
           startDate: parsed.startDate || formatDateLocal(getNextSaturday()),
@@ -76,12 +104,16 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
 
   const savedState = loadSavedState();
 
-  const [location, setLocation] = useState(savedState?.location || '');
-  const [locationSuggestions, setLocationSuggestions] = useState<LocationSuggestion[]>([]);
-  const [isLocationSuggestionsLoading, setIsLocationSuggestionsLoading] = useState(false);
-  const [isLocationSelected, setIsLocationSelected] = useState(savedState?.isLocationSelected || false);
   const [travelers, setTravelers] = useState(savedState?.travelers || 2);
   const [selectedVibes, setSelectedVibes] = useState<Vibe[]>(savedState?.selectedVibes || ['Adventure & Thrill']);
+  const [budget, setBudget] = useState<Budget>(savedState?.budget || 'Midrange');
+  const [tripType, setTripType] = useState<TripType>(savedState?.tripType || 'Standard');
+  const [isRoundTrip, setIsRoundTrip] = useState(savedState?.isRoundTrip !== undefined ? savedState.isRoundTrip : true); // Default to true
+  const [startPoint, setStartPoint] = useState(savedState?.startPoint || '');
+  const [startPointSuggestions, setStartPointSuggestions] = useState<LocationSuggestion[]>([]);
+  const [isStartPointSuggestionsLoading, setIsStartPointSuggestionsLoading] = useState(false);
+  const [isStartPointSelected, setIsStartPointSelected] = useState(savedState?.isStartPointSelected || false);
+  const [startPointError, setStartPointError] = useState<string | null>(null);
   const [language, setLanguage] = useState(savedState?.language || 'English (en)');
   const [currency, setCurrency] = useState(savedState?.currency || 'India (INR) – ₹');
   const [startDate, setStartDate] = useState(savedState?.startDate || formatDateLocal(getNextSaturday()));
@@ -92,91 +124,9 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
 
   const debounceTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isSelectingSuggestion = useRef(false);
-  const locationSuggestionsRef = useRef<HTMLUListElement>(null);
-  const locationInputRef = useRef<HTMLInputElement>(null);
+  const startPointSuggestionsRef = useRef<HTMLUListElement>(null);
+  const startPointInputRef = useRef<HTMLInputElement>(null);
   const searchResultsRef = useRef<HTMLDivElement>(null);
-
-  // Fetch location suggestions
-  useEffect(() => {
-    if (!location || location.trim().length < 2 || isSelectingSuggestion.current) {
-      setLocationSuggestions([]);
-      return;
-    }
-
-    if (debounceTimeout.current) {
-      clearTimeout(debounceTimeout.current);
-    }
-
-    debounceTimeout.current = setTimeout(() => {
-      // Check if user is logged in before searching
-      if (!user) {
-        onOpenAuthModal();
-        return;
-      }
-
-      setIsLocationSuggestionsLoading(true);
-      getDestinationSuggestions(location, user?.gemini_api_key)
-        .then(results => {
-          setLocationSuggestions(results);
-          setIsLocationSuggestionsLoading(false);
-          setError(null); // Clear any previous errors
-        })
-        .catch(error => {
-          setLocationSuggestions([]);
-          setIsLocationSuggestionsLoading(false);
-          
-          // Check if it's a quota/API key error - handle ApiError format
-          const errorMessage = error?.message || error?.error?.message || '';
-          const errorString = JSON.stringify(error || {});
-          const nestedError = error?.error;
-          const nestedErrorCode = nestedError?.code;
-          const nestedErrorStatus = nestedError?.status;
-          
-          // Extract error code from nested structure (ApiError format)
-          const errorCode = nestedErrorCode || error?.code || (nestedErrorStatus === 'RESOURCE_EXHAUSTED' ? 429 : null);
-          
-          // Check for quota/exhaustion errors
-          const combinedErrorText = (errorMessage + errorString).toLowerCase();
-          const isQuotaError = errorCode === 429 || 
-                              nestedErrorStatus === 'RESOURCE_EXHAUSTED' ||
-                              errorMessage.includes('[429]') || 
-                              combinedErrorText.includes('quota') || 
-                              combinedErrorText.includes('rate limit') ||
-                              combinedErrorText.includes('limit') ||
-                              combinedErrorText.includes('exceeded') ||
-                              combinedErrorText.includes('resource_exhausted');
-          
-          if (isQuotaError) {
-            if (!user?.gemini_api_key) {
-              setError('Please set your Gemini API key in profile settings to use this feature.');
-            } else {
-              setError('Your API key has reached its quota limit. Please set a new Gemini API key in your profile settings.');
-            }
-          } else if (errorMessage.includes('API key') || errorMessage.includes('Invalid API key')) {
-            setError('Please set your Gemini API key in profile settings to use this feature.');
-          } else {
-            // Don't show error for other issues, just log it
-            console.error('Error fetching location suggestions:', error);
-          }
-        });
-    }, 500);
-
-    return () => {
-      if (debounceTimeout.current) {
-        clearTimeout(debounceTimeout.current);
-      }
-    };
-  }, [location, user, onOpenAuthModal]);
-
-  const handleLocationSelect = (suggestion: LocationSuggestion) => {
-    setLocation(suggestion.name);
-    setIsLocationSelected(true);
-    setLocationSuggestions([]);
-    isSelectingSuggestion.current = true;
-    setTimeout(() => {
-      isSelectingSuggestion.current = false;
-    }, 100);
-  };
 
   const handleVibeToggle = (vibe: Vibe) => {
     setSelectedVibes(prev => 
@@ -186,15 +136,110 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
     );
   };
 
+  const handleTripTypeChange = (newTripType: TripType) => {
+    setTripType(newTripType);
+    // All trip types (Standard, Car, Bike) are automatically round trips
+    setIsRoundTrip(true);
+    if (!startPoint) {
+      // If start point is empty, clear selection state
+      setIsStartPointSelected(false);
+      setStartPointError(null);
+    }
+  };
+
+  const handleStartPointChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setStartPoint(value);
+    setIsStartPointSelected(false);
+    setStartPointError(null);
+    isSelectingSuggestion.current = false;
+
+    if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
+
+    if (value.trim().length > 1) {
+      if (!user) {
+        onOpenAuthModal();
+        return;
+      }
+      setIsStartPointSuggestionsLoading(true);
+      debounceTimeout.current = setTimeout(() => {
+        if (!isSelectingSuggestion.current) {
+          getDestinationSuggestions(value, user?.gemini_api_key).then(results => {
+            setStartPointSuggestions(results);
+            setIsStartPointSuggestionsLoading(false);
+          }).catch(error => {
+            setStartPointSuggestions([]);
+            setIsStartPointSuggestionsLoading(false);
+            console.error('Error fetching start point suggestions:', error);
+          });
+        }
+      }, 500);
+    } else {
+      setStartPointSuggestions([]);
+      setIsStartPointSuggestionsLoading(false);
+    }
+  };
+
+  const handleStartPointSelect = (suggestion: LocationSuggestion) => {
+    setStartPoint(suggestion.name);
+    setIsStartPointSelected(true);
+    setStartPointSuggestions([]);
+    setStartPointError(null);
+    isSelectingSuggestion.current = true;
+    setTimeout(() => {
+      isSelectingSuggestion.current = false;
+    }, 100);
+  };
+
+  const handleStartPointBlur = () => {
+    setTimeout(() => {
+      if (!isSelectingSuggestion.current && startPoint.trim().length > 0 && !isStartPointSelected) {
+        setStartPointError("Please select your starting point from the list. 📍");
+      }
+    }, 200);
+  };
+
+  const handleReset = () => {
+    // Clear all form fields
+    setTravelers(2);
+    setSelectedVibes(['Adventure & Thrill']);
+    setBudget('Midrange');
+    setTripType('Standard');
+    setIsRoundTrip(true);
+    setStartPoint('');
+    setIsStartPointSelected(false);
+    setLanguage('English (en)');
+    setCurrency('India (INR) – ₹');
+    setStartDate(formatDateLocal(getNextSaturday()));
+    
+    // Clear search results
+    setPackages([]);
+    setHasSearched(false);
+    setError(null);
+    
+    // Clear sessionStorage
+    try {
+      sessionStorage.removeItem('weekendExplorerState');
+    } catch (e) {
+      console.error('Error clearing sessionStorage:', e);
+    }
+    
+    // Clear suggestions
+    setStartPointSuggestions([]);
+  };
+
   // Save state to sessionStorage whenever relevant state changes
   useEffect(() => {
     if (hasSearched && packages.length > 0) {
       try {
         sessionStorage.setItem('weekendExplorerState', JSON.stringify({
-          location,
-          isLocationSelected,
           travelers,
           selectedVibes,
+          budget,
+          tripType,
+          isRoundTrip,
+          startPoint,
+          isStartPointSelected,
           language,
           currency,
           startDate,
@@ -205,11 +250,12 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
         console.error('Error saving state:', e);
       }
     }
-  }, [location, isLocationSelected, travelers, selectedVibes, language, currency, startDate, packages, hasSearched]);
+  }, [travelers, selectedVibes, budget, tripType, isRoundTrip, startPoint, isStartPointSelected, language, currency, startDate, packages, hasSearched]);
 
   const handleSearch = async () => {
-    if (!location || !isLocationSelected) {
-      setError('Please select a valid location');
+    // All trips require a starting point since they're all round trips
+    if (!startPoint || !isStartPointSelected) {
+      setError('Please select a valid starting point');
       return;
     }
 
@@ -234,9 +280,13 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
 
     try {
       const request: WeekendExplorerRequest = {
-        location,
+        location: startPoint, // Use startPoint as the base location for searching nearby destinations
         travelers,
         vibes: selectedVibes,
+        budget,
+        tripType,
+        isRoundTrip: true, // All trips are round trips
+        startPoint: startPoint,
         language,
         currency,
         startDate,
@@ -248,10 +298,13 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
       // Save results to sessionStorage
       try {
         sessionStorage.setItem('weekendExplorerState', JSON.stringify({
-          location,
-          isLocationSelected,
           travelers,
           selectedVibes,
+          budget,
+          tripType,
+          isRoundTrip,
+          startPoint,
+          isStartPointSelected,
           language,
           currency,
           startDate,
@@ -278,11 +331,11 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
 
     // Create QuestionnaireData for unified plan
     const questionnaireData: QuestionnaireData = {
-      destination: pkg.destination,
-      startPoint: location,
-      tripType: 'Standard',
+      destination: pkg.destination, // Destination comes from the selected package
+      startPoint: startPoint, // Starting point from the form
+      tripType: tripType,
       days: pkg.days,
-      budget: 'Midrange' as Budget,
+      budget: budget,
       vibe: selectedVibes,
       persons: travelers,
       foodPreference: 'Non-Veg' as FoodPreference,
@@ -291,7 +344,7 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
       includeMedical: false,
       language,
       currency,
-      isRoundTrip: false,
+      isRoundTrip: true, // All trips are round trips
       includeAlcoholicDrinks: false,
       stops: [],
     };
@@ -325,12 +378,12 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
-        locationSuggestionsRef.current &&
-        !locationSuggestionsRef.current.contains(event.target as Node) &&
-        locationInputRef.current &&
-        !locationInputRef.current.contains(event.target as Node)
+        startPointSuggestionsRef.current &&
+        !startPointSuggestionsRef.current.contains(event.target as Node) &&
+        startPointInputRef.current &&
+        !startPointInputRef.current.contains(event.target as Node)
       ) {
-        setLocationSuggestions([]);
+        setStartPointSuggestions([]);
       }
     };
 
@@ -357,37 +410,70 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
         {/* Form Section */}
         <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border-2 border-white/60 p-6 md:p-8 mb-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Location Input */}
+            {/* Trip Type */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-semibold text-slate-700 mb-3">
+                Trip Type
+              </label>
+              <div className="grid grid-cols-3 gap-3">
+                {tripTypes.map(({ label, icon }) => (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={() => handleTripTypeChange(label)}
+                    className={`px-4 py-3 rounded-lg text-sm font-semibold transition-all duration-200 border-2 flex items-center justify-center space-x-2 ${
+                      tripType === label
+                        ? 'bg-violet-600 text-white border-violet-600'
+                        : 'bg-white/50 border-slate-300 hover:border-violet-400'
+                    }`}
+                  >
+                    <span className="text-lg">{icon}</span>
+                    <span>{label}</span>
+                  </button>
+                ))}
+              </div>
+              <div className="mt-4 p-3 bg-violet-50/70 border border-violet-200 rounded-lg">
+                <div className="flex items-start space-x-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-violet-600 mt-0.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-violet-800">Round Trip (Automatic)</p>
+                    <p className="text-xs text-violet-600 mt-1">All trip types are automatically set as round trips, as you'll return to your starting point.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Starting Point (always shown since all trips are round trips) */}
             <div className="md:col-span-2">
               <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Starting Location *
+                Starting Point *
               </label>
               <div className="relative">
                 <input
-                  ref={locationInputRef}
+                  ref={startPointInputRef}
                   type="text"
-                  value={location}
-                  onChange={(e) => {
-                    setLocation(e.target.value);
-                    setIsLocationSelected(false);
-                  }}
-                  placeholder="Enter your city or location"
+                  value={startPoint}
+                  onChange={handleStartPointChange}
+                  onBlur={handleStartPointBlur}
+                  placeholder="e.g., Mumbai, India"
                   className="w-full px-4 py-3 rounded-lg border-2 border-slate-300 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-200"
                 />
-                {isLocationSuggestionsLoading && (
+                {isStartPointSuggestionsLoading && (
                   <div className="absolute right-3 top-3">
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-violet-600"></div>
                   </div>
                 )}
-                {locationSuggestions.length > 0 && !isLocationSelected && (
+                {startPointSuggestions.length > 0 && !isStartPointSelected && (
                   <ul
-                    ref={locationSuggestionsRef}
+                    ref={startPointSuggestionsRef}
                     className="absolute z-50 w-full mt-1 bg-white border-2 border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
                   >
-                    {locationSuggestions.map((suggestion, index) => (
+                    {startPointSuggestions.map((suggestion, index) => (
                       <li
                         key={index}
-                        onClick={() => handleLocationSelect(suggestion)}
+                        onClick={() => handleStartPointSelect(suggestion)}
                         className="px-4 py-3 hover:bg-violet-50 cursor-pointer border-b border-slate-100 last:border-b-0"
                       >
                         <div className="font-medium text-slate-800">{suggestion.name}</div>
@@ -397,6 +483,14 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
                   </ul>
                 )}
               </div>
+              {startPointError && (
+                <div className="mt-2 text-sm text-rose-700 bg-rose-100/60 p-2 rounded-md flex items-center space-x-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                  <span>{startPointError}</span>
+                </div>
+              )}
             </div>
 
             {/* Number of Travelers */}
@@ -452,6 +546,29 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
               </div>
             </div>
 
+            {/* Budget */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                Budget
+              </label>
+              <div className="grid grid-cols-3 gap-3">
+                {budgets.map((b) => (
+                  <button
+                    key={b}
+                    type="button"
+                    onClick={() => setBudget(b)}
+                    className={`px-4 py-3 rounded-lg text-sm font-semibold transition-all duration-200 border-2 ${
+                      budget === b
+                        ? 'bg-violet-600 text-white border-violet-600'
+                        : 'bg-white/50 border-slate-300 hover:border-violet-400'
+                    }`}
+                  >
+                    {b}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Language */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
@@ -491,20 +608,29 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
             </div>
           )}
 
-          <button
-            onClick={handleSearch}
-            disabled={isLoading || !location || !isLocationSelected}
-            className="mt-6 w-full md:w-auto px-8 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white font-bold rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-          >
-            {isLoading ? (
-              <span className="flex items-center justify-center">
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                Searching for packages...
-              </span>
-            ) : (
-              '🔍 Search Weekend Packages'
-            )}
-          </button>
+          <div className="mt-6 flex flex-col sm:flex-row gap-3 sm:gap-4 items-center justify-center">
+            <button
+              onClick={handleSearch}
+              disabled={isLoading || !startPoint || !isStartPointSelected}
+              className="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white font-bold rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+            >
+              {isLoading ? (
+                <span className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                  Searching for packages...
+                </span>
+              ) : (
+                '🔍 Search Weekend Packages'
+              )}
+            </button>
+            <button
+              onClick={handleReset}
+              disabled={isLoading}
+              className="w-full sm:w-auto px-6 py-3 bg-white border-2 border-slate-300 text-slate-700 font-semibold rounded-full shadow-md hover:shadow-lg hover:border-slate-400 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+            >
+              🔄 Reset
+            </button>
+          </div>
         </div>
 
         {/* Packages Display */}
