@@ -127,6 +127,10 @@ const AuthModal: React.FC<AuthModalProps> = ({
               src="/PlanMyTrip.png" 
               alt="PlanMyTrip AI Logo" 
               className="h-20 w-auto"
+              width="512"
+              height="512"
+              fetchPriority="high"
+              decoding="async"
             />
           </div>
           <h2 className="text-xl font-bold text-slate-900">

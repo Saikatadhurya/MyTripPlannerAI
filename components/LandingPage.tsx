@@ -77,16 +77,25 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
     };
   }, [user, onOpenAuthModal]);
 
+  const destinationsRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     const fetchDestinations = async () => {
       try {
-        const response = await fetch('/data/destinations.json');
+        const response = await fetch('/data/destinations.json', {
+          cache: 'force-cache',
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const data: PopularDestination[] = await response.json();
         setDestinations(data);
       } catch (error) {
         console.error("Failed to fetch destinations:", error);
       }
     };
+    
+    // Load destinations immediately to ensure all 8 are available
     fetchDestinations();
   }, []);
 
@@ -341,74 +350,43 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
       </div>
 
 
-      {/* Popular Destinations Section */}
-      <div className="sm:mt-6 md:mt-12 lg:mt-16">
-        <h2 className="text-2xl sm:text-3xl font-bold text-center text-slate-900 mb-4 sm:mb-6 animated-card" style={{ animationDelay: '1100ms' }}>Popular Destinations</h2>
-        
-        {/* Destinations with share links */}
-        <div className="mt-6 sm:mt-8 md:mt-10 grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
-          {destinations.map((dest, index) => {
-            // Skip excluded destinations
-            if (excludedDestinations.includes(dest.name)) {
-              return null;
-            }
-            
-            const shareLink = shareLinks[dest.name];
-            
-            if (shareLink) {
-              return (
-                <a
-                  key={dest.name}
-                  href={shareLink}
-                  className="animated-card text-left p-4 sm:p-5 rounded-xl sm:rounded-2xl border-2 shadow-xl transition-all duration-500 transform hover:scale-110 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-violet-400/50 bg-gradient-to-br from-white via-violet-50/40 to-purple-50/30 backdrop-blur-xl border-violet-200/60 hover:shadow-2xl hover:shadow-violet-500/25 hover:border-violet-400/80 cursor-pointer block relative overflow-hidden group"
-                  style={{ animationDelay: `${1200 + index * 50}ms` }}
-                >
-                  {/* Gradient overlay on hover */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-violet-500/0 to-purple-500/0 group-hover:from-violet-500/10 group-hover:to-purple-500/10 transition-all duration-500 rounded-xl sm:rounded-2xl"></div>
-                  <span className="text-3xl sm:text-4xl relative z-10 group-hover:scale-110 transition-transform duration-500 inline-block" role="img" aria-label="destination">{dest.icon}</span>
-                  <h3 className="text-base sm:text-lg font-semibold mt-2 sm:mt-3 text-slate-800 relative z-10">{dest.name}</h3>
-                  <p className="text-xs sm:text-sm text-slate-600 relative z-10 mt-1">{dest.description}</p>
-                </a>
-              );
-            }
-            return null;
-          })}
-        </div>
-
-        {/* Try Yourself Subsection */}
-        <div className="mt-10 sm:mt-12 md:mt-16">
-          <h3 className="text-xl sm:text-2xl font-bold text-center text-slate-800 mb-4 sm:mb-6 animated-card" style={{ animationDelay: '1300ms' }}>Try Yourself</h3>
-          <p className="text-sm sm:text-base text-center text-slate-600 mb-4 sm:mb-6 px-2 animated-card" style={{ animationDelay: '1350ms' }}>Create your own personalized itinerary for these amazing destinations</p>
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
-            {destinations.map((dest, index) => {
-              // Skip excluded destinations
-              if (excludedDestinations.includes(dest.name)) {
-                return null;
-              }
-              
-              const shareLink = shareLinks[dest.name];
-              
-              if (!shareLink) {
-                return (
+      {/* Try Yourself Section */}
+      <div ref={destinationsRef} className="sm:mt-6 md:mt-12 lg:mt-16">
+        <h2 className="text-2xl sm:text-3xl font-bold text-center text-slate-900 mb-3 sm:mb-4">Try Yourself</h2>
+        <p className="text-xs sm:text-sm text-center text-slate-600 mb-3 sm:mb-4 px-2">Create your own personalized itinerary for these amazing destinations</p>
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
+            {destinations.length > 0 ? (
+              destinations
+                .filter((dest) => !excludedDestinations.includes(dest.name) && !shareLinks[dest.name])
+                .slice(0, 8)
+                .map((dest) => (
                   <button 
                     key={dest.name} 
                     onClick={() => onPlanUnifiedTrip(dest.name)} 
-                    className="animated-card text-left p-4 sm:p-5 rounded-xl sm:rounded-2xl border-2 shadow-xl transition-all duration-500 transform hover:scale-110 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-violet-400/50 bg-gradient-to-br from-white via-violet-50/40 to-purple-50/30 backdrop-blur-xl border-violet-200/60 hover:shadow-2xl hover:shadow-violet-500/25 hover:border-violet-400/80 cursor-pointer relative overflow-hidden group"
-                    style={{ animationDelay: `${1400 + index * 50}ms` }}
+                    className="text-left p-2.5 sm:p-3 rounded-lg sm:rounded-xl border border-violet-200/60 sm:border-2 shadow-md sm:shadow-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-violet-400/50 bg-gradient-to-br from-white via-violet-50/40 to-purple-50/30 backdrop-blur-xl hover:shadow-xl hover:shadow-violet-500/20 hover:border-violet-400/80 cursor-pointer relative overflow-hidden group"
                   >
                     {/* Gradient overlay on hover */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-violet-500/0 to-purple-500/0 group-hover:from-violet-500/10 group-hover:to-purple-500/10 transition-all duration-500 rounded-xl sm:rounded-2xl"></div>
-                    <span className="text-3xl sm:text-4xl relative z-10 group-hover:scale-110 transition-transform duration-500 inline-block" role="img" aria-label="destination">{dest.icon}</span>
-                    <h3 className="text-base sm:text-lg font-semibold mt-2 sm:mt-3 text-slate-800 relative z-10">{dest.name}</h3>
-                    <p className="text-xs sm:text-sm text-slate-600 relative z-10 mt-1">{dest.description}</p>
+                    <div className="absolute inset-0 bg-gradient-to-br from-violet-500/0 to-purple-500/0 group-hover:from-violet-500/10 group-hover:to-purple-500/10 transition-all duration-300 rounded-lg sm:rounded-xl"></div>
+                    <span className="text-2xl sm:text-3xl relative z-10 group-hover:scale-110 transition-transform duration-300 inline-block" role="img" aria-label="destination">{dest.icon}</span>
+                    <h3 className="text-sm sm:text-base font-semibold mt-1.5 sm:mt-2 text-slate-800 relative z-10 leading-tight">{dest.name}</h3>
+                    <p className="text-[10px] sm:text-xs text-slate-600 relative z-10 mt-0.5 sm:mt-1 line-clamp-2">{dest.description}</p>
                   </button>
-                );
-              }
-              return null;
-            })}
+                ))
+            ) : (
+              // Loading placeholder - show 8 skeleton cards
+              Array.from({ length: 8 }).map((_, index) => (
+                <div
+                  key={`skeleton-${index}`}
+                  className="text-left p-2.5 sm:p-3 rounded-lg sm:rounded-xl border border-violet-200/60 sm:border-2 bg-gradient-to-br from-white via-violet-50/40 to-purple-50/30 animate-pulse"
+                >
+                  <div className="w-8 h-8 bg-slate-300 rounded mb-2"></div>
+                  <div className="h-4 bg-slate-300 rounded mb-1 w-3/4"></div>
+                  <div className="h-3 bg-slate-300 rounded w-full"></div>
+                </div>
+              ))
+            )}
           </div>
         </div>
-      </div>
 
       {/* Blog Carousel Section */}
       <section>

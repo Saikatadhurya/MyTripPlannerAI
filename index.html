@@ -71,6 +71,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     
+    <!-- Preload LCP Image (Logo) for Optimal Performance -->
+    <link rel="preload" as="image" href="/PlanMyTrip.png" fetchpriority="high" />
+    
     <!-- Structured Data - WebApplication -->
     <script type="application/ld+json">
     {
@@ -353,6 +356,7 @@
     <!-- Tailwind CSS is now loaded via PostCSS in index.tsx -->
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+      /* Font-display swap is already in the Google Fonts URL */
       body {
         /* FIX: Removed explicit font-family to allow Tailwind to manage it for better consistency. */
         background-color: #ffffff; /* Set a pure white background */

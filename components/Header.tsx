@@ -117,11 +117,15 @@ const Header: React.FC<HeaderProps> = ({
             onClick={() => navigate('/')}
             className={`${logoContainerBaseClasses} hover:opacity-80 transition-opacity cursor-pointer`}
           >
-            {/* PlanMyTrip Logo */}
+            {/* PlanMyTrip Logo - Optimized for LCP */}
             <img 
               src="/PlanMyTrip.png" 
               alt="PlanMyTrip AI Logo" 
               className="h-12 md:h-14 w-auto"
+              width="512"
+              height="512"
+              fetchPriority="high"
+              decoding="async"
             />
           </button>
 
