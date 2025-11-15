@@ -174,22 +174,15 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
     if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
 
     if (value.trim().length > 1) {
+      // Check if user is logged in before searching (iOS needs immediate check)
+      if (!user) {
+        onOpenAuthModal();
+        return;
+      }
       setIsStartPointSuggestionsLoading(true);
       debounceTimeout.current = setTimeout(() => {
         if (!isSelectingSuggestion.current) {
-          // Check for user only when making the API call, not during typing
-          if (!user || !user.gemini_api_key) {
-            setStartPointSuggestions([]);
-            setIsStartPointSuggestionsLoading(false);
-            // Only show auth modal if user is definitely not logged in (not just loading)
-            // Check localStorage to see if user might be loading
-            const storedUser = localStorage.getItem('planora_user');
-            if (!storedUser) {
-              onOpenAuthModal();
-            }
-            return;
-          }
-          getDestinationSuggestions(value, user.gemini_api_key).then(results => {
+          getDestinationSuggestions(value, user?.gemini_api_key).then(results => {
             setStartPointSuggestions(results);
             setIsStartPointSuggestionsLoading(false);
           }).catch(error => {
@@ -494,8 +487,18 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
                   value={startPoint}
                   onChange={handleStartPointChange}
                   onBlur={handleStartPointBlur}
+                  onFocus={() => {
+                    // On iOS, ensure suggestions are visible when input is focused
+                    if (startPointSuggestions.length > 0 && startPointInputRef.current) {
+                      startPointInputRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+                  }}
                   placeholder="e.g., Mumbai, India"
                   className="w-full px-4 py-3 rounded-lg border-2 border-slate-300 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-200"
+                  autoComplete="off"
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                  spellCheck="false"
                 />
                 {isStartPointSuggestionsLoading && (
                   <div className="absolute right-3 top-3">
@@ -505,7 +508,8 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
                 {startPointSuggestions.length > 0 && !isStartPointSelected && (
                   <ul
                     ref={startPointSuggestionsRef}
-                    className="absolute z-50 w-full mt-1 bg-white border-2 border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                    className="absolute z-[100] w-full mt-1 bg-white border-2 border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                    style={{ WebkitOverflowScrolling: 'touch' }}
                   >
                     {startPointSuggestions.map((suggestion, index) => (
                       <li
