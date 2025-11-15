@@ -1,16 +1,67 @@
 # robots.txt for PlanMyTrip AI
-# This file tells search engines which pages they can and cannot crawl
+# Optimized for maximum search engine visibility and global ranking
+# Last Updated: 2025-11-15
 
+# Allow all major search engines to crawl the site
 User-agent: *
 Allow: /
 
-# Disallow result pages as they are dynamic and require authentication
-Disallow: /results/
+# Explicitly allow all public pages for better indexing
+Allow: /plan
+Allow: /itinerary
+Allow: /weekend-explorer
+Allow: /packing
+Allow: /food
+Allow: /apps
+Allow: /music
+Allow: /lingo
+Allow: /blog
+Allow: /contact
+Allow: /get-api-key
+Allow: /profile
+Allow: /history
+Allow: /token-usage
+Allow: /share/
 
-# Disallow auth pages and test routes
+# Block private/dynamic pages that require authentication
+Disallow: /results/
 Disallow: /auth
 Disallow: /test-router
 
-# Sitemap location
+# Block admin and internal pages (if any)
+Disallow: /admin/
+Disallow: /api/
+Disallow: /_next/
+Disallow: /static/
+
+# Google-specific rules
+User-agent: Googlebot
+Allow: /
+Disallow: /results/
+Disallow: /auth
+Disallow: /test-router
+
+# Bing-specific rules
+User-agent: Bingbot
+Allow: /
+Disallow: /results/
+Disallow: /auth
+Disallow: /test-router
+Crawl-delay: 1
+
+# Block bad bots and scrapers
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: DotBot
+Disallow: /
+
+# Sitemap location (required for all search engines)
 Sitemap: https://www.planmytripai.in/sitemap.xml
 

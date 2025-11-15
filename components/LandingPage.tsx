@@ -423,6 +423,161 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
         </div>
       </section>
 
+      {/* FAQ Section - Visible on Page for SEO */}
+      <section className="mt-10 sm:mt-12 md:mt-16">
+        <h2 className="text-2xl sm:text-3xl font-bold text-center text-slate-900 mb-4 sm:mb-6 md:mb-8 animated-card" style={{ animationDelay: '1850ms' }}>
+          Frequently Asked Questions
+        </h2>
+        <p className="text-sm sm:text-base text-center text-slate-600 mb-6 sm:mb-8 px-2 animated-card" style={{ animationDelay: '1900ms' }}>
+          Everything you need to know about planning your trip with our AI trip planner
+        </p>
+        <div className="max-w-4xl mx-auto space-y-4 animated-card" style={{ animationDelay: '1950ms' }}>
+          <details className="bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl border-2 border-slate-200/60 shadow-lg p-4 sm:p-6 group">
+            <summary className="font-bold text-lg sm:text-xl text-slate-900 cursor-pointer list-none flex items-center justify-between">
+              <span>How do I plan a trip?</span>
+              <svg className="w-5 h-5 text-violet-600 transform group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            <p className="mt-4 text-slate-700 leading-relaxed">
+              Plan a trip easily with our free AI trip planner. Simply enter your destination, travel dates, budget, and preferences. Our AI will generate a complete personalized itinerary with day-by-day activities, budget estimates, packing lists, and local recommendations. Perfect for planning trips anywhere in the world.
+            </p>
+          </details>
+
+          <details className="bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl border-2 border-slate-200/60 shadow-lg p-4 sm:p-6 group">
+            <summary className="font-bold text-lg sm:text-xl text-slate-900 cursor-pointer list-none flex items-center justify-between">
+              <span>Is the trip planner free?</span>
+              <svg className="w-5 h-5 text-violet-600 transform group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            <p className="mt-4 text-slate-700 leading-relaxed">
+              Yes! Plan a trip is completely free. Our AI trip planner creates personalized travel itineraries at no cost. You can plan unlimited trips with full access to all features including itinerary planning, packing lists, food recommendations, and more. No credit card required.
+            </p>
+          </details>
+
+          <details className="bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl border-2 border-slate-200/60 shadow-lg p-4 sm:p-6 group">
+            <summary className="font-bold text-lg sm:text-xl text-slate-900 cursor-pointer list-none flex items-center justify-between">
+              <span>What can I plan with this trip planner?</span>
+              <svg className="w-5 h-5 text-violet-600 transform group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            <p className="mt-4 text-slate-700 leading-relaxed">
+              Plan a trip includes: complete day-by-day itineraries, budget estimation, smart packing lists, local food recommendations, music playlists, language phrase guides, mobile app suggestions, multi-destination trip planning, and weekend getaway planning.
+            </p>
+          </details>
+
+          <details className="bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl border-2 border-slate-200/60 shadow-lg p-4 sm:p-6 group">
+            <summary className="font-bold text-lg sm:text-xl text-slate-900 cursor-pointer list-none flex items-center justify-between">
+              <span>How accurate are the AI-generated trip plans?</span>
+              <svg className="w-5 h-5 text-violet-600 transform group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            <p className="mt-4 text-slate-700 leading-relaxed">
+              Our AI trip planner uses advanced algorithms to create highly personalized and accurate travel plans. The AI considers your budget, preferences, travel dates, and destination to generate detailed itineraries with realistic budget estimates and practical recommendations. Trusted by travelers worldwide.
+            </p>
+          </details>
+
+          <details className="bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl border-2 border-slate-200/60 shadow-lg p-4 sm:p-6 group">
+            <summary className="font-bold text-lg sm:text-xl text-slate-900 cursor-pointer list-none flex items-center justify-between">
+              <span>Can I plan a trip for multiple destinations?</span>
+              <svg className="w-5 h-5 text-violet-600 transform group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            <p className="mt-4 text-slate-700 leading-relaxed">
+              Yes! You can plan a trip for multiple destinations. Our unified trip planner supports multi-stop journeys, creating seamless itineraries that cover all your destinations with optimized travel routes and time management.
+            </p>
+          </details>
+
+          <details className="bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl border-2 border-slate-200/60 shadow-lg p-4 sm:p-6 group">
+            <summary className="font-bold text-lg sm:text-xl text-slate-900 cursor-pointer list-none flex items-center justify-between">
+              <span>How to plan a trip step by step?</span>
+              <svg className="w-5 h-5 text-violet-600 transform group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            <p className="mt-4 text-slate-700 leading-relaxed">
+              To plan a trip step by step: 1) Choose your destination, 2) Enter travel dates and number of travelers, 3) Select your budget range, 4) Pick your travel preferences and vibes, 5) Let our AI generate your personalized itinerary with day-by-day activities, budget breakdown, packing list, and local recommendations.
+            </p>
+          </details>
+
+          <details className="bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl border-2 border-slate-200/60 shadow-lg p-4 sm:p-6 group">
+            <summary className="font-bold text-lg sm:text-xl text-slate-900 cursor-pointer list-none flex items-center justify-between">
+              <span>What is the best way to plan a trip?</span>
+              <svg className="w-5 h-5 text-violet-600 transform group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            <p className="mt-4 text-slate-700 leading-relaxed">
+              The best way to plan a trip is using our AI-powered trip planner. It automatically creates personalized itineraries based on your preferences, budget, and travel style. Our tool handles everything from day-by-day activities to budget estimation, packing lists, and local recommendations - saving you hours of research.
+            </p>
+          </details>
+
+          <details className="bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl border-2 border-slate-200/60 shadow-lg p-4 sm:p-6 group">
+            <summary className="font-bold text-lg sm:text-xl text-slate-900 cursor-pointer list-none flex items-center justify-between">
+              <span>Can I plan a trip to any country?</span>
+              <svg className="w-5 h-5 text-violet-600 transform group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            <p className="mt-4 text-slate-700 leading-relaxed">
+              Yes! You can plan a trip to any country in the world. Our AI trip planner supports destinations globally, providing personalized itineraries, local recommendations, language guides, and cultural insights for any country you want to visit.
+            </p>
+          </details>
+
+          <details className="bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl border-2 border-slate-200/60 shadow-lg p-4 sm:p-6 group">
+            <summary className="font-bold text-lg sm:text-xl text-slate-900 cursor-pointer list-none flex items-center justify-between">
+              <span>How much does it cost to plan a trip?</span>
+              <svg className="w-5 h-5 text-violet-600 transform group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            <p className="mt-4 text-slate-700 leading-relaxed">
+              Planning a trip with our AI trip planner is completely free. There are no hidden fees, no subscription required, and no credit card needed. You get full access to all features including itinerary planning, budget estimation, packing lists, and recommendations at no cost.
+            </p>
+          </details>
+
+          <details className="bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl border-2 border-slate-200/60 shadow-lg p-4 sm:p-6 group">
+            <summary className="font-bold text-lg sm:text-xl text-slate-900 cursor-pointer list-none flex items-center justify-between">
+              <span>How long does it take to plan a trip?</span>
+              <svg className="w-5 h-5 text-violet-600 transform group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            <p className="mt-4 text-slate-700 leading-relaxed">
+              With our AI trip planner, you can plan a trip in just a few minutes. Simply fill out the quick questionnaire about your destination, dates, budget, and preferences. Our AI will generate a complete personalized itinerary within minutes, saving you hours of manual planning.
+            </p>
+          </details>
+
+          <details className="bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl border-2 border-slate-200/60 shadow-lg p-4 sm:p-6 group">
+            <summary className="font-bold text-lg sm:text-xl text-slate-900 cursor-pointer list-none flex items-center justify-between">
+              <span>How do I add my own Gemini API key?</span>
+              <svg className="w-5 h-5 text-violet-600 transform group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            <div className="mt-4 text-slate-700 leading-relaxed space-y-3">
+              <p>
+                Adding your own Gemini API key gives you full control over your AI usage and ensures you have your personal Google quota. Here's how to add it:
+              </p>
+              <ol className="list-decimal list-inside space-y-2 ml-2">
+                <li>Go to <a href="https://aistudio.google.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-violet-600 hover:text-violet-700 font-semibold underline">Google AI Studio</a> and click "Create API Key"</li>
+                <li>Create a new project or select an existing one</li>
+                <li>Copy your generated API key</li>
+                <li>Navigate to <a href="/profile" className="text-violet-600 hover:text-violet-700 font-semibold underline">Edit Profile</a> in your account settings</li>
+                <li>Paste the key in the "Gemini API Key" field and click "Save Changes"</li>
+              </ol>
+              <p className="text-sm text-slate-600 italic">
+                Your API key will be securely stored and used for all future AI requests. This ensures you have full control over your usage and can avoid any service limitations.
+              </p>
+            </div>
+          </details>
+        </div>
+      </section>
+
       {/* Testimonials Section */}
       <section>
         <h2 className="text-2xl sm:text-3xl font-bold text-center text-slate-900 mb-4 sm:mb-6 md:mb-8 animated-card" style={{ animationDelay: '1750ms' }}>
