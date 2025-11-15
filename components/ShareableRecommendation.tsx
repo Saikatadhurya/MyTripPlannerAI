@@ -103,6 +103,11 @@ const ShareableRecommendation: React.FC = () => {
         return;
       }
       
+      // Update user state if it changed
+      if (currentUser.id !== user?.id) {
+        setUser(currentUser);
+      }
+      
       try {
         let owns = false;
         if (unifiedTrip) {
@@ -124,7 +129,8 @@ const ShareableRecommendation: React.FC = () => {
           unifiedTrip: !!unifiedTrip,
           recommendation: !!recommendation,
           id,
-          tripId: unifiedTrip?.tripId
+          tripId: unifiedTrip?.tripId,
+          userId: currentUser?.id
         });
         setIsOwner(false);
         setOwnershipChecked(true);
@@ -352,6 +358,16 @@ const ShareableRecommendation: React.FC = () => {
               lingoRecommendations: trip.lingoRecommendations || null,
             });
             
+            // Initialize savedTripId from trip.tripId so regenerated sections save under same trip
+            if (trip.tripId) {
+              savedTripIdRef.current = trip.tripId;
+              setSavedTripId(trip.tripId);
+              // Also add tripId to questionnaireData so UnifiedResultPreview can use it
+              if (trip.questionnaireData) {
+                trip.questionnaireData.tripId = trip.tripId;
+              }
+            }
+            
             setLoading(false);
             // Ownership will be checked by the separate useEffect when user is loaded
             return;
@@ -439,14 +455,45 @@ const ShareableRecommendation: React.FC = () => {
   };
 
   const handleRegenerateUnifiedPlanStep = useCallback(async (step: keyof UnifiedPlanLoadingStatus) => {
-    if (!user) {
+    // Get fresh user from authService
+    const currentUser = authService.getCurrentUser();
+    
+    if (!currentUser) {
       setToast({ message: 'Please sign in to regenerate plans', type: 'error' });
       return;
     }
     
+    // Update user state if needed
+    if (currentUser.id !== user?.id) {
+      setUser(currentUser);
+    }
+    
+    // Re-check ownership if not checked yet or if ownership check hasn't completed
+    if (!ownershipChecked) {
+      setToast({ message: 'Checking ownership...', type: 'info' });
+      // Wait a bit for ownership check to complete
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+    
     if (!isOwner) {
-      setToast({ message: 'You can only regenerate your own plans', type: 'error' });
-      return;
+      // Try one more time to check ownership
+      try {
+        if (unifiedTrip) {
+          const tripIdToCheck = unifiedTrip.tripId || id;
+          const owns = await historyService.checkUnifiedTripOwnership(tripIdToCheck);
+          if (!owns) {
+            setToast({ message: 'You can only regenerate your own plans', type: 'error' });
+            return;
+          }
+          setIsOwner(true);
+        } else {
+          setToast({ message: 'You can only regenerate your own plans', type: 'error' });
+          return;
+        }
+      } catch (error) {
+        setToast({ message: 'You can only regenerate your own plans', type: 'error' });
+        return;
+      }
     }
     
     if (!unifiedTrip?.questionnaireData) {
@@ -594,17 +641,48 @@ const ShareableRecommendation: React.FC = () => {
         setUnifiedPlanLoadingStatus(prev => ({ ...prev, [step]: 'error' }));
       }
     }
-  }, [unifiedTrip, user]);
+  }, [unifiedTrip, user, isOwner, ownershipChecked, id]);
 
-  const handleRegenerateUnifiedPlan = useCallback(() => {
-    if (!user) {
+  const handleRegenerateUnifiedPlan = useCallback(async () => {
+    // Get fresh user from authService
+    const currentUser = authService.getCurrentUser();
+    
+    if (!currentUser) {
       setToast({ message: 'Please sign in to regenerate plans', type: 'error' });
       return;
     }
     
+    // Update user state if needed
+    if (currentUser.id !== user?.id) {
+      setUser(currentUser);
+    }
+    
+    // Re-check ownership if not checked yet or if ownership check hasn't completed
+    if (!ownershipChecked) {
+      setToast({ message: 'Checking ownership...', type: 'info' });
+      // Wait a bit for ownership check to complete
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+    
     if (!isOwner) {
-      setToast({ message: 'You can only regenerate your own plans', type: 'error' });
-      return;
+      // Try one more time to check ownership
+      try {
+        if (unifiedTrip) {
+          const tripIdToCheck = unifiedTrip.tripId || id;
+          const owns = await historyService.checkUnifiedTripOwnership(tripIdToCheck);
+          if (!owns) {
+            setToast({ message: 'You can only regenerate your own plans', type: 'error' });
+            return;
+          }
+          setIsOwner(true);
+        } else {
+          setToast({ message: 'You can only regenerate your own plans', type: 'error' });
+          return;
+        }
+      } catch (error) {
+        setToast({ message: 'You can only regenerate your own plans', type: 'error' });
+        return;
+      }
     }
     
     if (!unifiedTrip?.questionnaireData) {
@@ -636,7 +714,7 @@ const ShareableRecommendation: React.FC = () => {
 
     // Start with itinerary
     handleRegenerateUnifiedPlanStep('itinerary');
-  }, [unifiedTrip, handleRegenerateUnifiedPlanStep]);
+  }, [unifiedTrip, handleRegenerateUnifiedPlanStep, user, isOwner, ownershipChecked, id]);
 
   const handleCancelUnifiedPlanStep = useCallback((step: keyof UnifiedPlanLoadingStatus) => {
     cancellationFlags.current[step] = true;
@@ -960,8 +1038,8 @@ const ShareableRecommendation: React.FC = () => {
         loadingStatus={unifiedPlanLoadingStatus}
         stepErrors={unifiedStepErrors}
         onPlanNew={handleBackToHome}
-        onRegenerate={isOwner && user ? handleRegenerateUnifiedPlan : () => {}}
-        onRegenerateStep={isOwner && user ? handleRegenerateUnifiedPlanStep : () => {}}
+        onRegenerate={handleRegenerateUnifiedPlan}
+        onRegenerateStep={handleRegenerateUnifiedPlanStep}
         onCancel={() => {}}
         onCancelStep={handleCancelUnifiedPlanStep}
         onTabChangeScrollToTop={() => {

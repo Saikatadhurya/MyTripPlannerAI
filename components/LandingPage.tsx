@@ -16,9 +16,10 @@ interface LandingPageProps {
   onStartWeekendExplorer: () => void;
   onOpenAuthModal: () => void;
   onGoToBlog: () => void;
+  onViewHistory: () => void;
 }
 
-const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPlanItinerary, onStartPacking, onStartFoodFinder, onStartAppFinder, onStartMusicFinder, onStartLingoFinder, onStartWeekendExplorer, onOpenAuthModal, onGoToBlog }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPlanItinerary, onStartPacking, onStartFoodFinder, onStartAppFinder, onStartMusicFinder, onStartLingoFinder, onStartWeekendExplorer, onOpenAuthModal, onGoToBlog, onViewHistory }) => {
   const [destinations, setDestinations] = useState<PopularDestination[]>([]);
   const hasCheckedAuth = useRef(false);
   const authCheckTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -219,6 +220,38 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
         >
           {/* Decorative gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-br from-violet-100/20 via-transparent to-purple-100/20 pointer-events-none"></div>
+          
+          {/* History Button - Floating in top-right corner */}
+          {user && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onViewHistory();
+              }}
+              className="absolute top-3 right-3 sm:top-4 sm:right-4 lg:top-3 lg:right-3 xl:top-4 xl:right-4 z-20 group flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-full bg-white/90 backdrop-blur-md border border-violet-200/60 shadow-lg hover:shadow-xl hover:shadow-violet-500/20 transition-all duration-300 hover:scale-110 hover:bg-white hover:border-violet-400/80 focus:outline-none focus:ring-2 focus:ring-violet-400/50 focus:ring-offset-2"
+              aria-label="View trip history"
+              title="View Your Trip History"
+            >
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                className="h-4 w-4 sm:h-5 sm:w-5 text-violet-600 group-hover:text-violet-700 transition-colors duration-300" 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor" 
+                strokeWidth={2.5}
+              >
+                <path 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" 
+                />
+              </svg>
+              <span className="text-xs sm:text-sm font-semibold text-violet-600 group-hover:text-violet-700 transition-colors duration-300 hidden sm:inline">
+                History
+              </span>
+            </button>
+          )}
+          
           <div className="relative z-10 w-full">
             {user && user.full_name && (
               <div className="mb-2 sm:mb-3 md:mb-4 lg:mb-2 xl:mb-3">
