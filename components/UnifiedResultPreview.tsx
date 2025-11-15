@@ -33,6 +33,7 @@ interface UnifiedResultPreviewProps {
     itineraryStreamedText: string;
     questionnaireData?: any; // Add questionnaire data for saving
     isHistoryView?: boolean; // Add flag to indicate if this is from history
+    canRegenerate?: boolean; // Add flag to indicate if user can regenerate (must be owner and signed in)
 }
 
 const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({ 
@@ -47,7 +48,8 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
     onTabChangeScrollToTop, 
     itineraryStreamedText,
     questionnaireData,
-    isHistoryView = false
+    isHistoryView = false,
+    canRegenerate = true
 }) => {
     const [activeTab, setActiveTab] = useState<Tab>('itinerary');
     const [savedTripId, setSavedTripId] = useState<string | null>(null);
@@ -153,6 +155,48 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
     useEffect(() => {
         savedTripIdRef.current = savedTripId;
     }, [savedTripId]);
+
+    // Initialize savedTripId from questionnaireData if it exists (for existing trips)
+    useEffect(() => {
+        // Check if questionnaireData has a tripId (from history or shareable view)
+        if (questionnaireData?.tripId && !savedTripId) {
+            savedTripIdRef.current = questionnaireData.tripId;
+            setSavedTripId(questionnaireData.tripId);
+        }
+    }, [questionnaireData, savedTripId]);
+
+    // Track previous plan data to detect changes (regenerations)
+    const prevPlanRef = React.useRef<UnifiedPlan>({ ...plan });
+    const isInitialMountRef = React.useRef<boolean>(true);
+    
+    // Clear saved types when plan data changes (indicating regeneration)
+    useEffect(() => {
+        // Skip on initial mount to avoid clearing on first load
+        if (isInitialMountRef.current) {
+            isInitialMountRef.current = false;
+            prevPlanRef.current = { ...plan };
+            return;
+        }
+        
+        // Check each component and clear saved type if data changed
+        const checkAndClear = (key: string, currentData: any, prevData: any) => {
+            // If data was null and now has data, or if data changed, clear saved type
+            if (currentData && (!prevData || JSON.stringify(currentData) !== JSON.stringify(prevData))) {
+                // Data changed or regenerated, clear from saved types so it gets saved again
+                savedTypesRef.current.delete(key);
+            }
+        };
+        
+        checkAndClear('itinerary', plan.itinerary, prevPlanRef.current.itinerary);
+        checkAndClear('packing', plan.packingList, prevPlanRef.current.packingList);
+        checkAndClear('food', plan.foodRecommendations, prevPlanRef.current.foodRecommendations);
+        checkAndClear('apps', plan.appRecommendations, prevPlanRef.current.appRecommendations);
+        checkAndClear('music', plan.musicRecommendations, prevPlanRef.current.musicRecommendations);
+        checkAndClear('lingo', plan.lingoRecommendations, prevPlanRef.current.lingoRecommendations);
+        
+        // Update previous plan reference
+        prevPlanRef.current = { ...plan };
+    }, [plan]);
 
     // Incrementally save unified trip to history as each part becomes available
     useEffect(() => {
@@ -436,7 +480,7 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
                                 <p>{displayMessage}</p>
                             )}
                         </div>
-                        {!isQuotaOrApiKeyError && (
+                        {!isQuotaOrApiKeyError && canRegenerate && (
                         <button
                             onClick={() => onRegenerateStep(stepToRegenerate)}
                             className="mt-3 sm:mt-4 inline-flex items-center px-3 py-1.5 sm:px-4 sm:py-2 bg-violet-600 text-white font-semibold rounded-full hover:bg-violet-700 transition-all duration-300 shadow-md text-xs sm:text-sm"
@@ -472,6 +516,7 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
                 <div className="text-center py-12 sm:py-16 md:py-20">
                     <div className="space-y-4">
                         <p className="text-sm sm:text-base text-slate-600">This component was not included in your initial plan.</p>
+                        {canRegenerate && (
                         <button
                             onClick={() => onRegenerateStep(activeTab)}
                             className="inline-flex items-center px-4 py-2 sm:px-6 sm:py-3 bg-violet-600 text-white font-semibold rounded-full hover:bg-violet-700 transition-all duration-300 shadow-md text-sm sm:text-base"
@@ -481,6 +526,7 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
                             </svg>
                             Generate {tabName}
                         </button>
+                        )}
                     </div>
                 </div>
             );
@@ -523,7 +569,8 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
                         </svg>
                         <span>Home</span>
                     </button>
-                     <button
+                     {canRegenerate && (
+                    <button
                         type="button"
                         onClick={(e) => {
                           e.preventDefault();
@@ -535,6 +582,7 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.898 2.566l-1.581.53a5.002 5.002 0 00-8.917-1.789v.962a1 1 0 01-2 0V3a1 1 0 011-1zm12 15a1 1 0 01-1-1v-2.101a7.002 7.002 0 01-11.898-2.566l1.581-.53a5.002 5.002 0 008.917 1.789v-.962a1 1 0 012 0V17a1 1 0 01-1 1z" clipRule="evenodd" /></svg>
                         Regenerate
                     </button>
+                    )}
                 </div>
             </header>
             

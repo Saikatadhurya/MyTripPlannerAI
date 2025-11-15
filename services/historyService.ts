@@ -151,6 +151,72 @@ class HistoryService {
     return response.data.data;
   }
 
+  // Check if user owns a recommendation (returns true if owned, false otherwise)
+  async checkRecommendationOwnership(id: string): Promise<boolean> {
+    try {
+      // Check if user is authenticated first
+      if (!authService.isAuthenticated()) {
+        return false;
+      }
+      const headers = authService.getAuthHeaders();
+      // Check if headers are valid (should have Authorization header)
+      if (!headers || Object.keys(headers).length === 0 || !(headers as any).Authorization) {
+        return false;
+      }
+      const response = await axios.get(`${API_URL}/${id}`, { headers });
+      // If we get a successful response (200), the user owns it
+      return response.status === 200;
+    } catch (error: any) {
+      // 404 means not found (user doesn't own it or recommendation doesn't exist)
+      // 401 means unauthorized (not authenticated or token expired)
+      // 403 means forbidden (authenticated but doesn't own it)
+      if (error.response?.status === 404 || error.response?.status === 401 || error.response?.status === 403) {
+        return false;
+      }
+      // For other errors, log and assume not owned to be safe
+      console.error('Error checking recommendation ownership:', {
+        id,
+        status: error.response?.status,
+        message: error.message,
+        hasAuth: authService.isAuthenticated()
+      });
+      return false;
+    }
+  }
+
+  // Check if user owns a unified trip (returns true if owned, false otherwise)
+  async checkUnifiedTripOwnership(tripId: string): Promise<boolean> {
+    try {
+      // Check if user is authenticated first
+      if (!authService.isAuthenticated()) {
+        return false;
+      }
+      const headers = authService.getAuthHeaders();
+      // Check if headers are valid (should have Authorization header)
+      if (!headers || Object.keys(headers).length === 0 || !(headers as any).Authorization) {
+        return false;
+      }
+      const response = await axios.get(`${API_URL}/unified-trips/${tripId}`, { headers });
+      // If we get a successful response (200), the user owns it
+      return response.status === 200;
+    } catch (error: any) {
+      // 404 means not found (user doesn't own it or trip doesn't exist)
+      // 401 means unauthorized (not authenticated or token expired)
+      // 403 means forbidden (authenticated but doesn't own it)
+      if (error.response?.status === 404 || error.response?.status === 401 || error.response?.status === 403) {
+        return false;
+      }
+      // For other errors, log and assume not owned to be safe
+      console.error('Error checking unified trip ownership:', {
+        tripId,
+        status: error.response?.status,
+        message: error.message,
+        hasAuth: authService.isAuthenticated()
+      });
+      return false;
+    }
+  }
+
   // Update recommendation
   async updateRecommendation(
     id: string,

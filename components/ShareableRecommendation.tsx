@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { historyService } from '../services/historyService';
 import { RecommendationHistory, UnifiedTrip } from '../services/historyService';
@@ -11,6 +11,15 @@ import ItineraryPreview from './ItineraryPreview';
 import UnifiedResultPreview from './UnifiedResultPreview';
 import LoadingIndicator from './LoadingIndicator';
 import Toast from './Toast';
+import { generateItinerary } from '../services/geminiService';
+import { generatePackingList } from '../services/packingService';
+import { generateFoodRecommendations } from '../services/foodService';
+import { generateAppRecommendations } from '../services/appFinderService';
+import { generateMusicRecommendations } from '../services/musicService';
+import { generateLingoGuide } from '../services/lingoService';
+import { UnifiedPlan, UnifiedPlanLoadingStatus } from '../types';
+import { authService, User } from '../services/authService';
+import { useSaveRecommendation } from '../hooks/useSaveRecommendation';
 
 const ShareableRecommendation: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -20,6 +29,285 @@ const ShareableRecommendation: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  
+  // State for unified plan regeneration
+  const [unifiedPlan, setUnifiedPlan] = useState<UnifiedPlan>({
+    itinerary: null,
+    packingList: null,
+    foodRecommendations: null,
+    appRecommendations: null,
+    musicRecommendations: null,
+    lingoRecommendations: null,
+  });
+  const [unifiedPlanLoadingStatus, setUnifiedPlanLoadingStatus] = useState<UnifiedPlanLoadingStatus>({
+    itinerary: 'done',
+    packing: 'done',
+    food: 'done',
+    apps: 'done',
+    music: 'done',
+    lingo: 'done',
+  });
+  const [unifiedStepErrors, setUnifiedStepErrors] = useState<Partial<Record<keyof UnifiedPlanLoadingStatus, string>>>({});
+  const [user, setUser] = useState<User | null>(null);
+  const cancellationFlags = useRef<Partial<Record<keyof UnifiedPlanLoadingStatus, boolean>>>({});
+  const [isOwner, setIsOwner] = useState<boolean>(false);
+  const [ownershipChecked, setOwnershipChecked] = useState<boolean>(false);
+  const [savedTripId, setSavedTripId] = useState<string | null>(null);
+  const savedTypesRef = useRef<Set<string>>(new Set());
+  const isSavingRef = useRef<boolean>(false);
+  const savedTripIdRef = useRef<string | null>(null);
+  
+  const { 
+    saveUnifiedTripRecommendations,
+    saveItineraryRecommendation,
+    savePackingRecommendation,
+    saveFoodRecommendation,
+    saveAppRecommendation,
+    saveMusicRecommendation,
+    saveLingoRecommendation
+  } = useSaveRecommendation();
+
+  // Sync savedTripIdRef with savedTripId state
+  useEffect(() => {
+    savedTripIdRef.current = savedTripId;
+  }, [savedTripId]);
+
+  // Load user on mount
+  useEffect(() => {
+    const currentUser = authService.getCurrentUser();
+    setUser(currentUser);
+  }, []);
+
+  // Check ownership when user, trip/recommendation, or id changes
+  useEffect(() => {
+    if (!id) {
+      setIsOwner(false);
+      setOwnershipChecked(true);
+      return;
+    }
+    
+    // Wait for trip/recommendation to be loaded
+    if (!unifiedTrip && !recommendation) {
+      setIsOwner(false);
+      setOwnershipChecked(false);
+      return;
+    }
+    
+    const checkOwnership = async () => {
+      // Always get fresh user from authService to ensure we have the latest
+      const currentUser = authService.getCurrentUser();
+      
+      if (!currentUser) {
+        setIsOwner(false);
+        setOwnershipChecked(true);
+        return;
+      }
+      
+      try {
+        let owns = false;
+        if (unifiedTrip) {
+          // For unified trips, use the tripId from the trip object, or fall back to id
+          // The backend accepts either trip_id or id, so either should work
+          const tripIdToCheck = unifiedTrip.tripId || id;
+          owns = await historyService.checkUnifiedTripOwnership(tripIdToCheck);
+        } else if (recommendation) {
+          owns = await historyService.checkRecommendationOwnership(id);
+        }
+        setIsOwner(owns);
+        setOwnershipChecked(true);
+      } catch (error: any) {
+        // Log detailed error for debugging
+        console.error('Error checking ownership:', {
+          error,
+          status: error?.response?.status,
+          message: error?.message,
+          unifiedTrip: !!unifiedTrip,
+          recommendation: !!recommendation,
+          id,
+          tripId: unifiedTrip?.tripId
+        });
+        setIsOwner(false);
+        setOwnershipChecked(true);
+      }
+    };
+    
+    checkOwnership();
+  }, [user, unifiedTrip, recommendation, id]);
+
+  // Save regenerated unified plan to history (only if user is owner and signed in)
+  useEffect(() => {
+    if (!isOwner || !user || !unifiedTrip?.questionnaireData || isSavingRef.current) return;
+    if (!unifiedPlan.itinerary) return; // Don't save until at least itinerary is generated
+
+    const availableTypes: Array<{ key: string; saver: () => Promise<string | null> }> = [];
+    const data = unifiedTrip.questionnaireData;
+    const destination = data.destination;
+    const language = data.language || 'en';
+    const tripName = `${destination} Trip - ${new Date().toLocaleDateString()}`;
+    const currentTripId = savedTripIdRef.current;
+
+    if (unifiedPlan.itinerary && !savedTypesRef.current.has('itinerary')) {
+      availableTypes.push({
+        key: 'itinerary',
+        saver: async () => {
+          return await saveItineraryRecommendation(
+            data,
+            unifiedPlan.itinerary,
+            destination,
+            language,
+            data,
+            currentTripId || undefined,
+            tripName
+          );
+        }
+      });
+    }
+    if (unifiedPlan.packingList && !savedTypesRef.current.has('packing')) {
+      availableTypes.push({
+        key: 'packing',
+        saver: async () => {
+          return await savePackingRecommendation(
+            data,
+            unifiedPlan.packingList,
+            destination,
+            language,
+            data,
+            currentTripId || undefined,
+            tripName
+          );
+        }
+      });
+    }
+    if (unifiedPlan.foodRecommendations && !savedTypesRef.current.has('food')) {
+      availableTypes.push({
+        key: 'food',
+        saver: async () => {
+          return await saveFoodRecommendation(
+            data,
+            unifiedPlan.foodRecommendations,
+            destination,
+            language,
+            data,
+            currentTripId || undefined,
+            tripName
+          );
+        }
+      });
+    }
+    if (unifiedPlan.appRecommendations && !savedTypesRef.current.has('apps')) {
+      availableTypes.push({
+        key: 'apps',
+        saver: async () => {
+          return await saveAppRecommendation(
+            data,
+            unifiedPlan.appRecommendations,
+            destination,
+            language,
+            data,
+            currentTripId || undefined,
+            tripName
+          );
+        }
+      });
+    }
+    if (unifiedPlan.musicRecommendations && !savedTypesRef.current.has('music')) {
+      availableTypes.push({
+        key: 'music',
+        saver: async () => {
+          return await saveMusicRecommendation(
+            data,
+            unifiedPlan.musicRecommendations,
+            destination,
+            language,
+            data,
+            currentTripId || undefined,
+            tripName
+          );
+        }
+      });
+    }
+    if (unifiedPlan.lingoRecommendations && !savedTypesRef.current.has('lingo')) {
+      availableTypes.push({
+        key: 'lingo',
+        saver: async () => {
+          return await saveLingoRecommendation(
+            data,
+            unifiedPlan.lingoRecommendations,
+            destination,
+            language,
+            data,
+            currentTripId || undefined,
+            tripName
+          );
+        }
+      });
+    }
+
+    if (availableTypes.length === 0) return;
+
+    const run = async () => {
+      // Prevent concurrent saves
+      if (isSavingRef.current) return;
+      isSavingRef.current = true;
+
+      try {
+        const currentTripId = savedTripIdRef.current;
+        
+        if (!currentTripId) {
+          // First-time save: batch-save available types to create a unified trip and obtain tripId
+          const recs = availableTypes.map(t => {
+            const type = t.key;
+            const responseData = (unifiedPlan as any)[type === 'packing' ? 'packingList' : type === 'apps' ? 'appRecommendations' : type === 'food' ? 'foodRecommendations' : type === 'music' ? 'musicRecommendations' : type === 'lingo' ? 'lingoRecommendations' : 'itinerary'];
+            return { type, requestData: data, responseData };
+          });
+          const saveResult = await saveUnifiedTripRecommendations(
+            recs,
+            destination,
+            language,
+            data,
+            tripName
+          );
+          if (saveResult && saveResult.tripId) {
+            savedTripIdRef.current = saveResult.tripId;
+            setSavedTripId(saveResult.tripId);
+            // Only mark types that were successfully saved
+            saveResult.successfulTypes.forEach(type => {
+              savedTypesRef.current.add(type);
+            });
+            // Log any failures
+            const failedTypes = recs.map(r => r.type).filter(type => !saveResult.successfulTypes.includes(type));
+            if (failedTypes.length > 0) {
+              console.warn(`Failed to save the following types, will retry: ${failedTypes.join(', ')}`);
+            }
+          }
+        } else {
+          // Append new recommendations to existing trip
+          // Save each item individually and only mark as saved if successful
+          for (const item of availableTypes) {
+            try {
+              const result = await item.saver();
+              // Only mark as saved if we got a result (non-null ID)
+              if (result !== null && result !== undefined) {
+                savedTypesRef.current.add(item.key);
+              } else {
+                console.warn(`Failed to save ${item.key} recommendation, will retry on next effect run`);
+              }
+            } catch (error) {
+              console.error(`Failed to save ${item.key} recommendation:`, error);
+              // Don't mark as saved, so it will retry on next effect run
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to save unified trip recommendation(s):', error);
+        // Don't mark anything as saved if the entire operation fails
+      } finally {
+        isSavingRef.current = false;
+      }
+    };
+
+    run();
+  }, [unifiedPlan, unifiedTrip, isOwner, user, saveUnifiedTripRecommendations, saveItineraryRecommendation, savePackingRecommendation, saveFoodRecommendation, saveAppRecommendation, saveMusicRecommendation, saveLingoRecommendation]);
 
   useEffect(() => {
     const loadRecommendation = async () => {
@@ -39,7 +327,9 @@ const ShareableRecommendation: React.FC = () => {
           
           if (individualRec) {
             setRecommendation(individualRec);
+            
             setLoading(false);
+            // Ownership will be checked by the separate useEffect when user is loaded
             return;
           }
         } catch (individualError) {
@@ -52,7 +342,18 @@ const ShareableRecommendation: React.FC = () => {
           
           if (trip) {
             setUnifiedTrip(trip);
+            // Initialize unified plan state from trip data
+            setUnifiedPlan({
+              itinerary: trip.itinerary || null,
+              packingList: trip.packingList || null,
+              foodRecommendations: trip.foodRecommendations || null,
+              appRecommendations: trip.appRecommendations || null,
+              musicRecommendations: trip.musicRecommendations || null,
+              lingoRecommendations: trip.lingoRecommendations || null,
+            });
+            
             setLoading(false);
+            // Ownership will be checked by the separate useEffect when user is loaded
             return;
           }
         } catch (unifiedError) {
@@ -123,6 +424,223 @@ const ShareableRecommendation: React.FC = () => {
   const handleStartLingoFinder = () => {
     navigate('/lingo');
   };
+
+  // Regeneration handlers for unified trip
+  const stepToPlanKey = (step: keyof UnifiedPlanLoadingStatus): keyof UnifiedPlan => {
+    const mapping: Record<keyof UnifiedPlanLoadingStatus, keyof UnifiedPlan> = {
+      itinerary: 'itinerary',
+      packing: 'packingList',
+      food: 'foodRecommendations',
+      apps: 'appRecommendations',
+      music: 'musicRecommendations',
+      lingo: 'lingoRecommendations',
+    };
+    return mapping[step];
+  };
+
+  const handleRegenerateUnifiedPlanStep = useCallback(async (step: keyof UnifiedPlanLoadingStatus) => {
+    if (!user) {
+      setToast({ message: 'Please sign in to regenerate plans', type: 'error' });
+      return;
+    }
+    
+    if (!isOwner) {
+      setToast({ message: 'You can only regenerate your own plans', type: 'error' });
+      return;
+    }
+    
+    if (!unifiedTrip?.questionnaireData) {
+      setToast({ message: 'Cannot regenerate: no questionnaire data available', type: 'error' });
+      return;
+    }
+
+    const data = unifiedTrip.questionnaireData;
+    const planKey = stepToPlanKey(step);
+
+    // If itinerary is regenerated, all dependent steps must be regenerated too
+    if (step === 'itinerary') {
+      // Clear all plan data
+      setUnifiedPlan({
+        itinerary: null,
+        packingList: null,
+        foodRecommendations: null,
+        appRecommendations: null,
+        musicRecommendations: null,
+        lingoRecommendations: null,
+      });
+      // Reset cancellation flags
+      cancellationFlags.current = {};
+      // Clear errors
+      setUnifiedStepErrors({});
+      // Clear saved types so they get saved again after regeneration
+      savedTypesRef.current.clear();
+      // Set all to loading
+      setUnifiedPlanLoadingStatus({
+        itinerary: 'loading',
+        packing: 'pending',
+        food: 'pending',
+        apps: 'pending',
+        music: 'pending',
+        lingo: 'pending',
+      });
+    } else {
+      // Clear old data for the step being regenerated
+      setUnifiedPlan(prev => ({ ...prev, [planKey]: null }));
+      setUnifiedPlanLoadingStatus(prev => ({ ...prev, [step]: 'loading' }));
+      setUnifiedStepErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[step];
+        return newErrors;
+      });
+      // Clear saved type so it gets saved again after regeneration
+      savedTypesRef.current.delete(step);
+      cancellationFlags.current[step] = false;
+    }
+
+    try {
+      let result: any = null;
+
+      switch (step) {
+        case 'itinerary':
+          const { result: itineraryResult } = await generateItinerary(
+            data.destination,
+            data.startPoint,
+            data.tripType,
+            data.days,
+            data.budget,
+            data.vibe,
+            data.persons,
+            data.foodPreference,
+            data.startDate,
+            data.includeMedical,
+            data.language,
+            data.isRoundTrip,
+            data.currency,
+            () => {},
+            user?.gemini_api_key,
+            data.stops
+          );
+          result = itineraryResult;
+          break;
+
+        case 'packing':
+          const { result: packingResult } = await generatePackingList(
+            data,
+            () => {},
+            user?.gemini_api_key
+          );
+          result = packingResult;
+          break;
+
+        case 'food':
+          const { result: foodResult } = await generateFoodRecommendations(
+            data,
+            () => {},
+            user?.gemini_api_key
+          );
+          result = foodResult;
+          break;
+
+        case 'apps':
+          const { result: appResult } = await generateAppRecommendations(
+            data,
+            () => {},
+            user?.gemini_api_key
+          );
+          result = appResult;
+          break;
+
+        case 'music':
+          const isMultiStop = data.coveredDestinations && data.coveredDestinations.length > 1;
+          const musicData = {
+            destination: data.destination,
+            language: data.language,
+            coveredDestinations: isMultiStop ? data.coveredDestinations : undefined,
+          };
+          const { result: musicResult } = await generateMusicRecommendations(
+            musicData,
+            () => {},
+            user?.gemini_api_key
+          );
+          result = musicResult;
+          break;
+
+        case 'lingo':
+          const isMultiStopLingo = data.coveredDestinations && data.coveredDestinations.length > 1;
+          const lingoData = {
+            destination: data.destination,
+            language: data.language,
+            coveredDestinations: isMultiStopLingo ? data.coveredDestinations : undefined,
+          };
+          const { result: lingoResult } = await generateLingoGuide(
+            lingoData,
+            () => {},
+            user?.gemini_api_key
+          );
+          result = lingoResult;
+          break;
+      }
+
+      if (result && !cancellationFlags.current[step]) {
+        setUnifiedPlan(prev => ({ ...prev, [planKey]: result }));
+        setUnifiedPlanLoadingStatus(prev => ({ ...prev, [step]: 'done' }));
+      } else if (cancellationFlags.current[step]) {
+        setUnifiedPlanLoadingStatus(prev => ({ ...prev, [step]: 'cancelled' }));
+      }
+    } catch (error: any) {
+      if (!cancellationFlags.current[step]) {
+        const errorMessage = error?.message || 'An unknown error occurred';
+        setUnifiedStepErrors(prev => ({ ...prev, [step]: errorMessage }));
+        setUnifiedPlanLoadingStatus(prev => ({ ...prev, [step]: 'error' }));
+      }
+    }
+  }, [unifiedTrip, user]);
+
+  const handleRegenerateUnifiedPlan = useCallback(() => {
+    if (!user) {
+      setToast({ message: 'Please sign in to regenerate plans', type: 'error' });
+      return;
+    }
+    
+    if (!isOwner) {
+      setToast({ message: 'You can only regenerate your own plans', type: 'error' });
+      return;
+    }
+    
+    if (!unifiedTrip?.questionnaireData) {
+      setToast({ message: 'Cannot regenerate: no questionnaire data available', type: 'error' });
+      return;
+    }
+
+    // Reset all steps to pending
+    setUnifiedPlan({
+      itinerary: null,
+      packingList: null,
+      foodRecommendations: null,
+      appRecommendations: null,
+      musicRecommendations: null,
+      lingoRecommendations: null,
+    });
+    setUnifiedPlanLoadingStatus({
+      itinerary: 'pending',
+      packing: 'pending',
+      food: 'pending',
+      apps: 'pending',
+      music: 'pending',
+      lingo: 'pending',
+    });
+    setUnifiedStepErrors({});
+    cancellationFlags.current = {};
+    // Clear saved types so they get saved again after regeneration
+    savedTypesRef.current.clear();
+
+    // Start with itinerary
+    handleRegenerateUnifiedPlanStep('itinerary');
+  }, [unifiedTrip, handleRegenerateUnifiedPlanStep]);
+
+  const handleCancelUnifiedPlanStep = useCallback((step: keyof UnifiedPlanLoadingStatus) => {
+    cancellationFlags.current[step] = true;
+  }, []);
 
   const handleCopyLink = async () => {
     if (!id) {
@@ -425,61 +943,27 @@ const ShareableRecommendation: React.FC = () => {
   }
 
   function renderUnifiedTrip(trip: UnifiedTrip) {
-    // Create a properly structured unified plan from the API response
-    const unifiedPlan = {
-      itinerary: trip.itinerary || null,
-      packingList: trip.packingList || null,
-      foodRecommendations: trip.foodRecommendations || null,
-      appRecommendations: trip.appRecommendations || null,
-      musicRecommendations: trip.musicRecommendations || null,
-      lingoRecommendations: trip.lingoRecommendations || null
+    // Use the state-based unified plan (which gets updated during regeneration)
+    // Merge: use unifiedPlan values if they exist (regenerated), otherwise use trip data
+    const currentPlan: UnifiedPlan = {
+      itinerary: unifiedPlan.itinerary ?? trip.itinerary ?? null,
+      packingList: unifiedPlan.packingList ?? trip.packingList ?? null,
+      foodRecommendations: unifiedPlan.foodRecommendations ?? trip.foodRecommendations ?? null,
+      appRecommendations: unifiedPlan.appRecommendations ?? trip.appRecommendations ?? null,
+      musicRecommendations: unifiedPlan.musicRecommendations ?? trip.musicRecommendations ?? null,
+      lingoRecommendations: unifiedPlan.lingoRecommendations ?? trip.lingoRecommendations ?? null,
     };
-
-    // Create loading status - all done since this is from history
-    const loadingStatus = {
-      itinerary: 'done' as const,
-      packing: 'done' as const,
-      apps: 'done' as const,
-      food: 'done' as const,
-      music: 'done' as const,
-      lingo: 'done' as const
-    };
-
-    // No errors since this is from history
-    const stepErrors = {};
 
     return (
       <UnifiedResultPreview
-        plan={unifiedPlan}
-        loadingStatus={loadingStatus}
-        stepErrors={stepErrors}
+        plan={currentPlan}
+        loadingStatus={unifiedPlanLoadingStatus}
+        stepErrors={unifiedStepErrors}
         onPlanNew={handleBackToHome}
-        onRegenerate={handleStartItineraryPlanner}
-        onRegenerateStep={(step) => {
-          // Navigate to appropriate form based on step
-          switch (step) {
-            case 'itinerary':
-              handleStartItineraryPlanner();
-              break;
-            case 'packing':
-              handleStartPackingAssistant();
-              break;
-            case 'food':
-              handleStartFoodFinder();
-              break;
-            case 'apps':
-              handleStartAppFinder();
-              break;
-            case 'music':
-              handleStartMusicFinder();
-              break;
-            case 'lingo':
-              handleStartLingoFinder();
-              break;
-          }
-        }}
+        onRegenerate={isOwner && user ? handleRegenerateUnifiedPlan : () => {}}
+        onRegenerateStep={isOwner && user ? handleRegenerateUnifiedPlanStep : () => {}}
         onCancel={() => {}}
-        onCancelStep={() => {}}
+        onCancelStep={handleCancelUnifiedPlanStep}
         onTabChangeScrollToTop={() => {
           // Scroll to top when tab changes in shareable view
           window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
@@ -489,6 +973,7 @@ const ShareableRecommendation: React.FC = () => {
         itineraryStreamedText=""
         questionnaireData={trip.questionnaireData}
         isHistoryView={true}
+        canRegenerate={isOwner && user}
       />
     );
   }
