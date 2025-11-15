@@ -48,7 +48,7 @@ export const searchWeekendPackages = async (
   const dayOfWeek = startDateObj.toLocaleDateString('en-US', { weekday: 'long' });
   const tripTypeText = `Trip Type: ${request.tripType} (Round Trip - will return to starting point)`;
   
-  const prompt = `You are an expert travel planner specializing in weekend getaways. Search for nearby outdoor weekend getaway destinations and packages from "${request.location}" (starting point) that can be covered in 2-4 days (including Saturday and Sunday).
+  const prompt = `You are an expert travel planner specializing in weekend getaways. Search for nearby outdoor weekend getaway destinations and packages from "${request.location}" (starting point) that can be covered in 3-4 days (including Saturday and Sunday).
 
 **User Requirements:**
 - Starting Point: ${request.location}
@@ -63,7 +63,7 @@ export const searchWeekendPackages = async (
 **Search Criteria:**
 1. Find 4-6 weekend getaway destinations/packages that are:
    - Within reasonable driving distance (max 6-8 hours) from ${request.location} (starting point)
-   - Suitable for 2-4 day trips (including Saturday and Sunday)
+   - Suitable for 3-4 day trips (including Saturday and Sunday)
    - Outdoor-focused destinations (hill stations, beaches, nature reserves, adventure spots, etc.)
    - Perfect for weekend escapes
 
@@ -71,7 +71,7 @@ export const searchWeekendPackages = async (
    - Destination name
    - Attractive title
    - Brief description (2-3 sentences)
-   - Number of days (2-4 days)
+   - Number of days (3-4 days)
    - Top 3-5 highlights/attractions
    - Estimated budget range in ${request.currency}
    - Best suited for (based on vibes: ${vibeText})
@@ -89,7 +89,7 @@ Return a JSON array of packages. Each package must have:
   "destination": "destination name",
   "title": "attractive package title",
   "description": "brief description",
-  "days": 2-4,
+  "days": 3-4,
   "highlights": ["highlight1", "highlight2", "highlight3"],
   "estimatedBudget": "budget range in ${request.currency}",
   "bestFor": ["vibe1", "vibe2"],
@@ -100,7 +100,7 @@ Return a JSON array of packages. Each package must have:
 **CRITICAL RULES:**
 - Return ONLY valid JSON array starting with '[' and ending with ']'
 - NO markdown, NO code blocks, NO explanatory text
-- All packages must be feasible for weekend trips (2-4 days)
+- All packages must be feasible for weekend trips (3-4 days)
 - Use Google Search to find real, current information about weekend packages and destinations
 - Ensure all destinations are outdoor gateways suitable for weekend trips
 - Budget should be realistic and in ${request.currency}
@@ -141,19 +141,26 @@ Search for current weekend packages and popular weekend destinations near ${requ
     }
 
     // Add unique IDs if missing and validate structure
-    const packages: WeekendPackage[] = cleanedJson.map((pkg: any, index: number) => ({
-      id: pkg.id || `package-${index + 1}`,
-      destination: pkg.destination || 'Unknown',
-      title: pkg.title || pkg.destination || 'Weekend Package',
-      description: pkg.description || '',
-      days: pkg.days || 3,
-      highlights: Array.isArray(pkg.highlights) ? pkg.highlights : [],
-      estimatedBudget: pkg.estimatedBudget || 'Not specified',
-      bestFor: Array.isArray(pkg.bestFor) ? pkg.bestFor : [],
-      distance: pkg.distance || 'Not specified',
-      travelTime: pkg.travelTime || 'Not specified',
-      imageUrl: pkg.imageUrl,
-    }));
+    const packages: WeekendPackage[] = cleanedJson.map((pkg: any, index: number) => {
+      // Ensure days is between 3-4, default to 3 if invalid
+      let days = pkg.days || 3;
+      if (days < 3) days = 3;
+      if (days > 4) days = 4;
+      
+      return {
+        id: pkg.id || `package-${index + 1}`,
+        destination: pkg.destination || 'Unknown',
+        title: pkg.title || pkg.destination || 'Weekend Package',
+        description: pkg.description || '',
+        days: days,
+        highlights: Array.isArray(pkg.highlights) ? pkg.highlights : [],
+        estimatedBudget: pkg.estimatedBudget || 'Not specified',
+        bestFor: Array.isArray(pkg.bestFor) ? pkg.bestFor : [],
+        distance: pkg.distance || 'Not specified',
+        travelTime: pkg.travelTime || 'Not specified',
+        imageUrl: pkg.imageUrl,
+      };
+    });
 
     return packages;
 

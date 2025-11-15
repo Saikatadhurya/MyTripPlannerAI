@@ -495,7 +495,7 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
             🗺️ Weekend Explorer
           </h1>
           <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-            Discover perfect weekend getaways near you. Find outdoor destinations you can explore in 2-4 days including Saturday and Sunday.
+            Discover perfect weekend getaways near you. Find outdoor destinations you can explore in 3-4 days including Saturday and Sunday.
           </p>
         </div>
 
