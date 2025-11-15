@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Vibe, QuestionnaireData, Budget, FoodPreference, TripType } from '../types';
+import { Vibe, QuestionnaireData, Budget, FoodPreference, TripType, UnifiedPlanComponent } from '../types';
 import { User } from '../services/authService';
 import { searchWeekendPackages, WeekendPackage, WeekendExplorerRequest } from '../services/weekendExplorerService';
 import { getDestinationSuggestions } from '../services/geminiService';
@@ -12,6 +12,13 @@ const tripTypes: { label: TripType; icon: string }[] = [
   { label: 'Standard', icon: '✈️' },
   { label: 'Car', icon: '🚗' },
   { label: 'Bike', icon: '🏍️' },
+];
+const unifiedPlanComponents: { label: UnifiedPlanComponent; icon: string; description: string }[] = [
+  { label: 'packing', icon: '🎒', description: 'packing list and essentials' },
+  { label: 'food', icon: '🍽️', description: 'restaurant and food recommendations' },
+  { label: 'apps', icon: '📱', description: 'useful travel apps' },
+  { label: 'music', icon: '🎵', description: 'local music playlists' },
+  { label: 'lingo', icon: '🗣️', description: 'language guide and phrases' },
 ];
 
 const Toggle: React.FC<{ label: string; description: string; enabled: boolean; onChange: (enabled: boolean) => void; }> = ({ label, description, enabled, onChange }) => (
@@ -94,6 +101,7 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
           startDate: parsed.startDate || formatDateLocal(getNextSaturday()),
           packages: parsed.packages || [],
           hasSearched: parsed.hasSearched || false,
+          selectedComponents: parsed.selectedComponents || ['packing'], // Packing is preselected by default
         };
       }
     } catch (e) {
@@ -121,6 +129,7 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(savedState?.hasSearched || false);
+  const [selectedComponents, setSelectedComponents] = useState<UnifiedPlanComponent[]>(savedState?.selectedComponents || ['packing']); // Packing is preselected by default
 
   const debounceTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isSelectingSuggestion = useRef(false);
@@ -133,6 +142,14 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
       prev.includes(vibe) 
         ? prev.filter(v => v !== vibe)
         : [...prev, vibe]
+    );
+  };
+
+  const handleComponentToggle = (component: UnifiedPlanComponent) => {
+    setSelectedComponents(prev => 
+      prev.includes(component)
+        ? prev.filter(c => c !== component)
+        : [...prev, component]
     );
   };
 
@@ -211,6 +228,7 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
     setLanguage('English (en)');
     setCurrency('India (INR) – ₹');
     setStartDate(formatDateLocal(getNextSaturday()));
+    setSelectedComponents(['packing']); // Reset to default (packing preselected)
     
     // Clear search results
     setPackages([]);
@@ -245,12 +263,13 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
           startDate,
           packages,
           hasSearched,
+          selectedComponents,
         }));
       } catch (e) {
         console.error('Error saving state:', e);
       }
     }
-  }, [travelers, selectedVibes, budget, tripType, isRoundTrip, startPoint, isStartPointSelected, language, currency, startDate, packages, hasSearched]);
+  }, [travelers, selectedVibes, budget, tripType, isRoundTrip, startPoint, isStartPointSelected, language, currency, startDate, packages, hasSearched, selectedComponents]);
 
   const handleSearch = async () => {
     // All trips require a starting point since they're all round trips
@@ -310,6 +329,7 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
           startDate,
           packages: results,
           hasSearched: true,
+          selectedComponents,
         }));
       } catch (e) {
         console.error('Error saving search results:', e);
@@ -347,6 +367,7 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
       isRoundTrip: true, // All trips are round trips
       includeAlcoholicDrinks: false,
       stops: [],
+      selectedComponents: selectedComponents, // Include selected components
     };
 
     // Ensure we have valid data before generating
@@ -599,6 +620,34 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
                   <option key={curr} value={curr}>{curr}</option>
                 ))}
               </select>
+            </div>
+
+            {/* Plan Components */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-semibold text-slate-700 mb-3">
+                Plan Components
+              </label>
+              <p className="text-xs text-slate-600 mb-3">Select which components to include in your trip plan. Itinerary is always included.</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {unifiedPlanComponents.map(comp => (
+                  <button
+                    key={comp.label}
+                    type="button"
+                    onClick={() => handleComponentToggle(comp.label)}
+                    className={`p-3 rounded-lg text-left transition-all duration-200 border-2 flex items-start space-x-2 ${
+                      selectedComponents.includes(comp.label)
+                        ? 'bg-violet-100/70 border-violet-500'
+                        : 'bg-white/40 border-slate-300 hover:border-violet-400'
+                    }`}
+                  >
+                    <span className="text-xl mt-0.5 flex-shrink-0">{comp.icon}</span>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-slate-800 text-xs sm:text-sm">{comp.label.charAt(0).toUpperCase() + comp.label.slice(1)}</p>
+                      <p className="text-[10px] sm:text-xs text-slate-500">{comp.description}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 

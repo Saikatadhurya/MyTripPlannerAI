@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Budget, Vibe, FoodPreference, TripType, QuestionnaireData, LocationSuggestion, PopularDestination } from '../types';
+import { Budget, Vibe, FoodPreference, TripType, QuestionnaireData, LocationSuggestion, PopularDestination, UnifiedPlanComponent } from '../types';
 import { getDestinationSuggestions } from '../services/geminiService';
 import { User } from '../services/authService';
 import { currencies } from '../data/currencies';
@@ -37,6 +37,14 @@ const vibes: { label: Vibe; icon: string; description: string }[] = [
     { label: 'Nightlife & Entertainment', icon: '🎶', description: 'parties, clubs, festivals, concerts' },
     { label: 'Shopping & Style', icon: '🛍️', description: 'markets, malls, boutiques, fashion districts' },
     { label: 'Romantic & Family Getaways', icon: '❤️', description: 'honeymoons, bonding trips, safe family travel' },
+];
+
+const unifiedPlanComponents: { label: UnifiedPlanComponent; icon: string; description: string }[] = [
+    { label: 'packing', icon: '🎒', description: 'packing list and essentials' },
+    { label: 'food', icon: '🍽️', description: 'local exotic food recommendations' },
+    { label: 'apps', icon: '📱', description: 'useful travel apps' },
+    { label: 'music', icon: '🎵', description: 'local music playlists' },
+    { label: 'lingo', icon: '🗣️', description: 'language guide and phrases' },
 ];
 
 const languages = [
@@ -94,6 +102,7 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
     isRoundTrip: false,
     includeAlcoholicDrinks: false,
     stops: [],
+    selectedComponents: ['packing'], // Packing is preselected by default
   });
   
   const [destinationSuggestions, setDestinationSuggestions] = useState<LocationSuggestion[]>([]);
@@ -467,6 +476,14 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
     if (newVibes.length > 0) {
       handleInputChange('vibe', newVibes);
     }
+  };
+
+  const handleComponentToggle = (component: UnifiedPlanComponent) => {
+    const currentComponents = formData.selectedComponents || ['packing'];
+    const newComponents = currentComponents.includes(component)
+      ? currentComponents.filter(c => c !== component)
+      : [...currentComponents, component];
+    handleInputChange('selectedComponents', newComponents);
   };
 
   const handleTravelersChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1425,6 +1442,34 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
                 <div className="grid grid-cols-3 gap-2 sm:gap-3">
                     {budgets.map(b => (<button key={b} type="button" onClick={() => handleInputChange('budget', b)} className={`px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm md:text-base font-semibold transition-all duration-200 border-2 ${formData.budget === b ? 'bg-violet-600 text-white border-violet-600' : 'bg-white/50 border-white/50 hover:border-violet-400'}`}>{b}</button>))}
                 </div>
+            </div>
+
+            <div className="space-y-4 bg-white/60 backdrop-blur-md p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-200/70 shadow-xl">
+              <h2 className="flex items-center space-x-2 sm:space-x-3 text-lg sm:text-xl md:text-2xl font-bold text-slate-800 border-b pb-2 sm:pb-3">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-violet-600" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" /></svg>
+                <span>Plan Components</span>
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-600">Select which components to include in your trip plan. Itinerary is always included.</p>
+              <div className="grid grid-cols-2 gap-2 sm:gap-4">
+                {unifiedPlanComponents.map(comp => (
+                  <button
+                    key={comp.label}
+                    type="button"
+                    onClick={() => handleComponentToggle(comp.label)}
+                    className={`p-2 sm:p-4 rounded-lg text-left transition-all duration-200 border-2 flex items-start space-x-2 sm:space-x-3 ${
+                      (formData.selectedComponents || ['packing']).includes(comp.label)
+                        ? 'bg-violet-100/70 border-violet-500'
+                        : 'bg-white/40 border-white/40 hover:bg-white/60'
+                    }`}
+                  >
+                    <span className="text-xl sm:text-2xl mt-1 flex-shrink-0">{comp.icon}</span>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-slate-800 text-xs sm:text-sm">{comp.label.charAt(0).toUpperCase() + comp.label.slice(1)}</p>
+                      <p className="text-[10px] sm:text-xs text-slate-500">{comp.description}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="space-y-4 bg-slate-50/50 backdrop-blur-sm p-5 rounded-xl border border-slate-200/50 shadow-sm relative z-20">

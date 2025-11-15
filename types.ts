@@ -3,6 +3,8 @@ export type Vibe = 'Adventure & Thrill' | 'Relaxation & Wellness' | 'Cultural & 
 export type FoodPreference = 'Veg' | 'Non-Veg' | 'Vegan';
 export type TripType = 'Standard' | 'Bike' | 'Car';
 
+export type UnifiedPlanComponent = 'packing' | 'food' | 'apps' | 'music' | 'lingo';
+
 export interface QuestionnaireData {
     destination: string;
     startPoint: string;
@@ -20,6 +22,7 @@ export interface QuestionnaireData {
     currency: string;
     includeAlcoholicDrinks: boolean;
     stops?: string[]; // Array of additional stops/destinations
+    selectedComponents?: UnifiedPlanComponent[]; // Components to generate (itinerary is always included)
 }
 
 export interface DayPlan {

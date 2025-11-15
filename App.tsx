@@ -1444,8 +1444,12 @@ const AppContent: React.FC = () => {
                 },
             };
 
+            // Only run steps that are selected and pending
+            const selectedComponents = data.selectedComponents || ['packing'];
             const parallelSteps: (keyof Omit<UnifiedPlanLoadingStatus, 'itinerary'>)[] = ['packing', 'food', 'apps', 'music', 'lingo'];
-            const stepsToRun = parallelSteps.filter(step => unifiedPlanLoadingStatus[step] === 'pending');
+            const stepsToRun = parallelSteps.filter(step => 
+              selectedComponents.includes(step) && unifiedPlanLoadingStatus[step] === 'pending'
+            );
 
             if (stepsToRun.length > 0) {
                 const generationPromises = stepsToRun.map(step => {
@@ -1472,8 +1476,19 @@ const AppContent: React.FC = () => {
     setItineraryAttemptCount(0);
     setUnifiedStepErrors({});
     
+    // Get selected components (default to ['packing'] if not specified)
+    const selectedComponents = data.selectedComponents || ['packing'];
+    
     // Reset loading status first to ensure useEffect triggers (set to non-pending first, then pending)
-    setUnifiedPlanLoadingStatus({ itinerary: 'cancelled', packing: 'cancelled', food: 'cancelled', apps: 'cancelled', music: 'cancelled', lingo: 'cancelled' });
+    // Only set pending for selected components, others set to cancelled
+    setUnifiedPlanLoadingStatus({ 
+      itinerary: 'cancelled', // Itinerary is always included, will be set to pending
+      packing: selectedComponents.includes('packing') ? 'cancelled' : 'cancelled',
+      food: selectedComponents.includes('food') ? 'cancelled' : 'cancelled',
+      apps: selectedComponents.includes('apps') ? 'cancelled' : 'cancelled',
+      music: selectedComponents.includes('music') ? 'cancelled' : 'cancelled',
+      lingo: selectedComponents.includes('lingo') ? 'cancelled' : 'cancelled',
+    });
     
     // Set the questionnaire data
     setInitialQuestionnaireData(data);
@@ -1481,8 +1496,16 @@ const AppContent: React.FC = () => {
     
     // Use a small timeout to ensure state updates are applied before setting to pending and navigating
     setTimeout(() => {
-      // Reset loading status to pending - this will trigger the useEffect
-      setUnifiedPlanLoadingStatus({ itinerary: 'pending', packing: 'pending', food: 'pending', apps: 'pending', music: 'pending', lingo: 'pending' });
+      // Reset loading status to pending only for selected components
+      // Itinerary is always pending (always included)
+      setUnifiedPlanLoadingStatus({ 
+        itinerary: 'pending', // Always included
+        packing: selectedComponents.includes('packing') ? 'pending' : 'cancelled',
+        food: selectedComponents.includes('food') ? 'pending' : 'cancelled',
+        apps: selectedComponents.includes('apps') ? 'pending' : 'cancelled',
+        music: selectedComponents.includes('music') ? 'pending' : 'cancelled',
+        lingo: selectedComponents.includes('lingo') ? 'pending' : 'cancelled',
+      });
       
       // Navigate to unified results page
       navigate('/results/unified');
