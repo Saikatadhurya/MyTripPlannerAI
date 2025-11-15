@@ -638,17 +638,57 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
 
             {/* Number of Travelers */}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
+              <label htmlFor="travelers" className="block text-sm font-semibold text-slate-700 mb-2">
                 Number of Travelers
               </label>
-              <input
-                type="number"
-                min="1"
-                max="20"
-                value={travelers}
-                onChange={(e) => setTravelers(parseInt(e.target.value) || 1)}
-                className="w-full px-4 py-3 rounded-lg border-2 border-slate-300 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-200"
-              />
+              <div className="flex items-center w-full bg-white border-2 border-slate-300 rounded-lg focus-within:ring-2 focus-within:ring-violet-500 focus-within:border-violet-500 transition">
+                <button 
+                  type="button" 
+                  onClick={() => setTravelers(Math.max(1, travelers - 1))} 
+                  disabled={travelers <= 1} 
+                  className="p-3 text-violet-600 rounded-l-lg hover:bg-violet-50 transition disabled:text-slate-300 disabled:cursor-not-allowed" 
+                  aria-label="Decrease number of travelers"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clipRule="evenodd" />
+                  </svg>
+                </button>
+                <input 
+                  id="travelers"
+                  type="text" 
+                  inputMode="numeric" 
+                  pattern="[0-9]*" 
+                  value={travelers === 0 ? '' : travelers} 
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    const num = parseInt(value, 10);
+                    if (!isNaN(num)) {
+                      setTravelers(num);
+                    } else if (value === '') {
+                      setTravelers(0);
+                    }
+                  }}
+                  onBlur={() => {
+                    let value = travelers;
+                    if (value < 1) value = 1;
+                    if (value > 20) value = 20;
+                    setTravelers(value);
+                  }}
+                  className="font-semibold text-lg text-center flex-grow tabular-nums w-full bg-transparent border-none text-gray-800 focus:ring-0 focus:outline-none" 
+                  aria-label="Number of travelers" 
+                />
+                <button 
+                  type="button" 
+                  onClick={() => setTravelers(Math.min(20, travelers + 1))} 
+                  disabled={travelers >= 20} 
+                  className="p-3 text-violet-600 rounded-r-lg hover:bg-violet-50 transition disabled:text-slate-300 disabled:cursor-not-allowed" 
+                  aria-label="Increase number of travelers"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              </div>
             </div>
 
             {/* Start Date */}
