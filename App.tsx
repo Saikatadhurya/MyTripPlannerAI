@@ -1447,8 +1447,10 @@ const AppContent: React.FC = () => {
             // Only run steps that are selected and pending
             const selectedComponents = data.selectedComponents || ['packing'];
             const parallelSteps: (keyof Omit<UnifiedPlanLoadingStatus, 'itinerary'>)[] = ['packing', 'food', 'apps', 'music', 'lingo'];
+            // Allow generating steps that are pending, even if they weren't initially selected
+            // This allows users to generate skipped components later
             const stepsToRun = parallelSteps.filter(step => 
-              selectedComponents.includes(step) && unifiedPlanLoadingStatus[step] === 'pending'
+              unifiedPlanLoadingStatus[step] === 'pending'
             );
 
             if (stepsToRun.length > 0) {
@@ -1464,7 +1466,7 @@ const AppContent: React.FC = () => {
         if (location.pathname === '/results/unified' && unifiedPlan.itinerary && unifiedPlanLoadingStatus.itinerary === 'done') {
             runParallelSteps();
         }
-    }, [location.pathname, unifiedPlan.itinerary, unifiedPlanLoadingStatus.itinerary, questionnaireDataForUnifiedPlan, generateStep, handleGeneratePackingList, handleGenerateFoodRecommendations, handleGenerateAppRecommendations, handleGenerateMusicRecommendations, handleGenerateLingoGuide]);
+    }, [location.pathname, unifiedPlan.itinerary, unifiedPlanLoadingStatus.itinerary, unifiedPlanLoadingStatus.packing, unifiedPlanLoadingStatus.food, unifiedPlanLoadingStatus.apps, unifiedPlanLoadingStatus.music, unifiedPlanLoadingStatus.lingo, questionnaireDataForUnifiedPlan, generateStep, handleGeneratePackingList, handleGenerateFoodRecommendations, handleGenerateAppRecommendations, handleGenerateMusicRecommendations, handleGenerateLingoGuide]);
 
 
   const handleGenerateUnifiedPlan = useCallback(async (data: QuestionnaireData) => {
@@ -1513,7 +1515,9 @@ const AppContent: React.FC = () => {
   }, [navigate, user]);
 
   const handleRegenerateUnifiedPlanStep = useCallback((step: keyof UnifiedPlanLoadingStatus) => {
-    if (!questionnaireDataForUnifiedPlan) return;
+    if (!questionnaireDataForUnifiedPlan) {
+      return;
+    }
     
     // Clear old data for the step being regenerated
     const planKey = stepToPlanKey(step);
@@ -1521,6 +1525,7 @@ const AppContent: React.FC = () => {
 
     // If itinerary is regenerated, all dependent steps must be regenerated too.
     if (step === 'itinerary') {
+        // Clear all plan data
         setUnifiedPlan({
             itinerary: null,
             packingList: null,
@@ -1529,23 +1534,53 @@ const AppContent: React.FC = () => {
             musicRecommendations: null,
             lingoRecommendations: null,
         });
-        setUnifiedPlanLoadingStatus({
-            itinerary: 'pending',
-            packing: 'pending',
-            food: 'pending',
-            apps: 'pending',
-            music: 'pending',
-            lingo: 'pending',
-        });
+        // Reset cancellation flags
+        cancellationFlags.current = {};
+        // Clear errors
         setUnifiedStepErrors({});
+        // Reset streamed text and attempt count
+        setItineraryStreamedText('');
+        setItineraryAttemptCount(0);
+        
+        // First set all to cancelled to ensure state change, then set to pending
+        setUnifiedPlanLoadingStatus({
+            itinerary: 'cancelled',
+            packing: 'cancelled',
+            food: 'cancelled',
+            apps: 'cancelled',
+            music: 'cancelled',
+            lingo: 'cancelled',
+        });
+        
+        // Use setTimeout to ensure the cancelled state is set before pending
+        setTimeout(() => {
+          // Set all to pending (regenerating everything)
+          setUnifiedPlanLoadingStatus({
+              itinerary: 'pending',
+              packing: 'pending',
+              food: 'pending',
+              apps: 'pending',
+              music: 'pending',
+              lingo: 'pending',
+          });
+        }, 50);
     } else {
-        // Just regenerate the single step
-        setUnifiedPlanLoadingStatus(prev => ({ ...prev, [step]: 'pending' }));
+        // Just regenerate the single step (even if it was skipped initially)
+        // Clear cancellation flag for this step
+        cancellationFlags.current[step] = false;
+        // Clear the error for this step
         setUnifiedStepErrors(prev => {
             const newErrors = { ...prev };
             delete newErrors[step];
             return newErrors;
         });
+        // First set to cancelled to ensure state change, then set to pending
+        setUnifiedPlanLoadingStatus(prev => ({ ...prev, [step]: 'cancelled' }));
+        // Use setTimeout to ensure the cancelled state is set before pending
+        setTimeout(() => {
+            // Set to pending to trigger regeneration (even if it was skipped initially)
+            setUnifiedPlanLoadingStatus(prev => ({ ...prev, [step]: 'pending' }));
+        }, 50);
     }
   }, [questionnaireDataForUnifiedPlan]);
 

@@ -395,7 +395,7 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
             );
         }
         
-        const renderActionCard = (title: string, message: string) => {
+        const renderActionCard = (title: string, message: string, stepToRegenerate: Tab) => {
             // Check if it's a quota/API key error
             const isQuotaOrApiKeyError = message.includes('[429]') || 
                                         message.toLowerCase().includes('quota') || 
@@ -438,7 +438,7 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
                         </div>
                         {!isQuotaOrApiKeyError && (
                         <button
-                            onClick={() => onRegenerateStep(activeTab)}
+                            onClick={() => onRegenerateStep(stepToRegenerate)}
                             className="mt-3 sm:mt-4 inline-flex items-center px-3 py-1.5 sm:px-4 sm:py-2 bg-violet-600 text-white font-semibold rounded-full hover:bg-violet-700 transition-all duration-300 shadow-md text-xs sm:text-sm"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.898 2.566l-1.581.53a5.002 5.002 0 00-8.917-1.789v.962a1 1 0 01-2 0V3a1 1 0 011-1zm12 15a1 1 0 01-1-1v-2.101a7.002 7.002 0 01-11.898-2.566l1.581-.53a5.002 5.002 0 008.917 1.789v-.962a1 1 0 012 0V17a1 1 0 01-1 1z" clipRule="evenodd" /></svg>
@@ -461,10 +461,29 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
         };
 
         if (currentStatus === 'error') {
-            return renderActionCard(`Failed to Generate ${tabName}`, stepErrors[activeTab] || `An unknown error occurred.`);
+            return renderActionCard(`Failed to Generate ${tabName}`, stepErrors[activeTab] || `An unknown error occurred.`, activeTab);
         }
         if (currentStatus === 'cancelled') {
-            return renderActionCard(`${tabName} Generation Cancelled`, `The process was cancelled. You can try generating it again.`);
+            return renderActionCard(`${tabName} Generation Cancelled`, `This component was skipped initially. You can generate it now.`, activeTab);
+        }
+        // If no data and not loading, show generate button (for skipped components)
+        if (!currentData && currentStatus !== 'loading' && currentStatus !== 'pending') {
+            return (
+                <div className="text-center py-12 sm:py-16 md:py-20">
+                    <div className="space-y-4">
+                        <p className="text-sm sm:text-base text-slate-600">This component was not included in your initial plan.</p>
+                        <button
+                            onClick={() => onRegenerateStep(activeTab)}
+                            className="inline-flex items-center px-4 py-2 sm:px-6 sm:py-3 bg-violet-600 text-white font-semibold rounded-full hover:bg-violet-700 transition-all duration-300 shadow-md text-sm sm:text-base"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
+                            </svg>
+                            Generate {tabName}
+                        </button>
+                    </div>
+                </div>
+            );
         }
         if (!currentData) {
              return <div className="text-center py-12 sm:py-16 md:py-20 text-sm sm:text-base text-slate-500">Waiting for data...</div>;
@@ -472,15 +491,15 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
 
         switch (activeTab) {
             case 'itinerary':
-                return <ItineraryPreview itinerary={plan.itinerary!} onRegenerate={onRegenerate} isUnifiedView />;
+                return <ItineraryPreview itinerary={plan.itinerary!} onRegenerate={() => onRegenerateStep('itinerary')} isUnifiedView />;
             case 'packing':
-                return <PackingListPreview packingList={plan.packingList!} onRegenerate={onRegenerate} isUnifiedView />;
+                return <PackingListPreview packingList={plan.packingList!} onRegenerate={() => onRegenerateStep('packing')} isUnifiedView />;
             case 'food':
-                return <FoodFinderResult recommendations={plan.foodRecommendations!} onRegenerate={onRegenerate} isUnifiedView />;
+                return <FoodFinderResult recommendations={plan.foodRecommendations!} onRegenerate={() => onRegenerateStep('food')} isUnifiedView />;
             case 'apps':
-                return <AppFinderResult recommendations={plan.appRecommendations!} onRegenerate={onRegenerate} isUnifiedView />;
+                return <AppFinderResult recommendations={plan.appRecommendations!} onRegenerate={() => onRegenerateStep('apps')} isUnifiedView />;
             case 'music':
-                return <MusicFinderResult recommendations={plan.musicRecommendations!} onRegenerate={onRegenerate} isUnifiedView />;
+                return <MusicFinderResult recommendations={plan.musicRecommendations!} onRegenerate={() => onRegenerateStep('music')} isUnifiedView />;
             case 'lingo':
                 return <LingoFinderResult recommendations={plan.lingoRecommendations!} onRegenerate={() => onRegenerateStep('lingo')} isUnifiedView />;
             default:
@@ -573,12 +592,14 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
                                         <div className="relative flex-shrink-0">
                                             {tab.icon}
                                             {/* Status Indicator Dot */}
-                                            {status !== 'pending' && (
-                                                <span className={`absolute -top-1 -right-1 block h-3.5 w-3.5 rounded-full border-2 border-white
-                                                    ${status === 'loading' && 'animate-pulse bg-blue-500'}
-                                                    ${status === 'done' && dataExists && 'bg-green-500'}
-                                                    ${(status === 'error' || status === 'cancelled') && 'bg-red-500'}
-                                                `}></span>
+                                            {(status === 'loading' || status === 'pending') && (
+                                                <span className="absolute -top-1 -right-1 block h-3.5 w-3.5 rounded-full border-2 border-white animate-pulse bg-blue-500"></span>
+                                            )}
+                                            {status === 'done' && dataExists && (
+                                                <span className="absolute -top-1 -right-1 block h-3.5 w-3.5 rounded-full border-2 border-white bg-green-500"></span>
+                                            )}
+                                            {(status === 'error' || (status === 'cancelled' && !dataExists)) && (
+                                                <span className="absolute -top-1 -right-1 block h-3.5 w-3.5 rounded-full border-2 border-white bg-red-500"></span>
                                             )}
                                         </div>
                                         <span className="text-xs font-semibold md:text-sm">{tab.name}</span>
