@@ -51,7 +51,10 @@ const UnifiedTripItem: React.FC<UnifiedTripItemProps> = ({ trip, onView, onDelet
   };
 
   return (
-    <div className="bg-gradient-to-br from-white via-blue-50/30 to-violet-50/30 rounded-2xl shadow-lg border border-white/60 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 overflow-hidden group">
+    <div 
+      onClick={() => onView(trip)}
+      className="bg-gradient-to-br from-white via-blue-50/30 to-violet-50/30 rounded-2xl shadow-lg border border-white/60 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 overflow-hidden group cursor-pointer"
+    >
       {/* Header with gradient background */}
       <div className="bg-gradient-to-r from-blue-600 to-violet-600 p-6 text-white relative overflow-hidden">
         <div className="absolute inset-0 bg-black/10"></div>
@@ -126,7 +129,7 @@ const UnifiedTripItem: React.FC<UnifiedTripItemProps> = ({ trip, onView, onDelet
         )}
 
         {/* Action buttons */}
-        <div className="flex gap-3">
+        <div className="flex gap-3" onClick={(e) => e.stopPropagation()}>
           <button
             onClick={() => onView(trip)}
             className="flex-1 bg-gradient-to-r from-blue-600 to-violet-600 text-white px-4 py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-violet-700 transition-all duration-300 shadow-md hover:shadow-lg flex items-center justify-center gap-2 group-hover:scale-105"
@@ -239,7 +242,10 @@ const HistoryItem: React.FC<HistoryItemProps> = ({ item, onDelete, onView, onSha
   };
 
   return (
-    <div className="bg-gradient-to-br from-white via-blue-50/20 to-violet-50/20 rounded-2xl shadow-lg border border-white/60 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 overflow-hidden group">
+    <div 
+      onClick={() => onView(item)}
+      className="bg-gradient-to-br from-white via-blue-50/20 to-violet-50/20 rounded-2xl shadow-lg border border-white/60 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 overflow-hidden group cursor-pointer"
+    >
       {/* Header with gradient background */}
       <div className={`bg-gradient-to-r ${getTypeColor(item.recommendationType)} p-6 text-white relative overflow-hidden`}>
         <div className="absolute inset-0 bg-black/10"></div>
@@ -301,7 +307,7 @@ const HistoryItem: React.FC<HistoryItemProps> = ({ item, onDelete, onView, onSha
         )}
 
         {/* Action buttons */}
-        <div className="flex gap-3">
+        <div className="flex gap-3" onClick={(e) => e.stopPropagation()}>
           <button
             onClick={() => onView(item)}
             className={`flex-1 bg-gradient-to-r ${getTypeColor(item.recommendationType)} text-white px-4 py-3 rounded-xl font-semibold hover:opacity-90 transition-all duration-300 shadow-md hover:shadow-lg flex items-center justify-center gap-2 group-hover:scale-105`}

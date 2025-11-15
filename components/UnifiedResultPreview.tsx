@@ -538,8 +538,8 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
                 </div>
             </header>
             
-            {/* Share buttons - Only show when plan is complete and saved */}
-            {isPlanComplete && savedTripId && !isHistoryView && (
+            {/* Share buttons - Show from the beginning */}
+            {!isHistoryView && (
                 <div className="flex items-center justify-center gap-2 sm:gap-3 py-3 sm:py-4 no-print">
                     <button
                         onClick={handleCopyLink}
