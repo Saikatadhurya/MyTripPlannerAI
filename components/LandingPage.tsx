@@ -13,11 +13,12 @@ interface LandingPageProps {
   onStartAppFinder: () => void;
   onStartMusicFinder: () => void;
   onStartLingoFinder: () => void;
+  onStartWeekendExplorer: () => void;
   onOpenAuthModal: () => void;
   onGoToBlog: () => void;
 }
 
-const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPlanItinerary, onStartPacking, onStartFoodFinder, onStartAppFinder, onStartMusicFinder, onStartLingoFinder, onOpenAuthModal, onGoToBlog }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPlanItinerary, onStartPacking, onStartFoodFinder, onStartAppFinder, onStartMusicFinder, onStartLingoFinder, onStartWeekendExplorer, onOpenAuthModal, onGoToBlog }) => {
   const [destinations, setDestinations] = useState<PopularDestination[]>([]);
   const hasCheckedAuth = useRef(false);
   const authCheckTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -232,7 +233,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
             <p className="mt-2 sm:mt-3 md:mt-4 lg:mt-2 xl:mt-3 text-base sm:text-lg md:text-lg lg:text-sm xl:text-base 2xl:text-lg text-slate-700 max-w-2xl lg:max-w-none mx-auto font-medium px-2">
               Complete travel planning made simple. Just tell us where you want to go.
             </p>
-             <div className="mt-4 sm:mt-6 md:mt-8 lg:mt-4 xl:mt-5 2xl:mt-6">
+             <div className="mt-4 sm:mt-6 md:mt-8 lg:mt-4 xl:mt-5 2xl:mt-6 flex flex-col gap-3 sm:gap-4 items-center justify-center">
               <button
                 onClick={(e) => {
                   e.stopPropagation(); // Prevent parent click handler
@@ -242,7 +243,16 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
               >
                 ✨ Build Your Ultimate Itinerary
               </button>
-              <p className="mt-2 sm:mt-3 md:mt-4 lg:mt-2 xl:mt-3 text-xs sm:text-sm md:text-base lg:text-xs xl:text-sm 2xl:text-base text-violet-700 font-semibold tracking-wide px-2">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation(); // Prevent parent click handler
+                  onStartWeekendExplorer();
+                }}
+                className="w-full sm:w-auto inline-block px-5 py-2.5 sm:px-6 sm:py-3 md:px-8 md:py-3.5 lg:px-6 lg:py-2.5 xl:px-8 xl:py-3 2xl:px-10 2xl:py-3.5 font-bold rounded-full text-sm sm:text-base md:text-lg lg:text-sm xl:text-base 2xl:text-lg shadow-xl sm:shadow-2xl transition-all duration-300 transform focus:outline-none focus:ring-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-emerald-500/50 hover:from-emerald-600 hover:to-teal-700 hover:shadow-xl sm:hover:shadow-2xl hover:shadow-emerald-500/60 hover:scale-105 sm:hover:scale-110 focus:ring-emerald-300 whitespace-nowrap"
+              >
+                🗺️ Weekend Explorer
+              </button>
+              <p className="mt-2 sm:mt-3 md:mt-4 lg:mt-2 xl:mt-3 text-xs sm:text-sm md:text-base lg:text-xs xl:text-sm 2xl:text-base text-violet-700 font-semibold tracking-wide px-2 text-center">
                 Includes: Itinerary, Packing, Food, Apps, Music & Language Guides
               </p>
             </div>

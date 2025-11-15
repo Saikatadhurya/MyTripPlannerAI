@@ -672,6 +672,10 @@ const AppContent: React.FC = () => {
     navigate('/lingo');
   }, [navigate, user]);
 
+  const handleStartWeekendExplorer = useCallback(() => {
+    navigate('/weekend-explorer');
+  }, [navigate]);
+
   const handleBackToHome = useCallback(() => {
     setItinerary(null);
     setPackingList(null);
@@ -1460,18 +1464,29 @@ const AppContent: React.FC = () => {
 
 
   const handleGenerateUnifiedPlan = useCallback(async (data: QuestionnaireData) => {
-
-    setInitialQuestionnaireData(data);
-    setQuestionnaireDataForUnifiedPlan(data);
+    // Reset all state first - clear everything to ensure clean state
+    cancellationFlags.current = {};
     setUnifiedPlan({ itinerary: null, packingList: null, foodRecommendations: null, appRecommendations: null, musicRecommendations: null, lingoRecommendations: null });
     setError(null);
     setItineraryStreamedText('');
     setItineraryAttemptCount(0);
     setUnifiedStepErrors({});
-    cancellationFlags.current = {};
-    navigate('/results/unified');
-    // This state change will trigger the pipeline `useEffect`
-    setUnifiedPlanLoadingStatus({ itinerary: 'pending', packing: 'pending', food: 'pending', apps: 'pending', music: 'pending', lingo: 'pending' });
+    
+    // Reset loading status first to ensure useEffect triggers (set to non-pending first, then pending)
+    setUnifiedPlanLoadingStatus({ itinerary: 'cancelled', packing: 'cancelled', food: 'cancelled', apps: 'cancelled', music: 'cancelled', lingo: 'cancelled' });
+    
+    // Set the questionnaire data
+    setInitialQuestionnaireData(data);
+    setQuestionnaireDataForUnifiedPlan(data);
+    
+    // Use a small timeout to ensure state updates are applied before setting to pending and navigating
+    setTimeout(() => {
+      // Reset loading status to pending - this will trigger the useEffect
+      setUnifiedPlanLoadingStatus({ itinerary: 'pending', packing: 'pending', food: 'pending', apps: 'pending', music: 'pending', lingo: 'pending' });
+      
+      // Navigate to unified results page
+      navigate('/results/unified');
+    }, 10);
   }, [navigate, user]);
 
   const handleRegenerateUnifiedPlanStep = useCallback((step: keyof UnifiedPlanLoadingStatus) => {
@@ -1656,6 +1671,7 @@ const AppContent: React.FC = () => {
       onStartAppFinder={handleStartAppFinder}
       onStartMusicFinder={handleStartMusicFinder}
       onStartLingoFinder={handleStartLingoFinder}
+      onStartWeekendExplorer={handleStartWeekendExplorer}
       onBackToHome={handleBackToHome}
       onViewHistory={() => navigate('/history')}
       onGoToBlog={() => navigate('/blog')}

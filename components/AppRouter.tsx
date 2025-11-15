@@ -28,6 +28,7 @@ import AuthModal from './AuthModal';
 import ShareableRecommendation from './ShareableRecommendation';
 import TokenUsage from './TokenUsage';
 import GetApiKey from './GetApiKey';
+import WeekendExplorer from './WeekendExplorer';
 
 // Import route protection components
 import ProtectedRoute from './ProtectedRoute';
@@ -52,6 +53,7 @@ interface AppRouterProps {
   onStartAppFinder: () => void;
   onStartMusicFinder: () => void;
   onStartLingoFinder: () => void;
+  onStartWeekendExplorer: () => void;
   onBackToHome: () => void;
   onViewHistory: () => void;
   onGoToBlog: () => void;
@@ -109,6 +111,7 @@ const AppRouter: React.FC<AppRouterProps> = ({
   onStartAppFinder,
   onStartMusicFinder,
   onStartLingoFinder,
+  onStartWeekendExplorer,
   onBackToHome,
   onViewHistory,
   onGoToBlog,
@@ -159,6 +162,7 @@ const AppRouter: React.FC<AppRouterProps> = ({
               onStartAppFinder={onStartAppFinder}
               onStartMusicFinder={onStartMusicFinder}
               onStartLingoFinder={onStartLingoFinder}
+              onStartWeekendExplorer={onStartWeekendExplorer}
               onOpenAuthModal={onOpenAuthModal}
               onViewHistory={onViewHistory}
               onGoToBlog={onGoToBlog}
@@ -226,6 +230,21 @@ const AppRouter: React.FC<AppRouterProps> = ({
               onBack={onBackToHome}
               error={formError}
               user={user}
+              onOpenAuthModal={onOpenAuthModal}
+            />
+          </PublicRoute>
+        } 
+      />
+
+      <Route 
+        path="/weekend-explorer" 
+        element={
+          <PublicRoute user={user}>
+            <WeekendExplorer 
+              key={`weekend-${user?.id}-${user?.gemini_api_key ? 'has-key' : 'no-key'}`}
+              user={user}
+              onGenerateUnifiedPlan={onGenerateUnifiedPlan}
+              onBack={onBackToHome}
               onOpenAuthModal={onOpenAuthModal}
             />
           </PublicRoute>

@@ -1,0 +1,182 @@
+import { GoogleGenAI } from "@google/genai";
+import { extractJson, cleanCitations } from './jsonUtils';
+import { CookieUtils } from './cookieUtils';
+import { Vibe } from '../types';
+
+export interface WeekendPackage {
+  id: string;
+  destination: string;
+  title: string;
+  description: string;
+  days: number;
+  highlights: string[];
+  estimatedBudget: string;
+  bestFor: string[];
+  distance: string;
+  travelTime: string;
+  imageUrl?: string;
+}
+
+export interface WeekendExplorerRequest {
+  location: string;
+  travelers: number;
+  vibes: Vibe[];
+  language: string;
+  currency: string;
+  startDate: string;
+}
+
+export const searchWeekendPackages = async (
+  request: WeekendExplorerRequest,
+  userApiKey?: string
+): Promise<WeekendPackage[]> => {
+  const { apiKey, isUsingDefaultKey } = await CookieUtils.getApiKeyWithSource(userApiKey);
+  
+  if (!apiKey || apiKey.trim().length === 0) {
+    throw new Error("Invalid API key: key is empty or whitespace only");
+  }
+  
+  const cleanApiKey = apiKey.trim();
+  const ai = new GoogleGenAI({ apiKey: cleanApiKey });
+
+  const vibeText = request.vibes.join(', ');
+  const startDateObj = new Date(request.startDate);
+  const dayOfWeek = startDateObj.toLocaleDateString('en-US', { weekday: 'long' });
+  
+  const prompt = `You are an expert travel planner specializing in weekend getaways. Search for nearby outdoor weekend getaway destinations and packages from "${request.location}" that can be covered in 2-4 days (including Saturday and Sunday).
+
+**User Requirements:**
+- Starting Location: ${request.location}
+- Number of Travelers: ${request.travelers}
+- Preferred Vibes: ${vibeText}
+- Start Date: ${request.startDate} (${dayOfWeek})
+- Language: ${request.language}
+- Currency: ${request.currency}
+
+**Search Criteria:**
+1. Find 4-6 weekend getaway destinations/packages that are:
+   - Within reasonable driving distance (max 6-8 hours) from ${request.location}
+   - Suitable for 2-4 day trips (including Saturday and Sunday)
+   - Outdoor-focused destinations (hill stations, beaches, nature reserves, adventure spots, etc.)
+   - Perfect for weekend escapes
+
+2. For each package, provide:
+   - Destination name
+   - Attractive title
+   - Brief description (2-3 sentences)
+   - Number of days (2-4 days)
+   - Top 3-5 highlights/attractions
+   - Estimated budget range in ${request.currency}
+   - Best suited for (based on vibes: ${vibeText})
+   - Approximate distance from ${request.location}
+   - Approximate travel time
+
+3. Prioritize destinations that match the vibes: ${vibeText}
+
+**Response Format:**
+Return a JSON array of packages. Each package must have:
+{
+  "id": "unique-id",
+  "destination": "destination name",
+  "title": "attractive package title",
+  "description": "brief description",
+  "days": 2-4,
+  "highlights": ["highlight1", "highlight2", "highlight3"],
+  "estimatedBudget": "budget range in ${request.currency}",
+  "bestFor": ["vibe1", "vibe2"],
+  "distance": "approximate distance",
+  "travelTime": "approximate travel time"
+}
+
+**CRITICAL RULES:**
+- Return ONLY valid JSON array starting with '[' and ending with ']'
+- NO markdown, NO code blocks, NO explanatory text
+- All packages must be feasible for weekend trips (2-4 days)
+- Use Google Search to find real, current information about weekend packages and destinations
+- Ensure all destinations are outdoor gateways suitable for weekend trips
+- Budget should be realistic and in ${request.currency}
+- Distance and travel time should be accurate
+
+Search for current weekend packages and popular weekend destinations near ${request.location}.`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      config: {
+        tools: [{ googleSearch: {} }],
+        thinkingConfig: { thinkingBudget: 0 },
+      }
+    });
+
+    const fullText = response.text;
+    
+    if (!fullText) {
+      throw new Error("The AI returned an empty response.");
+    }
+    
+    const jsonString = extractJson(fullText);
+    const parsedJson = JSON.parse(jsonString);
+
+    if (parsedJson.error && parsedJson.error.code) {
+      const { code, message } = parsedJson.error;
+      throw new Error(`[${code}] ${message}`);
+    }
+
+    const cleanedJson = cleanCitations(parsedJson);
+
+    // Ensure it's an array
+    if (!Array.isArray(cleanedJson)) {
+      throw new Error("Invalid response format: expected an array");
+    }
+
+    // Add unique IDs if missing and validate structure
+    const packages: WeekendPackage[] = cleanedJson.map((pkg: any, index: number) => ({
+      id: pkg.id || `package-${index + 1}`,
+      destination: pkg.destination || 'Unknown',
+      title: pkg.title || pkg.destination || 'Weekend Package',
+      description: pkg.description || '',
+      days: pkg.days || 3,
+      highlights: Array.isArray(pkg.highlights) ? pkg.highlights : [],
+      estimatedBudget: pkg.estimatedBudget || 'Not specified',
+      bestFor: Array.isArray(pkg.bestFor) ? pkg.bestFor : [],
+      distance: pkg.distance || 'Not specified',
+      travelTime: pkg.travelTime || 'Not specified',
+      imageUrl: pkg.imageUrl,
+    }));
+
+    return packages;
+
+  } catch (error: any) {
+    console.error("Error searching for weekend packages:", error);
+    
+    const errorMessage = error?.message || '';
+    const errorString = JSON.stringify(error || {});
+    const nestedError = error?.error;
+    const nestedErrorMessage = nestedError?.message || '';
+    const nestedErrorCode = nestedError?.code;
+    const nestedErrorStatus = nestedError?.status;
+    
+    const errorCode = nestedErrorCode || error?.code || (nestedErrorStatus === 'RESOURCE_EXHAUSTED' ? 429 : null);
+    
+    const combinedErrorText = (errorMessage + errorString + nestedErrorMessage).toLowerCase();
+    const isQuotaError = errorCode === 429 || 
+                        nestedErrorStatus === 'RESOURCE_EXHAUSTED' ||
+                        combinedErrorText.includes("quota") || 
+                        combinedErrorText.includes("rate limit") || 
+                        combinedErrorText.includes("429") || 
+                        combinedErrorText.includes("exceeded") ||
+                        combinedErrorText.includes("resource_exhausted");
+    
+    if (isQuotaError) {
+      if (isUsingDefaultKey) {
+        throw new Error('The default API key has reached its quota limit. Please set your own Gemini API key in your profile settings to continue.');
+      } else {
+        throw new Error('Your Gemini API key has reached its quota limit. Please set a new Gemini API key in your profile settings to continue.');
+      }
+    }
+    
+    throw error;
+  }
+};
+

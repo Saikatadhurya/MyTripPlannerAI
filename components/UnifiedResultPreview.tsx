@@ -53,6 +53,8 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
     const [savedTripId, setSavedTripId] = useState<string | null>(null);
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
     const savedTypesRef = React.useRef<Set<string>>(new Set());
+    const isSavingRef = React.useRef<boolean>(false);
+    const savedTripIdRef = React.useRef<string | null>(null);
     const { 
         saveUnifiedTripRecommendations,
         saveItineraryRecommendation,
@@ -147,14 +149,20 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
         });
     }, [activeTab, onTabChangeScrollToTop]);
 
+    // Sync savedTripIdRef with savedTripId state
+    useEffect(() => {
+        savedTripIdRef.current = savedTripId;
+    }, [savedTripId]);
+
     // Incrementally save unified trip to history as each part becomes available
     useEffect(() => {
-        if (!questionnaireData || isHistoryView) return;
+        if (!questionnaireData || isHistoryView || isSavingRef.current) return;
 
         const availableTypes: Array<{ key: string; saver: () => Promise<string | null> }> = [];
         const destination = questionnaireData.destination;
         const language = questionnaireData.language || 'en';
         const tripName = `${destination} Trip - ${new Date().toLocaleDateString()}`;
+        const currentTripId = savedTripIdRef.current;
 
         if (plan.itinerary && !savedTypesRef.current.has('itinerary')) {
             availableTypes.push({
@@ -166,7 +174,7 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
                         destination,
                         language,
                         questionnaireData,
-                        savedTripId || undefined,
+                        currentTripId || undefined,
                         tripName
                     );
                 }
@@ -182,7 +190,7 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
                         destination,
                         language,
                         questionnaireData,
-                        savedTripId || undefined,
+                        currentTripId || undefined,
                         tripName
                     );
                 }
@@ -198,7 +206,7 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
                         destination,
                         language,
                         questionnaireData,
-                        savedTripId || undefined,
+                        currentTripId || undefined,
                         tripName
                     );
                 }
@@ -214,7 +222,7 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
                         destination,
                         language,
                         questionnaireData,
-                        savedTripId || undefined,
+                        currentTripId || undefined,
                         tripName
                     );
                 }
@@ -230,7 +238,7 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
                         destination,
                         language,
                         questionnaireData,
-                        savedTripId || undefined,
+                        currentTripId || undefined,
                         tripName
                     );
                 }
@@ -246,7 +254,7 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
                         destination,
                         language,
                         questionnaireData,
-                        savedTripId || undefined,
+                        currentTripId || undefined,
                         tripName
                     );
                 }
@@ -256,8 +264,14 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
         if (availableTypes.length === 0) return;
 
         const run = async () => {
+            // Prevent concurrent saves
+            if (isSavingRef.current) return;
+            isSavingRef.current = true;
+
             try {
-                if (!savedTripId) {
+                const currentTripId = savedTripIdRef.current;
+                
+                if (!currentTripId) {
                     // First-time save: batch-save available types to create a unified trip and obtain tripId
                     const recs = availableTypes.map(t => {
                         const type = t.key;
@@ -272,6 +286,7 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
                         tripName
                     );
                     if (saveResult && saveResult.tripId) {
+                        savedTripIdRef.current = saveResult.tripId;
                         setSavedTripId(saveResult.tripId);
                         // Only mark types that were successfully saved
                         saveResult.successfulTypes.forEach(type => {
@@ -305,11 +320,13 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
             } catch (error) {
                 console.error('Failed to save unified trip recommendation(s):', error);
                 // Don't mark anything as saved if the entire operation fails
+            } finally {
+                isSavingRef.current = false;
             }
         };
 
         run();
-    }, [plan, questionnaireData, isHistoryView, savedTripId, saveUnifiedTripRecommendations, saveItineraryRecommendation, savePackingRecommendation, saveFoodRecommendation, saveAppRecommendation, saveMusicRecommendation, saveLingoRecommendation]);
+    }, [plan, questionnaireData, isHistoryView, saveUnifiedTripRecommendations, saveItineraryRecommendation, savePackingRecommendation, saveFoodRecommendation, saveAppRecommendation, saveMusicRecommendation, saveLingoRecommendation]);
     
     const handleCopyLink = async () => {
         if (!savedTripId) {
