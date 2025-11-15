@@ -11,27 +11,6 @@ Disallow: /results/
 Disallow: /auth
 Disallow: /test-router
 
-# Allow all main public pages for SEO (all form pages are now publicly accessible)
-Allow: /
-Allow: /contact
-Allow: /plan
-Allow: /itinerary
-Allow: /packing
-Allow: /food
-Allow: /apps
-Allow: /music
-Allow: /lingo
-Allow: /get-api-key
-Allow: /share/
-
-# Allow user pages (will redirect if not authenticated, but pages exist)
-Allow: /profile
-Allow: /history
-Allow: /token-usage
-
-# Crawl-delay for better server performance
-Crawl-delay: 1
-
 # Sitemap location
 Sitemap: https://www.planmytripai.in/sitemap.xml
 
