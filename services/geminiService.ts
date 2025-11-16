@@ -227,8 +227,9 @@ export const generateItinerary = async (
   const ai = new GoogleGenAI({ apiKey: cleanApiKey });
   
   // Build list of all destinations including stops
-  // For Standard trips, include startPoint as a destination to visit if it's not a Car/Bike trip
-  const shouldIncludeStartPoint = tripType === 'Standard' && startPoint && startPoint.trim().length > 0;
+  // For Standard trips, include startPoint as a destination to visit if it's not a Car/Bike trip AND not a round trip
+  // For Standard round trips, the starting location should NOT be visited - only used as departure/return point
+  const shouldIncludeStartPoint = tripType === 'Standard' && startPoint && startPoint.trim().length > 0 && !isRoundTrip;
   
   // For Standard trips with multiple stops, destination should be both start and end point
   const isStandardMultiStop = tripType === 'Standard' && stops && stops.length > 0;
@@ -249,8 +250,9 @@ export const generateItinerary = async (
     allDestinations = [destination];
   }
   
-  // Add startPoint as a destination for Standard trips (not Car/Bike) when there are no stops
+  // Add startPoint as a destination for Standard trips (not Car/Bike, not round trip) when there are no stops
   // This ensures the source destination is also planned if it's a Standard trip without stops
+  // For Standard round trips, startPoint is NOT added as it's only a departure/return point, not a destination to visit
   // StartPoint should be at the beginning of the route
   if (shouldIncludeStartPoint && !allDestinations.includes(startPoint) && (!stops || stops.length === 0)) {
     allDestinations = [startPoint, ...allDestinations];
@@ -430,21 +432,29 @@ export const generateItinerary = async (
       `;
   } else if (tripType === 'Standard' && isRoundTrip && startPoint) {
       roundTripInstructions = `
-      CRITICAL INSTRUCTION - STANDARD MULTI-STOP TOUR (PUBLIC TRANSPORT):
-      This is a multi-stop round trip tour request. The user wants to travel from "${startPoint}", cover a series of interesting locations via public transport, and return to "${startPoint}" within ${days} days. The main destination of interest is "${destination}".
+      CRITICAL INSTRUCTION - STANDARD ROUND TRIP TOUR (PUBLIC TRANSPORT):
+      This is a Standard round trip tour request. The user wants to travel from "${startPoint}", cover a series of interesting locations via public transport, and return to "${startPoint}" within ${days} days. The main destination of interest is "${destination}".
+
+      **🚫 CRITICAL - STARTING LOCATION NOT VISITED:**
+      - The starting location "${startPoint}" is ONLY a departure and return point. DO NOT include it as a destination to visit or explore.
+      - DO NOT add "${startPoint}" to the 'coveredDestinations' array.
+      - DO NOT plan activities or sightseeing in "${startPoint}" - it is only used for departure and return.
+      - The first day should start with travel FROM "${startPoint}" to the first destination.
+      - The final day should end with return travel TO "${startPoint}" (arrival only, no activities there).
 
       1.  **Route & Transport Planning**:
           -   **A. Itinerary Density & Maximization (CRITICAL):** Your primary goal is to **maximize the number of interesting and feasible places covered** within the given **${days} days**, using public transport, adhering to the MAXIMALIST & EFFICIENT philosophy outlined above. A longer duration MUST result in a richer, denser itinerary with more stops, not just more days in the same few cities. You MUST intelligently add relevant destinations to create a comprehensive tour circuit that makes full and enjoyable use of the time. For example, a 15-day trip should cover significantly more cities than a 5-day trip.
-          -   **B. Route Design & Transport Details:** Design a logical, sequential tour circuit starting and ending at "${startPoint}". The route must maximize sightseeing of famous places based on the vibe: "${vibe.join(', ')}". The farthest point should be near "${destination}". Unlike a road trip, the travel between cities/stops MUST be planned using the most efficient and budget-appropriate public transport. Provide realistic options like **trains** (mentioning class options), **buses** (mentioning carrier types like Volvo/sleeper), **shared cars**, or **flights** if the distance is significant.
+          -   **B. Route Design & Transport Details:** Design a logical, sequential tour circuit starting FROM "${startPoint}" and ending back at "${startPoint}". The route must maximize sightseeing of famous places based on the vibe: "${vibe.join(', ')}". The farthest point should be near "${destination}". Unlike a road trip, the travel between cities/stops MUST be planned using the most efficient and budget-appropriate public transport. Provide realistic options like **trains** (mentioning class options), **buses** (mentioning carrier types like Volvo/sleeper), **shared cars**, or **flights** if the distance is significant.
 
       2.  **Distance & Time Accuracy with Traffic/Transport Delays (CRITICAL)**: You MUST use your search capabilities to get accurate travel distances and realistic travel times for the suggested mode of public transport (train, bus, etc.) between all stops in the circuit. **CRITICAL**: Account for potential delays due to traffic (for buses/road transport), train schedules, and typical public transport delays. For road-based public transport, research traffic patterns and peak hours that might affect bus/car travel times. These realistic time estimates MUST be reflected in the daily 'activities' descriptions and 'transport' suggestions. For example, mention "Travel by bus from City A to City B (**approx. 250 km, 5-6 hours including typical traffic delays**)". Inaccurate details or ignoring traffic/transport delays are critical failures.
 
       3.  **Structured Output - This is MANDATORY**:
-          -   **coveredDestinations**: This array MUST list each major city/stop of the tour circuit *in the order they are visited*. For each stop, provide the detailed information (history, culture, etc.).
+          -   **coveredDestinations**: This array MUST list each major city/stop of the tour circuit *in the order they are visited*. **DO NOT include "${startPoint}" in this array** - it is only a departure/return point, not a destination to visit. For each stop, provide the detailed information (history, culture, etc.).
           -   **plan**: The daily plan MUST correspond directly to the tour circuit.
+              -   Day 1 should start with: "Travel from "${startPoint}" to [First Destination] via [transport mode]" - do NOT include activities in "${startPoint}".
               -   Each day's **title** should clearly state the travel segment, for example: 'Day 3: Travel from Agra to Jaipur via Train & Local Sightseeing'.
               -   The **activities** for a travel day should include the journey itself (mentioning approximate duration and mode of transport) and then activities upon arrival at the new destination.
-              -   The final days of the plan MUST cover the return journey, possibly via intermediate stops, back to "${startPoint}".
+              -   The final day of the plan MUST cover the return journey back to "${startPoint}" (arrival only, no activities or sightseeing in "${startPoint}").
 
       4.  **Local Transport**: For days spent exploring a destination (not traveling between cities), you should suggest local transport options (e.g., metro, ride-sharing, auto-rickshaws, taxis) that are appropriate for the user's budget.
       `;

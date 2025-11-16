@@ -11,15 +11,72 @@ const parseBold = (text: string | undefined) => {
 const getWeatherIcon = (tempString: string | undefined): React.ReactNode => {
     if (!tempString) return <span className="text-4xl" role="img" aria-label="thermometer">🌡️</span>;
     
-    const matches = tempString.match(/-?\d+/g);
-    if (!matches) return <span className="text-4xl" role="img" aria-label="thermometer">🌡️</span>;
+    const weatherText = tempString.toLowerCase();
     
-    const temps = matches.map(Number);
-    const avgTemp = temps.reduce((a, b) => a + b, 0) / temps.length;
+    // First, check weather description keywords for more accurate icon selection
+    // Check more specific conditions first
+    if (weatherText.includes('partly cloudy') || weatherText.includes('partly cloud')) {
+        return <span className="text-4xl" role="img" aria-label="sun behind cloud">⛅</span>;
+    }
+    if (weatherText.includes('sunny') || weatherText.includes('clear')) {
+        return <span className="text-4xl" role="img" aria-label="sun">☀️</span>;
+    }
+    if (weatherText.includes('rain') || weatherText.includes('shower') || weatherText.includes('drizzle')) {
+        return <span className="text-4xl" role="img" aria-label="rain">🌧️</span>;
+    }
+    if (weatherText.includes('snow') || weatherText.includes('sleet')) {
+        return <span className="text-4xl" role="img" aria-label="snowflake">❄️</span>;
+    }
+    if (weatherText.includes('storm') || weatherText.includes('thunder')) {
+        return <span className="text-4xl" role="img" aria-label="storm">⛈️</span>;
+    }
+    if (weatherText.includes('cloud') || weatherText.includes('overcast')) {
+        return <span className="text-4xl" role="img" aria-label="cloud">☁️</span>;
+    }
+    if (weatherText.includes('fog') || weatherText.includes('mist')) {
+        return <span className="text-4xl" role="img" aria-label="fog">🌫️</span>;
+    }
+    
+    // Fall back to temperature-based logic if no weather keywords found
+    // Match temperature patterns like "20-28°C", "25°C", "15 to 20°C", etc.
+    // First try to match range pattern (e.g., "20-28°C" or "20 to 28°C")
+    const rangePattern = /(-?\d+)\s*[-–—to]+\s*(-?\d+)/i;
+    const rangeMatch = tempString.match(rangePattern);
+    
+    let avgTemp: number | null = null;
+    
+    if (rangeMatch) {
+        // Range found (e.g., "20-28°C")
+        const temp1 = parseInt(rangeMatch[1], 10);
+        const temp2 = parseInt(rangeMatch[2], 10);
+        
+        if (!isNaN(temp1) && !isNaN(temp2) && temp1 >= -50 && temp1 <= 60 && temp2 >= -50 && temp2 <= 60) {
+            avgTemp = (temp1 + temp2) / 2;
+        }
+    } else {
+        // Try to match single temperature (e.g., "25°C")
+        const singlePattern = /(-?\d+)\s*°?C/i;
+        const singleMatch = tempString.match(singlePattern);
+        
+        if (singleMatch) {
+            const temp = parseInt(singleMatch[1], 10);
+            if (!isNaN(temp) && temp >= -50 && temp <= 60) {
+                avgTemp = temp;
+            }
+        }
+    }
+    
+    // If we couldn't parse temperature, return thermometer icon
+    if (avgTemp === null || isNaN(avgTemp)) {
+        return <span className="text-4xl" role="img" aria-label="thermometer">🌡️</span>;
+    }
 
-    if (avgTemp > 25) return <span className="text-4xl" role="img" aria-label="sun">☀️</span>;
-    if (avgTemp > 15) return <span className="text-4xl" role="img" aria-label="sun behind cloud">🌥️</span>;
-    if (avgTemp > 5) return <span className="text-4xl" role="img" aria-label="coat">🧥</span>;
+    // Temperature-based icon selection (Celsius)
+    if (avgTemp >= 30) return <span className="text-4xl" role="img" aria-label="sun">☀️</span>;
+    if (avgTemp >= 20) return <span className="text-4xl" role="img" aria-label="sun behind cloud">⛅</span>;
+    if (avgTemp >= 10) return <span className="text-4xl" role="img" aria-label="cloud">☁️</span>;
+    if (avgTemp >= 0) return <span className="text-4xl" role="img" aria-label="coat">🧥</span>;
+    // Below 0°C
     return <span className="text-4xl" role="img" aria-label="snowflake">❄️</span>;
 };
 
