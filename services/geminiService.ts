@@ -479,6 +479,8 @@ export const generateItinerary = async (
      - Recent changes to attraction hours or availability
      - **Traffic patterns, peak hours, and current traffic conditions** for routes between destinations and within cities
      - **Real-time traffic forecasts** for planned travel routes during specific times and dates
+     - **WEATHER FORECAST (MANDATORY):** For each day in the itinerary, you MUST search for expected weather conditions for that specific date and location. Search format: "weather forecast [city] [date]" or "weather [city] [startDate] forecast". Provide temperature range, conditions (sunny, rainy, cloudy, etc.), and any relevant details (wind, humidity) in the 'expectedWeather' field for each day.
+     - **AIR QUALITY INDEX (AQI) (MANDATORY):** For each day in the itinerary, you MUST search for expected AQI for that specific date and location. Search format: "air quality index [city] [date]" or "AQI [city] [startDate]". **CRITICAL**: The 'expectedAQI' field MUST ALWAYS start with a numeric range (e.g., "45-65", "100-150"). Format: "45-65 (Good to Moderate)" or "100-150 (Moderate to Unhealthy for Sensitive Groups)". NEVER provide only text like "Good to Moderate" without the numeric range. The numeric range is MANDATORY and must come first, followed by the category in parentheses.
   2. **USE YOUR TRAINING DATA FOR:**
      - Famous attractions, landmarks, and historical sites
      - Cultural information, traditions, and local customs
@@ -486,11 +488,12 @@ export const generateItinerary = async (
      - Natural places, museums, and tourist spots
      - Historical background and general travel information
   3. **SEARCH EFFICIENCY RULES:**
-     - Make maximum 4-5 targeted searches per request
+     - Make maximum 6-7 targeted searches per request (increased to accommodate weather and AQI)
      - **MANDATORY: Search for accommodation prices AND restaurants for each destination city** - these are priorities
-     - Combine related searches: "Search for accommodation and restaurants together" or "Search for current prices and events together"
+     - **MANDATORY: Search for weather forecast AND AQI for each day** - these are critical for user planning
+     - Combine related searches when possible: "Search for accommodation and restaurants together" or "Search for weather and AQI for [city] [date]"
      - **For vehicle trips (Car/Bike): ALWAYS search for traffic patterns and peak hours for major routes**
-     - Prioritize: Search for accommodation prices, restaurant names, attraction prices, events, and traffic conditions first, then use knowledge base for everything else
+     - Prioritize: Search for accommodation prices, restaurant names, weather forecasts, AQI, attraction prices, events, and traffic conditions first, then use knowledge base for everything else
      - Do NOT search for information already in your training data (attractions, culture, history)
   
   **CORE ITINERARY PHILOSOPHY: MAXIMALIST & EFFICIENT**
@@ -621,7 +624,9 @@ export const generateItinerary = async (
         "placesToStay": string[], // MUST contain REAL hotel/hostel names in format: "**Hotel Name** (from price/night)" (NO generic names like "Budget hotel")
         "approxCost": string,
         "medicalFacilities"?: string[],
-        "transport"?: { "suggestions": string[], "cost": string }
+        "transport"?: { "suggestions": string[], "cost": string },
+        "expectedWeather"?: string, // Expected weather conditions for this day (e.g., "25-30°C, Sunny")
+        "expectedAQI"?: string // Expected Air Quality Index range for this day - MUST start with numeric range: "45-65 (Good to Moderate)" or "100-150 (Moderate)". NEVER provide only category text without numbers.
       }
     ],
     "referenceBlogs": []
@@ -671,9 +676,17 @@ export const generateItinerary = async (
      - Always respect the food preference: ${foodPreference}
      - Example: "**Joe's Pizza** - Authentic Italian pizza" or "**Spice Garden** (North Indian cuisine) - Try their butter chicken" or "**Local Market Street Food** - Famous for chaat"
   10. **DESTINATION DETAILS:** For historicBackground, famousCulture, naturalPlaces, museums, specialOrnaments, recommendedRestaurants: 1-3 concise points (5-10 words each). Restaurants can be names only.
-  11. **SPECIAL EVENTS:** Find events happening ONLY during ${startDate} for ${days} days. 1-2 sentences. If none: "No major special events scheduled, but enjoy ongoing local experiences."
-  12. **CURRENCY CONVERSION:** Determine local currency of "${destination}". If different from "${currency}", add 'currencyConversion' object with format "1 [DEST_CURRENCY] = [VALUE] [USER_CURRENCY]" (e.g., "1 USD = 83 INR"). If same, omit this field.
-  13. **FEASIBILITY CHECK PROCESS (CRITICAL - MANDATORY TWO-STEP PROCESS FOR ALL TRIP TYPES):** 
+  11. **WEATHER & AIR QUALITY (MANDATORY FOR EACH DAY):** For EACH day in the 'plan' array, you MUST:
+     - Search for expected weather conditions for that specific date and location (city where activities are planned)
+     - Search for expected AQI for that specific date and location
+     - Calculate the date for each day: Day 1 = ${startDate}, Day 2 = ${startDate} + 1 day, etc.
+     - For multi-stop trips, use the location where activities are planned that day
+     - Format 'expectedWeather': "25-30°C, Sunny" or "18-22°C, Partly cloudy" (keep concise, no extra details)
+     - Format 'expectedAQI': **MUST ALWAYS start with numeric range** - "45-65 (Good to Moderate)" or "100-150 (Moderate)" or "150-200 (Unhealthy for Sensitive Groups)". **CRITICAL**: The numeric range (e.g., "45-65") is MANDATORY and must always be included. NEVER provide only category text like "Good to Moderate" without the numeric range. Format: [numeric-range] (category). Keep concise - NO explanatory text.
+     - These fields help users plan their activities and pack accordingly
+  12. **SPECIAL EVENTS:** Find events happening ONLY during ${startDate} for ${days} days. 1-2 sentences. If none: "No major special events scheduled, but enjoy ongoing local experiences."
+  13. **CURRENCY CONVERSION:** Determine local currency of "${destination}". If different from "${currency}", add 'currencyConversion' object with format "1 [DEST_CURRENCY] = [VALUE] [USER_CURRENCY]" (e.g., "1 USD = 83 INR"). If same, omit this field.
+  14. **FEASIBILITY CHECK PROCESS (CRITICAL - MANDATORY TWO-STEP PROCESS FOR ALL TRIP TYPES):** 
      **STEP 1 - CALCULATE MINIMUM DAYS FIRST (ALWAYS DO THIS FIRST)**: Before deciding if a trip is feasible, you MUST:
        - Use Google Search to get the ACTUAL distance (in km) between the start point and destination. If it's a round trip, calculate the total round trip distance.
        - Calculate the minimum days using this EXACT formula (do this ONCE and LOCK the result):
@@ -691,9 +704,9 @@ export const generateItinerary = async (
      **ABSOLUTE RULE**: The minimum days you calculate in STEP 1 is FIXED for this route. It MUST be THE SAME regardless of whether the user selected 5 days, 7 days, or 10 days. For example, if Gurgaon to Mumbai requires 7 days, you MUST ALWAYS say 7 days, never 8-10 days or 9-11 days. The required days are based on the ROUTE distance and travel limits, NOT the USER INPUT.
      
      **WHEN NOT FEASIBLE**: If the trip is not feasible (calculated minimum > ${days}), include in the 'planNote' field: "NOTE: This trip is not feasible in ${days} days. Based on the actual distance (approximately [X] km round trip) and travel time, this trip requires approximately [Y] days to complete comfortably (calculated: [X] km ÷ [daily limit] km/day + 2 sightseeing days + 1 buffer day = [Y] days). [Then provide alternative solution]"
-  14. **JSON VALIDATION:** NO unescaped double quotes (") in string values. Use single quotes or escape: \\". Check every string before responding.
-  15. **FINAL:** Response MUST be raw JSON starting with '{' and ending with '}'. No markdown wrapping, no intro text. Immediately parsable.
-  16. 'referenceBlogs' must be an empty array [].
+  15. **JSON VALIDATION:** NO unescaped double quotes (") in string values. Use single quotes or escape: \\". Check every string before responding.
+  16. **FINAL:** Response MUST be raw JSON starting with '{' and ending with '}'. No markdown wrapping, no intro text. Immediately parsable.
+  17. 'referenceBlogs' must be an empty array [].
   `;
   
     let fullText = '';

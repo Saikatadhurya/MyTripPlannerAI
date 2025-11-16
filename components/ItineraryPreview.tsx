@@ -147,6 +147,72 @@ const generateRestaurantSearchUrl = (restaurantName: string, location: string): 
   return `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`;
 };
 
+// Helper to get weather icon based on weather description and temperature (compact size)
+const getWeatherIcon = (tempString: string | undefined): React.ReactNode => {
+  if (!tempString) return <span role="img" aria-label="thermometer">🌡️</span>;
+  
+  const weatherText = tempString.toLowerCase();
+  
+  // First, check weather description keywords for more accurate icon selection
+  // Check more specific conditions first
+  if (weatherText.includes('partly cloudy') || weatherText.includes('partly cloud')) {
+    return <span role="img" aria-label="sun behind cloud">⛅</span>;
+  }
+  if (weatherText.includes('sunny') || weatherText.includes('clear')) {
+    return <span role="img" aria-label="sun">☀️</span>;
+  }
+  if (weatherText.includes('rain') || weatherText.includes('shower') || weatherText.includes('drizzle')) {
+    return <span role="img" aria-label="rain">🌧️</span>;
+  }
+  if (weatherText.includes('snow') || weatherText.includes('sleet')) {
+    return <span role="img" aria-label="snowflake">❄️</span>;
+  }
+  if (weatherText.includes('storm') || weatherText.includes('thunder')) {
+    return <span role="img" aria-label="storm">⛈️</span>;
+  }
+  if (weatherText.includes('cloud') || weatherText.includes('overcast')) {
+    return <span role="img" aria-label="cloud">☁️</span>;
+  }
+  if (weatherText.includes('fog') || weatherText.includes('mist')) {
+    return <span role="img" aria-label="fog">🌫️</span>;
+  }
+  
+  // Fall back to temperature-based logic if no weather keywords found
+  const matches = tempString.match(/-?\d+/g);
+  if (!matches) return <span role="img" aria-label="thermometer">🌡️</span>;
+  
+  const temps = matches.map(Number).filter(t => t > -50 && t < 60); // Filter out invalid temps
+  if (temps.length === 0) return <span role="img" aria-label="thermometer">🌡️</span>;
+  
+  const avgTemp = temps.reduce((a, b) => a + b, 0) / temps.length;
+
+  // Temperature-based icon selection (Celsius)
+  if (avgTemp >= 30) return <span role="img" aria-label="sun">☀️</span>;
+  if (avgTemp >= 20) return <span role="img" aria-label="sun behind cloud">⛅</span>;
+  if (avgTemp >= 10) return <span role="img" aria-label="cloud">☁️</span>;
+  if (avgTemp >= 0) return <span role="img" aria-label="coat">🧥</span>;
+  return <span role="img" aria-label="snowflake">❄️</span>;
+};
+
+// Helper to get AQI color and category (handles ranges like "45-65" or single values)
+const getAQIColor = (aqiString: string | undefined): { color: string; bgColor: string; textColor: string } => {
+  if (!aqiString) return { color: 'slate', bgColor: 'bg-slate-100', textColor: 'text-slate-600' };
+  
+  // Extract all numbers from the string (handles ranges like "45-65" or single values like "45")
+  const aqiMatches = aqiString.match(/\d+/g);
+  if (!aqiMatches || aqiMatches.length === 0) return { color: 'slate', bgColor: 'bg-slate-100', textColor: 'text-slate-600' };
+  
+  // If range, use the higher value (worst case); if single value, use that
+  const aqiValues = aqiMatches.map(Number);
+  const aqi = Math.max(...aqiValues); // Use the maximum value from the range for color determination
+  
+  if (aqi <= 100) return { color: 'green', bgColor: 'bg-green-100', textColor: 'text-green-700' };
+  if (aqi <= 150) return { color: 'orange', bgColor: 'bg-orange-100', textColor: 'text-orange-700' };
+  if (aqi <= 200) return { color: 'red', bgColor: 'bg-red-100', textColor: 'text-red-700' };
+  if (aqi <= 300) return { color: 'purple', bgColor: 'bg-purple-100', textColor: 'text-purple-700' };
+  return { color: 'maroon', bgColor: 'bg-red-200', textColor: 'text-red-900' };
+};
+
 // Helper to parse time from activity text
 const parseActivityTime = (text: string): { time?: string; description: string } => {
   if (!text) return { description: '' };
@@ -1019,6 +1085,39 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
               </div>
             </div>
             <hr className="my-4 border-violet-200" />
+            
+            {/* Weather & AQI Section - Compact */}
+            {(day.expectedWeather || day.expectedAQI) && (
+              <div className="mb-4 bg-gradient-to-br from-sky-50/60 to-cyan-50/40 backdrop-blur-lg p-3 sm:p-3 rounded-lg shadow-md border border-sky-200/50">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                  {day.expectedWeather && (
+                    <div className="flex items-start space-x-2.5 sm:space-x-2 flex-1 min-w-0">
+                      <div className="flex-shrink-0 bg-white/30 p-1.5 rounded-md flex items-center justify-center h-7 w-7">
+                        <span className="text-base leading-none">{getWeatherIcon(day.expectedWeather)}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-slate-600 font-medium mb-1">Weather</p>
+                        <p className="text-sm font-bold text-sky-700 leading-relaxed break-words">{day.expectedWeather}</p>
+                      </div>
+                    </div>
+                  )}
+                  {day.expectedAQI && (
+                    <div className="flex items-start space-x-2.5 sm:space-x-2 flex-1 min-w-0">
+                      <div className={`flex-shrink-0 ${getAQIColor(day.expectedAQI).bgColor} ${getAQIColor(day.expectedAQI).textColor} p-1.5 rounded-md flex items-center justify-center h-7 w-7`}>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-slate-600 font-medium mb-1">AQI</p>
+                        <p className={`text-sm font-bold leading-relaxed break-words ${getAQIColor(day.expectedAQI).textColor}`}>{day.expectedAQI}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            
             <div className="space-y-6">
               <div className="bg-gradient-to-br from-violet-50/60 to-indigo-50/40 backdrop-blur-lg p-6 rounded-2xl shadow-lg border border-violet-200/50">
                   <div className="flex items-center space-x-3 mb-6">

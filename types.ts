@@ -37,6 +37,8 @@ export interface DayPlan {
     suggestions: string[];
     cost: string;
   };
+  expectedWeather?: string; // Expected weather conditions for this day (e.g., "25-30°C, Sunny")
+  expectedAQI?: string; // Expected Air Quality Index for this day (e.g., "45 (Good)")
 }
 
 export interface BlogReference {
