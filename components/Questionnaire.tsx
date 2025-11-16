@@ -76,25 +76,43 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const defaultEndDate = new Date(today);
-  defaultEndDate.setDate(defaultEndDate.getDate() + 2);
+  defaultEndDate.setDate(defaultEndDate.getDate() + 3); // Changed from +2 to +3 days
 
-  const [formData, setFormData] = useState<QuestionnaireData>(initialData || {
-    destination: '',
-    startPoint: '',
-    tripType: 'Standard',
-    days: 3,
-    budget: 'Midrange',
-    vibe: ['Food & Culinary'],
-    persons: 1,
-    foodPreference: 'Non-Veg',
-    startDate: formatDateLocal(today),
-    endDate: formatDateLocal(defaultEndDate),
-    includeMedical: false,
-    language: 'English (en)',
-    currency: 'India (INR) – ₹',
-    isRoundTrip: false,
-    includeAlcoholicDrinks: false,
-    stops: [],
+  // Calculate end date based on start date and days
+  const calculateEndDateFromStart = (startDateStr: string, days: number): string => {
+    const startDate = new Date(startDateStr + 'T00:00:00');
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + days - 1);
+    return formatDateLocal(endDate);
+  };
+
+  const [formData, setFormData] = useState<QuestionnaireData>(() => {
+    if (initialData) {
+      // If initialData has endDate, use it; otherwise calculate from startDate and days
+      const endDate = initialData.endDate || calculateEndDateFromStart(initialData.startDate || formatDateLocal(today), initialData.days || 3);
+      return {
+        ...initialData,
+        endDate: endDate
+      };
+    }
+    return {
+      destination: '',
+      startPoint: '',
+      tripType: 'Standard',
+      days: 3,
+      budget: 'Midrange',
+      vibe: ['Food & Culinary'],
+      persons: 1,
+      foodPreference: 'Non-Veg',
+      startDate: formatDateLocal(today),
+      endDate: formatDateLocal(defaultEndDate),
+      includeMedical: false,
+      language: 'English (en)',
+      currency: 'India (INR) – ₹',
+      isRoundTrip: false,
+      includeAlcoholicDrinks: false,
+      stops: [],
+    };
   });
   
   const [destinationSuggestions, setDestinationSuggestions] = useState<LocationSuggestion[]>([]);
@@ -166,6 +184,17 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  // Ensure endDate is always calculated from startDate and days on mount
+  useEffect(() => {
+    if (!formData.endDate || formData.endDate.trim() === '') {
+      const calculatedEndDate = calculateEndDateFromStart(formData.startDate, formData.days);
+      setFormData(prev => ({ 
+        ...prev, 
+        endDate: calculatedEndDate
+      }));
+    }
+  }, []); // Run only on mount
 
   // Ensure days don't exceed 45 on initialization
   useEffect(() => {
