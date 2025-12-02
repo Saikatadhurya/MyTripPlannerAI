@@ -560,6 +560,21 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
                   </div>
                 )}
               </div>
+              {isStartPointSuggestionsLoading && startPoint.trim().length > 1 && (
+                <div className="mt-2 px-3 py-2 bg-gradient-to-r from-violet-50 to-indigo-50 border border-violet-200/50 rounded-lg shadow-sm animate-pulse">
+                  <div className="flex items-center space-x-2 text-sm text-violet-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <span className="font-medium">Searching for locations</span>
+                    <span className="flex space-x-1">
+                      <span className="animate-bounce" style={{ animationDelay: '0ms' }}>.</span>
+                      <span className="animate-bounce" style={{ animationDelay: '150ms' }}>.</span>
+                      <span className="animate-bounce" style={{ animationDelay: '300ms' }}>.</span>
+                    </span>
+                  </div>
+                </div>
+              )}
               {startPointSuggestions.length > 0 && !isStartPointSelected && (
                 <ul
                   ref={startPointSuggestionsRef}
