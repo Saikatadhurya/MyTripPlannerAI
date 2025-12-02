@@ -736,18 +736,6 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
     <div className="bg-gradient-to-br from-slate-50 via-blue-50/30 to-violet-50/30 min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <BackToHomeButton onClick={onBack} />
-        
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-violet-600 rounded-2xl flex items-center justify-center shadow-lg">
-              <span className="text-2xl text-white">📚</span>
-            </div>
-            <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
-              Your History
-            </h1>
-          </div>
-          <p className="text-lg text-slate-600 max-w-2xl mx-auto">Discover, manage, and revisit your travel recommendations and trip plans</p>
-        </div>
 
         {/* Filters */}
         <div className="bg-white/90 backdrop-blur-xl rounded-2xl p-4 shadow-lg border border-white/60 mb-6">

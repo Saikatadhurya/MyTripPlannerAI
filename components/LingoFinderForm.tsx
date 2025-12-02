@@ -344,11 +344,6 @@ const LingoFinderForm: React.FC<LingoFinderFormProps> = ({ onSubmit, isLoading, 
     <div className="max-w-xl mx-auto">
       <BackToHomeButton onClick={onBack} />
 
-      <div className="text-center mb-6 sm:mb-8 md:mb-10">
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">Local Lingo Guide</h1>
-        <p className="mt-2 text-base md:text-lg text-slate-600">Get essential phrases for your destination.</p>
-      </div>
-
       {error && (
         <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md mb-6" role="alert">
           <p className="font-bold">Oops!</p>

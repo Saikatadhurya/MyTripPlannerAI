@@ -92,8 +92,8 @@ const Header: React.FC<HeaderProps> = ({
     }
   };
 
-  // Base classes for the fixed header - set a consistent height so main content can be offset
-  const headerBaseClasses = "fixed top-0 left-0 right-0 z-50 w-full no-print h-16 md:h-20 transition-shadow duration-300";
+  // Base classes for the header - relative (non-sticky) for all screens
+  const headerBaseClasses = "relative w-full no-print h-16 md:h-20 transition-shadow duration-300";
   
   // Container for the content inside the header
   const containerBaseClasses = "flex items-center container mx-auto h-full";

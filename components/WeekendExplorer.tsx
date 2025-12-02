@@ -489,15 +489,6 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-violet-50/30 py-4 sm:py-6 md:py-8 px-4 sm:px-6 md:px-8 lg:px-12">
       <div className="max-w-6xl mx-auto">
         <BackToHomeButton onBack={onBack} />
-        
-        <div className="mt-4 sm:mt-6 mb-6 sm:mb-8 text-center">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-slate-900 mb-2 sm:mb-3">
-            🗺️ Weekend Explorer
-          </h1>
-          <p className="text-sm sm:text-base md:text-lg text-slate-600 max-w-2xl mx-auto px-2">
-            Discover perfect weekend getaways near you. Find outdoor destinations you can explore in 3-4 days including Saturday and Sunday.
-          </p>
-        </div>
 
         {/* Form Section */}
         <div className="bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-xl border-2 border-white/60 p-4 sm:p-6 md:p-8 mb-6 sm:mb-8">
