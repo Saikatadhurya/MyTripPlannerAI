@@ -63,7 +63,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onEditProfile
   }
 
   return (
-    <div className="relative">
+    <div className="relative z-[9999]">
       {/* User Avatar Button */}
       <button
         onClick={toggleDropdown}
@@ -96,7 +96,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onEditProfile
 
       {/* Dropdown Menu */}
       {isDropdownOpen && (
-        <div className="absolute right-0 mt-2 w-64 bg-white/95 backdrop-blur-xl rounded-2xl shadow-xl border border-white/60 z-50">
+        <div className="absolute right-0 mt-2 w-64 bg-white/95 backdrop-blur-xl rounded-2xl shadow-xl border border-white/60 z-[10000]">
           {/* User Info Section */}
           <div className="p-4 border-b border-slate-100">
             <div className="flex items-center space-x-3">
@@ -178,7 +178,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onEditProfile
       {/* Backdrop to close dropdown */}
       {isDropdownOpen && (
         <div 
-          className="fixed inset-0 z-40" 
+          className="fixed inset-0 z-[9998]" 
           onClick={() => setIsDropdownOpen(false)}
         />
       )}

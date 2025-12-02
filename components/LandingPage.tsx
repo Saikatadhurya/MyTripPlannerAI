@@ -147,214 +147,151 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
   const miniApps = [
     {
       id: 'itinerary_planner',
-      title: 'Itinerary Planner',
+      title: 'Itinerary',
       description: 'Get a detailed, step-by-step plan',
       onClick: onPlanItinerary,
       color: 'blue' as const,
-      icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 lg:h-4 lg:w-4 xl:h-5 xl:w-5 2xl:h-6 2xl:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
+      icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
       buttonText: 'Plan Itinerary',
     },
     {
       id: 'packing',
-      title: 'Smart Bag Packing',
+      title: 'Packing',
       description: 'AI-powered packing tailored for your trip',
       onClick: onStartPacking,
       color: 'violet' as const,
-      icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 lg:h-4 lg:w-4 xl:h-5 xl:w-5 2xl:h-6 2xl:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 6h12a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2zm3-3a1 1 0 011-1h2a1 1 0 110 2H10a1 1 0 01-1-1z" /></svg>,
+      icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 6h12a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2zm3-3a1 1 0 011-1h2a1 1 0 110 2H10a1 1 0 01-1-1z" /></svg>,
       buttonText: 'Pack My Bag',
     },
     {
       id: 'food',
-      title: 'Local Food Finder',
+      title: 'Food',
       description: 'Discover authentic local cuisine',
       onClick: onStartFoodFinder,
       color: 'orange' as const,
-      icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 lg:h-4 lg:w-4 xl:h-5 xl:w-5 2xl:h-6 2xl:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
+      icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
       buttonText: 'Find My Feast',
     },
     {
       id: 'apps',
-      title: 'Mobile App Finder',
+      title: 'Apps',
       description: 'Find essential local apps for your trip',
       onClick: onStartAppFinder,
       color: 'teal' as const,
-      icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 lg:h-4 lg:w-4 xl:h-5 xl:w-5 2xl:h-6 2xl:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 18h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>,
+      icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 18h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>,
       buttonText: 'Find My Apps',
     },
     {
       id: 'music',
-      title: 'Local Music Finder',
+      title: 'Music',
       description: 'Discover the soundtrack of your travels',
       onClick: onStartMusicFinder,
       color: 'fuchsia' as const,
-      icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 lg:h-4 lg:w-4 xl:h-5 xl:w-5 2xl:h-6 2xl:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 18V5l12-2v13M9 18a3 3 0 11-6 0 3 3 0 016 0zm12-2a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+      icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 18V5l12-2v13M9 18a3 3 0 11-6 0 3 3 0 016 0zm12-2a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
       buttonText: 'Discover Music',
     },
     {
       id: 'lingo',
-      title: 'Local Lingo Guide',
+      title: 'Language',
       description: 'Learn essential phrases for your trip',
       onClick: onStartLingoFinder,
       color: 'sky' as const,
-      icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 lg:h-4 lg:w-4 xl:h-5 xl:w-5 2xl:h-6 2xl:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>,
+      icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>,
       buttonText: 'Get Phrases',
     },
   ];
   
   return (
-    <div className="space-y-8 md:space-y-16 lg:space-y-20 pb-8 px-4 md:px-8 lg:px-12 xl:px-16 2xl:px-20 pt-0 lg:pt-4">
-      {/* Hero and Mini Apps Container - Side by side on desktop */}
-      <div className="flex flex-col lg:grid lg:grid-cols-2 lg:gap-6 xl:gap-8 2xl:gap-10 lg:items-start">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 space-y-10 sm:space-y-12 lg:space-y-14">
         {/* Hero Section */}
-        <div 
-          onClick={(e) => {
-            // Check if click target is the button or its children
-            const target = e.target as HTMLElement;
-            if (target.closest('button')) {
-              return; // Let button handle its own click
-            }
-            // Clicking anywhere on the hero section opens the unified planner
-            onPlanUnifiedTrip();
-          }}
-          className="animated-card text-center max-w-4xl mx-auto lg:max-w-none lg:mx-0 p-5 sm:p-6 md:p-10 lg:p-6 xl:p-8 2xl:p-10 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-violet-50 via-purple-50/50 to-pink-50/40 backdrop-blur-xl border-2 border-violet-300/80 shadow-xl sm:shadow-2xl shadow-violet-500/30 hover:shadow-2xl sm:hover:shadow-3xl hover:shadow-violet-500/40 transition-all duration-500 relative overflow-y-auto cursor-pointer lg:h-full lg:flex lg:flex-col lg:justify-center lg:items-center mb-4 sm:mb-6 lg:mb-0" 
-          style={{ animationDelay: '100ms' }}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              onPlanUnifiedTrip();
-            }
-          }}
-        >
-          {/* Decorative gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-br from-violet-100/20 via-transparent to-purple-100/20 pointer-events-none"></div>
-          
-          {/* History Button - Floating in top-right corner */}
+        <section className="relative">
+          {/* History Button */}
           {user && (
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onViewHistory();
-              }}
-              className="absolute top-3 right-3 sm:top-4 sm:right-4 lg:top-3 lg:right-3 xl:top-4 xl:right-4 z-20 group flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-full bg-white/90 backdrop-blur-md border border-violet-200/60 shadow-lg hover:shadow-xl hover:shadow-violet-500/20 transition-all duration-300 hover:scale-110 hover:bg-white hover:border-violet-400/80 focus:outline-none focus:ring-2 focus:ring-violet-400/50 focus:ring-offset-2"
+              onClick={onViewHistory}
+              className="absolute top-0 right-0 sm:right-4 z-20 flex items-center gap-2 px-3 py-2 rounded-full bg-white/80 backdrop-blur-md border border-slate-200/60 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-105"
               aria-label="View trip history"
-              title="View Your Trip History"
             >
               <svg 
                 xmlns="http://www.w3.org/2000/svg" 
-                className="h-4 w-4 sm:h-5 sm:w-5 text-violet-600 group-hover:text-violet-700 transition-colors duration-300" 
+                className="h-4 w-4 text-slate-600" 
                 fill="none" 
                 viewBox="0 0 24 24" 
                 stroke="currentColor" 
-                strokeWidth={2.5}
+                strokeWidth={2}
               >
-                <path 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" 
-                />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <span className="text-xs sm:text-sm font-semibold text-violet-600 group-hover:text-violet-700 transition-colors duration-300 hidden sm:inline">
-                History
-              </span>
+              <span className="text-xs font-medium text-slate-700 hidden sm:inline">History</span>
             </button>
           )}
-          
-          <div className="relative z-10 w-full">
+
+          <div className="text-center space-y-5 sm:space-y-6 max-w-3xl mx-auto pt-4 sm:pt-6">
             {user && user.full_name && (
-              <div className="mb-2 sm:mb-3 md:mb-4 lg:mb-2 xl:mb-3">
-                <h2 className="text-lg sm:text-xl md:text-2xl lg:text-xl xl:text-2xl 2xl:text-3xl font-semibold text-violet-600 tracking-wide">
-                  Welcome, {user.full_name}! 👋
-                </h2>
-              </div>
-            )}
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-3xl xl:text-4xl 2xl:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight px-2">
-              Your Dream Trip, <span className="text-violet-600">Planned to Perfection.</span>
-            </h1>
-            <p className="mt-2 sm:mt-3 md:mt-4 lg:mt-2 xl:mt-3 text-base sm:text-lg md:text-lg lg:text-sm xl:text-base 2xl:text-lg text-slate-700 max-w-2xl lg:max-w-none mx-auto font-medium px-2">
-              Complete travel planning made simple. Just tell us where you want to go.
-            </p>
-             <div className="mt-4 sm:mt-6 md:mt-8 lg:mt-4 xl:mt-5 2xl:mt-6 flex flex-col gap-3 sm:gap-4 items-center justify-center">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation(); // Prevent parent click handler
-                  onPlanUnifiedTrip();
-                }}
-                className="cta-pulse w-full sm:w-auto inline-block px-5 py-2.5 sm:px-6 sm:py-3 md:px-8 md:py-3.5 lg:px-6 lg:py-2.5 xl:px-8 xl:py-3 2xl:px-10 2xl:py-3.5 font-bold rounded-full text-sm sm:text-base md:text-lg lg:text-sm xl:text-base 2xl:text-lg shadow-xl sm:shadow-2xl transition-all duration-300 transform focus:outline-none focus:ring-4 bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-violet-500/50 hover:from-violet-700 hover:to-purple-700 hover:shadow-xl sm:hover:shadow-2xl hover:shadow-violet-500/60 hover:scale-105 sm:hover:scale-110 focus:ring-violet-300 whitespace-nowrap"
-              >
-                ✨ Build Your Ultimate Itinerary
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation(); // Prevent parent click handler
-                  onStartWeekendExplorer();
-                }}
-                className="w-full sm:w-auto inline-block px-5 py-2.5 sm:px-6 sm:py-3 md:px-8 md:py-3.5 lg:px-6 lg:py-2.5 xl:px-8 xl:py-3 2xl:px-10 2xl:py-3.5 font-bold rounded-full text-sm sm:text-base md:text-lg lg:text-sm xl:text-base 2xl:text-lg shadow-xl sm:shadow-2xl transition-all duration-300 transform focus:outline-none focus:ring-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-emerald-500/50 hover:from-emerald-600 hover:to-teal-700 hover:shadow-xl sm:hover:shadow-2xl hover:shadow-emerald-500/60 hover:scale-105 sm:hover:scale-110 focus:ring-emerald-300 whitespace-nowrap"
-              >
-                🗺️ Weekend Explorer
-              </button>
-              <p className="mt-2 sm:mt-3 md:mt-4 lg:mt-2 xl:mt-3 text-xs sm:text-sm md:text-base lg:text-xs xl:text-sm 2xl:text-base text-violet-700 font-semibold tracking-wide px-2 text-center">
-                Includes: Itinerary, Packing, Food, Apps, Music & Language Guides
+              <p className="text-sm sm:text-base text-slate-500 font-medium">
+                Welcome back, {user.full_name}
               </p>
+            )}
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-slate-900 leading-tight tracking-tight">
+              Plan Your
+              <br />
+              <span className="bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
+                Perfect Trip
+              </span>
+            </h1>
+            <p className="text-base sm:text-lg text-slate-600 max-w-xl mx-auto">
+              AI-powered travel planning made simple
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center pt-3">
+              <button
+                onClick={onPlanUnifiedTrip}
+                className="w-full sm:w-auto px-8 py-3.5 bg-gradient-to-r from-violet-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2"
+              >
+                Start Planning
+              </button>
+              <button
+                onClick={onStartWeekendExplorer}
+                className="w-full sm:w-auto px-8 py-3.5 bg-white text-slate-700 font-semibold rounded-xl border border-slate-200 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-slate-300 focus:ring-offset-2"
+              >
+                Weekend Trip
+              </button>
             </div>
           </div>
-        </div>
+        </section>
 
         {/* Mini Apps Section */}
-        <div className="text-center lg:flex lg:flex-col pb-10 sm:pb-8 lg:pb-0">
-          <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-xl xl:text-2xl 2xl:text-3xl font-extrabold text-slate-900 tracking-tight animated-card px-2 mb-3 sm:mb-4 md:mb-6 lg:mb-2 xl:mb-3 2xl:mb-4" style={{ animationDelay: '200ms' }}>
-            Smart tools to make your trip <span className="text-violet-600">unforgettable.</span>
-          </h2>
-          <div className="mt-0 sm:mt-4 md:mt-6 lg:mt-0 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-2 sm:gap-3 md:gap-4 lg:gap-2 xl:gap-2.5 2xl:gap-3">
-          {miniApps.map((app, index) => {
-            const colors = colorClasses[app.color];
-            return (
-              <div
-                key={app.id}
-                onClick={() => app.onClick()}
-                onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        app.onClick();
-                    }
-                }}
-                role="button"
-                tabIndex={0}
-                className={`animated-card h-full w-full bg-gradient-to-br from-white via-white to-slate-50/80 backdrop-blur-xl rounded-xl sm:rounded-2xl border border-slate-300/50 sm:border-2 sm:border-slate-300/60 shadow-md sm:shadow-xl md:shadow-2xl shadow-slate-400/10 sm:shadow-slate-400/20 group transition-all duration-300 sm:duration-500 sm:[transform-style:preserve-3d] hover:scale-105 sm:hover:[transform:perspective(1000px)_rotateY(4deg)_rotateX(8deg)_scale(1.05)] hover:shadow-lg sm:hover:shadow-3xl ${colors.hoverShadow} ${colors.hoverBorder} focus:outline-none focus:ring-2 sm:focus:ring-4 focus:ring-offset-1 sm:focus:ring-offset-2 focus:ring-violet-400/50 cursor-pointer relative overflow-hidden`}
-                style={{ animationDelay: `${300 + index * 100}ms` }}
-              >
-                <div className="p-2 sm:p-3 md:p-4 lg:p-3 xl:p-4 2xl:p-5 flex flex-col text-center h-full sm:[transform:translateZ(40px)] relative z-10">
-                    {/* Gradient overlay on hover */}
-                    <div className={`absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-transparent ${colors.hoverGradient} transition-all duration-300 sm:duration-500 rounded-xl sm:rounded-2xl -z-0`}></div>
-                    <div className="flex-grow relative z-10">
-                        <div className={`mx-auto w-8 h-8 sm:w-12 sm:h-12 md:w-16 md:h-16 lg:w-12 lg:h-12 xl:w-14 xl:h-14 2xl:w-16 2xl:h-16 rounded-lg sm:rounded-xl md:rounded-2xl flex items-center justify-center transition-all duration-300 sm:duration-500 group-hover:scale-110 group-hover:shadow-md sm:group-hover:shadow-lg ${colors.iconBg} ${colors.iconText}`}>
-                            {app.icon}
-                        </div>
-                        <h3 className="text-xs sm:text-sm md:text-base lg:text-sm xl:text-base 2xl:text-lg font-bold text-slate-900 mt-1 sm:mt-1.5 md:mt-2 lg:mt-1.5 xl:mt-2">{app.title}</h3>
-                        <p className="text-[10px] sm:text-xs md:text-sm lg:text-xs xl:text-xs 2xl:text-sm text-slate-600 mt-0.5 sm:mt-0.5 md:mt-1 lg:mt-0.5 xl:mt-1 line-clamp-2">
-                            {app.description}
-                        </p>
+        <section>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+            {miniApps.map((app, index) => {
+              const colors = colorClasses[app.color];
+              return (
+                <button
+                  key={app.id}
+                  onClick={app.onClick}
+                  className="group relative p-4 sm:p-5 bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-lg hover:border-slate-200 transition-all duration-200 hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2"
+                >
+                  <div className="flex flex-col items-center text-center space-y-3">
+                    <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl ${colors.iconBg} ${colors.iconText} flex items-center justify-center transition-transform duration-200 group-hover:scale-110`}>
+                      {app.icon}
                     </div>
-                    <div className="mt-1 sm:mt-1.5 md:mt-2 lg:mt-1.5 xl:mt-2 2xl:mt-3 flex-shrink-0 relative z-10">
-                        <span className={`inline-block px-2 py-0.5 sm:px-2.5 sm:py-1 md:px-3 md:py-1.5 lg:px-3 lg:py-1 xl:px-3.5 xl:py-1.5 2xl:px-4 2xl:py-2 font-semibold rounded-full text-[10px] sm:text-xs md:text-sm lg:text-xs xl:text-xs 2xl:text-sm shadow-sm sm:shadow-md transition-all duration-300 group-hover:shadow-md sm:group-hover:shadow-lg ${colors.button}`}>
-                             {app.buttonText}
-                        </span>
+                    <div className="space-y-1">
+                      <h3 className="text-xs sm:text-sm font-semibold text-slate-900">{app.title}</h3>
                     </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-      </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </section>
 
 
-      {/* Try Yourself Section */}
-      <div ref={destinationsRef} className="sm:mt-6 md:mt-12 lg:mt-16">
-        <h2 className="text-2xl sm:text-3xl font-bold text-center text-slate-900 mb-3 sm:mb-4">Try Yourself</h2>
-        <p className="text-xs sm:text-sm text-center text-slate-600 mb-3 sm:mb-4 px-2">Create your own personalized itinerary for these amazing destinations</p>
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
+        {/* Destinations Section */}
+        <section ref={destinationsRef}>
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 mb-2">Popular Destinations</h2>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-3 sm:gap-4">
             {destinations.length > 0 ? (
               destinations
                 .filter((dest) => !excludedDestinations.includes(dest.name) && !shareLinks[dest.name])
@@ -363,209 +300,127 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
                   <button 
                     key={dest.name} 
                     onClick={() => onPlanUnifiedTrip(dest.name)} 
-                    className="text-left p-2.5 sm:p-3 rounded-lg sm:rounded-xl border border-violet-200/60 sm:border-2 shadow-md sm:shadow-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-violet-400/50 bg-gradient-to-br from-white via-violet-50/40 to-purple-50/30 backdrop-blur-xl hover:shadow-xl hover:shadow-violet-500/20 hover:border-violet-400/80 cursor-pointer relative overflow-hidden group"
+                    className="group p-4 sm:p-5 bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-lg hover:border-violet-200 transition-all duration-200 hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2"
                   >
-                    {/* Gradient overlay on hover */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-violet-500/0 to-purple-500/0 group-hover:from-violet-500/10 group-hover:to-purple-500/10 transition-all duration-300 rounded-lg sm:rounded-xl"></div>
-                    <span className="text-2xl sm:text-3xl relative z-10 group-hover:scale-110 transition-transform duration-300 inline-block" role="img" aria-label="destination">{dest.icon}</span>
-                    <h3 className="text-sm sm:text-base font-semibold mt-1.5 sm:mt-2 text-slate-800 relative z-10 leading-tight">{dest.name}</h3>
-                    <p className="text-[10px] sm:text-xs text-slate-600 relative z-10 mt-0.5 sm:mt-1 line-clamp-2">{dest.description}</p>
+                    <div className="flex flex-col items-center text-center space-y-2">
+                      <span className="text-3xl sm:text-4xl transition-transform duration-200 group-hover:scale-110" role="img" aria-label="destination">{dest.icon}</span>
+                      <h3 className="text-sm sm:text-base font-semibold text-slate-900">{dest.name}</h3>
+                    </div>
                   </button>
                 ))
             ) : (
-              // Loading placeholder - show 8 skeleton cards
               Array.from({ length: 8 }).map((_, index) => (
                 <div
                   key={`skeleton-${index}`}
-                  className="text-left p-2.5 sm:p-3 rounded-lg sm:rounded-xl border border-violet-200/60 sm:border-2 bg-gradient-to-br from-white via-violet-50/40 to-purple-50/30 animate-pulse"
+                  className="p-4 sm:p-5 bg-white rounded-2xl border border-slate-100 animate-pulse"
                 >
-                  <div className="w-8 h-8 bg-slate-300 rounded mb-2"></div>
-                  <div className="h-4 bg-slate-300 rounded mb-1 w-3/4"></div>
-                  <div className="h-3 bg-slate-300 rounded w-full"></div>
+                  <div className="w-12 h-12 bg-slate-200 rounded-full mx-auto mb-3"></div>
+                  <div className="h-4 bg-slate-200 rounded w-3/4 mx-auto"></div>
                 </div>
               ))
             )}
           </div>
-        </div>
+        </section>
 
-      {/* Blog Carousel Section */}
-      <section>
-        <h2 className="text-2xl sm:text-3xl font-bold text-center text-slate-900 mb-4 sm:mb-6 md:mb-8 animated-card" style={{ animationDelay: '1600ms' }}>
-          Travel Blog
-        </h2>
-        <p className="text-sm sm:text-base text-center text-slate-600 mb-6 sm:mb-8 px-2 animated-card" style={{ animationDelay: '1650ms' }}>
-          Discover expert travel tips, guides, and stories to inspire your next adventure
-        </p>
-        <div className="animated-card" style={{ animationDelay: '1700ms' }}>
+        {/* Blog Section */}
+        <section>
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 mb-2">Travel Blog</h2>
+            <p className="text-sm sm:text-base text-slate-600">Tips, guides & stories</p>
+          </div>
           <BlogCarousel onViewMore={onGoToBlog} />
-        </div>
-      </section>
+        </section>
 
-      {/* FAQ Section - Visible on Page for SEO */}
-      <section className="mt-10 sm:mt-12 md:mt-16">
-        <h2 className="text-2xl sm:text-3xl font-bold text-center text-slate-900 mb-4 sm:mb-6 md:mb-8 animated-card" style={{ animationDelay: '1850ms' }}>
-          Frequently Asked Questions
-        </h2>
-        <p className="text-sm sm:text-base text-center text-slate-600 mb-6 sm:mb-8 px-2 animated-card" style={{ animationDelay: '1900ms' }}>
-          Everything you need to know about planning your trip with our AI trip planner
-        </p>
-        <div className="max-w-4xl mx-auto space-y-4 animated-card" style={{ animationDelay: '1950ms' }}>
-          <details className="bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl border-2 border-slate-200/60 shadow-lg p-4 sm:p-6 group">
-            <summary className="font-bold text-lg sm:text-xl text-slate-900 cursor-pointer list-none flex items-center justify-between">
-              <span>How do I plan a trip?</span>
-              <svg className="w-5 h-5 text-violet-600 transform group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </summary>
-            <p className="mt-4 text-slate-700 leading-relaxed">
-              Plan a trip easily with our free AI trip planner. Simply enter your destination, travel dates, budget, and preferences. Our AI will generate a complete personalized itinerary with day-by-day activities, budget estimates, packing lists, and local recommendations. Perfect for planning trips anywhere in the world.
-            </p>
-          </details>
-
-          <details className="bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl border-2 border-slate-200/60 shadow-lg p-4 sm:p-6 group">
-            <summary className="font-bold text-lg sm:text-xl text-slate-900 cursor-pointer list-none flex items-center justify-between">
-              <span>Is the trip planner free?</span>
-              <svg className="w-5 h-5 text-violet-600 transform group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </summary>
-            <p className="mt-4 text-slate-700 leading-relaxed">
-              Yes! Plan a trip is completely free. Our AI trip planner creates personalized travel itineraries at no cost. You can plan unlimited trips with full access to all features including itinerary planning, packing lists, food recommendations, and more. No credit card required.
-            </p>
-          </details>
-
-          <details className="bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl border-2 border-slate-200/60 shadow-lg p-4 sm:p-6 group">
-            <summary className="font-bold text-lg sm:text-xl text-slate-900 cursor-pointer list-none flex items-center justify-between">
-              <span>What can I plan with this trip planner?</span>
-              <svg className="w-5 h-5 text-violet-600 transform group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </summary>
-            <p className="mt-4 text-slate-700 leading-relaxed">
-              Plan a trip includes: complete day-by-day itineraries, budget estimation, smart packing lists, local food recommendations, music playlists, language phrase guides, mobile app suggestions, multi-destination trip planning, and weekend getaway planning.
-            </p>
-          </details>
-
-          <details className="bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl border-2 border-slate-200/60 shadow-lg p-4 sm:p-6 group">
-            <summary className="font-bold text-lg sm:text-xl text-slate-900 cursor-pointer list-none flex items-center justify-between">
-              <span>How accurate are the AI-generated trip plans?</span>
-              <svg className="w-5 h-5 text-violet-600 transform group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </summary>
-            <p className="mt-4 text-slate-700 leading-relaxed">
-              Our AI trip planner uses advanced algorithms to create highly personalized and accurate travel plans. The AI considers your budget, preferences, travel dates, and destination to generate detailed itineraries with realistic budget estimates and practical recommendations. Trusted by travelers worldwide.
-            </p>
-          </details>
-
-          <details className="bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl border-2 border-slate-200/60 shadow-lg p-4 sm:p-6 group">
-            <summary className="font-bold text-lg sm:text-xl text-slate-900 cursor-pointer list-none flex items-center justify-between">
-              <span>Can I plan a trip for multiple destinations?</span>
-              <svg className="w-5 h-5 text-violet-600 transform group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </summary>
-            <p className="mt-4 text-slate-700 leading-relaxed">
-              Yes! You can plan a trip for multiple destinations. Our unified trip planner supports multi-stop journeys, creating seamless itineraries that cover all your destinations with optimized travel routes and time management.
-            </p>
-          </details>
-
-          <details className="bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl border-2 border-slate-200/60 shadow-lg p-4 sm:p-6 group">
-            <summary className="font-bold text-lg sm:text-xl text-slate-900 cursor-pointer list-none flex items-center justify-between">
-              <span>How to plan a trip step by step?</span>
-              <svg className="w-5 h-5 text-violet-600 transform group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </summary>
-            <p className="mt-4 text-slate-700 leading-relaxed">
-              To plan a trip step by step: 1) Choose your destination, 2) Enter travel dates and number of travelers, 3) Select your budget range, 4) Pick your travel preferences and vibes, 5) Let our AI generate your personalized itinerary with day-by-day activities, budget breakdown, packing list, and local recommendations.
-            </p>
-          </details>
-
-          <details className="bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl border-2 border-slate-200/60 shadow-lg p-4 sm:p-6 group">
-            <summary className="font-bold text-lg sm:text-xl text-slate-900 cursor-pointer list-none flex items-center justify-between">
-              <span>What is the best way to plan a trip?</span>
-              <svg className="w-5 h-5 text-violet-600 transform group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </summary>
-            <p className="mt-4 text-slate-700 leading-relaxed">
-              The best way to plan a trip is using our AI-powered trip planner. It automatically creates personalized itineraries based on your preferences, budget, and travel style. Our tool handles everything from day-by-day activities to budget estimation, packing lists, and local recommendations - saving you hours of research.
-            </p>
-          </details>
-
-          <details className="bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl border-2 border-slate-200/60 shadow-lg p-4 sm:p-6 group">
-            <summary className="font-bold text-lg sm:text-xl text-slate-900 cursor-pointer list-none flex items-center justify-between">
-              <span>Can I plan a trip to any country?</span>
-              <svg className="w-5 h-5 text-violet-600 transform group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </summary>
-            <p className="mt-4 text-slate-700 leading-relaxed">
-              Yes! You can plan a trip to any country in the world. Our AI trip planner supports destinations globally, providing personalized itineraries, local recommendations, language guides, and cultural insights for any country you want to visit.
-            </p>
-          </details>
-
-          <details className="bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl border-2 border-slate-200/60 shadow-lg p-4 sm:p-6 group">
-            <summary className="font-bold text-lg sm:text-xl text-slate-900 cursor-pointer list-none flex items-center justify-between">
-              <span>How much does it cost to plan a trip?</span>
-              <svg className="w-5 h-5 text-violet-600 transform group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </summary>
-            <p className="mt-4 text-slate-700 leading-relaxed">
-              Planning a trip with our AI trip planner is completely free. There are no hidden fees, no subscription required, and no credit card needed. You get full access to all features including itinerary planning, budget estimation, packing lists, and recommendations at no cost.
-            </p>
-          </details>
-
-          <details className="bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl border-2 border-slate-200/60 shadow-lg p-4 sm:p-6 group">
-            <summary className="font-bold text-lg sm:text-xl text-slate-900 cursor-pointer list-none flex items-center justify-between">
-              <span>How long does it take to plan a trip?</span>
-              <svg className="w-5 h-5 text-violet-600 transform group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </summary>
-            <p className="mt-4 text-slate-700 leading-relaxed">
-              With our AI trip planner, you can plan a trip in just a few minutes. Simply fill out the quick questionnaire about your destination, dates, budget, and preferences. Our AI will generate a complete personalized itinerary within minutes, saving you hours of manual planning.
-            </p>
-          </details>
-
-          <details className="bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl border-2 border-slate-200/60 shadow-lg p-4 sm:p-6 group">
-            <summary className="font-bold text-lg sm:text-xl text-slate-900 cursor-pointer list-none flex items-center justify-between">
-              <span>How do I add my own Gemini API key?</span>
-              <svg className="w-5 h-5 text-violet-600 transform group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </summary>
-            <div className="mt-4 text-slate-700 leading-relaxed space-y-3">
-              <p>
-                Adding your own Gemini API key gives you full control over your AI usage and ensures you have your personal Google quota. Here's how to add it:
+        {/* FAQ Section */}
+        <section>
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 mb-2">FAQ</h2>
+          </div>
+          <div className="max-w-3xl mx-auto space-y-3">
+            <details className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 group">
+              <summary className="font-semibold text-slate-900 cursor-pointer list-none flex items-center justify-between">
+                <span>How do I plan a trip?</span>
+                <svg className="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </summary>
+              <p className="mt-3 text-sm text-slate-600">
+                Enter your destination, dates, budget, and preferences. Our AI generates a complete personalized itinerary with activities, budget estimates, and recommendations.
               </p>
-              <ol className="list-decimal list-inside space-y-2 ml-2">
-                <li>Go to <a href="https://aistudio.google.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-violet-600 hover:text-violet-700 font-semibold underline">Google AI Studio</a> and click "Create API Key"</li>
-                <li>Create a new project or select an existing one</li>
-                <li>Copy your generated API key</li>
-                <li>Navigate to <a href="/profile" className="text-violet-600 hover:text-violet-700 font-semibold underline">Edit Profile</a> in your account settings</li>
-                <li>Paste the key in the "Gemini API Key" field and click "Save Changes"</li>
-              </ol>
-              <p className="text-sm text-slate-600 italic">
-                Your API key will be securely stored and used for all future AI requests. This ensures you have full control over your usage and can avoid any service limitations.
-              </p>
-            </div>
-          </details>
-        </div>
-      </section>
+            </details>
 
-      {/* Testimonials Section */}
-      <section>
-        <h2 className="text-2xl sm:text-3xl font-bold text-center text-slate-900 mb-4 sm:mb-6 md:mb-8 animated-card" style={{ animationDelay: '1750ms' }}>
-          What Our Travelers Say
-        </h2>
-        <div className="animated-card" style={{ animationDelay: '1800ms' }}>
+            <details className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 group">
+              <summary className="font-semibold text-slate-900 cursor-pointer list-none flex items-center justify-between">
+                <span>Is it free?</span>
+                <svg className="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </summary>
+              <p className="mt-3 text-sm text-slate-600">
+                Yes, completely free. No credit card required. Plan unlimited trips with full access to all features.
+              </p>
+            </details>
+
+            <details className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 group">
+              <summary className="font-semibold text-slate-900 cursor-pointer list-none flex items-center justify-between">
+                <span>What can I plan?</span>
+                <svg className="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </summary>
+              <p className="mt-3 text-sm text-slate-600">
+                Itineraries, packing lists, food recommendations, music playlists, language guides, app suggestions, and multi-destination trips.
+              </p>
+            </details>
+
+            <details className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 group">
+              <summary className="font-semibold text-slate-900 cursor-pointer list-none flex items-center justify-between">
+                <span>How accurate are the plans?</span>
+                <svg className="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </summary>
+              <p className="mt-3 text-sm text-slate-600">
+                Our AI uses advanced algorithms to create personalized plans based on your budget, preferences, and destination with realistic estimates.
+              </p>
+            </details>
+
+            <details className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 group">
+              <summary className="font-semibold text-slate-900 cursor-pointer list-none flex items-center justify-between">
+                <span>Can I plan multiple destinations?</span>
+                <svg className="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </summary>
+              <p className="mt-3 text-sm text-slate-600">
+                Yes, our unified planner supports multi-stop journeys with optimized routes and time management.
+              </p>
+            </details>
+
+            <details className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 group">
+              <summary className="font-semibold text-slate-900 cursor-pointer list-none flex items-center justify-between">
+                <span>How do I add my Gemini API key?</span>
+                <svg className="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </summary>
+              <div className="mt-3 text-sm text-slate-600 space-y-2">
+                <p>1. Go to <a href="https://aistudio.google.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-violet-600 hover:text-violet-700 font-medium underline">Google AI Studio</a> and create an API key</p>
+                <p>2. Copy the key and go to <a href="/profile" className="text-violet-600 hover:text-violet-700 font-medium underline">Edit Profile</a></p>
+                <p>3. Paste the key and save</p>
+              </div>
+            </details>
+          </div>
+        </section>
+
+        {/* Testimonials Section */}
+        <section>
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 mb-2">What Travelers Say</h2>
+          </div>
           <TestimonialsCarousel />
-        </div>
-      </section>
-
+        </section>
+      </div>
     </div>
   );
 };

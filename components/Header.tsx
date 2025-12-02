@@ -109,7 +109,7 @@ const Header: React.FC<HeaderProps> = ({
   return (
     <>
       <header
-        className={`${headerBaseClasses} ${headerInitialClasses} ${headerScrolledClasses}`}
+        className={`${headerBaseClasses} ${headerInitialClasses} ${headerScrolledClasses} z-[9998]`}
         aria-label="Application Header"
       >
         <div className={`${containerBaseClasses} ${containerInitialClasses}`}>
