@@ -1108,7 +1108,7 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
             id={`day-${day.day}`}
             ref={(el) => { dayRefs.current[day.day] = el; }}
             data-day={day.day}
-            className="bg-white/40 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/50 transition-all duration-300 hover:shadow-2xl hover:border-violet-300/50 hover:-translate-y-1 animated-card" 
+            className="bg-white/40 backdrop-blur-lg p-3 sm:p-4 md:p-6 rounded-xl shadow-lg border border-white/50 transition-all duration-300 hover:shadow-2xl hover:border-violet-300/50 hover:-translate-y-1 animated-card" 
             style={{ animationDelay: `${1250 + index * 100}ms` }}
           >
             <div className="flex justify-between items-start">
@@ -1155,48 +1155,48 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
               </div>
             )}
             
-            <div className="space-y-6">
-              <div className="bg-gradient-to-br from-violet-50/60 to-indigo-50/40 backdrop-blur-lg p-6 rounded-2xl shadow-lg border border-violet-200/50">
-                  <div className="flex items-center space-x-3 mb-6">
-                    <div className="bg-violet-600 text-white rounded-xl p-2.5 shadow-lg">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <div className="space-y-4 sm:space-y-6">
+              <div className="bg-gradient-to-br from-violet-50/60 to-indigo-50/40 backdrop-blur-lg p-3 sm:p-4 md:p-6 rounded-xl sm:rounded-2xl shadow-lg border border-violet-200/50">
+                  <div className="flex items-center space-x-2 sm:space-x-3 mb-4 sm:mb-6">
+                    <div className="bg-violet-600 text-white rounded-lg sm:rounded-xl p-2 sm:p-2.5 shadow-lg">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
                       </svg>
                     </div>
-                    <h3 className="text-2xl font-bold text-violet-900">Activities</h3>
+                    <h3 className="text-xl sm:text-2xl font-bold text-violet-900">Activities</h3>
                   </div>
                   
-                  <div className="space-y-4">
+                  <div className="space-y-3 sm:space-y-4">
                     {day.activities && day.activities.length > 0 && (
                       day.activities.map((item, index) => {
                         const { time, description } = parseActivityTime(item);
                         const isLastItem = index === day.activities!.length - 1;
                         
                         return (
-                          <div key={index} className="relative pl-8 group">
+                          <div key={index} className="relative pl-6 sm:pl-8 group">
                             {/* Timeline line */}
                             {!isLastItem && (
-                              <div className="absolute left-3 top-8 bottom-0 w-0.5 bg-gradient-to-b from-violet-300 to-transparent group-hover:from-violet-500 transition-colors"></div>
+                              <div className="absolute left-2.5 sm:left-3 top-6 sm:top-8 bottom-0 w-0.5 bg-gradient-to-b from-violet-300 to-transparent group-hover:from-violet-500 transition-colors"></div>
                             )}
                             
                             {/* Timeline dot */}
-                            <div className="absolute left-0 top-1.5 w-6 h-6 bg-gradient-to-br from-violet-500 to-indigo-500 rounded-full border-4 border-white shadow-lg flex items-center justify-center group-hover:scale-125 transition-transform duration-300">
-                              <div className="w-2 h-2 bg-white rounded-full"></div>
+                            <div className="absolute left-0 top-1 sm:top-1.5 w-5 h-5 sm:w-6 sm:h-6 bg-gradient-to-br from-violet-500 to-indigo-500 rounded-full border-2 sm:border-4 border-white shadow-lg flex items-center justify-center group-hover:scale-125 transition-transform duration-300">
+                              <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full"></div>
                             </div>
                             
                             {/* Activity content */}
-                            <div className="bg-white/70 backdrop-blur-sm rounded-xl p-4 shadow-md border border-violet-100/50 hover:shadow-lg hover:border-violet-200 transition-all duration-300 hover:-translate-x-1">
+                            <div className="bg-white/70 backdrop-blur-sm rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-md border border-violet-100/50 hover:shadow-lg hover:border-violet-200 transition-all duration-300 hover:-translate-x-1">
                               {time && (
-                                <div className="flex items-center space-x-2 mb-2">
-                                  <div className="bg-violet-100 text-violet-700 px-3 py-1 rounded-full text-sm font-semibold flex items-center space-x-1.5 shadow-sm">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <div className="flex items-center space-x-1.5 sm:space-x-2 mb-2">
+                                  <div className="bg-violet-100 text-violet-700 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm font-semibold flex items-center space-x-1 sm:space-x-1.5 shadow-sm">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
                                     <span>{time}</span>
                                   </div>
                                 </div>
                               )}
-                              <div className="text-gray-700 leading-relaxed" dangerouslySetInnerHTML={parseBold(description)} />
+                              <div className="text-sm sm:text-base text-gray-700 leading-relaxed" dangerouslySetInnerHTML={parseBold(description)} />
                             </div>
                           </div>
                         );
@@ -1205,17 +1205,17 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
                   </div>
               </div>
 
-              <div className="bg-gradient-to-br from-amber-50/60 to-orange-50/40 backdrop-blur-lg p-6 rounded-2xl shadow-lg border border-amber-200/50">
-                  <div className="flex items-center space-x-3 mb-6">
-                    <div className="bg-amber-600 text-white rounded-xl p-2.5 shadow-lg">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <div className="bg-gradient-to-br from-amber-50/60 to-orange-50/40 backdrop-blur-lg p-3 sm:p-4 md:p-6 rounded-xl sm:rounded-2xl shadow-lg border border-amber-200/50">
+                  <div className="flex items-center space-x-2 sm:space-x-3 mb-4 sm:mb-6">
+                    <div className="bg-amber-600 text-white rounded-lg sm:rounded-xl p-2 sm:p-2.5 shadow-lg">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0c-.454-.303-.977-.454-1.5-.454V5.454c.523 0 1.046-.151 1.5-.454a2.704 2.704 0 013 0 2.704 2.704 0 003 0 2.704 2.704 0 013 0 2.704 2.704 0 003 0c.454.303.977.454 1.5.454v10.092zM15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
                     </div>
-                    <h3 className="text-2xl font-bold text-amber-900">Food & Restaurant Recommendations</h3>
+                    <h3 className="text-xl sm:text-2xl font-bold text-amber-900">Food & Restaurant Recommendations</h3>
                   </div>
                   
-                  <div className="grid gap-3">
+                  <div className="grid gap-2 sm:gap-3">
                     {day.food && day.food.length > 0 && (
                       day.food.map((item, index) => {
                         const restaurantName = extractRestaurantName(item);
@@ -1280,14 +1280,14 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
                         itemWithLink = parseBold(itemWithLink).__html;
                         
                         return (
-                          <div key={index} className="bg-white/70 backdrop-blur-sm rounded-xl p-4 shadow-md border border-amber-100/50 hover:shadow-lg hover:border-amber-200 transition-all duration-300 hover:scale-[1.02] group">
-                            <div className="flex items-start space-x-3">
-                              <div className="flex-shrink-0 bg-amber-100 text-amber-600 rounded-full p-2 mt-0.5 group-hover:bg-amber-200 transition-colors">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <div key={index} className="bg-white/70 backdrop-blur-sm rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-md border border-amber-100/50 hover:shadow-lg hover:border-amber-200 transition-all duration-300 hover:scale-[1.02] group">
+                            <div className="flex items-start space-x-2 sm:space-x-3">
+                              <div className="flex-shrink-0 bg-amber-100 text-amber-600 rounded-full p-1.5 sm:p-2 mt-0.5 group-hover:bg-amber-200 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
                                 </svg>
                               </div>
-                              <div className="text-gray-700 leading-relaxed flex-1" dangerouslySetInnerHTML={{ __html: itemWithLink }} />
+                              <div className="text-sm sm:text-base text-gray-700 leading-relaxed flex-1" dangerouslySetInnerHTML={{ __html: itemWithLink }} />
                             </div>
                           </div>
                         );
@@ -1296,17 +1296,17 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
                   </div>
               </div>
               
-               <div className="bg-gradient-to-br from-blue-50/60 to-cyan-50/40 backdrop-blur-lg p-6 rounded-2xl shadow-lg border border-blue-200/50">
-                  <div className="flex items-center space-x-3 mb-6">
-                    <div className="bg-blue-600 text-white rounded-xl p-2.5 shadow-lg">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+               <div className="bg-gradient-to-br from-blue-50/60 to-cyan-50/40 backdrop-blur-lg p-3 sm:p-4 md:p-6 rounded-xl sm:rounded-2xl shadow-lg border border-blue-200/50">
+                  <div className="flex items-center space-x-2 sm:space-x-3 mb-4 sm:mb-6">
+                    <div className="bg-blue-600 text-white rounded-lg sm:rounded-xl p-2 sm:p-2.5 shadow-lg">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                       </svg>
                     </div>
-                    <h3 className="text-2xl font-bold text-blue-900">Suggested Places to Stay</h3>
+                    <h3 className="text-xl sm:text-2xl font-bold text-blue-900">Suggested Places to Stay</h3>
                   </div>
                   
-                  <div className="grid gap-3">
+                  <div className="grid gap-2 sm:gap-3">
                     {day.placesToStay && day.placesToStay.length > 0 && (
                       day.placesToStay.map((item, index) => {
                         const hotelName = extractHotelName(item);
@@ -1371,14 +1371,14 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
                         itemWithLink = parseBold(itemWithLink).__html;
                         
                         return (
-                          <div key={index} className="bg-white/70 backdrop-blur-sm rounded-xl p-4 shadow-md border border-blue-100/50 hover:shadow-lg hover:border-blue-200 transition-all duration-300 hover:scale-[1.02] group">
-                            <div className="flex items-start space-x-3">
-                              <div className="flex-shrink-0 bg-blue-100 text-blue-600 rounded-full p-2 mt-0.5 group-hover:bg-blue-200 transition-colors">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <div key={index} className="bg-white/70 backdrop-blur-sm rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-md border border-blue-100/50 hover:shadow-lg hover:border-blue-200 transition-all duration-300 hover:scale-[1.02] group">
+                            <div className="flex items-start space-x-2 sm:space-x-3">
+                              <div className="flex-shrink-0 bg-blue-100 text-blue-600 rounded-full p-1.5 sm:p-2 mt-0.5 group-hover:bg-blue-200 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                                 </svg>
                               </div>
-                              <div className="text-gray-700 leading-relaxed flex-1" dangerouslySetInnerHTML={{ __html: itemWithLink }} />
+                              <div className="text-sm sm:text-base text-gray-700 leading-relaxed flex-1" dangerouslySetInnerHTML={{ __html: itemWithLink }} />
                             </div>
                           </div>
                         );
@@ -1388,42 +1388,42 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
               </div>
               
               {day.transport && (
-                <div className="bg-gradient-to-br from-emerald-50/60 to-teal-50/40 backdrop-blur-lg p-6 rounded-2xl shadow-lg border border-emerald-200/50">
-                  <div className="flex items-center space-x-3 mb-6">
-                    <div className="bg-emerald-600 text-white rounded-xl p-2.5 shadow-lg">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <div className="bg-gradient-to-br from-emerald-50/60 to-teal-50/40 backdrop-blur-lg p-3 sm:p-4 md:p-6 rounded-xl sm:rounded-2xl shadow-lg border border-emerald-200/50">
+                  <div className="flex items-center space-x-2 sm:space-x-3 mb-4 sm:mb-6">
+                    <div className="bg-emerald-600 text-white rounded-lg sm:rounded-xl p-2 sm:p-2.5 shadow-lg">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 9m0 13V9m0 0l6-3m-6 3l6-3" />
                       </svg>
                     </div>
-                    <h3 className="text-2xl font-bold text-emerald-900">Transport Suggestions</h3>
+                    <h3 className="text-xl sm:text-2xl font-bold text-emerald-900">Transport Suggestions</h3>
                   </div>
                   
                   {isRoadTrip && dailyFuelCostPerPerson > 0 && (
-                    <div className="bg-amber-100/70 backdrop-blur-sm rounded-xl p-4 mb-4 border border-amber-200/50 shadow-sm">
+                    <div className="bg-amber-100/70 backdrop-blur-sm rounded-lg sm:rounded-xl p-3 sm:p-4 mb-3 sm:mb-4 border border-amber-200/50 shadow-sm">
                       <div className="flex items-center space-x-2">
-                        <div className="flex-shrink-0 bg-amber-500 text-white rounded-full p-2">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <div className="flex-shrink-0 bg-amber-500 text-white rounded-full p-1.5 sm:p-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 10v-1m0 0c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-amber-900">Est. Fuel Cost</p>
-                          <p className="text-lg font-bold text-amber-800">{currencySymbol}{dailyFuelCostPerPerson.toFixed(2)} per person</p>
+                          <p className="text-xs sm:text-sm font-semibold text-amber-900">Est. Fuel Cost</p>
+                          <p className="text-base sm:text-lg font-bold text-amber-800">{currencySymbol}{dailyFuelCostPerPerson.toFixed(2)} per person</p>
                         </div>
                       </div>
                     </div>
                   )}
                   
-                  <div className="grid gap-3">
+                  <div className="grid gap-2 sm:gap-3">
                     {[].concat(day.transport.suggestions || []).map((item, index) => (
-                      <div key={index} className="bg-white/70 backdrop-blur-sm rounded-xl p-4 shadow-md border border-emerald-100/50 hover:shadow-lg hover:border-emerald-200 transition-all duration-300 hover:scale-[1.02] group">
-                        <div className="flex items-start space-x-3">
-                          <div className="flex-shrink-0 bg-emerald-100 text-emerald-600 rounded-full p-2 mt-0.5 group-hover:bg-emerald-200 transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <div key={index} className="bg-white/70 backdrop-blur-sm rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-md border border-emerald-100/50 hover:shadow-lg hover:border-emerald-200 transition-all duration-300 hover:scale-[1.02] group">
+                        <div className="flex items-start space-x-2 sm:space-x-3">
+                          <div className="flex-shrink-0 bg-emerald-100 text-emerald-600 rounded-full p-1.5 sm:p-2 mt-0.5 group-hover:bg-emerald-200 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                           </div>
-                          <div className="text-gray-700 leading-relaxed flex-1" dangerouslySetInnerHTML={parseBold(String(item))} />
+                          <div className="text-sm sm:text-base text-gray-700 leading-relaxed flex-1" dangerouslySetInnerHTML={parseBold(String(item))} />
                         </div>
                       </div>
                     ))}
@@ -1432,26 +1432,26 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
               )}
               
               {day.medicalFacilities && day.medicalFacilities.length > 0 && (
-                <div className="bg-gradient-to-br from-rose-50/60 to-pink-50/40 backdrop-blur-lg p-6 rounded-2xl shadow-lg border border-rose-200/50">
-                  <div className="flex items-center space-x-3 mb-6">
-                    <div className="bg-rose-600 text-white rounded-xl p-2.5 shadow-lg">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <div className="bg-gradient-to-br from-rose-50/60 to-pink-50/40 backdrop-blur-lg p-3 sm:p-4 md:p-6 rounded-xl sm:rounded-2xl shadow-lg border border-rose-200/50">
+                  <div className="flex items-center space-x-2 sm:space-x-3 mb-4 sm:mb-6">
+                    <div className="bg-rose-600 text-white rounded-lg sm:rounded-xl p-2 sm:p-2.5 shadow-lg">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                       </svg>
                     </div>
-                    <h3 className="text-2xl font-bold text-rose-900">Nearby Medical Facilities</h3>
+                    <h3 className="text-xl sm:text-2xl font-bold text-rose-900">Nearby Medical Facilities</h3>
                   </div>
                   
-                  <div className="grid gap-3">
+                  <div className="grid gap-2 sm:gap-3">
                     {day.medicalFacilities.map((item, index) => (
-                      <div key={index} className="bg-white/70 backdrop-blur-sm rounded-xl p-4 shadow-md border border-rose-100/50 hover:shadow-lg hover:border-rose-200 transition-all duration-300 hover:scale-[1.02] group">
-                        <div className="flex items-start space-x-3">
-                          <div className="flex-shrink-0 bg-rose-100 text-rose-600 rounded-full p-2 mt-0.5 group-hover:bg-rose-200 transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <div key={index} className="bg-white/70 backdrop-blur-sm rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-md border border-rose-100/50 hover:shadow-lg hover:border-rose-200 transition-all duration-300 hover:scale-[1.02] group">
+                        <div className="flex items-start space-x-2 sm:space-x-3">
+                          <div className="flex-shrink-0 bg-rose-100 text-rose-600 rounded-full p-1.5 sm:p-2 mt-0.5 group-hover:bg-rose-200 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
                             </svg>
                           </div>
-                          <div className="text-gray-700 leading-relaxed flex-1" dangerouslySetInnerHTML={parseBold(item)} />
+                          <div className="text-sm sm:text-base text-gray-700 leading-relaxed flex-1" dangerouslySetInnerHTML={parseBold(item)} />
                         </div>
                       </div>
                     ))}
