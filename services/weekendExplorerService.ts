@@ -61,7 +61,7 @@ export const searchWeekendPackages = async (
 - Currency: ${request.currency}
 
 **Search Criteria:**
-1. Find 4-6 weekend getaway destinations/packages that are:
+1. Find 6 or 9 weekend getaway destinations/packages (minimum 6, multiple of 3) that are:
    - Within reasonable driving distance (max 6-8 hours) from ${request.location} (starting point)
    - Suitable for 3-4 day trips (including Saturday and Sunday)
    - Outdoor-focused destinations (hill stations, beaches, nature reserves, adventure spots, etc.)
@@ -100,6 +100,7 @@ Return a JSON array of packages. Each package must have:
 **CRITICAL RULES:**
 - Return ONLY valid JSON array starting with '[' and ending with ']'
 - NO markdown, NO code blocks, NO explanatory text
+- Return a minimum of 6 packages, and a multiple of 3 (6 or 9 packages)
 - All packages must be feasible for weekend trips (3-4 days)
 - Use Google Search to find real, current information about weekend packages and destinations
 - Ensure all destinations are outdoor gateways suitable for weekend trips
@@ -161,6 +162,25 @@ Search for current weekend packages and popular weekend destinations near ${requ
         imageUrl: pkg.imageUrl,
       };
     });
+
+    // Ensure minimum 6 and multiple of 3 results (6 or 9 packages)
+    // This ensures the grid layout looks balanced (3 columns)
+    if (packages.length >= 6) {
+      // If we have 6 or more, reduce to nearest multiple of 3 that is >= 6
+      while (packages.length > 6 && packages.length % 3 !== 0) {
+        packages.pop();
+      }
+      // Cap at 9 for optimal display
+      if (packages.length > 9) {
+        packages.splice(9);
+      }
+    } else {
+      // If we have less than 6, ensure it's still a multiple of 3
+      // (Ideally AI should return at least 6, but handle edge cases)
+      while (packages.length > 0 && packages.length % 3 !== 0) {
+        packages.pop();
+      }
+    }
 
     return packages;
 

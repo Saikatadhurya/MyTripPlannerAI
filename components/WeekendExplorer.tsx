@@ -856,75 +856,75 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
             {isLoading ? (
               <div className="text-center py-8 sm:py-12">
                 <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-violet-600 mx-auto mb-3 sm:mb-4"></div>
-                <p className="text-sm sm:text-base text-slate-600">Searching for perfect weekend getaways...</p>
+                <p className="text-sm sm:text-base text-slate-600">Searching...</p>
               </div>
             ) : packages.length > 0 ? (
               <>
-                <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 mb-4 sm:mb-6 text-center px-2">
-                  🎯 Weekend Packages Found
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-6 sm:mb-8 text-center">
+                  Weekend Packages
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                  {packages.map((pkg) => (
+                  {packages.slice(0, 6).map((pkg) => (
                     <div
                       key={pkg.id}
                       onClick={() => handlePackageSelect(pkg)}
-                      className="bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-xl border-2 border-white/60 p-4 sm:p-6 cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:border-violet-400"
+                      className="group bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-[1.02] hover:border-violet-300"
                     >
-                      <div className="flex items-start justify-between mb-2 sm:mb-3">
-                        <h3 className="text-lg sm:text-xl font-bold text-slate-900 flex-1">{pkg.title}</h3>
-                        <span className="text-xs sm:text-sm font-semibold text-violet-600 bg-violet-100 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full ml-2">
-                          {pkg.days} Days
-                        </span>
-                      </div>
-                      <p className="text-xs sm:text-sm text-slate-600 mb-3 sm:mb-4">{pkg.description}</p>
-                      
-                      <div className="mb-3 sm:mb-4">
-                        <div className="text-[10px] sm:text-xs font-semibold text-slate-500 mb-1 sm:mb-2">📍 {pkg.destination}</div>
-                        <div className="text-[10px] sm:text-xs text-slate-600 mb-1 sm:mb-2">
-                          🚗 {pkg.distance} • ⏱️ {pkg.travelTime}
-                        </div>
-                        <div className="text-xs sm:text-sm font-semibold text-green-600 mb-2 sm:mb-3">
-                          💰 {pkg.estimatedBudget}
+                      {/* Location Header - Highlighted */}
+                      <div className="bg-gradient-to-r from-violet-600 to-purple-600 p-4 sm:p-5">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-white flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                              </svg>
+                              <h3 className="text-base sm:text-lg font-bold text-white truncate">{pkg.destination}</h3>
+                            </div>
+                            <p className="text-xs sm:text-sm text-violet-100">{pkg.distance} • {pkg.travelTime}</p>
+                          </div>
+                          <span className="text-xs sm:text-sm font-semibold text-violet-600 bg-white px-2 sm:px-3 py-1 rounded-full ml-2 flex-shrink-0">
+                            {pkg.days}D
+                          </span>
                         </div>
                       </div>
 
-                      {pkg.highlights.length > 0 && (
-                        <div className="mb-3 sm:mb-4">
-                          <div className="text-[10px] sm:text-xs font-semibold text-slate-700 mb-1 sm:mb-2">✨ Highlights:</div>
-                          <ul className="space-y-0.5 sm:space-y-1">
-                            {pkg.highlights.slice(0, 3).map((highlight, idx) => (
-                              <li key={idx} className="text-[10px] sm:text-xs text-slate-600 flex items-start">
-                                <span className="mr-1 sm:mr-2">•</span>
-                                <span>{highlight}</span>
-                              </li>
+                      {/* Content */}
+                      <div className="p-4 sm:p-5">
+                        {/* Budget */}
+                        <div className="mb-4 flex items-center gap-2">
+                          <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span className="text-sm sm:text-base font-semibold text-green-600">{pkg.estimatedBudget}</span>
+                        </div>
+
+                        {/* Best For Tags - Minimal */}
+                        {pkg.bestFor.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mb-4">
+                            {pkg.bestFor.slice(0, 2).map((vibe, idx) => (
+                              <span
+                                key={idx}
+                                className="text-[10px] sm:text-xs px-2 py-0.5 bg-violet-50 text-violet-700 rounded-full font-medium"
+                              >
+                                {vibe}
+                              </span>
                             ))}
-                          </ul>
-                        </div>
-                      )}
+                          </div>
+                        )}
 
-                      {pkg.bestFor.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-3 sm:mb-4">
-                          {pkg.bestFor.map((vibe, idx) => (
-                            <span
-                              key={idx}
-                              className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 bg-blue-100 text-blue-700 rounded-full"
-                            >
-                              {vibe}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-
-                      <button className="w-full mt-3 sm:mt-4 px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-violet-600 to-purple-600 text-white text-xs sm:text-sm font-semibold rounded-lg hover:from-violet-700 hover:to-purple-700 transition-all">
-                        Plan This Trip →
-                      </button>
+                        {/* CTA Button */}
+                        <button className="w-full mt-2 px-4 py-2.5 bg-gradient-to-r from-violet-600 to-purple-600 text-white text-sm font-semibold rounded-lg hover:from-violet-700 hover:to-purple-700 transition-all">
+                          Plan Trip
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
               </>
             ) : (
-              <div className="text-center py-8 sm:py-12 bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-xl border-2 border-white/60 p-4 sm:p-6">
-                <p className="text-sm sm:text-base md:text-lg text-slate-600">No packages found. Try adjusting your search criteria.</p>
+              <div className="text-center py-12 bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border border-slate-200 p-6">
+                <p className="text-sm sm:text-base text-slate-600">No packages found. Try adjusting your search.</p>
               </div>
             )}
           </div>
