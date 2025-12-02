@@ -236,9 +236,18 @@ const PackingListPreview: React.FC<PackingListPreviewProps> = ({ packingList, on
             </div>
             )}
 
-            <header className="space-y-2 sm:space-y-4 text-center">
-                <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-gray-900 tracking-tight break-words px-1 sm:px-2">Packing for {packingList.destination}</h1>
-                <p className="text-sm sm:text-base md:text-lg text-gray-700 mt-1 sm:mt-2 px-1 sm:px-2">Your personalized {packingList.days}-day packing checklist</p>
+            <header className="bg-gradient-to-br from-violet-50/60 via-indigo-50/40 to-blue-50/30 backdrop-blur-lg rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 border border-violet-200/50 shadow-md animated-card">
+                <div className="text-center">
+                    <div className="inline-flex items-center justify-center mb-2 sm:mb-3">
+                        <div className="bg-gradient-to-br from-violet-500 to-indigo-600 rounded-full p-1.5 sm:p-2 shadow-md">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                            </svg>
+                        </div>
+                    </div>
+                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-extrabold bg-gradient-to-r from-slate-900 via-violet-800 to-slate-900 bg-clip-text text-transparent tracking-tight break-words px-1 sm:px-2">Packing for {packingList.destination}</h1>
+                    <p className="text-xs sm:text-sm md:text-base text-slate-600 mt-1.5 sm:mt-2 font-medium break-words px-1 sm:px-2">Your personalized {packingList.days}-day packing checklist</p>
+                </div>
             </header>
 
             <section className="space-y-4 sm:space-y-6">

@@ -219,13 +219,22 @@ const AppFinderResult: React.FC<AppFinderResultProps> = ({ recommendations, onRe
             </div>
             )}
             
-            <header className="space-y-2 sm:space-y-4 text-center">
-                <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-gray-900 tracking-tight break-words px-1 sm:px-2">
-                    Essential Apps for {recommendations.destination}
-                </h1>
-                <p className="text-sm sm:text-base md:text-lg text-gray-700 mt-1 sm:mt-2 px-1 sm:px-2">
-                    Your personalized guide to local and international apps.
-                </p>
+            <header className="bg-gradient-to-br from-teal-50/60 via-cyan-50/40 to-blue-50/30 backdrop-blur-lg rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 border border-teal-200/50 shadow-md animated-card">
+                <div className="text-center">
+                    <div className="inline-flex items-center justify-center mb-2 sm:mb-3">
+                        <div className="bg-gradient-to-br from-teal-500 to-cyan-600 rounded-full p-1.5 sm:p-2 shadow-md">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-extrabold bg-gradient-to-r from-slate-900 via-teal-800 to-slate-900 bg-clip-text text-transparent tracking-tight break-words px-1 sm:px-2">
+                        Essential Apps for {recommendations.destination}
+                    </h1>
+                    <p className="text-xs sm:text-sm md:text-base text-slate-600 mt-1.5 sm:mt-2 font-medium break-words px-1 sm:px-2">
+                        Your personalized guide to local and international apps.
+                    </p>
+                </div>
             </header>
             
             {/* Share buttons - Only show when saved and not in history view */}
