@@ -275,14 +275,14 @@ const parseActivityTime = (text: string): { time?: string; description: string }
 };
 
 const SummaryItem: React.FC<{ icon: React.ReactNode; label: string; children: React.ReactNode }> = ({ icon, label, children }) => (
-    <div className="bg-white/40 backdrop-blur-md p-4 rounded-xl border border-white/50 flex items-center space-x-4">
-        <div className="flex-shrink-0 bg-violet-100 text-violet-600 rounded-full p-3">
-            {icon}
+    <div className="bg-gradient-to-br from-white/60 to-violet-50/30 backdrop-blur-md p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-violet-200/50 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1 h-full flex flex-col">
+        <div className="flex items-center space-x-3 sm:space-x-4 mb-2 sm:mb-3">
+            <div className="flex-shrink-0 bg-gradient-to-br from-violet-500 to-violet-600 text-white rounded-lg sm:rounded-xl p-2 sm:p-3 shadow-md">
+                {icon}
+            </div>
+            <p className="text-xs sm:text-sm text-violet-700 font-semibold uppercase tracking-wide">{label}</p>
         </div>
-        <div>
-            <p className="text-sm text-violet-800 font-medium break-words">{label}</p>
-            <div className="font-semibold text-lg text-slate-800 break-words">{children}</div>
-        </div>
+        <div className="font-bold text-base sm:text-lg text-slate-800 break-words mt-auto">{children}</div>
     </div>
 );
 
@@ -299,17 +299,33 @@ const getCurrencySymbol = (currencyString: string): string => {
 // New component for budget cards
 const BudgetCard: React.FC<{ title: string; icon: React.ReactNode; value: string; currencySymbol: string; isHighlighted?: boolean; animationDelay: string; }> = ({ title, icon, value, currencySymbol, isHighlighted = false, animationDelay }) => {
   // Clean value from any currency prefix the AI might have added
-  const cleanedValue = value.replace(/^[A-Z]{3,5}\s?/, '').replace(/^[^\d\s.,-]+/, '').trim();
+  let cleanedValue = value.replace(/^[A-Z]{3,5}\s?/, '').replace(/^[^\d\s.,-]+/, '').trim();
   
-  // Regex to split the numerical part from the description
-  const match = cleanedValue.match(/([\d,.\s-]+)\s*(.*)/s);
+  // Check if the value contains a range (e.g., "2000-3000" or "2000 - 3000")
+  const rangeMatch = cleanedValue.match(/(\d+(?:[.,]\d+)?)\s*[-–—]\s*(\d+(?:[.,]\d+)?)/);
   
   let mainValue = cleanedValue;
   let description = '';
 
-  if (match) {
-    mainValue = match[1].trim();
-    description = match[2].trim();
+  if (rangeMatch) {
+    // Handle range: extract both numbers and format them
+    const minValue = rangeMatch[1].replace(/,/g, '');
+    const maxValue = rangeMatch[2].replace(/,/g, '');
+    mainValue = `${minValue} - ${maxValue}`;
+    
+    // Extract description after the range
+    const afterRange = cleanedValue.substring(rangeMatch[0].length).trim();
+    if (afterRange) {
+      description = afterRange;
+    }
+  } else {
+    // Handle single value: regex to split the numerical part from the description
+    const match = cleanedValue.match(/([\d,.\s-]+)\s*(.*)/s);
+    
+    if (match) {
+      mainValue = match[1].trim();
+      description = match[2].trim();
+    }
   }
   
   const cardClasses = isHighlighted 
@@ -326,16 +342,16 @@ const BudgetCard: React.FC<{ title: string; icon: React.ReactNode; value: string
 
   return (
     <div 
-      className={`p-6 rounded-2xl text-center flex flex-col justify-start animated-card h-full ${cardClasses}`}
+      className={`p-3 sm:p-4 md:p-6 rounded-xl sm:rounded-2xl text-center flex flex-col justify-start animated-card h-full ${cardClasses}`}
       style={{ animationDelay }}
     >
-      <div className={`mx-auto rounded-full h-12 w-12 flex items-center justify-center flex-shrink-0 ${iconContainerClasses}`}>
+      <div className={`mx-auto rounded-full h-10 w-10 sm:h-12 sm:w-12 flex items-center justify-center flex-shrink-0 ${iconContainerClasses}`}>
         {icon}
       </div>
-      <p className={`mt-4 text-sm font-medium break-words ${textColorClasses.title}`}>{title}</p>
+      <p className={`mt-2 sm:mt-3 md:mt-4 text-xs sm:text-sm font-medium break-words ${textColorClasses.title}`}>{title}</p>
       <div className="mt-2 flex-grow flex flex-col justify-center">
-        <p className={`text-2xl font-bold break-words ${textColorClasses.value}`}>{currencySymbol} {mainValue}</p>
-        {description && <p className={`text-sm mt-1 break-words ${textColorClasses.description}`}>{description}</p>}
+        <p className={`text-lg sm:text-2xl font-bold break-words ${textColorClasses.value}`}>{currencySymbol} {mainValue}</p>
+        {description && <p className={`text-xs sm:text-sm mt-1 break-words ${textColorClasses.description}`}>{description}</p>}
       </div>
     </div>
   );
@@ -731,9 +747,23 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
   const isRoadTrip = itinerary.tripType === 'Car' || itinerary.tripType === 'Bike';
 
   // Helper function to safely parse cost strings into numbers
+  // Handles ranges like "2000-3000" by using the average value
   const parseCost = (costString?: string): number => {
     if (!costString) return 0;
-    // Removes currency symbols, codes, commas, and any other text before parsing.
+    
+    // Check if it's a range (e.g., "2000-3000" or "2000 - 3000")
+    const rangeMatch = String(costString).match(/(\d+(?:[.,]\d+)?)\s*[-–—]\s*(\d+(?:[.,]\d+)?)/);
+    
+    if (rangeMatch) {
+      // For ranges, use the average of min and max
+      const min = parseFloat(rangeMatch[1].replace(/,/g, ''));
+      const max = parseFloat(rangeMatch[2].replace(/,/g, ''));
+      if (!isNaN(min) && !isNaN(max)) {
+        return (min + max) / 2;
+      }
+    }
+    
+    // For single values, remove currency symbols, codes, commas, and any other text before parsing
     const cleaned = String(costString).replace(/[^\d.]/g, '');
     return parseFloat(cleaned) || 0;
   };
@@ -824,7 +854,7 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
 
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8 md:space-y-12 mb-16 px-2 sm:px-4" id="itinerary-preview-content">
+    <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8 md:space-y-12 mb-16 px-1 sm:px-4" id="itinerary-preview-content">
       {/* Day Indicator - Fixed position for better visibility */}
       {itinerary.days && itinerary.days > 0 && (
         <div className="fixed top-20 right-2 sm:top-24 sm:right-4 md:top-24 md:right-6 z-[100] no-print">
@@ -890,8 +920,8 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
       )}
       <header className="space-y-2 sm:space-y-4 animated-card">
         <div className="text-center">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-gray-900 tracking-tight break-words px-2" dangerouslySetInnerHTML={parseBold(`Trip to ${itinerary.destination}`)} />
-            <p className="text-sm sm:text-base md:text-lg text-gray-700 mt-1 sm:mt-2 break-words px-2">Your amazing {itinerary.days}-day {itinerary.isRoundTrip ? 'round trip ' : ''}itinerary</p>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-gray-900 tracking-tight break-words px-1 sm:px-2" dangerouslySetInnerHTML={parseBold(`Trip to ${itinerary.destination}`)} />
+            <p className="text-sm sm:text-base md:text-lg text-gray-700 mt-1 sm:mt-2 break-words px-1 sm:px-2">Your amazing {itinerary.days}-day {itinerary.isRoundTrip ? 'round trip ' : ''}itinerary</p>
         </div>
       </header>
       
@@ -920,8 +950,8 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
       )}
       
       <section>
-        <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 mb-4 sm:mb-6 animated-card px-2" style={{ animationDelay: '100ms' }}>Trip Summary</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 mb-4 sm:mb-6 animated-card px-1 sm:px-2" style={{ animationDelay: '100ms' }}>Trip Summary</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4 lg:gap-6">
           <div className="animated-card" style={{ animationDelay: '200ms' }}>
             <SummaryItem icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>} label="Start Date">
               {formattedStartDate}
@@ -970,13 +1000,13 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
       </section>
 
       <section>
-        <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 mb-4 sm:mb-6 animated-card px-2" style={{ animationDelay: '500ms' }}>Budget Overview <span className="text-sm sm:text-base font-normal text-slate-600">(Est. Per Person)</span></h2>
+        <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 mb-4 sm:mb-6 animated-card px-1 sm:px-2" style={{ animationDelay: '500ms' }}>Budget Overview <span className="text-sm sm:text-base font-normal text-slate-600">(Est. Per Person)</span></h2>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-2 gap-2 sm:gap-4 lg:gap-6">
           {budgetItemsForGrid.map((item, index) => {
             const isLastItem = index === budgetItemsForGrid.length - 1;
-            // Span the last item if the total number of items is odd
-            const wrapperClass = (isLastItem && budgetItemsForGrid.length % 2 !== 0) ? 'sm:col-span-2' : '';
+            // Span the last item if the total number of items is odd (works for both mobile and desktop)
+            const wrapperClass = (isLastItem && budgetItemsForGrid.length % 2 !== 0) ? 'col-span-2 sm:col-span-2' : '';
 
             return (
               <div key={item.key} className={wrapperClass}>
@@ -1049,7 +1079,7 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
       </section>
 
       <section className="space-y-6 sm:space-y-8">
-        <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 animated-card px-2 mb-4 sm:mb-6" style={{ animationDelay: '1200ms' }}>Daily Itinerary</h2>
+        <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 animated-card px-1 sm:px-2 mb-4 sm:mb-6" style={{ animationDelay: '1200ms' }}>Daily Itinerary</h2>
         
         {itinerary.plan.map((day, index) => {
           let dailyFuelCostPerPerson = 0;

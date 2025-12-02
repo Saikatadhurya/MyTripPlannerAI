@@ -199,7 +199,7 @@ const MusicFinderResult: React.FC<MusicFinderResultProps> = ({ recommendations, 
     };
 
     return (
-        <div className="max-w-5xl mx-auto space-y-6 sm:space-y-8 md:space-y-12 animated-card mb-16 px-2 sm:px-4" id="music-finder-result-content">
+        <div className="max-w-5xl mx-auto space-y-6 sm:space-y-8 md:space-y-12 animated-card mb-16 px-1 sm:px-4" id="music-finder-result-content">
             {!isUnifiedView && (
             <div className="flex justify-start items-center no-print">
                 <button
@@ -218,10 +218,10 @@ const MusicFinderResult: React.FC<MusicFinderResultProps> = ({ recommendations, 
             )}
             
             <header className="space-y-2 sm:space-y-4 text-center">
-                <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-gray-900 tracking-tight break-words px-2">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-gray-900 tracking-tight break-words px-1 sm:px-2">
                     The Sound of {recommendations.destination}
                 </h1>
-                <p className="text-sm sm:text-base md:text-lg text-gray-700 mt-1 sm:mt-2 px-2">
+                <p className="text-sm sm:text-base md:text-lg text-gray-700 mt-1 sm:mt-2 px-1 sm:px-2">
                     Your personalized guide to the local music scene.
                 </p>
             </header>
@@ -264,8 +264,8 @@ const MusicFinderResult: React.FC<MusicFinderResultProps> = ({ recommendations, 
                     ))
                 ) : (
                     <div className="text-center bg-white/20 backdrop-blur-xl border border-white/30 rounded-xl sm:rounded-2xl p-6 sm:p-8 md:p-12 shadow-lg">
-                        <h2 className="text-xl sm:text-2xl font-bold text-slate-800 px-2">No Specific Music Found</h2>
-                        <p className="text-sm sm:text-base text-slate-600 mt-2 px-2">We couldn't find unique local music for {recommendations.destination}. Try exploring global charts on Spotify or Apple Music for popular hits!</p>
+                        <h2 className="text-xl sm:text-2xl font-bold text-slate-800 px-1 sm:px-2">No Specific Music Found</h2>
+                        <p className="text-sm sm:text-base text-slate-600 mt-2 px-1 sm:px-2">We couldn't find unique local music for {recommendations.destination}. Try exploring global charts on Spotify or Apple Music for popular hits!</p>
                     </div>
                 )}
             </div>

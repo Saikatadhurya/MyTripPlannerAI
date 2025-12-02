@@ -554,7 +554,7 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
     };
     
     return (
-        <div ref={containerRef} className="max-w-7xl mx-auto space-y-4 sm:space-y-6 md:space-y-8 animated-card unified-interactive-view mb-16 px-2 sm:px-4">
+        <div ref={containerRef} className="max-w-7xl mx-auto space-y-4 sm:space-y-6 md:space-y-8 animated-card unified-interactive-view mb-16 px-1 sm:px-4">
             <header ref={headerRef} id="unified-plan-header" className="flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4 py-3 sm:py-4 no-print unified-header scroll-mt-0">
                  <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight text-center sm:text-left break-words">
                     Your Unified Trip Plan to <span className="text-violet-700">{plan.itinerary?.destination || '...'}</span>

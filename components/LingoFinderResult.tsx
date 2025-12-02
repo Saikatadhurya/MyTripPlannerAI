@@ -133,7 +133,7 @@ const LingoFinderResult: React.FC<LingoFinderResultProps> = ({ recommendations, 
     };
 
     return (
-        <div className="max-w-3xl mx-auto space-y-6 sm:space-y-8 md:space-y-12 animated-card mb-16 px-2 sm:px-4" id="lingo-finder-result-content">
+        <div className="max-w-3xl mx-auto space-y-6 sm:space-y-8 md:space-y-12 animated-card mb-16 px-1 sm:px-4" id="lingo-finder-result-content">
             {!isUnifiedView && (
             <div className="flex justify-start items-center no-print">
                 <button
@@ -152,10 +152,10 @@ const LingoFinderResult: React.FC<LingoFinderResultProps> = ({ recommendations, 
             )}
             
             <header className="space-y-2 sm:space-y-4 text-center">
-                <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-gray-900 tracking-tight break-words px-2">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-gray-900 tracking-tight break-words px-1 sm:px-2">
                     Local Lingo Guide for {recommendations.destination}
                 </h1>
-                <p className="text-sm sm:text-base md:text-lg text-gray-700 mt-1 sm:mt-2 px-2">
+                <p className="text-sm sm:text-base md:text-lg text-gray-700 mt-1 sm:mt-2 px-1 sm:px-2">
                     Your essential phrasebook for speaking <span className="font-semibold text-sky-700">{recommendations.localLanguage}</span>.
                 </p>
             </header>
