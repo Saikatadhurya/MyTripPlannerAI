@@ -155,9 +155,21 @@ const Header: React.FC<HeaderProps> = ({
               <div className="flex items-center space-x-2">
                 <button
                   onClick={onOpenAuthModal}
-                  className="px-4 py-1.5 text-sm bg-violet-600 text-white font-semibold rounded-lg shadow-lg shadow-violet-500/30 hover:bg-violet-700 hover:shadow-xl hover:shadow-violet-500/40 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-violet-300"
+                  className="relative px-5 py-2.5 text-sm bg-gradient-to-r from-violet-600 to-purple-600 text-white font-bold rounded-xl shadow-lg shadow-violet-500/40 hover:from-violet-700 hover:to-purple-700 hover:shadow-xl hover:shadow-violet-500/50 transition-all duration-300 transform hover:scale-110 focus:outline-none focus:ring-4 focus:ring-violet-300 cursor-pointer animate-pulse hover:animate-none group overflow-hidden"
                 >
-                  Sign In
+                  {/* Animated background shimmer */}
+                  <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
+                  
+                  {/* Button content */}
+                  <span className="relative flex items-center gap-2">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    <span>Sign In</span>
+                    <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                  </span>
                 </button>
               </div>
             )}
