@@ -21,8 +21,6 @@ interface LandingPageProps {
 
 const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPlanItinerary, onStartPacking, onStartFoodFinder, onStartAppFinder, onStartMusicFinder, onStartLingoFinder, onStartWeekendExplorer, onOpenAuthModal, onGoToBlog, onViewHistory }) => {
   const [destinations, setDestinations] = useState<PopularDestination[]>([]);
-  const hasCheckedAuth = useRef(false);
-  const authCheckTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Map of destination names to share links
   const shareLinks: { [key: string]: string } = {
@@ -34,48 +32,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
 
   // Destinations to exclude from display
   const excludedDestinations = ['Singapore', 'Sri Lanka'];
-
-  // Open auth modal if user is not logged in on initial load
-  // Wait a bit for user state to initialize to prevent flashing
-  useEffect(() => {
-    // If user is already loaded and logged in, mark as checked and don't show modal
-    if (user) {
-      hasCheckedAuth.current = true;
-      if (authCheckTimeoutRef.current) {
-        clearTimeout(authCheckTimeoutRef.current);
-        authCheckTimeoutRef.current = null;
-      }
-      return;
-    }
-    
-    // If we've already checked, don't check again
-    if (hasCheckedAuth.current) return;
-    
-    // Clear any existing timeout
-    if (authCheckTimeoutRef.current) {
-      clearTimeout(authCheckTimeoutRef.current);
-    }
-    
-    // Wait a short time for user state to initialize from localStorage
-    // This prevents the modal from flashing when user is logged in
-    authCheckTimeoutRef.current = setTimeout(() => {
-      // Double check user state after delay
-      if (!hasCheckedAuth.current && !user) {
-        hasCheckedAuth.current = true;
-        onOpenAuthModal();
-      } else if (user) {
-        // User loaded during the delay, don't show modal
-        hasCheckedAuth.current = true;
-      }
-    }, 150); // Small delay to allow user state to load from localStorage
-
-    return () => {
-      if (authCheckTimeoutRef.current) {
-        clearTimeout(authCheckTimeoutRef.current);
-        authCheckTimeoutRef.current = null;
-      }
-    };
-  }, [user, onOpenAuthModal]);
 
   const destinationsRef = useRef<HTMLDivElement>(null);
 

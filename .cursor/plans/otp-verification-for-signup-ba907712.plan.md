@@ -1,4 +1,9 @@
-<!-- ba907712-311c-4ac9-8617-b5d1054fa0f1 e33d8baf-d306-47cb-9ad1-01f14c5c6592 -->
+---
+name: Trip Plan Generation Speed Optimization
+overview: ""
+todos: []
+---
+
 # Trip Plan Generation Speed Optimization
 
 ## Current Bottlenecks Identified
