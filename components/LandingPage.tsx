@@ -159,6 +159,52 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
   
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50">
+      <style>{`
+        @keyframes buttonPulse {
+          0%, 100% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.7), 0 0 20px rgba(139, 92, 246, 0.5);
+          }
+          50% {
+            transform: scale(1.02);
+            box-shadow: 0 0 0 10px rgba(139, 92, 246, 0), 0 0 30px rgba(139, 92, 246, 0.8);
+          }
+        }
+        @keyframes buttonFlash {
+          0%, 100% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0.9;
+          }
+        }
+        @keyframes buttonShine {
+          0% {
+            background-position: -200% center;
+          }
+          100% {
+            background-position: 200% center;
+          }
+        }
+        .start-planning-btn {
+          animation: buttonPulse 2s ease-in-out infinite, buttonFlash 3s ease-in-out infinite;
+          background: linear-gradient(90deg, #7c3aed 0%, #9333ea 50%, #7c3aed 100%);
+          background-size: 200% auto;
+        }
+        .start-planning-btn::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+          animation: buttonShine 3s infinite;
+        }
+        .start-planning-btn:hover {
+          animation: buttonPulse 1s ease-in-out infinite, buttonFlash 2s ease-in-out infinite;
+        }
+      `}</style>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 space-y-10 sm:space-y-12 lg:space-y-14">
         {/* Hero Section */}
         <section className="relative">
@@ -202,9 +248,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center pt-3">
               <button
                 onClick={onPlanUnifiedTrip}
-                className="w-full sm:w-auto px-8 py-3.5 bg-gradient-to-r from-violet-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2"
+                className="start-planning-btn relative w-full sm:w-auto px-10 py-4 text-white font-bold text-lg rounded-xl shadow-2xl shadow-violet-500/50 hover:shadow-2xl hover:shadow-violet-500/70 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-violet-400 focus:ring-offset-2 ring-4 ring-violet-400/30 overflow-hidden"
               >
-                Start Planning
+                <span className="relative z-10">Start Planning</span>
               </button>
               <button
                 onClick={onStartWeekendExplorer}
