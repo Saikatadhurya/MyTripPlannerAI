@@ -1,12 +1,12 @@
 # robots.txt for PlanMyTrip AI
-# Optimized for maximum search engine visibility and global ranking
-# Last Updated: 2025-11-15
+# Optimized for search engine indexing
+# Last Updated: 2025-12-10
 
-# Allow all major search engines to crawl the site
+# Allow all search engines to crawl and index the site
 User-agent: *
 Allow: /
 
-# Explicitly allow all public pages for better indexing
+# Allow all public pages
 Allow: /plan
 Allow: /itinerary
 Allow: /weekend-explorer
@@ -23,23 +23,40 @@ Allow: /history
 Allow: /token-usage
 Allow: /share/
 
-# Block private/dynamic pages that require authentication
+# Only block private/dynamic pages that require authentication
 Disallow: /results/
 Disallow: /auth
 Disallow: /test-router
-
-# Block admin and internal pages (if any)
 Disallow: /admin/
 Disallow: /api/
 Disallow: /_next/
 Disallow: /static/
 
-# Google-specific rules
+# Google-specific rules - explicitly allow indexing
 User-agent: Googlebot
 Allow: /
+Allow: /plan
+Allow: /itinerary
+Allow: /weekend-explorer
+Allow: /packing
+Allow: /food
+Allow: /apps
+Allow: /music
+Allow: /lingo
+Allow: /blog
+Allow: /contact
+Allow: /get-api-key
+Allow: /profile
+Allow: /history
+Allow: /token-usage
+Allow: /share/
 Disallow: /results/
 Disallow: /auth
 Disallow: /test-router
+Disallow: /admin/
+Disallow: /api/
+Disallow: /_next/
+Disallow: /static/
 
 # Bing-specific rules
 User-agent: Bingbot
@@ -47,6 +64,10 @@ Allow: /
 Disallow: /results/
 Disallow: /auth
 Disallow: /test-router
+Disallow: /admin/
+Disallow: /api/
+Disallow: /_next/
+Disallow: /static/
 Crawl-delay: 1
 
 # Block bad bots and scrapers
@@ -64,4 +85,3 @@ Disallow: /
 
 # Sitemap location (required for all search engines)
 Sitemap: https://www.planmytripai.in/sitemap.xml
-
