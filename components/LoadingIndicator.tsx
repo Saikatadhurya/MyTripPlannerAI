@@ -103,11 +103,6 @@ const StreamingLoadingIndicator: React.FC<StreamingLoadingIndicatorProps> = ({ s
           </p>
         )}
 
-        {attemptCount && maxAttempts && attemptCount > 1 && (
-            <div className="mt-4 p-2 bg-amber-100/70 text-amber-800 rounded-lg text-sm font-semibold border border-amber-200/80" style={{ animation: 'fadeIn 0.5s ease-out' }}>
-                Just a little hiccup! The AI is polishing the plan... (Attempt {attemptCount} of {maxAttempts})
-            </div>
-        )}
         
         {funFacts && funFacts.length > 0 && (
           <div className="mt-6 h-8 flex items-center justify-center">

@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { Budget, Itinerary, Vibe, FoodPreference, BlogReference, TripType, LocationSuggestion } from '../types';
+import { Budget, Itinerary, Vibe, FoodPreference, TripType, LocationSuggestion } from '../types';
 import { extractJson, cleanCitations } from './jsonUtils';
 import { CookieUtils } from './cookieUtils';
 
@@ -124,78 +124,6 @@ export const getDestinationSuggestions = async (query: string, userApiKey?: stri
     return [];
   }
 };
-
-export const getReferenceBlogs = async (destination: string, language: string, userApiKey?: string): Promise<BlogReference[]> => {
-  const { apiKey, isUsingDefaultKey } = await CookieUtils.getApiKeyWithSource(userApiKey);
-  
-  // Ensure API key is properly trimmed
-  if (!apiKey || apiKey.trim().length === 0) {
-    throw new Error("Invalid API key: key is empty or whitespace only");
-  }
-  const cleanApiKey = apiKey.trim();
-
-  const ai = new GoogleGenAI({ apiKey: cleanApiKey });
-
-  try {
-    // --- Find blogs using Google Search ---
-    const searchPrompt = `Find up to 5 helpful and popular travel blog posts for planning a trip to ${destination}. Prioritize blogs written in ${language}.`;
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: searchPrompt,
-      config: {
-        tools: [{ googleSearch: {} }],
-        thinkingConfig: { thinkingBudget: 0 },
-      },
-    });
-
-    const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
-
-    if (!Array.isArray(groundingChunks) || groundingChunks.length === 0) {
-      return [];
-    }
-
-    const blogs = groundingChunks
-      .map(chunk => {
-        if (chunk.web && chunk.web.uri && chunk.web.title) {
-          const url = new URL(chunk.web.uri);
-          let source = url.hostname.replace(/^www\./, '');
-
-          // If the source is a Google redirect, don't show it.
-          if (source === 'vertexaisearch.cloud.google.com') {
-            source = '';
-          }
-          
-          return {
-            title: chunk.web.title,
-            url: chunk.web.uri,
-            source,
-            description: `A helpful travel guide for your trip planning. Read more about ${destination}.`
-          };
-        }
-        return null;
-      })
-      .filter((blog): blog is BlogReference => blog !== null)
-      .slice(0, 5);
-
-    return blogs;
-
-  } catch (error) {
-    console.error("Error finding reference blogs:", error);
-    
-    // Check for quota errors when using default key
-    if (error instanceof Error) {
-      const errorText = (error.message || '').toLowerCase();
-      const isQuotaError = errorText.includes("quota") || errorText.includes("rate limit") || errorText.includes("429") || errorText.includes("exceeded");
-      
-      if (isQuotaError && isUsingDefaultKey) {
-        throw new Error('The default API key has reached its quota limit. Please set your own Gemini API key in your profile settings to continue.');
-      }
-    }
-    
-    return [];
-  }
-};
-
 
 export const generateItinerary = async (
   destination: string,

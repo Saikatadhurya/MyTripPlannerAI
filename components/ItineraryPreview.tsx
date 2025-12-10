@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Itinerary } from '../types';
-import { getReferenceBlogs } from '../services/geminiService';
 import { useSaveRecommendation } from '../hooks/useSaveRecommendation';
 import { User } from '../services/authService';
 import Toast from './Toast';
@@ -95,6 +94,36 @@ const extractLocationFromDay = (day: Itinerary['plan'][0], itinerary: Itinerary)
   // If destination is something like "Rajasthan Heritage Tour", try to find a city
   // For now, just return the destination as-is, but we'll try to improve this
   return mainDest.split(/[,\s]+/).find(part => part.length > 3 && /^[A-Z]/.test(part)) || mainDest;
+};
+
+// Helper to find destinations visited on a specific day
+const getDestinationsForDay = (day: Itinerary['plan'][0], itinerary: Itinerary): Itinerary['coveredDestinations'] => {
+  if (!itinerary.coveredDestinations || itinerary.coveredDestinations.length === 0) {
+    return [];
+  }
+  
+  const dayLocation = extractLocationFromDay(day, itinerary);
+  const dayText = `${day.title} ${day.activities?.join(' ') || ''}`.toLowerCase();
+  
+  // Find all destinations that match this day
+  const matchingDestinations = itinerary.coveredDestinations.filter(dest => {
+    const destNameLower = dest.name.toLowerCase();
+    // Check if destination name appears in day title or activities
+    return dayText.includes(destNameLower) || dayLocation.toLowerCase().includes(destNameLower);
+  });
+  
+  // If no matches found, try to match by location extracted from day
+  if (matchingDestinations.length === 0 && dayLocation) {
+    const locationMatch = itinerary.coveredDestinations.find(dest => 
+      dest.name.toLowerCase() === dayLocation.toLowerCase() ||
+      dayLocation.toLowerCase().includes(dest.name.toLowerCase())
+    );
+    if (locationMatch) {
+      return [locationMatch];
+    }
+  }
+  
+  return matchingDestinations;
 };
 
 // Helper to generate Google search URL for a hotel
@@ -357,12 +386,6 @@ const BudgetCard: React.FC<{ title: string; icon: React.ReactNode; value: string
   );
 };
 
-// Helper to identify transport-related blogs
-const isTransportBlog = (blog: Itinerary['referenceBlogs'][0]): boolean => {
-    const keywords = ['transport', 'getting around', 'driving', 'bus', 'train', 'airport', 'commute', 'travel between', 'route', 'navigation'];
-    const content = `${blog.title.toLowerCase()} ${blog.description.toLowerCase()}`;
-    return keywords.some(keyword => content.includes(keyword));
-};
 
 interface ItineraryPreviewProps {
   itinerary: Itinerary;
@@ -390,33 +413,210 @@ const DestinationInfoTabs: React.FC<{ destinationDetails: Itinerary['coveredDest
     const sections = getAboutSectionsForDestination(destinationDetails);
     const availableSections = sections.filter(section => (section.content || (Array.isArray(section.items) && section.items.length > 0)));
     const [activeTab, setActiveTab] = useState(availableSections[0]?.title || '');
+    const tabsContainerRef = useRef<HTMLDivElement>(null);
+    const [showScrollArrow, setShowScrollArrow] = useState(true);
+    const [showLeftArrow, setShowLeftArrow] = useState(false);
+
+    // Check if scrolling is needed and if user has scrolled to the end or beginning
+    useEffect(() => {
+        const checkScroll = () => {
+            if (tabsContainerRef.current) {
+                const container = tabsContainerRef.current;
+                const hasScroll = container.scrollWidth > container.clientWidth;
+                const isAtEnd = container.scrollLeft + container.clientWidth >= container.scrollWidth - 10; // 10px threshold
+                const isAtStart = container.scrollLeft <= 10; // 10px threshold
+                
+                setShowScrollArrow(hasScroll && !isAtEnd);
+                setShowLeftArrow(hasScroll && !isAtStart);
+            }
+        };
+
+        checkScroll();
+        const container = tabsContainerRef.current;
+        if (container) {
+            container.addEventListener('scroll', checkScroll);
+            // Also check on resize
+            window.addEventListener('resize', checkScroll);
+        }
+
+        return () => {
+            if (container) {
+                container.removeEventListener('scroll', checkScroll);
+            }
+            window.removeEventListener('resize', checkScroll);
+        };
+    }, [availableSections.length]);
+
+    // Handle right arrow click to scroll to next 2 sections
+    const handleRightArrowClick = () => {
+        if (tabsContainerRef.current) {
+            const container = tabsContainerRef.current;
+            const buttons = container.querySelectorAll('button');
+            
+            if (buttons.length === 0) return;
+            
+            // Get the width of the first button (they should be similar)
+            const firstButton = buttons[0] as HTMLElement;
+            const buttonWidth = firstButton.offsetWidth;
+            const buttonSpacing = 6; // space-x-1.5 = 6px (1.5 * 4px)
+            const scrollAmount = (buttonWidth + buttonSpacing) * 2; // Scroll by 2 buttons
+            
+            // Calculate new scroll position
+            const currentScroll = container.scrollLeft;
+            const maxScroll = container.scrollWidth - container.clientWidth;
+            const newScroll = Math.min(currentScroll + scrollAmount, maxScroll);
+            
+            // Smooth scroll
+            container.scrollTo({
+                left: newScroll,
+                behavior: 'smooth'
+            });
+        }
+    };
+
+    // Handle left arrow click to scroll back by 2 sections
+    const handleLeftArrowClick = () => {
+        if (tabsContainerRef.current) {
+            const container = tabsContainerRef.current;
+            const buttons = container.querySelectorAll('button');
+            
+            if (buttons.length === 0) return;
+            
+            // Get the width of the first button (they should be similar)
+            const firstButton = buttons[0] as HTMLElement;
+            const buttonWidth = firstButton.offsetWidth;
+            const buttonSpacing = 6; // space-x-1.5 = 6px (1.5 * 4px)
+            const scrollAmount = (buttonWidth + buttonSpacing) * 2; // Scroll by 2 buttons
+            
+            // Calculate new scroll position
+            const currentScroll = container.scrollLeft;
+            const newScroll = Math.max(currentScroll - scrollAmount, 0);
+            
+            // Smooth scroll
+            container.scrollTo({
+                left: newScroll,
+                behavior: 'smooth'
+            });
+        }
+    };
 
     if (availableSections.length === 0) {
         return null;
     }
 
     return (
-        <div className="bg-white/40 backdrop-blur-lg rounded-2xl shadow-lg border border-white/50 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-            <nav className="no-print border-b border-violet-200/50 p-2 sm:p-3">
-                <div className="flex space-x-1 sm:space-x-2 overflow-x-auto hide-scrollbar [mask-image:linear-gradient(to_right,rgba(0,0,0,1)_85%,rgba(0,0,0,0))] lg:[mask-image:none]">
+        <div className="bg-gradient-to-br from-violet-50/60 via-indigo-50/40 to-purple-50/30 backdrop-blur-lg rounded-xl sm:rounded-2xl shadow-lg border border-violet-200/50 transition-all duration-300 hover:shadow-xl hover:border-violet-300/60 overflow-hidden">
+            {/* Destination Header */}
+            <div className="bg-gradient-to-r from-violet-600/90 to-indigo-600/90 backdrop-blur-sm px-4 py-3 sm:px-5 sm:py-4">
+                <div className="flex items-center justify-between gap-3">
+                    <a
+                        href={`https://www.google.com/search?q=${encodeURIComponent(destinationDetails.name)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center space-x-3 flex-1 min-w-0 group cursor-pointer"
+                        aria-label={`Search ${destinationDetails.name} on Google`}
+                        title={`Click to search ${destinationDetails.name} on Google`}
+                    >
+                        <div className="flex-shrink-0 bg-white/20 backdrop-blur-sm rounded-lg p-2 shadow-md group-hover:bg-white/30 transition-all duration-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                        </div>
+                        <h4 className="text-lg sm:text-xl font-bold text-white break-words leading-tight flex-1 min-w-0 group-hover:text-violet-100 transition-colors duration-200 underline-offset-2 group-hover:underline" dangerouslySetInnerHTML={parseBold(destinationDetails.name)} />
+                    </a>
+                    <a
+                        href={`https://www.google.com/search?q=${encodeURIComponent(destinationDetails.name)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-shrink-0 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg p-2 shadow-md transition-all duration-200 hover:scale-110 active:scale-95"
+                        aria-label={`Search ${destinationDetails.name} on Google`}
+                        title={`Search ${destinationDetails.name} on Google`}
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </a>
+                </div>
+            </div>
+
+            {/* Tabs Navigation */}
+            <nav className="no-print bg-white/30 backdrop-blur-sm border-b border-violet-200/50 px-3 py-2 sm:px-4 sm:py-2.5 relative">
+                <div 
+                    ref={tabsContainerRef}
+                    className={`flex space-x-1.5 sm:space-x-2 overflow-x-auto hide-scrollbar ${
+                        (showLeftArrow || showScrollArrow)
+                            ? showLeftArrow && showScrollArrow
+                                ? '[mask-image:linear-gradient(to_right,rgba(0,0,0,0)_0%,rgba(0,0,0,0.3)_10%,rgba(0,0,0,1)_20%,rgba(0,0,0,1)_75%,rgba(0,0,0,0.3)_85%,rgba(0,0,0,0)_100%)]'
+                                : showLeftArrow
+                                    ? '[mask-image:linear-gradient(to_right,rgba(0,0,0,0)_0%,rgba(0,0,0,0.3)_10%,rgba(0,0,0,1)_20%,rgba(0,0,0,1)_100%)]'
+                                    : '[mask-image:linear-gradient(to_right,rgba(0,0,0,1)_0%,rgba(0,0,0,1)_75%,rgba(0,0,0,0.3)_85%,rgba(0,0,0,0)_100%)]'
+                            : '[mask-image:none]'
+                    }`}
+                >
                     {availableSections.map(section => (
                         <button
                             key={section.title}
                             onClick={() => setActiveTab(section.title)}
-                            className={`flex-shrink-0 flex items-center space-x-2 px-3 py-2 text-sm sm:text-base font-semibold rounded-md transition-all duration-200 ${
+                            className={`flex-shrink-0 flex items-center space-x-1.5 sm:space-x-2 px-3 py-2 sm:px-3.5 sm:py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all duration-200 transform hover:scale-105 ${
                                 activeTab === section.title
-                                ? 'bg-violet-600 text-white shadow'
-                                : 'text-slate-600 hover:bg-white/60'
+                                ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg shadow-violet-500/30 scale-105'
+                                : 'text-slate-700 hover:bg-white/70 hover:text-violet-700'
                             }`}
                         >
-                            {section.icon}
-                            <span>{section.title}</span>
+                            <span className={`w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 ${activeTab === section.title ? 'text-white' : 'text-violet-600'}`}>{section.icon}</span>
+                            <span className="whitespace-nowrap">{section.title}</span>
                         </button>
                     ))}
                 </div>
+                
+                {/* Left Arrow Indicator */}
+                {showLeftArrow && (
+                    <div className="absolute left-0 top-0 bottom-0 w-12 pointer-events-none z-10 flex items-center justify-start pl-2 bg-gradient-to-r from-white/30 via-white/20 to-transparent">
+                        <button
+                            onClick={handleLeftArrowClick}
+                            className="bg-white/90 backdrop-blur-sm rounded-full p-1.5 shadow-md border border-violet-200/50 hover:bg-white hover:shadow-lg hover:border-violet-300/70 transition-all duration-200 active:scale-95 pointer-events-auto cursor-pointer"
+                            aria-label="Scroll to previous sections"
+                        >
+                            <svg 
+                                xmlns="http://www.w3.org/2000/svg" 
+                                className="h-3.5 w-3.5 text-violet-600 scroll-arrow-animate-reverse" 
+                                fill="none" 
+                                viewBox="0 0 24 24" 
+                                stroke="currentColor" 
+                                strokeWidth={2.5}
+                            >
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                            </svg>
+                        </button>
+                    </div>
+                )}
+                
+                {/* Right Arrow Indicator */}
+                {showScrollArrow && (
+                    <div className="absolute right-0 top-0 bottom-0 w-12 pointer-events-none z-10 flex items-center justify-end pr-2 bg-gradient-to-l from-white/30 via-white/20 to-transparent">
+                        <button
+                            onClick={handleRightArrowClick}
+                            className="bg-white/90 backdrop-blur-sm rounded-full p-1.5 shadow-md border border-violet-200/50 hover:bg-white hover:shadow-lg hover:border-violet-300/70 transition-all duration-200 active:scale-95 pointer-events-auto cursor-pointer"
+                            aria-label="Scroll to next sections"
+                        >
+                            <svg 
+                                xmlns="http://www.w3.org/2000/svg" 
+                                className="h-3.5 w-3.5 text-violet-600 scroll-arrow-animate" 
+                                fill="none" 
+                                viewBox="0 0 24 24" 
+                                stroke="currentColor" 
+                                strokeWidth={2.5}
+                            >
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                            </svg>
+                        </button>
+                    </div>
+                )}
             </nav>
 
-            <div key={activeTab} className="relative p-4 sm:p-6" style={{animation: 'fadeIn 0.4s ease-out'}}>
+            {/* Content Area */}
+            <div key={activeTab} className="relative bg-white/40 backdrop-blur-sm" style={{animation: 'fadeIn 0.4s ease-out'}}>
                 {availableSections.map(section => {
                     const isActive = activeTab === section.title;
                     return (
@@ -430,14 +630,24 @@ const DestinationInfoTabs: React.FC<{ destinationDetails: Itinerary['coveredDest
                                 </div>
                                 <h3 className="text-xl font-bold text-slate-800">{section.title}</h3>
                             </div>
-                            <div className="prose prose-slate max-w-none text-gray-700 print:pl-1">
+                            <div className="p-4 sm:p-5">
                                 {section.content && (
-                                    <div dangerouslySetInnerHTML={parseBold(section.content as string)} />
+                                    <div className="prose prose-slate max-w-none text-sm sm:text-base text-slate-700 leading-relaxed">
+                                        <div className="bg-white/60 backdrop-blur-sm rounded-lg p-4 sm:p-5 border border-violet-100/50 shadow-sm" dangerouslySetInnerHTML={parseBold(section.content as string)} />
+                                    </div>
                                 )}
                                 {Array.isArray(section.items) && section.items.length > 0 && (
-                                    <ul className="list-disc pl-5 space-y-1">
+                                    <ul className="space-y-2.5 sm:space-y-3 mt-2">
                                         {section.items.map((item, index) => (
-                                            <li key={index} dangerouslySetInnerHTML={parseBold(item)} />
+                                            <li 
+                                                key={index} 
+                                                className="flex items-start space-x-3 bg-white/60 backdrop-blur-sm rounded-lg p-3 sm:p-4 border border-violet-100/50 shadow-sm hover:shadow-md hover:border-violet-200/70 transition-all duration-200"
+                                            >
+                                                <div className="flex-shrink-0 mt-0.5">
+                                                    <div className="w-2 h-2 rounded-full bg-gradient-to-r from-violet-500 to-indigo-500"></div>
+                                                </div>
+                                                <div className="flex-1 text-sm sm:text-base text-slate-700 leading-relaxed" dangerouslySetInnerHTML={parseBold(item)} />
+                                            </li>
                                         ))}
                                     </ul>
                                 )}
@@ -452,8 +662,6 @@ const DestinationInfoTabs: React.FC<{ destinationDetails: Itinerary['coveredDest
 
 
 const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegenerate, isUnifiedView = false, requestData, isHistoryView = false, user }) => {
-  const [blogs, setBlogs] = useState<Itinerary['referenceBlogs']>([]);
-  const [isLoadingBlogs, setIsLoadingBlogs] = useState(true);
   const [hasBeenSaved, setHasBeenSaved] = useState(false);
   const [savedId, setSavedId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
@@ -465,21 +673,6 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
   const [dayInputValue, setDayInputValue] = useState<string>('1');
   const dayRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
   const observerRef = useRef<IntersectionObserver | null>(null);
-  
-  useEffect(() => {
-    const fetchBlogs = async () => {
-      setIsLoadingBlogs(true);
-      try {
-        const fetchedBlogs = await getReferenceBlogs(itinerary.destination, itinerary.language, user?.gemini_api_key);
-        setBlogs(fetchedBlogs);
-      } catch (error) {
-        console.error('Failed to fetch reference blogs:', error);
-        setBlogs([]);
-      }
-      setIsLoadingBlogs(false);
-    };
-    fetchBlogs();
-  }, [itinerary.destination, itinerary.language, user?.gemini_api_key]);
 
   // Save to history when component mounts (only if not in unified view and request data is available)
   useEffect(() => {
@@ -1073,20 +1266,8 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
         </section>
       )}
 
-      <section>
-        <h2 className="text-3xl font-bold text-slate-800 mb-6 animated-card" style={{ animationDelay: '1050ms' }}>About the Destinations</h2>
-        <div className="space-y-10">
-          {itinerary.coveredDestinations?.map((dest, destIndex) => (
-            <div key={destIndex} className="animated-card" style={{ animationDelay: `${1100 + destIndex * 200}ms` }}>
-                <h3 className="text-2xl font-bold text-slate-700 mb-4 border-b border-violet-200 pb-2 break-words" dangerouslySetInnerHTML={parseBold(dest.name)} />
-                <DestinationInfoTabs destinationDetails={dest} />
-            </div>
-          ))}
-        </div>
-      </section>
-
       <section className="space-y-6 sm:space-y-8">
-        <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 animated-card px-1 sm:px-2 mb-4 sm:mb-6" style={{ animationDelay: '1200ms' }}>Daily Itinerary</h2>
+        <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 animated-card px-1 sm:px-2 mb-4 sm:mb-6" style={{ animationDelay: '1050ms' }}>Daily Itinerary</h2>
         
         {itinerary.plan.map((day, index) => {
           let dailyFuelCostPerPerson = 0;
@@ -1102,6 +1283,9 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
               }
           }
 
+          // Find destinations for this day
+          const dayDestinations = getDestinationsForDay(day, itinerary);
+
           return (
           <div 
             key={day.day} 
@@ -1109,7 +1293,7 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
             ref={(el) => { dayRefs.current[day.day] = el; }}
             data-day={day.day}
             className="bg-white/40 backdrop-blur-lg p-3 sm:p-4 md:p-6 rounded-xl shadow-lg border border-white/50 transition-all duration-300 hover:shadow-2xl hover:border-violet-300/50 hover:-translate-y-1 animated-card" 
-            style={{ animationDelay: `${1250 + index * 100}ms` }}
+            style={{ animationDelay: `${1100 + index * 100}ms` }}
           >
             <div className="flex justify-between items-start">
               <div className="flex-1">
@@ -1152,6 +1336,17 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
                     </div>
                   )}
                 </div>
+              </div>
+            )}
+
+            {/* Destination Info - Show for this day */}
+            {dayDestinations.length > 0 && (
+              <div className="mb-4">
+                {dayDestinations.map((dest, destIndex) => (
+                  <div key={destIndex} className={destIndex > 0 ? 'mt-4' : ''}>
+                    <DestinationInfoTabs destinationDetails={dest} />
+                  </div>
+                ))}
               </div>
             )}
             
@@ -1464,62 +1659,6 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
         )})}
       </section>
 
-      {isLoadingBlogs ? (
-        <section>
-          <h2 className="text-3xl font-bold text-slate-800 mb-6 animated-card flex items-center space-x-3" style={{ animationDelay: '1400ms' }}>
-             <svg className="animate-spin h-6 w-6 text-violet-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-             <span>Finding helpful blogs...</span>
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {Array(2).fill(0).map((_, i) => (
-              <div key={i} className="bg-white/40 p-5 rounded-xl border border-white/50 shadow-lg animate-pulse">
-                <div className="h-4 bg-slate-200/50 rounded w-1/4"></div>
-                <div className="h-5 bg-slate-200/50 rounded mt-2 w-3/4"></div>
-                <div className="h-4 bg-slate-200/50 rounded mt-3 w-full"></div>
-                <div className="h-4 bg-slate-200/50 rounded mt-1 w-5/6"></div>
-              </div>
-            ))}
-          </div>
-        </section>
-      ) : (
-        blogs && blogs.length > 0 && (
-        <section>
-          <h2 className="text-3xl font-bold text-slate-800 mb-6 animated-card" style={{ animationDelay: '1400ms' }}>Reference Blog Posts</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {blogs.map((blog, index) => {
-               const isTransport = isTransportBlog(blog);
-               return (
-                <a 
-                  key={index}
-                  href={blog.url} target="_blank" rel="noopener noreferrer"
-                  className={`block p-5 rounded-xl shadow-lg border transition-all duration-300 hover:shadow-xl hover:-translate-y-1 animated-card ${
-                    isTransport 
-                      ? 'bg-sky-50/40 backdrop-blur-lg border-sky-300/50 hover:border-sky-400/50' 
-                      : 'bg-white/40 backdrop-blur-lg border-white/50 hover:border-violet-300/50'
-                  }`}
-                   style={{ animationDelay: `${1450 + index * 100}ms` }}
-                >
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      {blog.source && <p className={`text-xs font-semibold uppercase tracking-wider ${isTransport ? 'text-sky-600' : 'text-violet-600'}`}>{blog.source}</p>}
-                      <h4 className="text-lg font-bold text-slate-800 mt-1 hover:underline break-words">{blog.title}</h4>
-                    </div>
-                    {isTransport && (
-                      <div className="flex-shrink-0 ml-4 bg-sky-100 text-sky-600 rounded-full p-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M18.562 6.077C18.238 5.437 17.562 5 16.808 5H3.192c-.754 0-1.43.437-1.754 1.077L.05 9.423A.5.5 0 00.5 10h19a.5.5 0 00.45-.577l-1.388-3.346zM2 11v4a1 1 0 001 1h1a1 1 0 001-1v-4H2zm15 0v4a1 1 0 001 1h1a1 1 0 001-1v-4h-3zM5 11v4a1 1 0 001 1h8a1 1 0 001-1v-4H5z" clipRule="evenodd" />
-                        </svg>
-                      </div>
-                    )}
-                  </div>
-                  <p className="text-sm text-slate-600 mt-2">{blog.description}</p>
-                </a>
-              );
-            })}
-          </div>
-        </section>
-        )
-      )}
 
       <div className="pt-8 text-center no-print">
         {!isUnifiedView && (

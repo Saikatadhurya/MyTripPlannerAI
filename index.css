@@ -2,3 +2,44 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Continuous horizontal arrow animation for mobile scroll indicator */
+@keyframes scroll-arrow-pulse {
+  0% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  50% {
+    transform: translateX(8px);
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes scroll-arrow-pulse-reverse {
+  0% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  50% {
+    transform: translateX(-8px);
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.scroll-arrow-animate {
+  animation: scroll-arrow-pulse 1s ease-in-out infinite !important;
+  display: block !important;
+}
+
+.scroll-arrow-animate-reverse {
+  animation: scroll-arrow-pulse-reverse 1s ease-in-out infinite !important;
+  display: block !important;
+}
+
