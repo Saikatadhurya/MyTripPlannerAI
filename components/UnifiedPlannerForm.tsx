@@ -47,6 +47,18 @@ const unifiedPlanComponents: { label: UnifiedPlanComponent; icon: string; descri
     { label: 'lingo', icon: '🗣️', description: 'language guide and phrases' },
 ];
 
+// Get component-specific colors for selection
+const getComponentColor = (component: UnifiedPlanComponent) => {
+  const colors = {
+    packing: { bg: 'bg-violet-100/70', border: 'border-violet-500', hover: 'hover:border-violet-400' },
+    food: { bg: 'bg-orange-100/70', border: 'border-orange-500', hover: 'hover:border-orange-400' },
+    apps: { bg: 'bg-teal-100/70', border: 'border-teal-500', hover: 'hover:border-teal-400' },
+    music: { bg: 'bg-fuchsia-100/70', border: 'border-fuchsia-500', hover: 'hover:border-fuchsia-400' },
+    lingo: { bg: 'bg-sky-100/70', border: 'border-sky-500', hover: 'hover:border-sky-400' },
+  };
+  return colors[component] || colors.packing;
+};
+
 const languages = [
     'Afrikaans (af)', 'Akan (ak)', 'Albanian (sq)', 'Amharic (am)', 'Arabic (ar)', 'Armenian (hy)', 'Assamese (as)', 'Aymara (ay)', 'Azerbaijani (az)', 
     'Bambara (bm)', 'Basque (eu)', 'Belarusian (be)', 'Bengali (bn)', 'Bhojpuri (bho)', 'Bosnian (bs)', 'Bulgarian (bg)', 'Catalan (ca)', 'Cebuano (ceb)', 'Chinese (Simplified) (zh-CN)', 'Chinese (Traditional) (zh-TW)', 'Corsican (co)', 'Croatian (hr)', 'Czech (cs)', 'Danish (da)', 'Dhivehi (dv)', 'Dogri (doi)', 'Dutch (nl)', 'English (en)', 'Esperanto (eo)', 'Estonian (et)', 'Ewe (ee)', 'Filipino (Tagalog) (fil)', 'Finnish (fi)', 'French (fr)', 'Frisian (fy)', 'Galician (gl)', 'Ganda (lg)', 'Georgian (ka)', 'German (de)', 'Goan Konkani (gom)', 'Greek (el)', 'Guarani (gn)', 'Gujarati (gu)', 'Haitian Creole (ht)', 'Hausa (ha)', 'Hawaiian (haw)', 'Hebrew (iw)', 'Hindi (hi)', 'Hmong (hmn)', 'Hungarian (hu)', 'Icelandic (is)', 'Igbo (ig)', 'Ilocano (ilo)', 'Indonesian (id)', 'Irish (ga)', 'Italian (it)', 'Japanese (ja)', 'Javanese (jv)', 'Kannada (kn)', 'Kazakh (kk)', 'Khmer (km)', 'Kinyarwanda (rw)', 'Korean (ko)', 'Krio (kri)', 'Kurdish (ku)', 'Kurdish (Sorani) (ckb)', 'Kyrgyz (ky)', 'Lao (lo)', 'Latin (la)', 'Latvian (lv)', 'Lingala (ln)', 'Lithuanian (lt)', 'Luganda (lg)', 'Luxembourgish (lb)', 'Macedonian (mk)', 'Maithili (mai)', 'Malagasy (mg)', 'Malay (ms)', 'Malayalam (ml)', 'Maltese (mt)', 'Maori (mi)', 'Marathi (mr)', 'Meiteilon (Manipuri) (mni-Mtei)', 'Mizo (lus)', 'Mongolian (mn)', 'Myanmar (Burmese) (my)', 'Nepali (ne)', 'Norwegian (no)', 'Nyanja (Chichewa) (ny)', 'Odia (Oriya) (or)', 'Oromo (om)', 'Pashto (ps)', 'Persian (fa)', 'Polish (pl)', 'Portuguese (Brazil) (pt-BR)', 'Portuguese (Portugal) (pt-PT)', 'Punjabi (pa)', 'Quechua (qu)', 'Romanian (ro)', 'Russian (ru)', 'Samoan (sm)', 'Sanskrit (sa)', 'Scots Gaelic (gd)', 'Sepedi (nso)', 'Serbian (sr)', 'Sesotho (st)', 'Shona (sn)', 'Sindhi (sd)', 'Sinhala (si)', 'Slovak (sk)', 'Slovenian (sl)', 'Somali (so)', 'Spanish (es)', 'Sundanese (su)', 'Swahili (sw)', 'Swedish (sv)', 'Tagalog (Filipino) (tl)', 'Tajik (tg)', 'Tamil (ta)', 'Tatar (tt)', 'Telugu (te)', 'Thai (th)', 'Tigrinya (ti)', 'Tsonga (ts)', 'Turkish (tr)', 'Turkmen (tk)', 'Ukrainian (uk)', 'Urdu (ur)', 'Uyghur (ug)', 'Uzbek (uz)', 'Vietnamese (vi)', 'Welsh (cy)', 'Xhosa (xh)', 'Yiddish (yi)', 'Yoruba (yo)', 'Zulu (zu)',
@@ -119,7 +131,7 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
       isRoundTrip: false,
       includeAlcoholicDrinks: false,
       stops: [],
-      selectedComponents: ['packing'], // Packing is preselected by default
+      selectedComponents: ['packing', 'food', 'apps', 'music', 'lingo'], // All components preselected by default
     };
   });
   
@@ -508,7 +520,7 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
   };
 
   const handleComponentToggle = (component: UnifiedPlanComponent) => {
-    const currentComponents = formData.selectedComponents || ['packing'];
+    const currentComponents = formData.selectedComponents || ['packing', 'food', 'apps', 'music', 'lingo'];
     const newComponents = currentComponents.includes(component)
       ? currentComponents.filter(c => c !== component)
       : [...currentComponents, component];
@@ -1534,15 +1546,18 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
               </h2>
               <p className="text-xs sm:text-sm text-slate-600">Select which components to include in your trip plan. Itinerary is always included.</p>
               <div className="grid grid-cols-2 gap-2 sm:gap-4">
-                {unifiedPlanComponents.map(comp => (
+                {unifiedPlanComponents.map(comp => {
+                  const isSelected = (formData.selectedComponents || ['packing', 'food', 'apps', 'music', 'lingo']).includes(comp.label);
+                  const componentColor = getComponentColor(comp.label);
+                  return (
                   <button
                     key={comp.label}
                     type="button"
                     onClick={() => handleComponentToggle(comp.label)}
                     className={`p-2 sm:p-4 rounded-lg text-left transition-all duration-200 border-2 flex items-start space-x-2 sm:space-x-3 ${
-                      (formData.selectedComponents || ['packing']).includes(comp.label)
-                        ? 'bg-violet-100/70 border-violet-500'
-                        : 'bg-white/40 border-white/40 hover:bg-white/60'
+                      isSelected
+                        ? `${componentColor.bg} ${componentColor.border}`
+                        : `bg-white/40 border-slate-300 ${componentColor.hover}`
                     }`}
                   >
                     <span className="text-xl sm:text-2xl mt-1 flex-shrink-0">{comp.icon}</span>
@@ -1551,7 +1566,8 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
                       <p className="text-[10px] sm:text-xs text-slate-500">{comp.description}</p>
                     </div>
                   </button>
-                ))}
+                  );
+                })}
               </div>
             </div>
 

@@ -717,7 +717,7 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
                     value={searchTerm}
                     onChange={(e) => handleSearchTermChange(e.target.value)}
                     placeholder="Search trips, destinations..."
-                    className="w-full pl-9 sm:pl-11 pr-9 sm:pr-10 py-2.5 sm:py-3 bg-gradient-to-r from-slate-50 to-violet-50/30 border-2 border-violet-200 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-400 text-sm sm:text-base font-medium text-slate-700 placeholder:text-slate-400 transition-all duration-200 shadow-sm hover:shadow-md"
+                    className="w-full pl-9 sm:pl-11 pr-9 sm:pr-10 py-2.5 sm:py-3 bg-gradient-to-r from-slate-50 to-violet-50/30 border-2 border-violet-200 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-400 text-base font-medium text-slate-700 placeholder:text-slate-400 transition-all duration-200 shadow-sm hover:shadow-md"
                   />
                   {searchTerm && (
                     <button

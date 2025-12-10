@@ -21,6 +21,18 @@ const unifiedPlanComponents: { label: UnifiedPlanComponent; icon: string; descri
   { label: 'lingo', icon: '🗣️', description: 'language guide and phrases' },
 ];
 
+// Get component-specific colors for selection
+const getComponentColor = (component: UnifiedPlanComponent) => {
+  const colors = {
+    packing: { bg: 'bg-violet-100/70', border: 'border-violet-500', hover: 'hover:border-violet-400' },
+    food: { bg: 'bg-orange-100/70', border: 'border-orange-500', hover: 'hover:border-orange-400' },
+    apps: { bg: 'bg-teal-100/70', border: 'border-teal-500', hover: 'hover:border-teal-400' },
+    music: { bg: 'bg-fuchsia-100/70', border: 'border-fuchsia-500', hover: 'hover:border-fuchsia-400' },
+    lingo: { bg: 'bg-sky-100/70', border: 'border-sky-500', hover: 'hover:border-sky-400' },
+  };
+  return colors[component] || colors.packing;
+};
+
 const Toggle: React.FC<{ label: string; description: string; enabled: boolean; onChange: (enabled: boolean) => void; }> = ({ label, description, enabled, onChange }) => (
   <button 
     type="button"
@@ -58,8 +70,8 @@ const vibes: { label: Vibe; icon: string; description: string }[] = [
 ];
 
 const languages = [
-  'English (en)', 'Hindi (hi)', 'Spanish (es)', 'French (fr)', 'German (de)', 'Italian (it)', 
-  'Portuguese (pt)', 'Chinese (zh)', 'Japanese (ja)', 'Korean (ko)', 'Arabic (ar)', 'Russian (ru)'
+  'Afrikaans (af)', 'Akan (ak)', 'Albanian (sq)', 'Amharic (am)', 'Arabic (ar)', 'Armenian (hy)', 'Assamese (as)', 'Aymara (ay)', 'Azerbaijani (az)', 
+  'Bambara (bm)', 'Basque (eu)', 'Belarusian (be)', 'Bengali (bn)', 'Bhojpuri (bho)', 'Bosnian (bs)', 'Bulgarian (bg)', 'Catalan (ca)', 'Cebuano (ceb)', 'Chinese (Simplified) (zh-CN)', 'Chinese (Traditional) (zh-TW)', 'Corsican (co)', 'Croatian (hr)', 'Czech (cs)', 'Danish (da)', 'Dhivehi (dv)', 'Dogri (doi)', 'Dutch (nl)', 'English (en)', 'Esperanto (eo)', 'Estonian (et)', 'Ewe (ee)', 'Filipino (Tagalog) (fil)', 'Finnish (fi)', 'French (fr)', 'Frisian (fy)', 'Galician (gl)', 'Ganda (lg)', 'Georgian (ka)', 'German (de)', 'Goan Konkani (gom)', 'Greek (el)', 'Guarani (gn)', 'Gujarati (gu)', 'Haitian Creole (ht)', 'Hausa (ha)', 'Hawaiian (haw)', 'Hebrew (iw)', 'Hindi (hi)', 'Hmong (hmn)', 'Hungarian (hu)', 'Icelandic (is)', 'Igbo (ig)', 'Ilocano (ilo)', 'Indonesian (id)', 'Irish (ga)', 'Italian (it)', 'Japanese (ja)', 'Javanese (jv)', 'Kannada (kn)', 'Kazakh (kk)', 'Khmer (km)', 'Kinyarwanda (rw)', 'Korean (ko)', 'Krio (kri)', 'Kurdish (ku)', 'Kurdish (Sorani) (ckb)', 'Kyrgyz (ky)', 'Lao (lo)', 'Latin (la)', 'Latvian (lv)', 'Lingala (ln)', 'Lithuanian (lt)', 'Luganda (lg)', 'Luxembourgish (lb)', 'Macedonian (mk)', 'Maithili (mai)', 'Malagasy (mg)', 'Malay (ms)', 'Malayalam (ml)', 'Maltese (mt)', 'Maori (mi)', 'Marathi (mr)', 'Meiteilon (Manipuri) (mni-Mtei)', 'Mizo (lus)', 'Mongolian (mn)', 'Myanmar (Burmese) (my)', 'Nepali (ne)', 'Norwegian (no)', 'Nyanja (Chichewa) (ny)', 'Odia (Oriya) (or)', 'Oromo (om)', 'Pashto (ps)', 'Persian (fa)', 'Polish (pl)', 'Portuguese (Brazil) (pt-BR)', 'Portuguese (Portugal) (pt-PT)', 'Punjabi (pa)', 'Quechua (qu)', 'Romanian (ro)', 'Russian (ru)', 'Samoan (sm)', 'Sanskrit (sa)', 'Scots Gaelic (gd)', 'Sepedi (nso)', 'Serbian (sr)', 'Sesotho (st)', 'Shona (sn)', 'Sindhi (sd)', 'Sinhala (si)', 'Slovak (sk)', 'Slovenian (sl)', 'Somali (so)', 'Spanish (es)', 'Sundanese (su)', 'Swahili (sw)', 'Swedish (sv)', 'Tagalog (Filipino) (tl)', 'Tajik (tg)', 'Tamil (ta)', 'Tatar (tt)', 'Telugu (te)', 'Thai (th)', 'Tigrinya (ti)', 'Tsonga (ts)', 'Turkish (tr)', 'Turkmen (tk)', 'Ukrainian (uk)', 'Urdu (ur)', 'Uyghur (ug)', 'Uzbek (uz)', 'Vietnamese (vi)', 'Welsh (cy)', 'Xhosa (xh)', 'Yiddish (yi)', 'Yoruba (yo)', 'Zulu (zu)',
 ];
 
 const formatDateLocal = (date: Date): string => {
@@ -101,7 +113,7 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
           startDate: parsed.startDate || formatDateLocal(getNextSaturday()),
           packages: parsed.packages || [],
           hasSearched: parsed.hasSearched || false,
-          selectedComponents: parsed.selectedComponents || ['packing'], // Packing is preselected by default
+          selectedComponents: parsed.selectedComponents || ['packing', 'food', 'apps', 'music', 'lingo'], // All components preselected by default
         };
       }
     } catch (e) {
@@ -130,13 +142,21 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(savedState?.hasSearched || false);
-  const [selectedComponents, setSelectedComponents] = useState<UnifiedPlanComponent[]>(savedState?.selectedComponents || ['packing']); // Packing is preselected by default
+  const [selectedComponents, setSelectedComponents] = useState<UnifiedPlanComponent[]>(savedState?.selectedComponents || ['packing', 'food', 'apps', 'music', 'lingo']); // All components preselected by default
 
   const debounceTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isSelectingSuggestion = useRef(false);
   const startPointSuggestionsRef = useRef<HTMLUListElement>(null);
   const startPointInputRef = useRef<HTMLInputElement>(null);
   const searchResultsRef = useRef<HTMLDivElement>(null);
+  
+  // Language and Currency dropdown state
+  const [langSearchTerm, setLangSearchTerm] = useState('');
+  const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
+  const [currencySearchTerm, setCurrencySearchTerm] = useState('');
+  const [isCurrencyDropdownOpen, setIsCurrencyDropdownOpen] = useState(false);
+  const langDropdownRef = useRef<HTMLDivElement>(null);
+  const currencyDropdownRef = useRef<HTMLDivElement>(null);
 
   const handleVibeToggle = (vibe: Vibe) => {
     setSelectedVibes(prev => 
@@ -278,7 +298,7 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
     setLanguage('English (en)');
     setCurrency('India (INR) – ₹');
     setStartDate(formatDateLocal(getNextSaturday()));
-    setSelectedComponents(['packing']); // Reset to default (packing preselected)
+    setSelectedComponents(['packing', 'food', 'apps', 'music', 'lingo']); // Reset to default (all components preselected)
     
     // Clear search results
     setPackages([]);
@@ -477,6 +497,12 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
       ) {
         setStartPointSuggestions([]);
       }
+      if (langDropdownRef.current && !langDropdownRef.current.contains(event.target as Node)) {
+        setIsLangDropdownOpen(false);
+      }
+      if (currencyDropdownRef.current && !currencyDropdownRef.current.contains(event.target as Node)) {
+        setIsCurrencyDropdownOpen(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
@@ -547,7 +573,7 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
                   onChange={handleStartPointChange}
                   onBlur={handleStartPointBlur}
                   placeholder="e.g., Mumbai, India"
-                  className="w-full pl-9 sm:pl-10 pr-4 py-2 sm:py-2.5 bg-white text-sm sm:text-base text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
+                  className="w-full pl-9 sm:pl-10 pr-4 py-2 sm:py-2.5 bg-white text-base text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
                   required
                   autoComplete="off"
                 />
@@ -763,15 +789,44 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
               <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-1 sm:mb-2">
                 Language
               </label>
-              <select
-                value={language}
-                onChange={(e) => setLanguage(e.target.value)}
-                className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg border-2 border-slate-300 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-200 text-sm sm:text-base"
-              >
-                {languages.map((lang) => (
-                  <option key={lang} value={lang}>{lang}</option>
-                ))}
-              </select>
+              <div ref={langDropdownRef} className="relative">
+                <input 
+                  type="text"
+                  value={isLangDropdownOpen ? langSearchTerm : language}
+                  onChange={e => {
+                    setLangSearchTerm(e.target.value);
+                    if (!isLangDropdownOpen) {
+                      setIsLangDropdownOpen(true);
+                    }
+                  }}
+                  onFocus={() => {
+                    setLangSearchTerm('');
+                    setIsLangDropdownOpen(true);
+                    setIsCurrencyDropdownOpen(false); // Close currency dropdown when language opens
+                  }}
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white text-gray-800 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition text-base"
+                  placeholder="Search language..."
+                  autoComplete="off"
+                />
+                {isLangDropdownOpen && (
+                  <ul className="absolute z-[100] w-full bg-white border-2 border-slate-300 rounded-lg mt-1 shadow-lg max-h-60 overflow-y-auto">
+                    {languages
+                      .filter(l => l.toLowerCase().includes(langSearchTerm.toLowerCase()))
+                      .map(lang => (
+                        <li 
+                          key={lang} 
+                          onClick={() => {
+                            setLanguage(lang);
+                            setIsLangDropdownOpen(false);
+                          }}
+                          className="px-4 py-3 cursor-pointer hover:bg-violet-100/60"
+                        >
+                          {lang}
+                        </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
 
             {/* Currency */}
@@ -779,15 +834,44 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
               <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-1 sm:mb-2">
                 Currency
               </label>
-              <select
-                value={currency}
-                onChange={(e) => setCurrency(e.target.value)}
-                className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg border-2 border-slate-300 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-200 text-sm sm:text-base"
-              >
-                {currencies.map((curr) => (
-                  <option key={curr} value={curr}>{curr}</option>
-                ))}
-              </select>
+              <div ref={currencyDropdownRef} className="relative">
+                <input 
+                  type="text"
+                  value={isCurrencyDropdownOpen ? currencySearchTerm : currency}
+                  onChange={e => {
+                    setCurrencySearchTerm(e.target.value);
+                    if (!isCurrencyDropdownOpen) {
+                      setIsCurrencyDropdownOpen(true);
+                    }
+                  }}
+                  onFocus={() => {
+                    setCurrencySearchTerm('');
+                    setIsCurrencyDropdownOpen(true);
+                    setIsLangDropdownOpen(false); // Close language dropdown when currency opens
+                  }}
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white text-gray-800 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition text-base"
+                  placeholder="Search currency..."
+                  autoComplete="off"
+                />
+                {isCurrencyDropdownOpen && (
+                  <ul className="absolute z-[100] w-full bg-white border-2 border-slate-300 rounded-lg mt-1 shadow-lg max-h-60 overflow-y-auto">
+                    {currencies
+                      .filter(c => c.toLowerCase().includes(currencySearchTerm.toLowerCase()))
+                      .map(curr => (
+                        <li 
+                          key={curr} 
+                          onClick={() => {
+                            setCurrency(curr);
+                            setIsCurrencyDropdownOpen(false);
+                          }}
+                          className="px-4 py-3 cursor-pointer hover:bg-violet-100/60"
+                        >
+                          {curr}
+                        </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
 
             {/* Plan Components */}
@@ -797,15 +881,18 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
               </label>
               <p className="text-[10px] sm:text-xs text-slate-600 mb-2 sm:mb-3">Select which components to include in your trip plan. Itinerary is always included.</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
-                {unifiedPlanComponents.map(comp => (
+                {unifiedPlanComponents.map(comp => {
+                  const isSelected = selectedComponents.includes(comp.label);
+                  const componentColor = getComponentColor(comp.label);
+                  return (
                   <button
                     key={comp.label}
                     type="button"
                     onClick={() => handleComponentToggle(comp.label)}
                     className={`p-2 sm:p-3 rounded-lg text-left transition-all duration-200 border-2 flex items-start space-x-2 ${
-                      selectedComponents.includes(comp.label)
-                        ? 'bg-violet-100/70 border-violet-500'
-                        : 'bg-white/40 border-slate-300 hover:border-violet-400'
+                      isSelected
+                        ? `${componentColor.bg} ${componentColor.border}`
+                        : `bg-white/40 border-slate-300 ${componentColor.hover}`
                     }`}
                   >
                     <span className="text-lg sm:text-xl mt-0.5 flex-shrink-0">{comp.icon}</span>
@@ -814,7 +901,8 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
                       <p className="text-[10px] sm:text-xs text-slate-500">{comp.description}</p>
                     </div>
                   </button>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
