@@ -5,7 +5,6 @@ import { searchWeekendPackages, WeekendPackage, WeekendExplorerRequest } from '.
 import { getDestinationSuggestions } from '../services/geminiService';
 import { LocationSuggestion } from '../types';
 import { currencies } from '../data/currencies';
-import BackToHomeButton from './BackToHomeButton';
 
 const budgets: Budget[] = ['Low Budget', 'Midrange', 'Luxury'];
 const tripTypes: { label: TripType; icon: string }[] = [
@@ -514,7 +513,12 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-violet-50/30 py-4 sm:py-6 md:py-8 px-4 sm:px-6 md:px-8 lg:px-12">
       <div className="max-w-6xl mx-auto">
-        <BackToHomeButton onBack={onBack} />
+        {/* App Name Header */}
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent text-center">
+            Weekend Explorer
+          </h1>
+        </div>
 
         {/* Form Section */}
         <div className="bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-xl border-2 border-white/60 p-4 sm:p-6 md:p-8 mb-6 sm:mb-8">

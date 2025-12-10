@@ -580,15 +580,6 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
                     Your Unified Trip Plan to <span className="text-violet-700">{plan.itinerary?.destination || '...'}</span>
                 </h1>
                 <div className="flex-shrink-0 flex items-center space-x-2 sm:space-x-3 w-full sm:w-auto justify-center sm:justify-end">             
-                    <button
-                        onClick={onPlanNew}
-                        className="inline-flex items-center px-3 py-1.5 sm:px-4 sm:py-2 bg-violet-600 text-white font-bold rounded-full hover:bg-violet-700 transition-all duration-300 shadow-md text-xs sm:text-sm"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        <span>Home</span>
-                    </button>
                      {canRegenerate && (
                     <button
                         type="button"

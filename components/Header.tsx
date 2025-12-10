@@ -93,15 +93,15 @@ const Header: React.FC<HeaderProps> = ({
   };
 
   // Base classes for the header - relative (non-sticky) for all screens, with left margin for sidebar on desktop
-  const headerBaseClasses = "relative w-full no-print h-16 md:h-20 md:ml-20 transition-shadow duration-300";
+  const headerBaseClasses = "relative w-full no-print h-16 md:h-20 md:ml-20 md:w-[calc(100%-5rem)] transition-shadow duration-300";
   
   // Container for the content inside the header
-  const containerBaseClasses = "flex items-center container mx-auto h-full";
+  const containerBaseClasses = "flex items-center container mx-auto h-full max-w-full overflow-visible px-4 sm:px-6 lg:px-8";
 
   // Classes for the initial, transparent, centered state
   const headerInitialClasses = "bg-white/90 backdrop-blur-xl"; // Always use glassmorphic style
   const headerScrolledClasses = isScrolled ? "shadow-lg shadow-slate-200/50" : "";
-  const containerInitialClasses = "justify-between px-4 sm:px-6 lg:px-8";
+  const containerInitialClasses = "justify-between";
   
   // Logo scaling effect
   const logoContainerBaseClasses = "flex items-center space-x-2 text-slate-800";
@@ -109,10 +109,10 @@ const Header: React.FC<HeaderProps> = ({
   return (
     <>
       <header
-        className={`${headerBaseClasses} ${headerInitialClasses} ${headerScrolledClasses} z-[9998]`}
+        className={`${headerBaseClasses} ${headerInitialClasses} ${headerScrolledClasses} z-[9998] overflow-visible`}
         aria-label="Application Header"
       >
-        <div className={`${containerBaseClasses} ${containerInitialClasses}`}>
+        <div className={`${containerBaseClasses} ${containerInitialClasses} overflow-visible`}>
           <button 
             onClick={() => navigate('/')}
             className={`${logoContainerBaseClasses} hover:opacity-80 transition-opacity cursor-pointer`}
@@ -130,7 +130,7 @@ const Header: React.FC<HeaderProps> = ({
           </button>
 
           {/* Authentication Section */}
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-3 overflow-visible relative z-[9999] flex-shrink-0 min-w-0">
             {user ? (
               user.full_name ? (
                 <UserProfile 

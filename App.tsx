@@ -1768,7 +1768,7 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
-  <div ref={mainContentRef} className="flex-1 overflow-y-auto md:ml-20">
+      <div ref={mainContentRef} className="flex-1 overflow-y-auto overflow-x-hidden md:ml-20">
         <Header user={user} onLogout={handleLogout} onEditProfile={handleEditProfile} onLogin={handleLogin} onSignup={handleSignup} isLoading={isAuthLoading} error={authError} isAuthModalOpen={isAuthModalOpen} onOpenAuthModal={() => setIsAuthModalOpen(true)} onCloseAuthModal={() => setIsAuthModalOpen(false)} onForgotPassword={handleForgotPassword} onViewTokenUsage={() => navigate('/token-usage')} onGoToContact={() => navigate('/contact')} onGetApiKey={() => navigate('/get-api-key')} />
         <div className="px-4 sm:px-6 md:px-0">
           {renderContent()}

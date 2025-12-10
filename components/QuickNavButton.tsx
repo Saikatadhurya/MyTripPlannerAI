@@ -53,7 +53,6 @@ const QuickNavButton: React.FC<QuickNavButtonProps> = ({
       'Mobile App Finder': { bg: 'bg-teal-50', border: 'border-teal-400', text: 'text-teal-700', hoverBg: 'hover:bg-teal-100' },
       'Local Music Finder': { bg: 'bg-fuchsia-50', border: 'border-fuchsia-400', text: 'text-fuchsia-700', hoverBg: 'hover:bg-fuchsia-100' },
       'Local Lingo Guide': { bg: 'bg-sky-50', border: 'border-sky-400', text: 'text-sky-700', hoverBg: 'hover:bg-sky-100' },
-      'Go Home': { bg: 'bg-green-50', border: 'border-green-400', text: 'text-green-700', hoverBg: 'hover:bg-green-100' },
       'My History': { bg: 'bg-amber-50', border: 'border-amber-400', text: 'text-amber-700', hoverBg: 'hover:bg-amber-100' },
       'Contact Us': { bg: 'bg-purple-50', border: 'border-purple-400', text: 'text-purple-700', hoverBg: 'hover:bg-purple-100' },
     };
@@ -66,7 +65,6 @@ const QuickNavButton: React.FC<QuickNavButtonProps> = ({
     const actionStr = item.action.toString();
     
     // Special cases
-    if (path === '/' && item.label === 'Go Home') return true;
     if (path === '/plan' && item.label === 'Complete Trip Plan') return true;
     if (path === '/itinerary' && item.label === 'Day-by-Day Itinerary') return true;
     if (path === '/packing' && item.label === 'Smart Bag Packing') return true;
@@ -125,7 +123,6 @@ const QuickNavButton: React.FC<QuickNavButtonProps> = ({
     {
       title: 'General',
       items: [
-        { label: 'Go Home', action: () => navigate('/'), icon: '🏠' },
         { 
           label: 'My History', 
           action: () => navigate('/history'), 
@@ -151,19 +148,24 @@ const QuickNavButton: React.FC<QuickNavButtonProps> = ({
         }`}
       >
         {/* Logo/Brand Section - Always visible */}
-        <div className="px-4 py-5 border-b border-slate-200/50 flex items-center justify-center min-h-[80px]">
+        <button
+          onClick={() => handleAction(() => navigate('/'))}
+          className="w-full px-4 py-5 border-b border-slate-200/50 flex items-center justify-center min-h-[80px] hover:bg-slate-50/50 transition-colors duration-200"
+          title={!isExpanded ? 'Home' : undefined}
+          aria-label="Home"
+        >
           <div className={`flex items-center gap-3 transition-all duration-500 ease-in-out ${isExpanded ? 'w-full' : 'w-auto'}`}>
             <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-indigo-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
-              <span className="text-xl">✨</span>
+              <span className="text-xl">🏠</span>
             </div>
             {isExpanded && (
-              <div className="flex-1 min-w-0">
-                <h2 className="text-sm font-bold text-slate-800 truncate">Menu</h2>
+              <div className="flex-1 min-w-0 text-left">
+                <h2 className="text-sm font-bold text-slate-800 truncate">Home</h2>
                 <p className="text-xs text-slate-500 truncate">Your Travel Planner</p>
               </div>
             )}
           </div>
-        </div>
+        </button>
 
         {/* Navigation Items */}
         <nav className="flex-1 overflow-y-auto py-4 px-2 scrollbar-thin scrollbar-thumb-violet-300 scrollbar-track-transparent hover:scrollbar-thumb-violet-400">
@@ -190,7 +192,6 @@ const QuickNavButton: React.FC<QuickNavButtonProps> = ({
                     if (label.includes('App')) return 'hover:bg-teal-100 hover:border-teal-400';
                     if (label.includes('Music')) return 'hover:bg-fuchsia-100 hover:border-fuchsia-400';
                     if (label.includes('Lingo')) return 'hover:bg-sky-100 hover:border-sky-400';
-                    if (label.includes('Home')) return 'hover:bg-green-100 hover:border-green-400';
                     if (label.includes('History')) return 'hover:bg-amber-100 hover:border-amber-400';
                     if (label.includes('Contact')) return 'hover:bg-purple-100 hover:border-purple-400';
                     return 'hover:bg-slate-100 hover:border-slate-300';

@@ -3,7 +3,6 @@ import { Budget, Vibe, FoodPreference, TripType, QuestionnaireData, LocationSugg
 import { getDestinationSuggestions } from '../services/geminiService';
 import { User } from '../services/authService';
 import { currencies } from '../data/currencies';
-import BackToHomeButton from './BackToHomeButton';
 import SelectionPage from './SelectionPage';
 
 interface QuestionnaireProps {
@@ -50,7 +49,7 @@ const Toggle: React.FC<{ label: string; description: string; enabled: boolean; o
     <button 
         type="button"
         onClick={() => onChange(!enabled)}
-        className={`w-full flex items-center justify-between p-4 rounded-lg cursor-pointer transition-all duration-200 border-2 ${enabled ? 'bg-violet-100/70 border-violet-500' : 'bg-white/40 border-white/40 hover:bg-white/60'}`}
+        className={`w-full flex items-center justify-between p-4 rounded-lg cursor-pointer transition-all duration-200 border-2 ${enabled ? 'bg-blue-100/70 border-blue-500' : 'bg-white/40 border-white/40 hover:bg-white/60'}`}
         role="switch"
         aria-checked={enabled}
     >
@@ -58,7 +57,7 @@ const Toggle: React.FC<{ label: string; description: string; enabled: boolean; o
           <p className="font-semibold text-slate-800">{label}</p>
           <p className="text-xs sm:text-sm text-slate-600">{description}</p>
       </div>
-      <div className={`w-12 h-6 flex items-center rounded-full transition-colors duration-300 ${enabled ? 'bg-violet-500' : 'bg-slate-300'}`}>
+      <div className={`w-12 h-6 flex items-center rounded-full transition-colors duration-300 ${enabled ? 'bg-blue-500' : 'bg-slate-300'}`}>
           <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${enabled ? 'translate-x-6' : 'translate-x-1'}`}></div>
       </div>
     </button>
@@ -999,7 +998,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
             isLoading={isLoading}
             popularItems={popularItems}
             renderPopularItem={renderPopularItem}
-            accentColor="violet"
+            accentColor="sky"
             error={apiKeyError && (selectionView?.field === 'destination' || selectionView?.field === 'startPoint') ? apiKeyError : null}
         />
     );
@@ -1019,7 +1018,12 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
 
   return (
     <div className="max-w-2xl mx-auto">
-      <BackToHomeButton onClick={onBack} />
+      {/* App Name Header */}
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 bg-clip-text text-transparent text-center">
+          Day-by-Day Itinerary
+        </h1>
+      </div>
 
       {error && (
         <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md mb-6" role="alert">
@@ -1040,21 +1044,21 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
 
         <div className="space-y-4 sm:space-y-6 bg-white/60 backdrop-blur-md p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-200/70 shadow-xl">
             <h2 className="flex items-center space-x-2 sm:space-x-3 text-lg sm:text-xl md:text-2xl font-bold text-slate-800 border-b pb-2 sm:pb-3">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 9m-6 3l6-3m0 0l6-3m-6 3v6.382" />
               </svg>
               <span>Trip Type</span>
             </h2>
             <div className="grid grid-cols-3 gap-2 sm:gap-3">
               {tripTypes.map(({ label, icon }) => (
-                <button key={label} type="button" onClick={() => handleInputChange('tripType', label)} className={`px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm md:text-base font-semibold transition-all duration-200 border-2 flex items-center justify-center space-x-1 sm:space-x-2 ${formData.tripType === label ? 'bg-violet-600 text-white border-violet-600' : 'bg-white/50 border-white/50 hover:border-violet-400'}`}>
+                <button key={label} type="button" onClick={() => handleInputChange('tripType', label)} className={`px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm md:text-base font-semibold transition-all duration-200 border-2 flex items-center justify-center space-x-1 sm:space-x-2 ${formData.tripType === label ? 'bg-blue-600 text-white border-blue-600' : 'bg-white/50 border-white/50 hover:border-blue-400'}`}>
                   <span className="text-base">{icon}</span>
                   <span className="truncate">{label}</span>
                 </button>
               ))}
             </div>
             {formData.tripType === 'Standard' && (
-              <div className="mt-4 pt-4 border-t border-violet-200/50">
+              <div className="mt-4 pt-4 border-t border-blue-200/50">
                 <Toggle
                   label="Round Trip"
                   description="Plan a multi-stop circuit using public transport"
@@ -1064,14 +1068,14 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
               </div>
             )}
             {(formData.tripType === 'Car' || formData.tripType === 'Bike') && (
-              <div className="mt-4 pt-4 border-t border-violet-200/50">
-                <div className="flex items-start space-x-2 p-3 bg-violet-50/70 border border-violet-200 rounded-lg">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-violet-600 mt-0.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+              <div className="mt-4 pt-4 border-t border-blue-200/50">
+                <div className="flex items-start space-x-2 p-3 bg-blue-50/70 border border-blue-200 rounded-lg">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                   </svg>
                   <div className="flex-1">
-                    <p className="text-sm font-semibold text-violet-800">Round Trip (Automatic)</p>
-                    <p className="text-xs text-violet-600 mt-1">Car and Bike trips are automatically set as round trips, as you'll return to your starting point.</p>
+                    <p className="text-sm font-semibold text-blue-800">Round Trip (Automatic)</p>
+                    <p className="text-xs text-blue-600 mt-1">Car and Bike trips are automatically set as round trips, as you'll return to your starting point.</p>
                   </div>
                 </div>
               </div>
@@ -1080,7 +1084,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
 
         <div className="space-y-4 sm:space-y-6 bg-white/60 backdrop-blur-md p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-200/70 shadow-xl">
             <h2 className="flex items-center space-x-2 sm:space-x-3 text-lg sm:text-xl md:text-2xl font-bold text-slate-800 border-b pb-2 sm:pb-3">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-violet-600" viewBox="0 0 20 20" fill="currentColor"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" /><path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h.01a1 1 0 100-2H10zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h.01a1 1 0 100-2H10z" clipRule="evenodd" /></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-blue-600" viewBox="0 0 20 20" fill="currentColor"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" /><path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h.01a1 1 0 100-2H10zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h.01a1 1 0 100-2H10z" clipRule="evenodd" /></svg>
                 <span>Journey Blueprint</span>
             </h2>
             <div className={`grid grid-cols-1 ${showStartPoint ? 'sm:grid-cols-2' : ''} gap-4`}>
@@ -1091,19 +1095,19 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-1.172-8.243a.75.75 0 01.12-1.06l3-3a.75.75 0 011.06 1.06l-3 3a.75.75 0 01-1.18 0z" clipRule="evenodd" /></svg>
                           </div>
-                          <input id="startPoint" ref={startPointInputRef} type="text" value={formData.startPoint} onChange={handleStartPointChange} onBlur={handleStartPointBlur} placeholder="e.g., Mumbai, India" className="w-full pl-10 pr-4 py-2 bg-white text-base text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition" required autoComplete="off" />
+                          <input id="startPoint" ref={startPointInputRef} type="text" value={formData.startPoint} onChange={handleStartPointChange} onBlur={handleStartPointBlur} placeholder="e.g., Mumbai, India" className="w-full pl-10 pr-4 py-2 bg-white text-base text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" required autoComplete="off" />
                         </div>
                         {isStartPointSuggestionsLoading && (
                           <div className="absolute right-3 top-9">
-                            <svg className="animate-spin h-5 w-5 text-violet-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <svg className="animate-spin h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
                           </div>
                         )}
                         {isStartPointSuggestionsLoading && formData.startPoint && formData.startPoint.trim().length > 1 && (
-                          <div className="mt-2 px-3 py-2 bg-gradient-to-r from-violet-50 to-indigo-50 border border-violet-200/50 rounded-lg shadow-sm animate-pulse">
-                            <div className="flex items-center space-x-2 text-sm text-violet-700">
+                          <div className="mt-2 px-3 py-2 bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200/50 rounded-lg shadow-sm animate-pulse">
+                            <div className="flex items-center space-x-2 text-sm text-blue-700">
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                               </svg>
@@ -1119,7 +1123,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                         {startPointSuggestions.length > 0 && (
                             <ul ref={startPointSuggestionsRef} className="absolute z-10 w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg max-h-60 overflow-y-auto">
                                 {startPointSuggestions.map((s, i) => (
-                                    <li key={i} onClick={() => handleStartPointSuggestionClick(s)} className="px-4 py-3 cursor-pointer hover:bg-violet-100/60 flex justify-between items-center transition-colors">
+                                    <li key={i} onClick={() => handleStartPointSuggestionClick(s)} className="px-4 py-3 cursor-pointer hover:bg-blue-100/60 flex justify-between items-center transition-colors">
                                         <div>
                                             <span className="font-semibold text-slate-800">{s.name}</span>
                                             {s.parentHierarchy && <span className="text-sm text-slate-600">, {s.parentHierarchy}</span>}
@@ -1179,7 +1183,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                     <button
                       type="button"
                       onClick={addStop}
-                      className="text-sm px-3 py-1.5 bg-violet-100 text-violet-700 rounded-lg hover:bg-violet-200 transition flex items-center space-x-1"
+                      className="text-sm px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition flex items-center space-x-1"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                         <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
@@ -1245,21 +1249,21 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                             onMouseDown={(e) => e.stopPropagation()}
                             onDragStart={(e) => e.preventDefault()}
                             placeholder={`Stop ${index + 1} (e.g., Paris, France)`}
-                            className="w-full pl-10 pr-4 py-2 bg-white text-base text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
+                            className="w-full pl-10 pr-4 py-2 bg-white text-base text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                             autoComplete="off"
                             draggable={false}
                           />
                           {stop.isLoading && (
                             <div className="absolute right-3 top-2.5">
-                              <svg className="animate-spin h-5 w-5 text-violet-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <svg className="animate-spin h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                               </svg>
                             </div>
                           )}
                           {stop.isLoading && stop.value.trim().length > 1 && (
-                            <div className="mt-2 px-3 py-2 bg-gradient-to-r from-violet-50 to-indigo-50 border border-violet-200/50 rounded-lg shadow-sm animate-pulse">
-                              <div className="flex items-center space-x-2 text-sm text-violet-700">
+                            <div className="mt-2 px-3 py-2 bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200/50 rounded-lg shadow-sm animate-pulse">
+                              <div className="flex items-center space-x-2 text-sm text-blue-700">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
@@ -1287,7 +1291,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                                 <li
                                   key={i}
                                   onClick={() => handleStopSuggestionClick(stop.id, s)}
-                                  className="px-4 py-3 cursor-pointer hover:bg-violet-100/60 flex justify-between items-center transition-colors"
+                                  className="px-4 py-3 cursor-pointer hover:bg-blue-100/60 flex justify-between items-center transition-colors"
                                 >
                                   <div>
                                     <span className="font-semibold text-slate-800">{s.name}</span>
@@ -1364,19 +1368,19 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 20l-4.95-5.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
                       </div>
-                      <input id="destination" ref={destinationInputRef} type="text" value={formData.destination} onChange={handleDestinationChange} onBlur={handleDestinationBlur} placeholder="e.g., Paris, France" className="w-full pl-10 pr-4 py-2 bg-white text-base text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition" required autoComplete="off" />
+                      <input id="destination" ref={destinationInputRef} type="text" value={formData.destination} onChange={handleDestinationChange} onBlur={handleDestinationBlur} placeholder="e.g., Paris, France" className="w-full pl-10 pr-4 py-2 bg-white text-base text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" required autoComplete="off" />
                     </div>
                     {isDestinationSuggestionsLoading && (
                       <div className="absolute right-3 top-9">
-                        <svg className="animate-spin h-5 w-5 text-violet-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <svg className="animate-spin h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
                       </div>
                     )}
                     {isDestinationSuggestionsLoading && formData.destination.trim().length > 1 && (
-                      <div className="mt-2 px-3 py-2 bg-gradient-to-r from-violet-50 to-indigo-50 border border-violet-200/50 rounded-lg shadow-sm animate-pulse">
-                        <div className="flex items-center space-x-2 text-sm text-violet-700">
+                      <div className="mt-2 px-3 py-2 bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200/50 rounded-lg shadow-sm animate-pulse">
+                        <div className="flex items-center space-x-2 text-sm text-blue-700">
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                           </svg>
@@ -1392,7 +1396,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                     {destinationSuggestions.length > 0 && (
                          <ul ref={destinationSuggestionsRef} className="absolute z-10 w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg max-h-60 overflow-y-auto">
                             {destinationSuggestions.map((s, i) => (
-                                <li key={i} onClick={() => handleDestinationSuggestionClick(s)} className="px-4 py-3 cursor-pointer hover:bg-violet-100/60 flex justify-between items-center transition-colors">
+                                <li key={i} onClick={() => handleDestinationSuggestionClick(s)} className="px-4 py-3 cursor-pointer hover:bg-blue-100/60 flex justify-between items-center transition-colors">
                                     <div>
                                         <span className="font-semibold text-slate-800">{s.name}</span>
                                         {s.parentHierarchy && <span className="text-sm text-slate-600">, {s.parentHierarchy}</span>}
@@ -1460,7 +1464,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                                         value={formData.startDate}
                                         onChange={handleStartDateChange}
                                         min={formatDateLocal(today)}
-                                        className="w-full pl-10 pr-3 py-2 bg-white text-base text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
+                                        className="w-full pl-10 pr-3 py-2 bg-white text-base text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                                         required
                                     />
                                 </div>
@@ -1479,14 +1483,14 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                                         onChange={handleEndDateChange}
                                         min={formData.startDate}
                                         max={maxEndDate}
-                                        className="w-full pl-10 pr-3 py-2 bg-white text-base text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
+                                        className="w-full pl-10 pr-3 py-2 bg-white text-base text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                                         required
                                     />
                                 </div>
                             </div>
                         </div>
                         <div className="flex items-center space-x-2">
-                            <span className="bg-violet-100 text-violet-700 font-bold px-3 py-1 rounded-full text-sm">
+                            <span className="bg-blue-100 text-blue-700 font-bold px-3 py-1 rounded-full text-sm">
                                 {formData.days} {formData.days === 1 ? 'day' : 'days'}
                             </span>
                             {formData.days >= 45 && (
@@ -1496,10 +1500,10 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                     </div>
                   <div className="flex flex-col">
                     <label htmlFor="persons" className="block text-xs sm:text-sm font-medium text-slate-700 mb-1 sm:mb-[29px]">Travelers</label>
-                    <div className="flex items-center w-full bg-white border border-slate-300 rounded-lg focus-within:ring-2 focus-within:ring-violet-500 focus-within:border-violet-500 transition">
-                      <button type="button" onClick={() => handleInputChange('persons', Math.max(1, formData.persons - 1))} disabled={formData.persons <= 1} className="p-3 text-violet-600 rounded-l-lg hover:bg-violet-50 transition disabled:text-slate-300 disabled:cursor-not-allowed" aria-label="Decrease number of travelers"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clipRule="evenodd" /></svg></button>
+                    <div className="flex items-center w-full bg-white border border-slate-300 rounded-lg focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition">
+                      <button type="button" onClick={() => handleInputChange('persons', Math.max(1, formData.persons - 1))} disabled={formData.persons <= 1} className="p-3 text-blue-600 rounded-l-lg hover:bg-blue-50 transition disabled:text-slate-300 disabled:cursor-not-allowed" aria-label="Decrease number of travelers"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clipRule="evenodd" /></svg></button>
                       <input id="persons" type="text" inputMode="numeric" pattern="[0-9]*" value={formData.persons === 0 ? '' : formData.persons} onChange={handleTravelersChange} onBlur={handleTravelersBlur} className="font-semibold text-lg text-center flex-grow tabular-nums w-full bg-transparent border-none text-gray-800 focus:ring-0 focus:outline-none" aria-label="Number of travelers" />
-                      <button type="button" onClick={() => handleInputChange('persons', Math.min(20, formData.persons + 1))} disabled={formData.persons >= 20} className="p-3 text-violet-600 rounded-r-lg hover:bg-violet-50 transition disabled:text-slate-300 disabled:cursor-not-allowed" aria-label="Increase number of travelers"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" /></svg></button>
+                      <button type="button" onClick={() => handleInputChange('persons', Math.min(20, formData.persons + 1))} disabled={formData.persons >= 20} className="p-3 text-blue-600 rounded-r-lg hover:bg-blue-50 transition disabled:text-slate-300 disabled:cursor-not-allowed" aria-label="Increase number of travelers"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" /></svg></button>
                     </div>
                   </div>
                 </div>
@@ -1507,11 +1511,11 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
 
             <div className="space-y-4 bg-white/60 backdrop-blur-md p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-200/70 shadow-xl relative z-10">
                 <h2 className="flex items-center space-x-2 sm:space-x-3 text-lg sm:text-xl md:text-2xl font-bold text-slate-800 border-b pb-2 sm:pb-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-violet-600" viewBox="0 0 20 20" fill="currentColor"><path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.5 2.5 0 00-1.168-.217c-1.36.0-2.5 1.119-2.5 2.5s1.14 2.5 2.5 2.5c.346 0 .682-.07.98-.2a2.5 2.5 0 001.52-2.3z" /><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.5 4.5 0 00-1.879.938.5.5 0 00-.22.643l.612 1.224a.5.5 0 00.643.22A3.49 3.49 0 0110 7.5v1.698a2.5 2.5 0 00-1.168-.217c-1.36.0-2.5 1.119-2.5 2.5s1.14 2.5 2.5 2.5c.346 0 .682-.07.98-.2a2.5 2.5 0 001.52-2.3V9.5a1 1 0 10-2 0v1a.5.5 0 01-1 0V9.5a.5.5 0 01.5-.5h1V8a1 1 0 10-2 0v.092a4.5 4.5 0 00-1.879.938.5.5 0 00-.22.643l.612 1.224a.5.5 0 00.643.22A3.49 3.49 0 0110 7.5v1.698a2.5 2.5 0 00-1.168-.217c-1.36.0-2.5 1.119-2.5 2.5s1.14 2.5 2.5 2.5c.346 0 .682-.07.98-.2a2.5 2.5 0 001.52-2.3V9.5a1 1 0 10-2 0v1a.5.5 0 01-1 0V9.5a.5.5 0 01.5-.5h1V8a1 1 0 00-2 0z" clipRule="evenodd" /></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-blue-600" viewBox="0 0 20 20" fill="currentColor"><path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.5 2.5 0 00-1.168-.217c-1.36.0-2.5 1.119-2.5 2.5s1.14 2.5 2.5 2.5c.346 0 .682-.07.98-.2a2.5 2.5 0 001.52-2.3z" /><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.5 4.5 0 00-1.879.938.5.5 0 00-.22.643l.612 1.224a.5.5 0 00.643.22A3.49 3.49 0 0110 7.5v1.698a2.5 2.5 0 00-1.168-.217c-1.36.0-2.5 1.119-2.5 2.5s1.14 2.5 2.5 2.5c.346 0 .682-.07.98-.2a2.5 2.5 0 001.52-2.3V9.5a1 1 0 10-2 0v1a.5.5 0 01-1 0V9.5a.5.5 0 01.5-.5h1V8a1 1 0 10-2 0v.092a4.5 4.5 0 00-1.879.938.5.5 0 00-.22.643l.612 1.224a.5.5 0 00.643.22A3.49 3.49 0 0110 7.5v1.698a2.5 2.5 0 00-1.168-.217c-1.36.0-2.5 1.119-2.5 2.5s1.14 2.5 2.5 2.5c.346 0 .682-.07.98-.2a2.5 2.5 0 001.52-2.3V9.5a1 1 0 10-2 0v1a.5.5 0 01-1 0V9.5a.5.5 0 01.5-.5h1V8a1 1 0 00-2 0z" clipRule="evenodd" /></svg>
                   <span>Budget</span>
                 </h2>
                 <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                    {budgets.map(b => (<button key={b} type="button" onClick={() => handleInputChange('budget', b)} className={`px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm md:text-base font-semibold transition-all duration-200 border-2 ${formData.budget === b ? 'bg-violet-600 text-white border-violet-600' : 'bg-white/50 border-white/50 hover:border-violet-400'}`}>{b}</button>))}
+                    {budgets.map(b => (<button key={b} type="button" onClick={() => handleInputChange('budget', b)} className={`px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm md:text-base font-semibold transition-all duration-200 border-2 ${formData.budget === b ? 'bg-blue-600 text-white border-blue-600' : 'bg-white/50 border-white/50 hover:border-blue-400'}`}>{b}</button>))}
                 </div>
             </div>
 
@@ -1535,7 +1539,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                                         setIsLangDropdownOpen(true);
                                         setIsCurrencyDropdownOpen(false); // Close currency dropdown when language opens
                                     }}
-                                    className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition text-base"
+                                    className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-base"
                                     placeholder="Search language..."
                                     autoComplete="off"
                                 />
@@ -1550,7 +1554,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                                                         handleInputChange('language', lang);
                                                         setIsLangDropdownOpen(false);
                                                     }}
-                                                    className="px-4 py-3 cursor-pointer hover:bg-violet-100/60"
+                                                    className="px-4 py-3 cursor-pointer hover:bg-blue-100/60"
                                                 >
                                                     {lang}
                                                 </li>
@@ -1576,7 +1580,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                                         setIsCurrencyDropdownOpen(true);
                                         setIsLangDropdownOpen(false); // Close language dropdown when currency opens
                                     }}
-                                    className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition text-base"
+                                    className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-base"
                                     placeholder="Search currency..."
                                     autoComplete="off"
                                 />
@@ -1591,7 +1595,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                                                         handleInputChange('currency', currency);
                                                         setIsCurrencyDropdownOpen(false);
                                                     }}
-                                                    className="px-4 py-3 cursor-pointer hover:bg-violet-100/60"
+                                                    className="px-4 py-3 cursor-pointer hover:bg-blue-100/60"
                                                 >
                                                     {currency}
                                                 </li>
@@ -1605,29 +1609,29 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
 
             <div className="space-y-4 bg-white/60 backdrop-blur-md p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-200/70 shadow-xl">
               <h2 className="flex items-center space-x-2 sm:space-x-3 text-lg sm:text-xl md:text-2xl font-bold text-slate-800 border-b pb-2 sm:pb-3">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-violet-600" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" /></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-blue-600" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" /></svg>
                 <span>What's your vibe?</span>
               </h2>
               <p className="text-xs sm:text-sm text-slate-600">Select one or more vibes that best describe your ideal trip.</p>
               <div className="grid grid-cols-2 gap-2 sm:gap-4">
-                {vibes.map(v => (<button key={v.label} type="button" onClick={() => handleVibeToggle(v.label)} className={`p-2 sm:p-4 rounded-lg text-left transition-all duration-200 border-2 flex items-start space-x-2 sm:space-x-3 ${formData.vibe.includes(v.label) ? 'bg-violet-100/70 border-violet-500' : 'bg-white/40 border-white/40 hover:bg-white/60'}`}><span className="text-xl sm:text-2xl mt-1 flex-shrink-0">{v.icon}</span><div className="min-w-0 flex-1"><p className="font-semibold text-slate-800 text-xs sm:text-sm">{v.label}</p><p className="text-[10px] sm:text-xs text-slate-500">{v.description}</p></div></button>))}
+                {vibes.map(v => (<button key={v.label} type="button" onClick={() => handleVibeToggle(v.label)} className={`p-2 sm:p-4 rounded-lg text-left transition-all duration-200 border-2 flex items-start space-x-2 sm:space-x-3 ${formData.vibe.includes(v.label) ? 'bg-blue-100/70 border-blue-500' : 'bg-white/40 border-white/40 hover:bg-white/60'}`}><span className="text-xl sm:text-2xl mt-1 flex-shrink-0">{v.icon}</span><div className="min-w-0 flex-1"><p className="font-semibold text-slate-800 text-xs sm:text-sm">{v.label}</p><p className="text-[10px] sm:text-xs text-slate-500">{v.description}</p></div></button>))}
               </div>
             </div>
             
             <div className="space-y-4 bg-white/60 backdrop-blur-md p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-200/70 shadow-xl">
                <h2 className="flex items-center space-x-2 sm:space-x-3 text-lg sm:text-xl md:text-2xl font-bold text-slate-800 border-b pb-2 sm:pb-3">
-                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-violet-600" viewBox="0 0 20 20" fill="currentColor"><path d="M11 3a1 1 0 10-2 0v1.088A7 7 0 004.53 10.756.5.5 0 005 11h10a.5.5 0 00.47-.244A7 7 0 0011 4.088V3z" /><path fillRule="evenodd" d="M15 13a.5.5 0 01.5.5v2a.5.5 0 01-.5.5H5a.5.5 0 01-.5-.5v-2a.5.5 0 01.5-.5h10z" clipRule="evenodd" /></svg>
+                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-blue-600" viewBox="0 0 20 20" fill="currentColor"><path d="M11 3a1 1 0 10-2 0v1.088A7 7 0 004.53 10.756.5.5 0 005 11h10a.5.5 0 00.47-.244A7 7 0 0011 4.088V3z" /><path fillRule="evenodd" d="M15 13a.5.5 0 01.5.5v2a.5.5 0 01-.5.5H5a.5.5 0 01-.5-.5v-2a.5.5 0 01.5-.5h10z" clipRule="evenodd" /></svg>
                  <span>Food & Drink</span>
                </h2>
                 <div className="grid grid-cols-3 gap-2 sm:gap-3">
                     {foodPreferences.map(({ label, icon }) => (
-                        <button key={label} type="button" onClick={() => handleInputChange('foodPreference', label)} className={`px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm md:text-base font-semibold transition-all duration-200 border-2 flex items-center justify-center space-x-1 sm:space-x-2 ${formData.foodPreference === label ? 'bg-violet-600 text-white border-violet-600' : 'bg-white/50 border-white/50 hover:border-violet-400'}`}>
+                        <button key={label} type="button" onClick={() => handleInputChange('foodPreference', label)} className={`px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm md:text-base font-semibold transition-all duration-200 border-2 flex items-center justify-center space-x-1 sm:space-x-2 ${formData.foodPreference === label ? 'bg-blue-600 text-white border-blue-600' : 'bg-white/50 border-white/50 hover:border-blue-400'}`}>
                             <span className="text-base sm:text-xl">{icon}</span>
                             <span className="truncate">{label}</span>
                         </button>
                     ))}
                 </div>
-                <div className="pt-4 border-t border-violet-200/50">
+                <div className="pt-4 border-t border-blue-200/50">
                    <Toggle
                     label="Include Alcoholic Drinks"
                     description="Get recommendations for local beers, wines, etc."
@@ -1639,7 +1643,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
 
             <div className="space-y-4 bg-white/60 backdrop-blur-md p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-200/70 shadow-xl">
                 <h2 className="flex items-center space-x-2 sm:space-x-3 text-lg sm:text-xl md:text-2xl font-bold text-slate-800 border-b pb-2 sm:pb-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-violet-600" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" /></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-blue-600" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" /></svg>
                   <span>Trip Add-ons</span>
                 </h2>
                 <p className="text-xs sm:text-sm text-slate-600">Add extra details to your plan for a more comprehensive experience.</p>
@@ -1656,7 +1660,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
             <div className="text-center pt-4 mb-48 pb-16">
               <button
                 type="submit"
-                className="w-full sm:w-auto px-10 py-4 bg-violet-600 text-white font-bold rounded-full hover:bg-violet-700 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-violet-500/30 disabled:bg-violet-400/80 disabled:cursor-not-allowed disabled:shadow-md disabled:scale-100"
+                className="w-full sm:w-auto px-10 py-4 bg-blue-600 text-white font-bold rounded-full hover:bg-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-blue-500/30 disabled:bg-blue-400/80 disabled:cursor-not-allowed disabled:shadow-md disabled:scale-100"
                 disabled={!user || !isDestinationSelected || !!destinationError || !!apiKeyError || (showStartPoint && (!isStartPointSelected || !!startPointError || !!startPointApiKeyError)) || formData.vibe.length === 0 || stops.some(s => s.value.trim().length > 0 && !s.isSelected)}
               >
                 ✨ Plan My Adventure

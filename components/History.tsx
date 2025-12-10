@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useHistory } from '../hooks/useHistory';
 import { RecommendationHistory, UnifiedTrip } from '../services/historyService';
-import BackToHomeButton from './BackToHomeButton';
 import { historyService } from '../services/historyService';
 import Toast from './Toast';
 import { authService } from '../services/authService';
@@ -685,8 +684,6 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
   return (
     <div className="bg-gradient-to-br from-slate-50 via-blue-50/30 to-violet-50/30 min-h-screen">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8">
-        <BackToHomeButton onClick={onBack} />
-
         {/* Filters - Modernized Design */}
         <div className="bg-white/95 backdrop-blur-xl rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 shadow-xl border-2 border-violet-100/50 mb-4 sm:mb-6">
           <div className="flex flex-col gap-3 sm:gap-4">

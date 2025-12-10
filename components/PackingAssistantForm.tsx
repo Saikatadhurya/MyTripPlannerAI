@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { PackingListRequestData, LocationSuggestion, PopularDestination } from '../types';
 import { getDestinationSuggestions } from '../services/geminiService';
 import { User } from '../services/authService';
-import BackToHomeButton from './BackToHomeButton';
 import SelectionPage from './SelectionPage';
 
 interface PackingAssistantFormProps {
@@ -477,7 +476,12 @@ const PackingAssistantForm: React.FC<PackingAssistantFormProps> = ({ onSubmit, i
   
   return (
     <div className="max-w-xl mx-auto">
-      <BackToHomeButton onClick={onBack} />
+      {/* App Name Header */}
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-violet-600 via-purple-500 to-indigo-600 bg-clip-text text-transparent text-center">
+          Smart Bag Packing
+        </h1>
+       </div>
 
       {error && (
         <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md mb-6" role="alert">

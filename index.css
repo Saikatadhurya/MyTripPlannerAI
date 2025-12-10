@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Prevent horizontal scrolling globally */
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
 /* Continuous horizontal arrow animation for mobile scroll indicator */
 @keyframes scroll-arrow-pulse {
   0% {

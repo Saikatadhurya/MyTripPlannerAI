@@ -3,7 +3,6 @@ import { Budget, Vibe, FoodPreference, TripType, QuestionnaireData, LocationSugg
 import { getDestinationSuggestions } from '../services/geminiService';
 import { User } from '../services/authService';
 import { currencies } from '../data/currencies';
-import BackToHomeButton from './BackToHomeButton';
 import SelectionPage from './SelectionPage';
 
 // FIX: Renamed props interface for clarity and correctness
@@ -1043,7 +1042,12 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
 
   return (
     <div className="max-w-2xl mx-auto">
-      <BackToHomeButton onClick={onBack} />
+      {/* App Name Header */}
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent text-center">
+          Complete Trip Planner
+        </h1>
+      </div>
 
       {error && (
         <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md mb-6" role="alert">
@@ -1160,7 +1164,7 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
                           </div>
                         )}
                         {startPointApiKeyError && (
-                          <div style={{ animation: 'validation-fade-in 0.3s ease' }} className="mt-2 text-sm text-amber-700 bg-amber-100/60 p-2 rounded-md flex items-center space-x-2">
+                          <div style={{ animation: 'validation-fade-in 0.3s ease' }} className="mt-2 text-sm text-violet-700 bg-violet-100/60 p-2 rounded-md flex items-center space-x-2">
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
                               <span className="flex items-center flex-wrap gap-1">
                                 {startPointApiKeyError.includes('quota') || startPointApiKeyError.includes('limit') || startPointApiKeyError.includes('exceeded') ? (
@@ -1168,14 +1172,14 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
                                     {startPointApiKeyError.includes('profile settings') ? (
                                       <>
                                         {startPointApiKeyError.split('profile settings')[0]}
-                                        <a href="/profile" className="font-semibold underline hover:text-amber-800">your profile settings</a>
+                                        <a href="/profile" className="font-semibold underline hover:text-violet-800">your profile settings</a>
                                         {startPointApiKeyError.split('profile settings')[1]}
                                       </>
                                     ) : (
                                       <>
                                         {startPointApiKeyError}
                                         {' '}Please set your own Gemini API key in{' '}
-                                        <a href="/profile" className="font-semibold underline hover:text-amber-800">your profile settings</a>
+                                        <a href="/profile" className="font-semibold underline hover:text-violet-800">your profile settings</a>
                                         {' '}to continue.
                                       </>
                                     )}
@@ -1183,7 +1187,7 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
                                 ) : startPointApiKeyError.includes('API key not valid') || startPointApiKeyError.includes('Gemini key not set') ? (
                                   <>
                                     API key not valid. Please provide a valid Gemini API key in{' '}
-                                    <a href="/profile" className="font-semibold underline hover:text-amber-800">Edit Profile</a>
+                                    <a href="/profile" className="font-semibold underline hover:text-violet-800">Edit Profile</a>
                                     {' '}to search for destinations.
                                   </>
                                 ) : (
@@ -1336,7 +1340,7 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
                         </button>
                       </div>
                       {stop.error && (
-                        <div style={{ animation: 'validation-fade-in 0.3s ease' }} className={`mt-2 text-sm p-2 rounded-md flex items-center space-x-2 ${stop.error.includes('quota') || stop.error.includes('limit') || stop.error.includes('exceeded') || stop.error.includes('API key') ? 'text-amber-700 bg-amber-100/60' : 'text-rose-700 bg-rose-100/60'}`}>
+                        <div style={{ animation: 'validation-fade-in 0.3s ease' }} className={`mt-2 text-sm p-2 rounded-md flex items-center space-x-2 ${stop.error.includes('quota') || stop.error.includes('limit') || stop.error.includes('exceeded') || stop.error.includes('API key') ? 'text-violet-700 bg-violet-100/60' : 'text-rose-700 bg-rose-100/60'}`}>
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                             {stop.error.includes('quota') || stop.error.includes('limit') || stop.error.includes('exceeded') || stop.error.includes('API key') ? (
                               <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
@@ -1350,14 +1354,14 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
                                 {stop.error.includes('profile settings') ? (
                                 <>
                                   {stop.error.split('profile settings')[0]}
-                                  <a href="/profile" className="font-semibold underline hover:text-amber-800">your profile settings</a>
+                                  <a href="/profile" className="font-semibold underline hover:text-violet-800">your profile settings</a>
                                   {stop.error.split('profile settings')[1]}
                                 </>
                               ) : (
                                 <>
                                   {stop.error}
                                   {' '}Please set your own Gemini API key in{' '}
-                                  <a href="/profile" className="font-semibold underline hover:text-amber-800">your profile settings</a>
+                                  <a href="/profile" className="font-semibold underline hover:text-violet-800">your profile settings</a>
                                   {' '}to continue.
                                 </>
                               )}
@@ -1365,7 +1369,7 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
                             ) : stop.error.includes('API key not valid') || stop.error.includes('Gemini key not set') ? (
                               <>
                                 API key not valid. Please provide a valid Gemini API key in{' '}
-                                <a href="/profile" className="font-semibold underline hover:text-amber-800">Edit Profile</a>
+                                <a href="/profile" className="font-semibold underline hover:text-violet-800">Edit Profile</a>
                                 {' '}to search for destinations.
                               </>
                             ) : (
@@ -1433,7 +1437,7 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
                           </div>
                         )}
                         {apiKeyError && (
-                          <div style={{ animation: 'validation-fade-in 0.3s ease' }} className="mt-2 text-sm text-amber-700 bg-amber-100/60 p-2 rounded-md flex items-center space-x-2">
+                          <div style={{ animation: 'validation-fade-in 0.3s ease' }} className="mt-2 text-sm text-violet-700 bg-violet-100/60 p-2 rounded-md flex items-center space-x-2">
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
                               <span className="flex items-center flex-wrap gap-1">
                                 {apiKeyError.includes('quota') || apiKeyError.includes('limit') || apiKeyError.includes('exceeded') ? (
@@ -1441,14 +1445,14 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
                                     {apiKeyError.includes('profile settings') ? (
                                       <>
                                         {apiKeyError.split('profile settings')[0]}
-                                        <a href="/profile" className="font-semibold underline hover:text-amber-800">your profile settings</a>
+                                        <a href="/profile" className="font-semibold underline hover:text-violet-800">your profile settings</a>
                                         {apiKeyError.split('profile settings')[1]}
                                       </>
                                     ) : (
                                       <>
                                         {apiKeyError}
                                         {' '}Please set your own Gemini API key in{' '}
-                                        <a href="/profile" className="font-semibold underline hover:text-amber-800">your profile settings</a>
+                                        <a href="/profile" className="font-semibold underline hover:text-violet-800">your profile settings</a>
                                         {' '}to continue.
                                       </>
                                     )}
@@ -1456,7 +1460,7 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
                                 ) : apiKeyError.includes('API key not valid') || apiKeyError.includes('Gemini key not set') ? (
                                   <>
                                     API key not valid. Please provide a valid Gemini API key in{' '}
-                                    <a href="/profile" className="font-semibold underline hover:text-amber-800">Edit Profile</a>
+                                    <a href="/profile" className="font-semibold underline hover:text-violet-800">Edit Profile</a>
                                     {' '}to search for destinations.
                                   </>
                                 ) : (
@@ -1514,7 +1518,7 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
                                 {formData.days} {formData.days === 1 ? 'day' : 'days'}
                             </span>
                             {formData.days >= 45 && (
-                                <span className="text-xs text-amber-600 font-medium">(Max 45 days)</span>
+                                <span className="text-xs text-violet-600 font-medium">(Max 45 days)</span>
                             )}
                         </div>
                     </div>
