@@ -69,11 +69,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
   useEffect(() => {
     if (!showTutorial) return;
     
-    const stepTimings = [6000, 15000, 15000, 8000]; // Step 1: 6s, Step 2: 15s, Step 3: 15s, Step 4: 8s
+    const stepTimings = [6000, 15000, 15000, 8000, 10000]; // Step 1: 6s, Step 2: 15s, Step 3: 15s, Step 4: 8s, Step 5: 10s
     
     const timeout = setTimeout(() => {
       setCurrentTutorialStep((prev) => {
-        const nextStep = (prev + 1) % 4;
+        const nextStep = (prev + 1) % 5;
         // Restart the timer with the new step's timing
         return nextStep;
       });
@@ -621,6 +621,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
                     <span className="text-xs sm:text-sm font-semibold text-slate-900">Get Your Complete Plan</span>
                   </div>
                 )}
+                {currentTutorialStep === 4 && (
+                  <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-white/80 backdrop-blur-sm rounded-full border border-indigo-200 shadow-sm">
+                    <span className="text-[10px] sm:text-xs font-bold text-indigo-600 bg-indigo-100 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full">STEP 5</span>
+                    <span className="text-xs sm:text-sm font-semibold text-slate-900">Explore Your History</span>
+                  </div>
+                )}
               </div>
 
               {/* Mobile Phone Frame */}
@@ -970,9 +976,172 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
                 </div>
               )}
 
+              {/* Step 5: History Exploration */}
+              {currentTutorialStep === 4 && (
+                <div className="tutorial-content w-full h-full flex flex-col justify-start">
+                  {/* Search Bar - Enhanced */}
+                  <div className="mb-3 sm:mb-4 flex-shrink-0">
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-2.5 sm:pl-3 flex items-center pointer-events-none">
+                        <svg className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                      </div>
+                      <input
+                        type="text"
+                        readOnly
+                        value="Paris"
+                        className="w-full pl-8 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-2.5 bg-gradient-to-r from-slate-50 to-violet-50/30 border-2 border-violet-200 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-medium text-slate-700 shadow-sm focus:border-violet-400 focus:ring-2 focus:ring-violet-200 transition-all"
+                        placeholder="Search..."
+                      />
+                    </div>
+                  </div>
+
+                  {/* History Cards - Enhanced Design */}
+                  <div className="space-y-2.5 sm:space-y-3 flex-1 overflow-y-auto min-h-0">
+                    {/* Unified Trip Card */}
+                    <div className="form-slide-up bg-white rounded-xl sm:rounded-2xl shadow-lg border-2 border-violet-100 overflow-hidden hover:shadow-xl hover:border-violet-200 transition-all duration-300" style={{ animationDelay: '0s' }}>
+                      <div className="bg-gradient-to-r from-violet-600 via-purple-600 to-pink-600 p-3 sm:p-4 text-white">
+                        <div className="flex items-center gap-2.5 sm:gap-3">
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/25 backdrop-blur-sm rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                            <span className="text-xl sm:text-2xl">🗺️</span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-sm sm:text-base font-bold text-white truncate mb-0.5">Paris Adventure</h3>
+                            <div className="flex items-center gap-1.5">
+                              <svg className="w-3 h-3 sm:w-4 sm:h-4 text-violet-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                              </svg>
+                              <p className="text-[10px] sm:text-xs text-violet-100 truncate font-medium">Paris, France</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-3 sm:p-4 bg-gradient-to-br from-white to-slate-50/50">
+                        <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-3">
+                          <span className="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1 sm:py-1.5 bg-violet-100 text-violet-800 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-semibold border border-violet-200">
+                            <span className="text-xs sm:text-sm">🗺️</span>
+                            <span>itinerary</span>
+                          </span>
+                          <span className="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1 sm:py-1.5 bg-orange-100 text-orange-800 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-semibold border border-orange-200">
+                            <span className="text-xs sm:text-sm">🍽️</span>
+                            <span>food</span>
+                          </span>
+                          <span className="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1 sm:py-1.5 bg-teal-100 text-teal-800 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-semibold border border-teal-200">
+                            <span className="text-xs sm:text-sm">📱</span>
+                            <span>apps</span>
+                          </span>
+                        </div>
+                        <div className="flex gap-2 sm:gap-2.5">
+                          <button className="flex-1 bg-gradient-to-r from-violet-600 to-purple-600 text-white px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold shadow-md hover:shadow-lg hover:from-violet-700 hover:to-purple-700 transition-all duration-200 flex items-center justify-center gap-1.5">
+                            <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            <span>View</span>
+                          </button>
+                          <button className="px-3 sm:px-4 py-2 sm:py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl sm:rounded-2xl transition-all duration-200 shadow-sm">
+                            <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Individual Recommendation Card - Food */}
+                    <div className="form-slide-up bg-white rounded-xl sm:rounded-2xl shadow-lg border-2 border-orange-100 overflow-hidden hover:shadow-xl hover:border-orange-200 transition-all duration-300" style={{ animationDelay: '0.1s' }}>
+                      <div className="bg-gradient-to-r from-orange-500 via-orange-600 to-red-500 p-3 sm:p-4 text-white">
+                        <div className="flex items-center gap-2.5 sm:gap-3">
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/25 backdrop-blur-sm rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                            <span className="text-xl sm:text-2xl">🍽️</span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-sm sm:text-base font-bold text-white truncate mb-0.5">Best Restaurants</h3>
+                            <div className="flex items-center gap-1.5">
+                              <svg className="w-3 h-3 sm:w-4 sm:h-4 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                              </svg>
+                              <p className="text-[10px] sm:text-xs text-white/90 truncate font-medium">Paris, France</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-3 sm:p-4 bg-gradient-to-br from-white to-orange-50/30">
+                        <div className="flex items-center gap-2 mb-3 text-[10px] sm:text-xs text-slate-600">
+                          <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          <span className="font-semibold">Dec 10, 2025</span>
+                        </div>
+                        <div className="flex gap-2 sm:gap-2.5">
+                          <button className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 text-white px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold shadow-md hover:shadow-lg hover:from-orange-600 hover:to-orange-700 transition-all duration-200 flex items-center justify-center gap-1.5">
+                            <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            <span>View</span>
+                          </button>
+                          <button className="px-3 sm:px-4 py-2 sm:py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl sm:rounded-2xl transition-all duration-200 shadow-sm">
+                            <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Individual Recommendation Card - Apps */}
+                    <div className="form-slide-up bg-white rounded-xl sm:rounded-2xl shadow-lg border-2 border-teal-100 overflow-hidden hover:shadow-xl hover:border-teal-200 transition-all duration-300" style={{ animationDelay: '0.2s' }}>
+                      <div className="bg-gradient-to-r from-teal-500 via-teal-600 to-cyan-500 p-3 sm:p-4 text-white">
+                        <div className="flex items-center gap-2.5 sm:gap-3">
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/25 backdrop-blur-sm rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                            <span className="text-xl sm:text-2xl">📱</span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-sm sm:text-base font-bold text-white truncate mb-0.5">Essential Apps</h3>
+                            <div className="flex items-center gap-1.5">
+                              <svg className="w-3 h-3 sm:w-4 sm:h-4 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                              </svg>
+                              <p className="text-[10px] sm:text-xs text-white/90 truncate font-medium">Paris, France</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-3 sm:p-4 bg-gradient-to-br from-white to-teal-50/30">
+                        <div className="flex items-center gap-2 mb-3 text-[10px] sm:text-xs text-slate-600">
+                          <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          <span className="font-semibold">Dec 8, 2025</span>
+                        </div>
+                        <div className="flex gap-2 sm:gap-2.5">
+                          <button className="flex-1 bg-gradient-to-r from-teal-500 to-teal-600 text-white px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold shadow-md hover:shadow-lg hover:from-teal-600 hover:to-teal-700 transition-all duration-200 flex items-center justify-center gap-1.5">
+                            <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            <span>View</span>
+                          </button>
+                          <button className="px-3 sm:px-4 py-2 sm:py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl sm:rounded-2xl transition-all duration-200 shadow-sm">
+                            <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
                       {/* Mobile Navigation Dots */}
                       <div className="flex items-center justify-center gap-2 mt-6 mb-4">
-                        {[0, 1, 2, 3].map((step) => (
+                        {[0, 1, 2, 3, 4].map((step) => (
                           <button
                             key={step}
                             onClick={() => setCurrentTutorialStep(step)}
@@ -997,11 +1166,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
                     </button>
                     <button
                       onClick={() => {
-                        setCurrentTutorialStep((currentTutorialStep + 1) % 4);
+                        if (currentTutorialStep < 4) {
+                          setCurrentTutorialStep(currentTutorialStep + 1);
+                        } else {
+                          setCurrentTutorialStep(0); // Loop back to step 1
+                        }
                       }}
                       className="px-4 sm:px-6 py-1.5 sm:py-2.5 text-xs sm:text-sm bg-gradient-to-r from-violet-600 to-purple-600 text-white font-semibold rounded-lg sm:rounded-xl shadow-lg transition-all duration-200 active:scale-95"
                     >
-                      Next
+                      {currentTutorialStep === 4 ? 'Restart' : 'Next'}
                     </button>
                   </div>
                 </div>
