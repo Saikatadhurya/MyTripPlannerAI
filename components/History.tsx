@@ -6,6 +6,25 @@ import { historyService } from '../services/historyService';
 import Toast from './Toast';
 import { authService } from '../services/authService';
 
+// Travel quotes for loading state
+const TRAVEL_QUOTES = [
+  "Adventure is worthwhile in itself. — Amelia Earhart",
+  "Travel makes one modest. You see what a tiny place you occupy in the world. — Gustave Flaubert",
+  "The world is a book, and those who do not travel read only one page. — Saint Augustine",
+  "Not all those who wander are lost. — J.R.R. Tolkien",
+  "Travel is the only thing you buy that makes you richer. — Anonymous",
+  "To travel is to live. — Hans Christian Andersen",
+  "Life is either a daring adventure or nothing at all. — Helen Keller",
+  "The journey of a thousand miles begins with a single step. — Lao Tzu",
+  "Travel far, travel wide, travel light. — Anonymous",
+  "I haven't been everywhere, but it's on my list. — Susan Sontag",
+  "Collect moments, not things. — Anonymous",
+  "Traveling – it leaves you speechless, then turns you into a storyteller. — Ibn Battuta",
+  "Wherever you go becomes a part of you somehow. — Anita Desai",
+  "Travel is fatal to prejudice, bigotry, and narrow-mindedness. — Mark Twain",
+  "We travel not to escape life, but for life not to escape us. — Anonymous"
+];
+
 interface UnifiedTripItemProps {
   trip: UnifiedTrip;
   onView: (trip: UnifiedTrip) => void;
@@ -51,17 +70,17 @@ const UnifiedTripItem: React.FC<UnifiedTripItemProps> = ({ trip, onView, onDelet
       className="bg-white/80 backdrop-blur-xl rounded-xl shadow-lg border border-white/60 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 overflow-hidden group cursor-pointer flex flex-col h-full"
     >
       {/* Header */}
-      <div className="bg-gradient-to-r from-violet-600 to-purple-600 p-4 text-white">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
-            <span className="text-2xl">🗺️</span>
+      <div className="bg-gradient-to-r from-violet-600 to-purple-600 p-3 sm:p-4 text-white">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center flex-shrink-0">
+            <span className="text-xl sm:text-2xl">🗺️</span>
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-bold text-white truncate">
+            <h3 className="text-base sm:text-lg font-bold text-white truncate">
               {trip.tripName || trip.destination}
             </h3>
-            <div className="flex items-center gap-2 mt-1">
-              <svg className="w-3 h-3 text-violet-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex items-center gap-1.5 sm:gap-2 mt-1">
+              <svg className="w-3 h-3 text-violet-200 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
@@ -72,7 +91,7 @@ const UnifiedTripItem: React.FC<UnifiedTripItemProps> = ({ trip, onView, onDelet
       </div>
 
       {/* Content */}
-      <div className="p-4 flex flex-col flex-1">
+      <div className="p-3 sm:p-4 flex flex-col flex-1">
         {/* Date and Count with icons */}
         <div className="mb-4 space-y-2">
           <div className="flex items-center gap-2 text-xs text-slate-600">
@@ -110,27 +129,32 @@ const UnifiedTripItem: React.FC<UnifiedTripItemProps> = ({ trip, onView, onDelet
         <div className="flex gap-2 mt-auto pt-2" onClick={(e) => e.stopPropagation()}>
           <button
             onClick={() => onView(trip)}
-            className="flex-1 bg-gradient-to-r from-violet-600 to-purple-600 text-white px-3 py-2.5 rounded-lg text-sm font-semibold hover:from-violet-700 hover:to-purple-700 transition-all flex items-center justify-center gap-2"
+            className="flex-1 bg-gradient-to-r from-violet-600 to-purple-600 text-white px-3 py-2.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold hover:from-violet-700 hover:to-purple-700 transition-all flex items-center justify-center gap-1.5 sm:gap-2 touch-manipulation"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
             </svg>
-            View
+            <span className="hidden sm:inline">View</span>
           </button>
           <button
             onClick={() => onShareTrip(trip)}
-            className="px-3 py-2.5 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-all flex items-center justify-center"
+            className="px-3 py-2.5 sm:py-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-all flex items-center justify-center touch-manipulation min-w-[44px]"
             title="Share"
+            aria-label="Share trip"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
             </svg>
           </button>
           <button
-            onClick={() => onDelete(trip.tripId)}
-            className="px-3 py-2.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-all flex items-center justify-center"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(trip.tripId);
+            }}
+            className="px-3 py-2.5 sm:py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-all flex items-center justify-center touch-manipulation min-w-[44px]"
             title="Delete"
+            aria-label="Delete trip"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -200,17 +224,17 @@ const HistoryItem: React.FC<HistoryItemProps> = ({ item, onDelete, onView, onSha
       className="bg-white/80 backdrop-blur-xl rounded-xl shadow-lg border border-white/60 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 overflow-hidden group cursor-pointer flex flex-col h-full"
     >
       {/* Header */}
-      <div className={`bg-gradient-to-r ${getTypeColor(item.recommendationType)} p-4 text-white`}>
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
-            <span className="text-2xl">{getTypeIcon(item.recommendationType)}</span>
+      <div className={`bg-gradient-to-r ${getTypeColor(item.recommendationType)} p-3 sm:p-4 text-white`}>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center flex-shrink-0">
+            <span className="text-xl sm:text-2xl">{getTypeIcon(item.recommendationType)}</span>
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-bold text-white truncate">
+            <h3 className="text-base sm:text-lg font-bold text-white truncate">
               {item.title || item.destination}
             </h3>
-            <div className="flex items-center gap-2 mt-1">
-              <svg className="w-3 h-3 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex items-center gap-1.5 sm:gap-2 mt-1">
+              <svg className="w-3 h-3 text-white/80 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
@@ -221,7 +245,7 @@ const HistoryItem: React.FC<HistoryItemProps> = ({ item, onDelete, onView, onSha
       </div>
 
       {/* Content */}
-      <div className="p-4 flex flex-col flex-1">
+      <div className="p-3 sm:p-4 flex flex-col flex-1">
         {/* Date and Count with icons */}
         <div className="mb-4 space-y-2">
           <div className="flex items-center gap-2 text-xs text-slate-600">
@@ -244,18 +268,19 @@ const HistoryItem: React.FC<HistoryItemProps> = ({ item, onDelete, onView, onSha
         <div className="flex gap-2 mt-auto pt-2" onClick={(e) => e.stopPropagation()}>
           <button
             onClick={() => onView(item)}
-            className={`flex-1 bg-gradient-to-r ${getTypeColor(item.recommendationType)} text-white px-3 py-2.5 rounded-lg text-sm font-semibold hover:opacity-90 transition-all flex items-center justify-center gap-2`}
+            className={`flex-1 bg-gradient-to-r ${getTypeColor(item.recommendationType)} text-white px-3 py-2.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold hover:opacity-90 transition-all flex items-center justify-center gap-1.5 sm:gap-2 touch-manipulation`}
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
             </svg>
-            View
+            <span className="hidden sm:inline">View</span>
           </button>
           <button
             onClick={() => onShare(item)}
-            className="px-3 py-2.5 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-all flex items-center justify-center"
+            className="px-3 py-2.5 sm:py-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-all flex items-center justify-center touch-manipulation min-w-[44px]"
             title="Share"
+            aria-label="Share recommendation"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
@@ -263,8 +288,9 @@ const HistoryItem: React.FC<HistoryItemProps> = ({ item, onDelete, onView, onSha
           </button>
           <button
             onClick={() => onDelete(item.id)}
-            className="px-3 py-2.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-all flex items-center justify-center"
+            className="px-3 py-2.5 sm:py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-all flex items-center justify-center touch-manipulation min-w-[44px]"
             title="Delete"
+            aria-label="Delete recommendation"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -293,17 +319,14 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
   } = useHistory();
 
   const [searchTerm, setSearchTerm] = useState(filters.search || '');
-  const [selectedDestination, setSelectedDestination] = useState(filters.destination || '');
-  const [selectedType, setSelectedType] = useState(filters.recommendationType || '');
   
   // Unified trip state
   const [unifiedTrips, setUnifiedTrips] = useState<UnifiedTrip[]>([]);
   const [allUnifiedTrips, setAllUnifiedTrips] = useState<UnifiedTrip[]>([]); // Store all trips for filtering
   const [unifiedTripsLoading, setUnifiedTripsLoading] = useState(false);
   
-  // Combined items state
+  // Combined items type
   type CombinedItem = { type: 'individual'; data: RecommendationHistory } | { type: 'unified'; data: UnifiedTrip };
-  const [combinedItems, setCombinedItems] = useState<CombinedItem[]>([]);
   
   // Infinite scroll state - accumulate all loaded items
   const [allLoadedHistory, setAllLoadedHistory] = useState<RecommendationHistory[]>([]);
@@ -311,13 +334,35 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   
-  // Trip type visibility state
-  const [showIndividual, setShowIndividual] = useState<boolean>(true);
-  const [showUnified, setShowUnified] = useState<boolean>(true);
+  // Trip type filter state
+  const [tripTypeFilter, setTripTypeFilter] = useState<'all' | 'individual' | 'unified'>('all');
   
   // Count state
   const [totalIndividualCount, setTotalIndividualCount] = useState<number>(0);
   const [totalUnifiedCount, setTotalUnifiedCount] = useState<number>(0);
+  
+  // Loading quote state
+  const [currentQuote, setCurrentQuote] = useState<string>('');
+  
+  // Set initial quote and rotate quotes while loading
+  useEffect(() => {
+    if (loading) {
+      // Set initial random quote
+      const randomIndex = Math.floor(Math.random() * TRAVEL_QUOTES.length);
+      setCurrentQuote(TRAVEL_QUOTES[randomIndex]);
+      
+      // Rotate quotes every 3 seconds while loading
+      const quoteInterval = setInterval(() => {
+        const newRandomIndex = Math.floor(Math.random() * TRAVEL_QUOTES.length);
+        setCurrentQuote(TRAVEL_QUOTES[newRandomIndex]);
+      }, 3000);
+      
+      return () => clearInterval(quoteInterval);
+    } else {
+      // Clear quote when not loading
+      setCurrentQuote('');
+    }
+  }, [loading]);
   
   // Toast state
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
@@ -328,48 +373,17 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
     setHasMore(true);
     // Apply filters immediately
     setFilters({
-      search: value || undefined,
-      destination: selectedDestination || undefined,
-      recommendationType: selectedType || undefined
+      search: value || undefined
     });
     
     // Apply filters to unified trips immediately
-    const filteredTrips = filterUnifiedTrips(allUnifiedTrips, value, selectedDestination);
+    const filteredTrips = filterUnifiedTrips(allUnifiedTrips, value);
     setUnifiedTrips(filteredTrips);
-  };
-
-  const handleDestinationChange = (value: string) => {
-    setSelectedDestination(value);
-    setCurrentPage(1);
-    setHasMore(true);
-    // Apply filters immediately
-    setFilters({
-      search: searchTerm || undefined,
-      destination: value || undefined,
-      recommendationType: selectedType || undefined
-    });
-    
-    // Apply filters to unified trips immediately
-    const filteredTrips = filterUnifiedTrips(allUnifiedTrips, searchTerm, value);
-    setUnifiedTrips(filteredTrips);
-  };
-
-  const handleTypeChange = (value: string) => {
-    setSelectedType(value);
-    setCurrentPage(1);
-    setHasMore(true);
-    // Apply filters immediately
-    setFilters({
-      search: searchTerm || undefined,
-      destination: selectedDestination || undefined,
-      recommendationType: value || undefined
-    });
   };
 
   const handleClearFilters = () => {
     setSearchTerm('');
-    setSelectedDestination('');
-    setSelectedType('');
+    setTripTypeFilter('all');
     setCurrentPage(1);
     setHasMore(true);
     setFilters({});
@@ -454,7 +468,7 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
         existingSentinel.remove();
       }
     };
-  }, [hasMore, loading, loadingMore, loadMoreHistory, combinedItems]);
+  }, [hasMore, loading, loadingMore, loadMoreHistory]);
   
   // Reset pagination when filters change
   useEffect(() => {
@@ -462,7 +476,7 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
     setHasMore(true);
     setAllLoadedHistory([]); // Clear accumulated history when filters change
     setLoadingMore(false);
-  }, [searchTerm, selectedDestination, selectedType]);
+  }, [searchTerm]);
 
   const handleDelete = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this recommendation?')) {
@@ -535,7 +549,7 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
   };
 
   // Unified trip filtering function
-  const filterUnifiedTrips = (trips: UnifiedTrip[], searchTerm: string, destination: string) => {
+  const filterUnifiedTrips = (trips: UnifiedTrip[], searchTerm: string) => {
     return trips.filter(trip => {
       // Search filter
       if (searchTerm) {
@@ -545,13 +559,6 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
           trip.destination.toLowerCase().includes(searchLower) ||
           trip.language.toLowerCase().includes(searchLower);
         if (!matchesSearch) return false;
-      }
-      
-      // Destination filter
-      if (destination) {
-        if (trip.destination.toLowerCase() !== destination.toLowerCase()) {
-          return false;
-        }
       }
       
       return true;
@@ -571,7 +578,7 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
       setAllUnifiedTrips(trips); // Store all trips
       
       // Apply current filters
-      const filteredTrips = filterUnifiedTrips(trips, searchTerm, selectedDestination);
+      const filteredTrips = filterUnifiedTrips(trips, searchTerm);
       setUnifiedTrips(filteredTrips);
     } catch (error) {
       // Failed to load unified trips
@@ -639,18 +646,27 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
   const sortedUnifiedTrips = useMemo(() => sortByTime(unifiedTrips), [unifiedTrips]);
 
   // Combine and sort all items by creation date (most recent first)
-  useEffect(() => {
+  // Use useMemo to ensure immediate updates when filter changes
+  const combinedItems = useMemo(() => {
     const combined: CombinedItem[] = [];
     
-    // Add individual recommendations
-    if (showIndividual) {
+    // Add items based on filter
+    if (tripTypeFilter === 'all') {
+      // Add all individual recommendations
       sortedHistory.forEach(item => {
         combined.push({ type: 'individual', data: item });
       });
-    }
-    
-    // Add unified trips
-    if (showUnified) {
+      // Add all unified trips
+      sortedUnifiedTrips.forEach(trip => {
+        combined.push({ type: 'unified', data: trip });
+      });
+    } else if (tripTypeFilter === 'individual') {
+      // Add only individual recommendations
+      sortedHistory.forEach(item => {
+        combined.push({ type: 'individual', data: item });
+      });
+    } else if (tripTypeFilter === 'unified') {
+      // Add only unified trips
       sortedUnifiedTrips.forEach(trip => {
         combined.push({ type: 'unified', data: trip });
       });
@@ -663,175 +679,191 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
       return dateB - dateA;
     });
     
-    setCombinedItems(combined);
-  }, [sortedHistory, sortedUnifiedTrips, showIndividual, showUnified]);
+    return combined;
+  }, [sortedHistory, sortedUnifiedTrips, tripTypeFilter]);
 
   return (
     <div className="bg-gradient-to-br from-slate-50 via-blue-50/30 to-violet-50/30 min-h-screen">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8">
         <BackToHomeButton onClick={onBack} />
 
-        {/* Filters */}
-        <div className="bg-white/90 backdrop-blur-xl rounded-2xl p-4 shadow-lg border border-white/60 mb-6">
-          <div className="flex flex-col sm:flex-row gap-3">
-            {/* Search Bar */}
-            <div className="relative flex-1">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg className="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        {/* Filters - Modernized Design */}
+        <div className="bg-white/95 backdrop-blur-xl rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 shadow-xl border-2 border-violet-100/50 mb-4 sm:mb-6">
+          <div className="flex flex-col gap-3 sm:gap-4">
+            {/* Header */}
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-violet-500 to-purple-600 rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                 </svg>
               </div>
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => handleSearchTermChange(e.target.value)}
-                placeholder="Search..."
-                className="w-full pl-10 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base transition-all duration-200"
-              />
+              <h3 className="text-base sm:text-lg font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
+                Filter & Search
+              </h3>
             </div>
-            
-            {/* Destination Filter */}
-            <div className="sm:w-48">
-              <select
-                value={selectedDestination}
-                onChange={(e) => handleDestinationChange(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base transition-all duration-200"
-              >
-                <option value="">All</option>
-                {destinations.map(dest => (
-                  <option key={dest} value={dest}>{dest}</option>
-                ))}
-              </select>
-            </div>
-            
-            {/* Type Filter */}
-            <div className="sm:w-40">
-              <select
-                value={selectedType}
-                onChange={(e) => handleTypeChange(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base transition-all duration-200"
-              >
-                <option value="">All</option>
-                {recommendationTypes.map(type => (
-                  <option key={type} value={type}>{type}</option>
-                ))}
-              </select>
-            </div>
-            
-            {/* Clear Button */}
-            <button
-              onClick={handleClearFilters}
-              className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 transition-all duration-200 text-sm font-medium border border-slate-200 whitespace-nowrap"
-            >
-              Clear
-            </button>
-          </div>
-        </div>
 
-        {/* Trip Type Filter Chips */}
-        <div className="bg-white/90 backdrop-blur-xl rounded-2xl p-4 shadow-lg border border-white/60 mb-6">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-slate-700">Type</span>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowIndividual(!showIndividual)}
-                className={`group relative px-4 py-2 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 shadow-md ${
-                  showIndividual
-                    ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-blue-500/30'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200'
-                }`}
-              >
-                <span className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full transition-colors ${
-                    showIndividual ? 'bg-white' : 'bg-slate-400'
-                  }`}></div>
-                  <span className="text-sm font-semibold">Individual</span>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                    showIndividual ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'
-                  }`}>
-                    {combinedItems.filter(item => item.type === 'individual').length}
-                  </span>
-                </span>
-              </button>
-              <button
-                onClick={() => setShowUnified(!showUnified)}
-                className={`group relative px-4 py-2 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 shadow-md ${
-                  showUnified
-                    ? 'bg-gradient-to-r from-violet-500 to-violet-600 text-white shadow-violet-500/30'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200'
-                }`}
-              >
-                <span className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full transition-colors ${
-                    showUnified ? 'bg-white' : 'bg-slate-400'
-                  }`}></div>
-                  <span className="text-sm font-semibold">Unified Trips</span>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                    showUnified ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'
-                  }`}>
-                    {combinedItems.filter(item => item.type === 'unified').length}
-                  </span>
-                </span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Count Display */}
-        {(showIndividual || showUnified) && (
-          <div className="bg-white/90 backdrop-blur-xl rounded-2xl p-4 shadow-lg border border-white/60 mb-6">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
-              {showIndividual && (
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-slate-600">Individual</span>
-                  <span className="text-sm font-bold text-blue-600">
-                    {loading ? '...' : combinedItems.filter(item => item.type === 'individual').length}
-                  </span>
-                </div>
-              )}
-              
-              {showUnified && (
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-slate-600">Unified</span>
-                  <span className="text-sm font-bold text-violet-600">
-                    {unifiedTripsLoading ? '...' : combinedItems.filter(item => item.type === 'unified').length}
-                  </span>
-                </div>
-              )}
-            </div>
-            
-            {/* Filter Status */}
-            {(searchTerm || selectedDestination || selectedType) && (
-              <div className="pt-3 border-t border-slate-200 mt-3">
-                <div className="flex flex-wrap gap-2">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+              {/* Search Bar - Enhanced */}
+              <div className="relative flex-1 w-full">
+                <label className="block text-xs font-semibold text-slate-600 mb-1.5">Search</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 sm:pl-3.5 flex items-center pointer-events-none">
+                    <svg className="h-4 w-4 sm:h-5 sm:w-5 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => handleSearchTermChange(e.target.value)}
+                    placeholder="Search trips, destinations..."
+                    className="w-full pl-9 sm:pl-11 pr-9 sm:pr-10 py-2.5 sm:py-3 bg-gradient-to-r from-slate-50 to-violet-50/30 border-2 border-violet-200 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-400 text-sm sm:text-base font-medium text-slate-700 placeholder:text-slate-400 transition-all duration-200 shadow-sm hover:shadow-md"
+                  />
                   {searchTerm && (
-                    <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-lg">
-                      {searchTerm}
+                    <button
+                      onClick={() => handleSearchTermChange('')}
+                      className="absolute inset-y-0 right-0 pr-3 sm:pr-3.5 flex items-center touch-manipulation"
+                      aria-label="Clear search"
+                    >
+                      <svg className="h-4 w-4 sm:h-5 sm:w-5 text-slate-400 hover:text-slate-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              </div>
+              
+              {/* Trip Type Filter */}
+              <div className="w-full sm:w-auto sm:min-w-[180px] lg:w-52">
+                <label className="block text-xs font-semibold text-slate-600 mb-1.5">Trip Type</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 sm:pl-3.5 flex items-center pointer-events-none">
+                    <svg className="h-4 w-4 sm:h-5 sm:w-5 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <select
+                    value={tripTypeFilter}
+                    onChange={(e) => setTripTypeFilter(e.target.value as 'all' | 'individual' | 'unified')}
+                    className="w-full pl-9 sm:pl-11 pr-9 sm:pr-10 py-2.5 sm:py-3 bg-gradient-to-r from-slate-50 to-violet-50/30 border-2 border-violet-200 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-400 text-sm sm:text-base font-medium text-slate-700 transition-all duration-200 shadow-sm hover:shadow-md appearance-none cursor-pointer touch-manipulation"
+                  >
+                    <option value="all">All</option>
+                    <option value="individual">Individual</option>
+                    <option value="unified">Unified</option>
+                  </select>
+                  <div className="absolute inset-y-0 right-0 pr-3 sm:pr-3.5 flex items-center pointer-events-none">
+                    <svg className="h-4 w-4 sm:h-5 sm:w-5 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Clear Button - Enhanced */}
+              <div className="w-full sm:w-auto sm:flex sm:items-end">
+                <button
+                  onClick={handleClearFilters}
+                  disabled={!searchTerm && tripTypeFilter === 'all'}
+                  className="w-full sm:w-auto px-5 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 disabled:from-slate-50 disabled:to-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed text-slate-700 font-semibold rounded-lg sm:rounded-xl transition-all duration-200 shadow-sm hover:shadow-md border-2 border-slate-300 hover:border-slate-400 disabled:border-slate-200 flex items-center justify-center gap-2 text-sm sm:text-base touch-manipulation"
+                >
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  <span>Clear All</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Active Filters Display */}
+            {(searchTerm || tripTypeFilter !== 'all') && (
+              <div className="pt-3 sm:pt-4 border-t-2 border-violet-100">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs font-semibold text-slate-600 w-full sm:w-auto">Active filters:</span>
+                  {searchTerm && (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-violet-100 text-violet-800 rounded-lg text-xs sm:text-sm font-medium border border-violet-200">
+                      <span className="truncate max-w-[150px] sm:max-w-none">Search: "{searchTerm}"</span>
+                      <button
+                        onClick={() => handleSearchTermChange('')}
+                        className="hover:text-violet-900 transition-colors touch-manipulation flex-shrink-0"
+                        aria-label="Remove search filter"
+                      >
+                        <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
                     </span>
                   )}
-                  {selectedDestination && (
-                    <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-lg">
-                      {selectedDestination}
-                    </span>
-                  )}
-                  {selectedType && (
-                    <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-lg">
-                      {selectedType}
+                  {tripTypeFilter !== 'all' && (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-purple-100 text-purple-800 rounded-lg text-xs sm:text-sm font-medium border border-purple-200">
+                      <span>Type: {tripTypeFilter === 'individual' ? 'Individual' : 'Unified'}</span>
+                      <button
+                        onClick={() => setTripTypeFilter('all')}
+                        className="hover:text-purple-900 transition-colors touch-manipulation flex-shrink-0"
+                        aria-label="Remove type filter"
+                      >
+                        <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
                     </span>
                   )}
                 </div>
               </div>
             )}
           </div>
-        )}
+        </div>
 
-        {/* Results */}
+
+        {/* Results - Attractive Loading State */}
         {loading && (
-          <div className="text-center py-20">
-            <div className="w-12 h-12 mx-auto mb-4 border-4 border-violet-500 border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-slate-600">Loading...</p>
+          <div className="text-center py-16 sm:py-20">
+            <div className="max-w-md mx-auto">
+              {/* Animated Loader */}
+              <div className="relative mb-8">
+                <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto relative">
+                  {/* Outer rotating ring */}
+                  <div className="absolute inset-0 border-4 border-violet-200 rounded-full"></div>
+                  <div className="absolute inset-0 border-4 border-transparent border-t-violet-500 rounded-full animate-spin"></div>
+                  
+                  {/* Middle pulsing ring */}
+                  <div className="absolute inset-2 border-4 border-purple-200 rounded-full animate-pulse"></div>
+                  <div className="absolute inset-2 border-4 border-transparent border-r-purple-500 rounded-full animate-spin" style={{ animationDuration: '1.5s', animationDirection: 'reverse' }}></div>
+                  
+                  {/* Inner icon */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <svg className="w-8 h-8 sm:w-10 sm:h-10 text-violet-600 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Loading Text */}
+              <div className="mb-6">
+                <h3 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent mb-2">
+                  Loading Your Adventures
+                </h3>
+                <div className="flex items-center justify-center gap-2 text-slate-500">
+                  <div className="w-2 h-2 bg-violet-500 rounded-full animate-bounce" style={{ animationDelay: '0s' }}></div>
+                  <div className="w-2 h-2 bg-violet-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  <div className="w-2 h-2 bg-violet-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+                </div>
+              </div>
+              
+              {/* Quote Display */}
+              {currentQuote && (
+                <div className="bg-gradient-to-br from-violet-50 to-purple-50 rounded-xl sm:rounded-2xl p-6 sm:p-8 border-2 border-violet-100 shadow-lg">
+                  <div className="flex items-start gap-3">
+                    <svg className="w-6 h-6 sm:w-8 sm:h-8 text-violet-400 flex-shrink-0 mt-1" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.996 2.151c-3.312.817-5.546 3.271-5.546 6.818v7.021h6.568v4.99h-10.981zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-3.313.817-5.547 3.271-5.547 6.818v7.021h6.568v4.99h-10.981z"/>
+                    </svg>
+                    <p className="text-sm sm:text-base text-slate-700 italic leading-relaxed font-medium">
+                      {currentQuote}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -842,32 +874,32 @@ const History: React.FC<{ onBack: () => void; onNavigateToResult: (type: string,
         )}
 
         {/* Combined Results - Show items sorted by creation date (most recent first) */}
-        {!loading && !error && (showIndividual || showUnified) && combinedItems.length > 0 && (
+        {!loading && !error && combinedItems.length > 0 && (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 mb-12">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 md:gap-8 mb-8 sm:mb-12">
               {combinedItems.map((combinedItem, index) => {
-                if (combinedItem.type === 'individual') {
-                  return (
-                    <HistoryItem
-                      key={`individual-${combinedItem.data.id}`}
-                      item={combinedItem.data}
-                      onDelete={handleDelete}
-                      onView={handleView}
-                      onShare={handleShare}
-                    />
-                  );
-                } else {
-                  return (
-                    <UnifiedTripItem
-                      key={`unified-${combinedItem.data.tripId}`}
-                      trip={combinedItem.data}
-                      onView={handleViewUnifiedTrip}
-                      onDelete={handleDeleteUnifiedTrip}
-                      onShareTrip={handleShareTrip}
-                    />
-                  );
-                }
-              })}
+                  if (combinedItem.type === 'individual') {
+                    return (
+                      <HistoryItem
+                        key={`individual-${combinedItem.data.id}`}
+                        item={combinedItem.data}
+                        onDelete={handleDelete}
+                        onView={handleView}
+                        onShare={handleShare}
+                      />
+                    );
+                  } else {
+                    return (
+                      <UnifiedTripItem
+                        key={`unified-${combinedItem.data.tripId}`}
+                        trip={combinedItem.data}
+                        onView={handleViewUnifiedTrip}
+                        onDelete={handleDeleteUnifiedTrip}
+                        onShareTrip={handleShareTrip}
+                      />
+                    );
+                  }
+                })}
             </div>
 
             {/* Loading More Indicator */}
