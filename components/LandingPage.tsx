@@ -21,6 +21,16 @@ interface LandingPageProps {
 
 const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPlanItinerary, onStartPacking, onStartFoodFinder, onStartAppFinder, onStartMusicFinder, onStartLingoFinder, onStartWeekendExplorer, onOpenAuthModal, onGoToBlog, onViewHistory }) => {
   const [destinations, setDestinations] = useState<PopularDestination[]>([]);
+  const [currentTutorialStep, setCurrentTutorialStep] = useState(0);
+  const [showTutorial, setShowTutorial] = useState(true);
+  const [formAnimationState, setFormAnimationState] = useState({
+    typing: false,
+    currentField: 0,
+    filledFields: [] as number[],
+    showSuggestions: false,
+    isLoading: false,
+    suggestions: [] as Array<{ name: string; type: string }>,
+  });
 
   // Map of destination names to share links
   const shareLinks: { [key: string]: string } = {
@@ -54,6 +64,136 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
     // Load destinations immediately to ensure all 8 are available
     fetchDestinations();
   }, []);
+
+  // Auto-advance tutorial steps - different timing for each step
+  useEffect(() => {
+    if (!showTutorial) return;
+    
+    const stepTimings = [6000, 15000, 15000, 8000]; // Step 1: 6s, Step 2: 15s, Step 3: 15s, Step 4: 8s
+    
+    const timeout = setTimeout(() => {
+      setCurrentTutorialStep((prev) => {
+        const nextStep = (prev + 1) % 4;
+        // Restart the timer with the new step's timing
+        return nextStep;
+      });
+    }, stepTimings[currentTutorialStep]);
+
+    return () => clearTimeout(timeout);
+  }, [showTutorial, currentTutorialStep]);
+
+  // Form animation logic - enhanced to match Questionnaire
+  useEffect(() => {
+    if (!showTutorial || currentTutorialStep !== 1) {
+      setFormAnimationState({ 
+        typing: false, 
+        currentField: 0, 
+        filledFields: [],
+        showSuggestions: false,
+        isLoading: false,
+        suggestions: [],
+      });
+      return;
+    }
+
+    const fields = [
+      { 
+        name: 'Destination', 
+        value: 'Paris, France', 
+        delay: 500,
+        showSuggestions: true,
+        suggestions: [
+          { name: 'Paris', type: 'City' },
+          { name: 'Paris, France', type: 'City' },
+          { name: 'Paris, Île-de-France', type: 'Region' },
+        ],
+      },
+      { name: 'Start Date', value: '2025-06-15', delay: 4000, showSuggestions: false },
+      { name: 'End Date', value: '2025-06-22', delay: 6000, showSuggestions: false },
+      { name: 'Budget', value: 'Midrange', delay: 8000, showSuggestions: false },
+      { name: 'Travelers', value: '2', delay: 10000, showSuggestions: false },
+    ];
+
+    let fieldIndex = 0;
+    const animateField = () => {
+      if (fieldIndex >= fields.length) {
+        // Reset after showing all fields
+        setTimeout(() => {
+          setFormAnimationState({ 
+            typing: false, 
+            currentField: 0, 
+            filledFields: [],
+            showSuggestions: false,
+            isLoading: false,
+            suggestions: [],
+          });
+          fieldIndex = 0;
+          setTimeout(animateField, 2000);
+        }, 3000);
+        return;
+      }
+
+      const field = fields[fieldIndex];
+      
+      // Show loading state for destination field
+      if (fieldIndex === 0) {
+        setFormAnimationState({
+          typing: false,
+          currentField: fieldIndex,
+          filledFields: fields.slice(0, fieldIndex).map((_, i) => i),
+          showSuggestions: false,
+          isLoading: true,
+          suggestions: [],
+        });
+
+        // After loading, show suggestions
+        setTimeout(() => {
+          setFormAnimationState((prev) => ({
+            ...prev,
+            isLoading: false,
+            showSuggestions: true,
+            suggestions: field.suggestions || [],
+          }));
+        }, 1000);
+
+        // Then start typing
+        setTimeout(() => {
+          setFormAnimationState((prev) => ({
+            ...prev,
+            typing: true,
+            showSuggestions: false,
+          }));
+        }, 2500);
+      } else {
+        setFormAnimationState({
+          typing: true,
+          currentField: fieldIndex,
+          filledFields: fields.slice(0, fieldIndex).map((_, i) => i),
+          showSuggestions: false,
+          isLoading: false,
+          suggestions: [],
+        });
+      }
+
+      // Mark field as filled after typing animation
+      const typingDuration = fieldIndex === 0 ? 2000 : 1500; // Longer for destination field
+      setTimeout(() => {
+        setFormAnimationState((prev) => ({
+          ...prev,
+          typing: false,
+          filledFields: [...prev.filledFields, fieldIndex],
+          showSuggestions: false,
+          isLoading: false,
+        }));
+        fieldIndex++;
+        // Move to next field after a short delay
+        setTimeout(animateField, 1000);
+      }, typingDuration);
+    };
+
+    const timer = setTimeout(animateField, 1000);
+    return () => clearTimeout(timer);
+  }, [currentTutorialStep, showTutorial]);
 
   const colorClasses = {
     blue: {
@@ -204,6 +344,155 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
         .start-planning-btn:hover {
           animation: buttonPulse 1s ease-in-out infinite, buttonFlash 2s ease-in-out infinite;
         }
+        @keyframes tutorialFadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @keyframes tutorialPulse {
+          0%, 100% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4);
+          }
+          50% {
+            transform: scale(1.05);
+            box-shadow: 0 0 0 10px rgba(139, 92, 246, 0);
+          }
+        }
+        @keyframes tutorialSlideIn {
+          from {
+            opacity: 0;
+            transform: translateX(-20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+        @keyframes tutorialHighlight {
+          0%, 100% {
+            border-color: rgba(139, 92, 246, 0.3);
+            box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.3);
+          }
+          50% {
+            border-color: rgba(139, 92, 246, 0.8);
+            box-shadow: 0 0 0 8px rgba(139, 92, 246, 0.2);
+          }
+        }
+        @keyframes typeWriter {
+          from {
+            width: 0;
+          }
+          to {
+            width: 100%;
+          }
+        }
+        @keyframes fieldFocus {
+          0%, 100% {
+            border-color: rgba(139, 92, 246, 0.3);
+            box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.2);
+          }
+          50% {
+            border-color: rgba(139, 92, 246, 1);
+            box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.3);
+          }
+        }
+        @keyframes checkmark {
+          0% {
+            transform: scale(0);
+            opacity: 0;
+          }
+          50% {
+            transform: scale(1.2);
+          }
+          100% {
+            transform: scale(1);
+            opacity: 1;
+          }
+        }
+        @keyframes formSlideUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @keyframes shimmer {
+          0% {
+            background-position: -1000px 0;
+          }
+          100% {
+            background-position: 1000px 0;
+          }
+        }
+        @keyframes phoneSlideIn {
+          from {
+            opacity: 0;
+            transform: translateY(30px) scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+        .mobile-phone-frame {
+          animation: phoneSlideIn 0.6s ease-out;
+        }
+        .tutorial-step {
+          animation: tutorialFadeIn 0.6s ease-out;
+        }
+        .tutorial-highlight {
+          animation: tutorialHighlight 2s ease-in-out infinite;
+        }
+        .tutorial-icon-pulse {
+          animation: tutorialPulse 2s ease-in-out infinite;
+        }
+        .tutorial-content {
+          animation: tutorialSlideIn 0.5s ease-out;
+        }
+        .form-field-focus {
+          animation: fieldFocus 1.5s ease-in-out;
+        }
+        .form-field-filled {
+          border-color: rgba(34, 197, 94, 0.5);
+          background-color: rgba(34, 197, 94, 0.05);
+        }
+        .typing-animation {
+          overflow: hidden;
+          white-space: nowrap;
+          border-right: 2px solid rgba(139, 92, 246, 0.8);
+          animation: typeWriter 1s steps(20, end), blink 0.75s step-end infinite;
+        }
+        @keyframes blink {
+          from, to {
+            border-color: transparent;
+          }
+          50% {
+            border-color: rgba(139, 92, 246, 0.8);
+          }
+        }
+        .checkmark-animation {
+          animation: checkmark 0.5s ease-out;
+        }
+        .form-slide-up {
+          animation: formSlideUp 0.4s ease-out;
+        }
+        .form-field-slide {
+          animation: formSlideUp 0.5s ease-out;
+        }
+        .shimmer-effect {
+          background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+          background-size: 1000px 100%;
+          animation: shimmer 2s infinite;
+        }
       `}</style>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 space-y-10 sm:space-y-12 lg:space-y-14">
         {/* Hero Section */}
@@ -286,6 +575,440 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onPlanUnifiedTrip, onPl
             })}
           </div>
         </section>
+
+        {/* Animated Tutorial Section - Mobile App View */}
+        {showTutorial && (
+          <section className="tutorial-step bg-gradient-to-br from-violet-50 via-purple-50 to-pink-50 rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 border border-violet-200/50 shadow-xl">
+            <div className="max-w-[280px] sm:max-w-sm mx-auto">
+              {/* Modern Step Header - Outside Mobile Frame */}
+              <div className="mb-4 sm:mb-6 text-center">
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 mb-3">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-violet-600 via-purple-600 to-pink-600 rounded-xl sm:rounded-2xl flex items-center justify-center tutorial-icon-pulse shadow-lg shadow-violet-500/30">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                  </div>
+                  <div className="text-center sm:text-left">
+                    <h2 className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
+                      How to Use PlanMyTrip AI
+                    </h2>
+                    <p className="text-xs sm:text-sm text-slate-600">Interactive tutorial guide</p>
+                  </div>
+                </div>
+                
+                {/* Step Indicator */}
+                {currentTutorialStep === 0 && (
+                  <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-white/80 backdrop-blur-sm rounded-full border border-violet-200 shadow-sm">
+                    <span className="text-[10px] sm:text-xs font-bold text-violet-600 bg-violet-100 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full">STEP 1</span>
+                    <span className="text-xs sm:text-sm font-semibold text-slate-900">Get Started</span>
+                  </div>
+                )}
+                {currentTutorialStep === 1 && (
+                  <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-white/80 backdrop-blur-sm rounded-full border border-blue-200 shadow-sm">
+                    <span className="text-[10px] sm:text-xs font-bold text-blue-600 bg-blue-100 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full">STEP 2</span>
+                    <span className="text-xs sm:text-sm font-semibold text-slate-900">Enter Your Details</span>
+                  </div>
+                )}
+                {currentTutorialStep === 2 && (
+                  <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-white/80 backdrop-blur-sm rounded-full border border-orange-200 shadow-sm">
+                    <span className="text-[10px] sm:text-xs font-bold text-orange-600 bg-orange-100 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full">STEP 3</span>
+                    <span className="text-xs sm:text-sm font-semibold text-slate-900">Explore Mini Apps</span>
+                  </div>
+                )}
+                {currentTutorialStep === 3 && (
+                  <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-white/80 backdrop-blur-sm rounded-full border border-green-200 shadow-sm">
+                    <span className="text-[10px] sm:text-xs font-bold text-green-600 bg-green-100 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full">STEP 4</span>
+                    <span className="text-xs sm:text-sm font-semibold text-slate-900">Get Your Complete Plan</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Mobile Phone Frame */}
+              <div className="mobile-phone-frame bg-slate-900 rounded-[1.5rem] sm:rounded-[2.5rem] p-1.5 sm:p-2 shadow-2xl">
+                {/* Phone Screen */}
+                <div className="bg-white rounded-[1.25rem] sm:rounded-[2rem] overflow-hidden relative flex flex-col h-[500px] sm:h-[600px] md:h-[600px] max-h-[500px] sm:max-h-[600px] md:max-h-[600px]">
+                  {/* Mobile Status Bar */}
+                  <div className="bg-white px-3 sm:px-4 pt-1.5 sm:pt-2 pb-1 flex items-center justify-between text-[10px] sm:text-xs font-semibold text-slate-900 flex-shrink-0">
+                    <span>9:41</span>
+                    <div className="flex items-center gap-0.5 sm:gap-1">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
+                      </svg>
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M17.778 8.222c-4.296-4.296-11.26-4.296-15.556 0A1 1 0 01.808 6.808c5.076-5.076 13.308-5.076 18.384 0a1 1 0 01-1.414 1.414zM14.95 11.05a7 7 0 00-9.9 0 1 1 0 01-1.414-1.414 9 9 0 0112.728 0 1 1 0 01-1.414 1.414zM12.12 13.88a3 3 0 00-4.242 0 1 1 0 01-1.415-1.415 5 5 0 017.072 0 1 1 0 01-1.415 1.415zM9 16a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clipRule="evenodd" />
+                      </svg>
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M3.5 2A1.5 1.5 0 002 3.5v13A1.5 1.5 0 003.5 18h13a1.5 1.5 0 001.5-1.5v-13A1.5 1.5 0 0016.5 2h-13zM4 4h12v12H4V4z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                  </div>
+                  
+                  {/* Mobile App Content */}
+                  <div className="flex-1 overflow-hidden">
+                    <div className="px-3 sm:px-4 py-2 sm:py-3 h-full flex flex-col">
+
+              {/* Step 1: Click Start Planning - Enhanced */}
+              {currentTutorialStep === 0 && (
+                <div className="tutorial-content h-full flex flex-col justify-center">
+                  
+                  {/* Enhanced Hero Section */}
+                  <div className="text-center mb-2 sm:mb-3">
+                    <h2 className="text-lg sm:text-xl font-bold text-slate-900 mb-0.5">
+                      Plan Your
+                      <br />
+                      <span className="bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
+                        Perfect Trip
+                      </span>
+                    </h2>
+                    <p className="text-[10px] sm:text-xs text-slate-600">AI-powered travel planning</p>
+                  </div>
+                  
+                  {/* Enhanced Button with Animation */}
+                  <div className="bg-gradient-to-br from-violet-100 to-purple-100 rounded-xl sm:rounded-2xl p-3 sm:p-4 flex flex-col items-center justify-center my-2 sm:my-3 space-y-2">
+                    <button className="relative w-full px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white font-bold text-sm sm:text-base rounded-lg sm:rounded-xl shadow-xl shadow-violet-500/50 tutorial-icon-pulse overflow-hidden">
+                      <span className="relative z-10">Start Planning</span>
+                    </button>
+                    <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-violet-700">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                      </svg>
+                      <span className="font-medium">Tap to begin</span>
+                    </div>
+                  </div>
+                  
+                  {/* Quick Features Preview */}
+                  <div className="grid grid-cols-3 gap-1.5 sm:gap-2 mt-2">
+                    {[
+                      { icon: '✈️', label: 'Trips' },
+                      { icon: '🎒', label: 'Packing' },
+                      { icon: '🍽️', label: 'Food' },
+                    ].map((item, idx) => (
+                      <div key={idx} className="bg-white/60 backdrop-blur-sm rounded-lg p-1.5 sm:p-2 text-center border border-violet-100">
+                        <div className="text-base sm:text-xl mb-0.5">{item.icon}</div>
+                        <div className="text-[10px] sm:text-xs font-medium text-slate-700">{item.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Step 2: Animated Form - Enhanced Design */}
+              {currentTutorialStep === 1 && (
+                <div className="tutorial-content h-full flex flex-col overflow-hidden">
+                  
+                  <div className="space-y-1.5 sm:space-y-2 form-slide-up bg-gradient-to-br from-white to-slate-50/50 backdrop-blur-sm p-2 sm:p-2.5 rounded-xl sm:rounded-2xl border border-slate-200 shadow-sm flex-1 overflow-hidden">
+                    {/* Destination Field - Enhanced */}
+                    <div className="relative">
+                      <label className="block text-[10px] sm:text-xs font-semibold text-slate-700 mb-0.5 sm:mb-1 flex items-center gap-1">
+                        <span className="text-xs sm:text-sm">📍</span>
+                        Main Destination
+                      </label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-2 sm:pl-3 flex items-center pointer-events-none">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 text-violet-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 20l-4.95-5.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <input
+                          type="text"
+                          readOnly
+                          value={formAnimationState.filledFields.includes(0) ? 'Paris, France' : (formAnimationState.currentField === 0 && formAnimationState.typing ? 'Paris, France' : '')}
+                          className={`w-full pl-8 sm:pl-10 pr-8 sm:pr-10 py-1.5 sm:py-2 bg-white text-xs sm:text-sm text-gray-800 border-2 rounded-lg sm:rounded-xl transition-all duration-300 shadow-sm ${
+                            formAnimationState.currentField === 0
+                              ? 'border-violet-500 ring-2 ring-violet-500/20 bg-violet-50/30'
+                              : formAnimationState.filledFields.includes(0)
+                              ? 'border-emerald-400 bg-emerald-50/50'
+                              : 'border-slate-200'
+                          } ${formAnimationState.currentField === 0 && formAnimationState.typing ? 'typing-animation' : ''}`}
+                          placeholder={formAnimationState.currentField === 0 && !formAnimationState.typing && !formAnimationState.filledFields.includes(0) ? 'Typing...' : 'e.g., Paris, France'}
+                        />
+                        {formAnimationState.currentField === 0 && formAnimationState.isLoading && (
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                            <svg className="animate-spin h-5 w-5 text-violet-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                          </div>
+                        )}
+                        {formAnimationState.currentField === 0 && formAnimationState.filledFields.includes(0) && (
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2 checkmark-animation">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-600" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                        )}
+                      </div>
+                      {/* Suggestions Dropdown - like Questionnaire */}
+                      {formAnimationState.currentField === 0 && formAnimationState.showSuggestions && formAnimationState.suggestions.length > 0 && (
+                        <ul className="absolute z-10 w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg max-h-32 sm:max-h-40 overflow-y-auto form-slide-up">
+                          {formAnimationState.suggestions.map((s, i) => (
+                            <li
+                              key={i}
+                              className="px-2 sm:px-3 py-1.5 sm:py-2 cursor-pointer hover:bg-violet-100/60 flex justify-between items-center transition-colors"
+                            >
+                              <div>
+                                <span className="font-semibold text-xs sm:text-sm text-slate-800">{s.name}</span>
+                                {s.name === 'Paris, France' && <span className="text-[10px] sm:text-xs text-slate-600">, France</span>}
+                              </div>
+                              <span className="text-[10px] sm:text-xs bg-slate-200 text-slate-700 font-medium px-1.5 sm:px-2 py-0.5 rounded-full">{s.type}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      {formAnimationState.currentField === 0 && formAnimationState.isLoading && (
+                        <div className="mt-1.5 sm:mt-2 px-2 sm:px-3 py-1.5 sm:py-2 bg-gradient-to-r from-violet-50 to-indigo-50 border border-violet-200/50 rounded-lg shadow-sm animate-pulse">
+                          <div className="flex items-center space-x-1.5 sm:space-x-2 text-xs sm:text-sm text-violet-700">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                            <span className="font-medium">Searching for locations</span>
+                            <span className="flex space-x-0.5">
+                              <span className="animate-bounce" style={{ animationDelay: '0ms' }}>.</span>
+                              <span className="animate-bounce" style={{ animationDelay: '150ms' }}>.</span>
+                              <span className="animate-bounce" style={{ animationDelay: '300ms' }}>.</span>
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Date Fields - Enhanced */}
+                    <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
+                      <div className="space-y-0.5 sm:space-y-1">
+                        <label className="block text-[10px] sm:text-xs font-semibold text-slate-700 flex items-center gap-1">
+                          <span className="text-xs sm:text-sm">📅</span>
+                          Start Date
+                        </label>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-2 sm:pl-3 flex items-center pointer-events-none">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4 text-violet-400" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                          <input
+                            type="text"
+                            readOnly
+                            value={formAnimationState.filledFields.includes(1) ? '2025-06-15' : (formAnimationState.currentField === 1 && formAnimationState.typing ? '2025-06-15' : '')}
+                            className={`w-full pl-7 sm:pl-9 pr-2 sm:pr-3 py-1.5 sm:py-2 bg-white text-[10px] sm:text-xs text-gray-800 border-2 rounded-lg sm:rounded-xl transition-all duration-300 shadow-sm ${
+                              formAnimationState.currentField === 1
+                                ? 'border-violet-500 ring-2 ring-violet-500/20 bg-violet-50/30'
+                                : formAnimationState.filledFields.includes(1)
+                                ? 'border-emerald-400 bg-emerald-50/50'
+                                : 'border-slate-200'
+                            }`}
+                            placeholder="Start date"
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-0.5 sm:space-y-1">
+                        <label className="block text-[10px] sm:text-xs font-semibold text-slate-700 flex items-center gap-1">
+                          <span className="text-xs sm:text-sm">📅</span>
+                          End Date
+                        </label>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-2 sm:pl-3 flex items-center pointer-events-none">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4 text-violet-400" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                          <input
+                            type="text"
+                            readOnly
+                            value={formAnimationState.filledFields.includes(2) ? '2025-06-22' : (formAnimationState.currentField === 2 && formAnimationState.typing ? '2025-06-22' : '')}
+                            className={`w-full pl-7 sm:pl-9 pr-2 sm:pr-3 py-1.5 sm:py-2 bg-white text-[10px] sm:text-xs text-gray-800 border-2 rounded-lg sm:rounded-xl transition-all duration-300 shadow-sm ${
+                              formAnimationState.currentField === 2
+                                ? 'border-violet-500 ring-2 ring-violet-500/20 bg-violet-50/30'
+                                : formAnimationState.filledFields.includes(2)
+                                ? 'border-emerald-400 bg-emerald-50/50'
+                                : 'border-slate-200'
+                            }`}
+                            placeholder="End date"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-center py-0">
+                      <span className="bg-gradient-to-r from-violet-100 to-purple-100 text-violet-700 font-bold px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs shadow-sm">
+                        ✨ 7 days
+                      </span>
+                    </div>
+
+                    {/* Budget Selection - Enhanced */}
+                    <div>
+                      <label className="block text-[10px] sm:text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
+                        <span className="text-xs sm:text-sm">💰</span>
+                        Budget
+                      </label>
+                      <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+                        {['Low Budget', 'Midrange', 'Luxury'].map((budget, idx) => (
+                          <button
+                            key={budget}
+                            type="button"
+                            className={`px-1.5 sm:px-2 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-semibold transition-all duration-200 border-2 shadow-sm ${
+                              formAnimationState.filledFields.includes(3) && budget === 'Midrange'
+                                ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white border-violet-600 shadow-md'
+                                : formAnimationState.currentField === 3 && budget === 'Midrange'
+                                ? 'bg-violet-100 border-violet-400 text-violet-700'
+                                : 'bg-white border-slate-200 text-slate-700'
+                            }`}
+                          >
+                            {budget}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Travelers - Enhanced */}
+                    <div>
+                      <label className="block text-[10px] sm:text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
+                        <span className="text-xs sm:text-sm">👥</span>
+                        Travelers
+                      </label>
+                      <div className="flex items-center w-full bg-white border-2 border-slate-200 rounded-lg sm:rounded-xl shadow-sm overflow-hidden">
+                        <button
+                          type="button"
+                          className="p-1.5 sm:p-2 text-violet-600 hover:bg-violet-50 transition flex-shrink-0"
+                          disabled
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clipRule="evenodd" />
+                          </svg>
+                        </button>
+                        <input
+                          type="text"
+                          readOnly
+                          value={formAnimationState.filledFields.includes(4) ? '2' : (formAnimationState.currentField === 4 && formAnimationState.typing ? '2' : '')}
+                          className={`font-bold text-sm sm:text-base text-center flex-grow w-full bg-transparent border-none text-gray-800 focus:ring-0 focus:outline-none ${
+                            formAnimationState.currentField === 4 ? 'text-violet-600' : ''
+                          }`}
+                        />
+                        <button
+                          type="button"
+                          className="p-1.5 sm:p-2 text-violet-600 hover:bg-violet-50 transition flex-shrink-0"
+                          disabled
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-1.5 sm:mt-2 pt-1.5 sm:pt-2 border-t border-slate-200">
+                      <button className="w-full px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-violet-600 to-purple-600 text-white font-bold text-xs sm:text-sm rounded-lg sm:rounded-xl shadow-lg shadow-violet-500/30 hover:shadow-xl transition-all duration-200">
+                        ✨ Plan My Adventure
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 3: Mini Apps */}
+              {currentTutorialStep === 2 && (
+                <div className="tutorial-content h-full flex flex-col justify-center">
+                  <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+                    {miniApps.slice(0, 6).map((app, index) => {
+                      const colors = colorClasses[app.color];
+                      return (
+                        <div
+                          key={app.id}
+                          className="form-slide-up bg-white rounded-lg sm:rounded-xl p-2 sm:p-3 border-2 border-slate-200 hover:border-violet-300 transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
+                          style={{ animationDelay: `${index * 0.1}s` }}
+                        >
+                          <div className={`w-8 h-8 sm:w-10 sm:h-10 ${colors.iconBg} ${colors.iconText} rounded-lg flex items-center justify-center mx-auto mb-1 sm:mb-2 tutorial-icon-pulse text-sm sm:text-base`}>
+                            {app.icon}
+                          </div>
+                          <p className="text-[10px] sm:text-xs font-semibold text-slate-700 text-center leading-tight">{app.title}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <p className="text-[10px] sm:text-xs text-slate-600 mt-2 sm:mt-3 text-center px-2">Use specialized tools for packing, food, music, language, and more</p>
+                </div>
+              )}
+
+              {/* Step 4: Results */}
+              {currentTutorialStep === 3 && (
+                <div className="tutorial-content h-full flex flex-col justify-center">
+                  <div className="space-y-1.5 sm:space-y-2">
+                    {[
+                      { title: 'Day 1: Arrival & Exploration', icon: '✈️', gradient: 'from-blue-500 to-cyan-500' },
+                      { title: 'Day 2: Cultural Sites', icon: '🏛️', gradient: 'from-purple-500 to-pink-500' },
+                      { title: 'Day 3: Local Experiences', icon: '🍷', gradient: 'from-orange-500 to-red-500' },
+                    ].map((day, index) => (
+                      <div
+                        key={index}
+                        className={`form-slide-up bg-gradient-to-r ${day.gradient} p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-white shadow-lg`}
+                        style={{ animationDelay: `${index * 0.2}s` }}
+                      >
+                        <div className="flex items-center gap-2 sm:gap-3">
+                          <span className="text-lg sm:text-xl">{day.icon}</span>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-bold text-xs sm:text-sm">{day.title}</h4>
+                            <p className="text-[10px] sm:text-xs opacity-90">Activities, restaurants & budget included</p>
+                          </div>
+                          <span className="checkmark-animation flex-shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                    <div className="mt-2 sm:mt-3 p-2 sm:p-3 bg-gradient-to-r from-violet-100 to-purple-100 rounded-lg sm:rounded-xl border-2 border-violet-200">
+                      <div className="space-y-1.5 sm:space-y-2">
+                        <div>
+                          <p className="text-[10px] sm:text-xs font-semibold text-slate-700">Total Budget</p>
+                          <p className="text-lg sm:text-xl font-bold text-violet-600">$2,500</p>
+                        </div>
+                        <button className="w-full px-3 sm:px-4 py-1.5 sm:py-2 bg-violet-600 text-white font-semibold rounded-lg text-xs sm:text-sm">
+                          View Full Plan
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+                      {/* Mobile Navigation Dots */}
+                      <div className="flex items-center justify-center gap-2 mt-6 mb-4">
+                        {[0, 1, 2, 3].map((step) => (
+                          <button
+                            key={step}
+                            onClick={() => setCurrentTutorialStep(step)}
+                            className={`h-2 rounded-full transition-all duration-300 ${
+                              currentTutorialStep === step ? 'bg-violet-600 w-8' : 'bg-violet-300 w-2'
+                            }`}
+                            aria-label={`Go to step ${step + 1}`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Mobile Bottom Navigation */}
+                  <div className="bg-white border-t border-slate-200 px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between flex-shrink-0">
+                    <button
+                      onClick={() => setCurrentTutorialStep(Math.max(0, currentTutorialStep - 1))}
+                      disabled={currentTutorialStep === 0}
+                      className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm text-violet-600 font-medium disabled:text-slate-400 disabled:cursor-not-allowed"
+                    >
+                      Back
+                    </button>
+                    <button
+                      onClick={() => {
+                        setCurrentTutorialStep((currentTutorialStep + 1) % 4);
+                      }}
+                      className="px-4 sm:px-6 py-1.5 sm:py-2.5 text-xs sm:text-sm bg-gradient-to-r from-violet-600 to-purple-600 text-white font-semibold rounded-lg sm:rounded-xl shadow-lg transition-all duration-200 active:scale-95"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
 
 
         {/* Destinations Section */}
