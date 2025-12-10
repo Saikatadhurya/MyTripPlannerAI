@@ -92,8 +92,8 @@ const Header: React.FC<HeaderProps> = ({
     }
   };
 
-  // Base classes for the header - relative (non-sticky) for all screens
-  const headerBaseClasses = "relative w-full no-print h-16 md:h-20 transition-shadow duration-300";
+  // Base classes for the header - relative (non-sticky) for all screens, with left margin for sidebar on desktop
+  const headerBaseClasses = "relative w-full no-print h-16 md:h-20 md:ml-20 transition-shadow duration-300";
   
   // Container for the content inside the header
   const containerBaseClasses = "flex items-center container mx-auto h-full";

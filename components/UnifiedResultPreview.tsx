@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { UnifiedPlan, UnifiedPlanLoadingStatus } from '../types';
 import ItineraryPreview from './ItineraryPreview';
 import PackingListPreview from './PackingListPreview';
@@ -69,8 +69,28 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
     const mainContentRef = React.useRef<HTMLElement>(null);
     const headerRef = React.useRef<HTMLElement>(null);
     const containerRef = React.useRef<HTMLDivElement>(null);
+    const isSwitchingTabRef = useRef<boolean>(false);
     
     const isPlanComplete = Object.values(loadingStatus).every(status => status === 'done');
+
+    // Memoized tab change handler to prevent issues with rapid clicks
+    const handleTabChange = useCallback((tabId: Tab) => {
+        // Prevent switching if already switching or if it's the same tab
+        if (isSwitchingTabRef.current || activeTab === tabId) {
+            return;
+        }
+
+        // Mark as switching
+        isSwitchingTabRef.current = true;
+
+        // Update state immediately
+        setActiveTab(tabId);
+
+        // Reset switching flag after a short delay
+        setTimeout(() => {
+            isSwitchingTabRef.current = false;
+        }, 100);
+    }, [activeTab]);
 
     // Update page title based on the plan
     useEffect(() => {
@@ -621,15 +641,21 @@ const UnifiedResultPreview: React.FC<UnifiedResultPreviewProps> = ({
                                 return (
                                     <button
                                         key={tab.id}
-                                        onClick={() => {
-                                            // Immediate scroll before state update
-                                            window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-                                            document.documentElement.scrollTop = 0;
-                                            document.body.scrollTop = 0;
-                                            
-                                            setActiveTab(tab.id);
-                                            // Additional scroll is handled by useEffect when activeTab changes
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            handleTabChange(tab.id);
                                         }}
+                                        onTouchEnd={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            handleTabChange(tab.id);
+                                        }}
+                                        onMouseDown={(e) => {
+                                            // Prevent default to avoid focus issues
+                                            e.preventDefault();
+                                        }}
+                                        style={{ pointerEvents: 'auto', touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
                                         className={`relative flex flex-col items-center justify-center flex-1 space-y-1 transition-colors duration-200 md:flex-row md:flex-none md:px-4 md:py-2 md:space-x-2 md:rounded-full
                                             ${activeTab === tab.id
                                                 ? 'text-violet-600 md:bg-violet-600 md:text-white md:shadow'
