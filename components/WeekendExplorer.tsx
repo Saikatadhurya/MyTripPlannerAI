@@ -439,6 +439,11 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
     const endDateObj = new Date(startDateObj);
     endDateObj.setDate(endDateObj.getDate() + pkg.days - 1);
 
+    // Ensure selectedComponents is set (default to all if not set)
+    const finalSelectedComponents = selectedComponents && selectedComponents.length > 0 
+      ? selectedComponents 
+      : ['packing', 'food', 'apps', 'music', 'lingo'];
+    
     // Create QuestionnaireData for unified plan
     const questionnaireData: QuestionnaireData = {
       destination: pkg.destination, // Destination comes from the selected package
@@ -457,7 +462,7 @@ const WeekendExplorer: React.FC<WeekendExplorerProps> = ({ user, onGenerateUnifi
       isRoundTrip: true, // All trips are round trips
       includeAlcoholicDrinks: false,
       stops: [],
-      selectedComponents: selectedComponents, // Include selected components
+      selectedComponents: finalSelectedComponents, // Include selected components
     };
 
     // Ensure we have valid data before generating

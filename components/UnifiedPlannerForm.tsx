@@ -110,7 +110,8 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
       const endDate = initialData.endDate || calculateEndDateFromStart(initialData.startDate || formatDateLocal(today), initialData.days || 3);
       return {
         ...initialData,
-        endDate: endDate
+        endDate: endDate,
+        selectedComponents: initialData.selectedComponents || ['packing', 'food', 'apps', 'music', 'lingo'] // Ensure selectedComponents is always set
       };
     }
     return {
@@ -954,10 +955,14 @@ const UnifiedPlannerForm: React.FC<UnifiedPlannerFormProps> = ({ onSubmit, error
     
     if (hasError) return;
     
+    // Ensure selectedComponents is included
+    const currentSelectedComponents = formData.selectedComponents || ['packing', 'food', 'apps', 'music', 'lingo'];
+    
     // Update formData with final stops values
     const finalFormData = {
       ...formData,
-      stops: stops.filter(s => s.isSelected && s.value.trim().length > 0).map(s => s.value)
+      stops: stops.filter(s => s.isSelected && s.value.trim().length > 0).map(s => s.value),
+      selectedComponents: currentSelectedComponents // Explicitly ensure it's included
     };
     onSubmit(finalFormData);
   };

@@ -169,6 +169,7 @@ const AppContent: React.FC = () => {
   // --- Unified Planner Pipeline State ---
   const cancellationFlags = useRef<Partial<Record<keyof UnifiedPlanLoadingStatus, boolean>>>({});
   const simplePlanCancellationFlag = useRef(false);
+  const isParallelGenerationRunning = useRef(false);
 
   const formViews: View[] = [
     'questionnaire',
@@ -879,8 +880,34 @@ const AppContent: React.FC = () => {
         } catch (e) {
           console.error(`Attempt ${attempt} for ${step} failed:`, e);
           lastError = e instanceof Error ? e : new Error('An unknown error occurred');
+          
           if (attempt < maxRetries) {
-            await new Promise(resolve => setTimeout(resolve, 1000)); 
+            // Check if it's a rate limit or server overload error
+            const errorMessage = lastError.message.toLowerCase();
+            const isRateLimit = errorMessage.includes('[429]') || 
+                               errorMessage.includes('quota') || 
+                               errorMessage.includes('rate limit') ||
+                               errorMessage.includes('limit') ||
+                               errorMessage.includes('exceeded');
+            const isServerOverload = errorMessage.includes('[503]') || 
+                                    errorMessage.includes('overloaded') || 
+                                    errorMessage.includes('server error') ||
+                                    errorMessage.includes('busy');
+            
+            // Use exponential backoff with longer delays for rate limits
+            let delay: number;
+            if (isRateLimit) {
+              // For rate limits, use longer exponential backoff: 3s, 6s, 12s
+              delay = Math.min(3000 * Math.pow(2, attempt - 1), 15000);
+            } else if (isServerOverload) {
+              // For server overload, use moderate delays: 2s, 4s, 8s
+              delay = Math.min(2000 * Math.pow(2, attempt - 1), 10000);
+            } else {
+              // For other errors, use shorter delays: 1s, 2s, 4s
+              delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+            }
+            
+            await new Promise(resolve => setTimeout(resolve, delay));
           }
         }
       }
@@ -1402,9 +1429,17 @@ const AppContent: React.FC = () => {
     // Effect for parallel generation of other steps, dependent on itinerary completion
     useEffect(() => {
         const runParallelSteps = async () => {
-            const data = questionnaireDataForUnifiedPlan!;
-            const currentItinerary = unifiedPlan.itinerary!;
-            const isMultiStop = currentItinerary && currentItinerary.coveredDestinations.length > 1;
+            // Prevent multiple parallel runs
+            if (isParallelGenerationRunning.current) {
+                return;
+            }
+            
+            isParallelGenerationRunning.current = true;
+            
+            try {
+                const data = questionnaireDataForUnifiedPlan!;
+                const currentItinerary = unifiedPlan.itinerary!;
+                const isMultiStop = currentItinerary && currentItinerary.coveredDestinations.length > 1;
 
             const stepGenerators: Partial<Record<keyof Omit<UnifiedPlanLoadingStatus, 'itinerary'>, { generator: () => Promise<any>, onSuccess: (result: any) => void }>> = {
                 packing: {
@@ -1445,22 +1480,54 @@ const AppContent: React.FC = () => {
             };
 
             // Only run steps that are selected and pending
-            const selectedComponents = data.selectedComponents || ['packing'];
+            const selectedComponents = data.selectedComponents || ['packing', 'food', 'apps', 'music', 'lingo'];
             const parallelSteps: (keyof Omit<UnifiedPlanLoadingStatus, 'itinerary'>)[] = ['packing', 'food', 'apps', 'music', 'lingo'];
-            // Allow generating steps that are pending, even if they weren't initially selected
-            // This allows users to generate skipped components later
-            const stepsToRun = parallelSteps.filter(step => 
-              unifiedPlanLoadingStatus[step] === 'pending'
-            );
+            // Filter to only run steps that are both selected AND pending
+            const stepsToRun = parallelSteps.filter(step => {
+              const isSelected = selectedComponents.includes(step);
+              const isPending = unifiedPlanLoadingStatus[step] === 'pending';
+              return isSelected && isPending;
+            });
 
             if (stepsToRun.length > 0) {
-                const generationPromises = stepsToRun.map(step => {
-                    cancellationFlags.current[step] = false;
+                // Process steps sequentially with delays to avoid rate limiting and server overload
+                // This prevents 429 (rate limit) and 503 (server overload) errors
+                for (let i = 0; i < stepsToRun.length; i++) {
+                    const step = stepsToRun[i];
+                    
+                    // Skip if already cancelled
+                    if (cancellationFlags.current[step]) {
+                        continue;
+                    }
+                    
+                    // Add delay between requests (except for the first one)
+                    // This helps avoid rate limiting when multiple requests are made
+                    if (i > 0) {
+                        // Exponential backoff: 1s, 2s, 3s, etc. (max 5s)
+                        const delay = Math.min(1000 * i, 5000);
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                    }
+                    
+                    // Check again if cancelled during delay
+                    if (cancellationFlags.current[step]) {
+                        continue;
+                    }
+                    
                     const { generator, onSuccess } = stepGenerators[step]!;
-                    return generateStep(step, generator, onSuccess);
-                });
-                await Promise.all(generationPromises);
+                    
+                    // Generate with retry logic (generateStep already has retry built-in)
+                    try {
+                        await generateStep(step, generator, onSuccess);
+                    } catch (error) {
+                        // generateStep handles errors internally, but catch here to prevent unhandled rejections
+                        console.error(`Error generating ${step}:`, error);
+                    }
+                }
             }
+        } finally {
+            // Always reset the flag when done
+            isParallelGenerationRunning.current = false;
+        }
         };
 
         if (location.pathname === '/results/unified' && unifiedPlan.itinerary && unifiedPlanLoadingStatus.itinerary === 'done') {
@@ -1472,46 +1539,33 @@ const AppContent: React.FC = () => {
   const handleGenerateUnifiedPlan = useCallback(async (data: QuestionnaireData) => {
     // Reset all state first - clear everything to ensure clean state
     cancellationFlags.current = {};
+    isParallelGenerationRunning.current = false; // Reset parallel generation flag
     setUnifiedPlan({ itinerary: null, packingList: null, foodRecommendations: null, appRecommendations: null, musicRecommendations: null, lingoRecommendations: null });
     setError(null);
     setItineraryStreamedText('');
     setItineraryAttemptCount(0);
     setUnifiedStepErrors({});
     
-    // Get selected components (default to ['packing'] if not specified)
-    const selectedComponents = data.selectedComponents || ['packing'];
+    // Get selected components (default to all components if not specified)
+    const selectedComponents = data.selectedComponents || ['packing', 'food', 'apps', 'music', 'lingo'];
     
-    // Reset loading status first to ensure useEffect triggers (set to non-pending first, then pending)
-    // Only set pending for selected components, others set to cancelled
-    setUnifiedPlanLoadingStatus({ 
-      itinerary: 'cancelled', // Itinerary is always included, will be set to pending
-      packing: selectedComponents.includes('packing') ? 'cancelled' : 'cancelled',
-      food: selectedComponents.includes('food') ? 'cancelled' : 'cancelled',
-      apps: selectedComponents.includes('apps') ? 'cancelled' : 'cancelled',
-      music: selectedComponents.includes('music') ? 'cancelled' : 'cancelled',
-      lingo: selectedComponents.includes('lingo') ? 'cancelled' : 'cancelled',
-    });
-    
-    // Set the questionnaire data
+    // Set the questionnaire data first
     setInitialQuestionnaireData(data);
     setQuestionnaireDataForUnifiedPlan(data);
     
-    // Use a small timeout to ensure state updates are applied before setting to pending and navigating
-    setTimeout(() => {
-      // Reset loading status to pending only for selected components
-      // Itinerary is always pending (always included)
-      setUnifiedPlanLoadingStatus({ 
-        itinerary: 'pending', // Always included
-        packing: selectedComponents.includes('packing') ? 'pending' : 'cancelled',
-        food: selectedComponents.includes('food') ? 'pending' : 'cancelled',
-        apps: selectedComponents.includes('apps') ? 'pending' : 'cancelled',
-        music: selectedComponents.includes('music') ? 'pending' : 'cancelled',
-        lingo: selectedComponents.includes('lingo') ? 'pending' : 'cancelled',
-      });
-      
-      // Navigate to unified results page
-      navigate('/results/unified');
-    }, 10);
+    // Set loading status correctly from the start - only set pending for selected components
+    // Itinerary is always pending (always included)
+    setUnifiedPlanLoadingStatus({ 
+      itinerary: 'pending', // Always included
+      packing: selectedComponents.includes('packing') ? 'pending' : 'cancelled',
+      food: selectedComponents.includes('food') ? 'pending' : 'cancelled',
+      apps: selectedComponents.includes('apps') ? 'pending' : 'cancelled',
+      music: selectedComponents.includes('music') ? 'pending' : 'cancelled',
+      lingo: selectedComponents.includes('lingo') ? 'pending' : 'cancelled',
+    });
+    
+    // Navigate to unified results page
+    navigate('/results/unified');
   }, [navigate, user]);
 
   const handleRegenerateUnifiedPlanStep = useCallback((step: keyof UnifiedPlanLoadingStatus) => {
