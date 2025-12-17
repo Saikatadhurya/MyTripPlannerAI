@@ -1363,7 +1363,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmit, isLoading, erro
                 
                 {/* Main Destination Field - After Stops */}
                 <div className="relative min-w-0">
-                    <label htmlFor="destination" className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">Main Destination{formData.tripType === 'Standard' && stops.length > 0 ? ' (Start & End Point)' : ''}</label>
+                    <label htmlFor="destination" className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">Main Destination{formData.tripType === 'Standard' && stops.length > 0 && formData.isRoundTrip ? ' (Start & End Point)' : ''}</label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 20l-4.95-5.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>

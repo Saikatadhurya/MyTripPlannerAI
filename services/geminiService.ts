@@ -159,14 +159,22 @@ export const generateItinerary = async (
   // For Standard round trips, the starting location should NOT be visited - only used as departure/return point
   const shouldIncludeStartPoint = tripType === 'Standard' && startPoint && startPoint.trim().length > 0 && !isRoundTrip;
   
-  // For Standard trips with multiple stops, destination should be both start and end point
-  const isStandardMultiStop = tripType === 'Standard' && stops && stops.length > 0;
+  // For Standard trips with multiple stops AND round trip: destination should be both start and end point
+  // For Standard trips with multiple stops but NOT round trip: destination is only the end point
+  const isStandardMultiStopRoundTrip = tripType === 'Standard' && stops && stops.length > 0 && isRoundTrip;
+  const isStandardMultiStopOneWay = tripType === 'Standard' && stops && stops.length > 0 && !isRoundTrip;
   
   let allDestinations: string[] = [];
   if (stops && stops.length > 0) {
-    if (isStandardMultiStop) {
-      // For Standard trips with stops: destination → stops → destination (circular)
+    if (isStandardMultiStopRoundTrip) {
+      // For Standard round trips with stops: destination → stops → destination (circular)
       allDestinations = [destination, ...stops, destination].filter(d => d && d.trim().length > 0);
+    } else if (isStandardMultiStopOneWay && startPoint && startPoint.trim().length > 0) {
+      // For Standard one-way trips with stops and startPoint: startPoint → stops → destination
+      allDestinations = [startPoint, ...stops, destination].filter(d => d && d.trim().length > 0);
+    } else if (isStandardMultiStopOneWay) {
+      // For Standard one-way trips with stops but no startPoint: stops → destination (destination is end point only)
+      allDestinations = [...stops, destination].filter(d => d && d.trim().length > 0);
     } else if (isRoundTrip) {
       // For round trips (Car/Bike): stops → destination (farthest point)
       allDestinations = [...stops, destination].filter(d => d && d.trim().length > 0);
@@ -250,8 +258,8 @@ export const generateItinerary = async (
   
   let multiStopInstructions = '';
   if (isMultiStop) {
-    const standardMultiStopInstructions = isStandardMultiStop ? `
-    6.  **STANDARD MULTI-STOP ROUTING (CRITICAL)**: This is a Standard trip with multiple stops. The main destination "${destination}" MUST be both the STARTING and ENDING point of the journey:
+    const standardMultiStopRoundTripInstructions = isStandardMultiStopRoundTrip ? `
+    6.  **STANDARD MULTI-STOP ROUND TRIP ROUTING (CRITICAL)**: This is a Standard round trip with multiple stops. The main destination "${destination}" MUST be both the STARTING and ENDING point of the journey:
         - The route MUST start from "${destination}"
         - Visit all intermediate stops (${stops?.join(', ') || ''}) in logical order
         - Return to "${destination}" at the end
@@ -261,7 +269,18 @@ export const generateItinerary = async (
         - This creates a circular route where "${destination}" serves as both the departure and return point.
     ` : '';
     
-    const circularInstructions = isCircularTrip && !isStandardMultiStop ? `
+    const standardMultiStopOneWayInstructions = isStandardMultiStopOneWay ? `
+    6.  **STANDARD MULTI-STOP ONE-WAY ROUTING (CRITICAL)**: This is a Standard one-way trip with multiple stops. The route flows from start to destination:
+        ${startPoint && startPoint.trim().length > 0 ? `- The route MUST start from "${startPoint}"` : `- The route MUST start from the first stop`}
+        - Visit all intermediate stops (${stops?.join(', ') || ''}) in logical order
+        - End at "${destination}" (this is the final destination, NOT the starting point)
+        - The 'coveredDestinations' array should reflect this one-way path: ${startPoint && startPoint.trim().length > 0 ? `"${startPoint}" → ` : ''}[stops] → "${destination}"
+        ${startPoint && startPoint.trim().length > 0 ? `- The first day should include activities in "${startPoint}" (starting point)` : `- The first day should start with activities at the first stop`}
+        - The final days MUST include activities in "${destination}" (ending point)
+        - This is a one-way journey ending at "${destination}", NOT a circular route.
+    ` : '';
+    
+    const circularInstructions = isCircularTrip && !isStandardMultiStopRoundTrip && !isStandardMultiStopOneWay ? `
     6.  **CIRCULAR TRIP ROUTING**: This is a circular/round trip where the main destination "${destination}" is the farthest point. The route MUST be planned as a circular circuit:
         - Start from ${shouldIncludeStartPoint ? `"${startPoint}"` : 'the first stop'}
         - Visit all intermediate stops in logical order
@@ -274,14 +293,16 @@ export const generateItinerary = async (
     multiStopInstructions = `
     CRITICAL MULTI-STOP INSTRUCTION:
     The user has specified multiple destinations for this trip: ${destinationsString}
-    ${shouldIncludeStartPoint && !isStandardMultiStop ? `Note: The starting point "${startPoint}" is included as a destination to visit (Standard trip).` : ''}
-    ${isStandardMultiStop ? `Note: For this Standard trip with multiple stops, "${destination}" is both the starting and ending point.` : ''}
+    ${shouldIncludeStartPoint && !isStandardMultiStopRoundTrip && !isStandardMultiStopOneWay ? `Note: The starting point "${startPoint}" is included as a destination to visit (Standard trip).` : ''}
+    ${isStandardMultiStopRoundTrip ? `Note: For this Standard round trip with multiple stops, "${destination}" is both the starting and ending point.` : ''}
+    ${isStandardMultiStopOneWay ? `Note: For this Standard one-way trip with multiple stops, the route flows from ${startPoint && startPoint.trim().length > 0 ? `"${startPoint}"` : 'the first stop'} to "${destination}" (end point only).` : ''}
     1.  The 'coveredDestinations' array MUST be populated with detailed information for EACH destination listed, in the order they should be visited.
     2.  The 'destination' field in the JSON response should be a descriptive name for this multi-destination trip (e.g., '${destinationsString} Tour' or 'Multi-City ${destinationsString} Adventure').
     3.  The daily 'plan' MUST logically reflect travel between these destinations, ensuring each destination is properly explored.
     4.  You MUST create a logical route that efficiently connects all destinations, minimizing backtracking and travel time.
     5.  For each destination in the 'coveredDestinations' array, provide comprehensive information (history, culture, natural places, museums, etc.).
-    ${standardMultiStopInstructions}
+    ${standardMultiStopRoundTripInstructions}
+    ${standardMultiStopOneWayInstructions}
     ${circularInstructions}
     `;
   }
