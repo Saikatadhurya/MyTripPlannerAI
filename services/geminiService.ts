@@ -455,12 +455,58 @@ export const generateItinerary = async (
      - Prioritize: Search for accommodation prices, restaurant names, weather forecasts, AQI, attraction prices, events, and traffic conditions first, then use knowledge base for everything else
      - Do NOT search for information already in your training data (attractions, culture, history)
   
-  **CORE ITINERARY PHILOSOPHY: MAXIMALIST & EFFICIENT**
-  Your core directive is to create a dense and efficient travel plan that maximizes the user's time. Assume the traveler is energetic and wants to see and do as much as possible.
-  - **NO WASTED TIME:** Minimize downtime. Days should be packed with activities from morning to evening. Avoid suggesting entire "rest days" or "leisure days" unless the trip is extremely long or the vibe is explicitly 'Relaxation'.
-  - **MAXIMIZE SIGHTSEEING:** For any given location, you must include not only the main attractions but also highly-rated secondary attractions, local experiences, and hidden gems.
-  - **DAY TRIPS ARE ESSENTIAL:** For trips longer than 3-4 days to a single city, you MUST incorporate relevant and feasible day trips to nearby towns, natural parks, or historical sites to enrich the itinerary. For example, a 7-day trip to Paris should include a day trip to the Palace of Versailles.
-  - **TRAVEL DAY EFFICIENCY:** On days that involve travel between cities, the itinerary should still include activities either in the departure city in the morning or in the arrival city in the afternoon/evening. A travel day should not be solely dedicated to transit unless the journey is exceptionally long (over 8 hours).
+  **CORE ITINERARY PHILOSOPHY: ADAPTIVE & REALISTIC**
+  Your core directive is to create a perfectly balanced travel plan that adapts to the trip duration. The itinerary must be realistic, enjoyable, and achievable.
+  
+  **TRIP DURATION-SPECIFIC GUIDELINES (CRITICAL - FOLLOW THESE EXACTLY):**
+  
+  **FOR SHORT TRIPS (1-3 DAYS):**
+  - **REALISTIC FOCUS:** These are quick getaways. Focus on the TOP 3-5 MUST-SEE attractions/experiences. Quality over quantity.
+  - **ARRIVAL/DEPARTURE REALITY:** Day 1 typically involves arrival, check-in, and 1-2 activities maximum. Last day involves checkout and departure, so plan only morning activities or early afternoon at most.
+  - **NO OVERWHELMING:** Do NOT pack too many activities. Allow 2-3 hours per major attraction including travel time. Include meal breaks and rest periods.
+  - **SINGLE LOCATION FOCUS:** For 1-2 day trips, stay in ONE location. For 3-day trips, maximum ONE additional nearby location if very close (< 2 hours travel).
+  - **ACTIVITY COUNT PER DAY:** 
+    * Day 1 (Arrival): 1-2 activities maximum
+    * Middle days: 3-4 activities maximum (morning, afternoon, evening)
+    * Last day (Departure): 1-2 activities maximum (morning/early afternoon only)
+  - **TIMING REALISM:** Account for check-in (typically 2-3 PM), check-out (typically 11 AM-12 PM), airport/train station travel time, and buffer time between activities.
+  - **EXAMPLE:** A 2-day trip to Paris should focus on: Eiffel Tower + Louvre OR Notre-Dame + Montmartre, not trying to cover everything.
+  
+  **FOR MEDIUM TRIPS (4-7 DAYS):**
+  - **BALANCED PACE:** Mix must-see attractions with local experiences. Include 1-2 day trips if staying in one city for 5+ days.
+  - **ACTIVITY DENSITY:** 4-5 activities per full day (excluding arrival/departure days). Include time for meals, rest, and spontaneous exploration.
+  - **MULTI-LOCATION:** Can include 2-3 destinations if logically connected and travel time is reasonable.
+  - **DAY TRIPS:** For single-city trips of 5+ days, include 1 day trip to nearby attractions (within 2-3 hours travel).
+  - **EXAMPLE:** A 5-day trip to Rome could include: 3 days in Rome + 1 day trip to Pompeii + 1 day for Vatican City.
+  
+  **FOR LONG TRIPS (8+ DAYS):**
+  - **COMPREHENSIVE COVERAGE:** Maximize sightseeing while maintaining realistic pacing. Include main attractions, secondary attractions, local experiences, and hidden gems.
+  - **ACTIVITY DENSITY:** 5-6 activities per full day. Days should be packed but not exhausting. Include strategic rest periods.
+  - **MULTI-DESTINATION:** Can cover multiple cities/regions. Plan logical routes that minimize backtracking.
+  - **DAY TRIPS ESSENTIAL:** For trips longer than 7 days in one region, include 2-3 day trips to nearby attractions, towns, or natural sites.
+  - **VARIETY:** Mix cultural sites, natural attractions, local experiences, shopping, and relaxation activities.
+  - **EXAMPLE:** A 10-day trip to Japan could cover: Tokyo (3 days) → Kyoto (3 days) → Osaka (2 days) + day trips to Nara and Mount Fuji.
+  
+  **UNIVERSAL PRINCIPLES (APPLY TO ALL TRIP LENGTHS):**
+  - **NO WASTED TIME:** Minimize downtime, but DO NOT create an exhausting schedule. Balance is key.
+  - **REALISTIC TIMING:** Always account for:
+    * Travel time between locations (including traffic/public transport delays)
+    * Queue/waiting time at popular attractions (add 30-60 min buffer for major sites)
+    * Meal times (breakfast 30-60 min, lunch 60-90 min, dinner 90-120 min)
+    * Check-in/check-out procedures
+    * Rest periods (15-30 min breaks between major activities)
+  - **TRAVEL DAY EFFICIENCY:** On days involving inter-city travel:
+    * If travel < 4 hours: Include activities in departure city (morning) AND arrival city (afternoon/evening)
+    * If travel 4-6 hours: Include activities in arrival city (afternoon/evening) only
+    * If travel > 6 hours: Focus on arrival and settling in, with 1-2 light activities maximum
+  - **VIBE ADAPTATION:** 
+    * 'Relaxation & Wellness': Include more rest time, spa visits, leisurely meals (even for short trips)
+    * 'Adventure & Thrill': Can pack more activities but ensure safety and recovery time
+    * 'Cultural & Heritage': Allow adequate time at museums/historical sites (2-3 hours minimum for major sites)
+  - **BUDGET CONSIDERATION:** 
+    * Low Budget: Include free attractions, walking tours, street food options
+    * Midrange: Mix paid attractions with free experiences
+    * Luxury: Include premium experiences, fine dining, private tours
   
   **TRAFFIC-AWARE PLANNING (APPLIES TO ALL TRIP TYPES):**
   - **Local Transport & City Navigation**: For ALL trip types, when planning activities within cities, account for local traffic patterns. Research typical traffic conditions in ${destination} and adjust activity schedules accordingly. For example, if moving between attractions in a major city during peak hours, add buffer time (15-30 minutes extra) for travel.
@@ -593,6 +639,34 @@ export const generateItinerary = async (
 
   IMPORTANT RULES:
   1. All strings must be in ${language}. 'plan' array must have exactly ${days} elements. 'coveredDestinations' is mandatory (populate for multi-location trips, single destination for single city).
+  
+  **TRIP DURATION: ${days} DAYS - ADAPT YOUR PLANNING ACCORDINGLY**
+  ${days <= 3 ? `
+  ⚠️ SHORT TRIP ALERT (${days} days): This is a QUICK GETAWAY. 
+  - Focus on TOP 3-5 MUST-SEE attractions only. Quality over quantity.
+  - Day 1: Maximum 1-2 activities AFTER check-in (account for arrival and check-in time)
+  - Day ${days}: Maximum 1-2 activities in MORNING ONLY (account for check-out and departure)
+  - Middle days: 3-4 activities maximum per day
+  - Stay realistic - do NOT try to cover everything
+  - Allow adequate time for each activity (2-3 hours for major attractions)
+  ` : days <= 7 ? `
+  ⚠️ MEDIUM TRIP ALERT (${days} days): This is a BALANCED TRIP.
+  - Mix must-see attractions with local experiences
+  - Day 1: 1-2 activities after check-in
+  - Day ${days}: 1-2 activities in morning/early afternoon before departure
+  - Full days: 4-5 activities per day
+  - Can include 1-2 day trips if staying in one city for 5+ days
+  - Maintain realistic pacing with meal breaks and rest periods
+  ` : `
+  ⚠️ LONG TRIP ALERT (${days} days): This is a COMPREHENSIVE JOURNEY.
+  - Maximize sightseeing while maintaining realistic pacing
+  - Day 1: 1-2 activities after check-in
+  - Day ${days}: 1-2 activities in morning/early afternoon before departure
+  - Full days: 5-6 activities per day (packed but not exhausting)
+  - Include day trips for trips longer than 7 days in one region
+  - Cover main attractions, secondary attractions, and local experiences
+  - Include strategic rest periods and varied activity types
+  `}
   2. **🚫 CRITICAL VALIDATION - DAILY DRIVING DISTANCE LIMIT (FOR CAR TRIPS):**
      - **BEFORE FINALIZING THE RESPONSE, YOU MUST VALIDATE:**
        * Calculate the driving distance for EACH day in the 'plan' array
@@ -608,7 +682,41 @@ export const generateItinerary = async (
        * Any day with "Drive... (**approx. 500 km**)" or more ❌
        * Any day with "Drive... (**approx. 600 km**)" or more ❌
      - **ONLY RESPONSES WHERE ALL DAYS HAVE ≤ 350 KM ARE VALID**
-  3. **ACTIVITY TIMINGS (TRAFFIC-AWARE):** Prefix each activity with time: "**09:00 AM - 11:00 AM:** Visit..." or "**01:00 PM:** Lunch...". Be realistic accounting for travel time, duration, AND traffic conditions. For vehicle trips (Car/Bike), account for peak traffic hours when scheduling activities. For example, if moving between attractions in a city during rush hour (7-9 AM or 5-7 PM), add extra buffer time. For inter-city travel, suggest departure times that avoid peak hours. Always include realistic travel time estimates that reflect traffic: "**06:30 AM:** Depart from Hotel (early departure to avoid rush hour traffic)" or "**10:00 AM - 12:00 PM:** Visit Museum (allowing 30 min for city traffic)". **CRITICAL**: When mentioning driving distances in activities, ensure they never exceed 350 km per day.
+  3. **ACTIVITY TIMINGS (REALISTIC & TRAFFIC-AWARE):** 
+     - **MANDATORY TIME FORMAT:** Prefix each activity with specific time ranges: "**09:00 AM - 11:00 AM:** Visit..." or "**01:00 PM - 02:30 PM:** Lunch...". 
+     - **ARRIVAL DAY (Day 1) REALISM:**
+       * Account for actual arrival time (if flight/train arrives at 2 PM, don't schedule activities at 10 AM)
+       * Include check-in time (typically 2-3 PM for hotels)
+       * Plan only 1-2 activities maximum on arrival day, starting AFTER check-in
+       * Example: "**03:00 PM:** Check-in at hotel and freshen up. **04:00 PM - 06:00 PM:** Visit [nearby attraction]..."
+     - **DEPARTURE DAY (Last Day) REALISM:**
+       * Account for check-out time (typically 11 AM-12 PM)
+       * Plan activities ONLY in morning/early afternoon (before 2 PM)
+       * Include travel time to airport/station (typically 1-2 hours before departure)
+       * Example: "**09:00 AM - 11:00 AM:** Visit [attraction]. **11:30 AM:** Check-out and proceed to airport..."
+     - **FULL DAY ACTIVITY PLANNING:**
+       * Morning: 8:00 AM - 12:00 PM (4 hours) - 1-2 activities
+       * Afternoon: 12:00 PM - 5:00 PM (5 hours) - 1-2 activities + lunch break
+       * Evening: 5:00 PM - 9:00 PM (4 hours) - 1-2 activities + dinner
+       * Always include 15-30 min buffer between activities for travel
+     - **TRAFFIC & TRANSPORT CONSIDERATIONS:**
+       * Account for peak traffic hours (7-9 AM, 5-7 PM weekdays) - add 30-60 min extra travel time
+       * For inter-city travel, suggest departure times that avoid peak hours
+       * Include realistic travel time: "**06:30 AM:** Depart from Hotel (early departure to avoid rush hour traffic)" or "**10:00 AM - 12:00 PM:** Visit Museum (allowing 30 min for city traffic)"
+       * For popular attractions, add queue time: "**09:00 AM - 12:00 PM:** Visit Eiffel Tower (including 30-45 min queue time)"
+     - **MEAL TIMING REALISM:**
+       * Breakfast: 7:00-9:00 AM (30-60 min)
+       * Lunch: 12:00-2:00 PM (60-90 min)
+       * Dinner: 7:00-9:00 PM (90-120 min)
+       * Include meal locations near activities to minimize travel
+     - **CRITICAL**: When mentioning driving distances in activities, ensure they never exceed 350 km per day.
+     - **ACTIVITY DURATION GUIDELINES:**
+       * Major museums/historical sites: 2-3 hours minimum
+       * Popular landmarks: 1-2 hours (including photos)
+       * Parks/gardens: 1-2 hours
+       * Markets/shopping: 1-2 hours
+       * Quick attractions: 30-60 minutes
+       * Always add 15-30 min buffer for travel between locations
   4. **COST FORMATTING:** All cost fields (budgetSummary.*, approxCost, transport.cost) = strings with ONLY numbers (e.g., "1500", "250.50"). No currency symbols. All per-person costs in "${currency}".
   5. **BOLDING:** Use **text** to highlight attractions, restaurants, hotels, timings, cultural items, travel advice.
   6. **NO TECHNICAL JARGON:** User-facing text must be friendly and natural. NEVER mention JSON field names like 'budgetSummary.total' or 'approxCost' in user text. Use natural language instead.
@@ -635,6 +743,33 @@ export const generateItinerary = async (
      - Always respect the food preference: ${foodPreference}
      - Example: "**Joe's Pizza** - Authentic Italian pizza" or "**Spice Garden** (North Indian cuisine) - Try their butter chicken" or "**Local Market Street Food** - Famous for chaat"
   10. **DESTINATION DETAILS:** For historicBackground, famousCulture, naturalPlaces, museums, specialOrnaments, recommendedRestaurants: 1-3 concise points (5-10 words each). Restaurants can be names only.
+  
+  18. **TRIP DURATION VALIDATION (CRITICAL):**
+     - **BEFORE FINALIZING, VALIDATE YOUR PLAN MATCHES THE DURATION:**
+       * Count total activities across all days
+       * Verify arrival day has realistic activity count (1-2 max)
+       * Verify departure day has realistic activity count (1-2 max, morning only)
+       * Verify full days have appropriate activity density based on trip length:
+         - Short trips (1-3 days): 2-4 activities per full day
+         - Medium trips (4-7 days): 4-5 activities per full day
+         - Long trips (8+ days): 5-6 activities per full day
+       * Ensure total activities are achievable and not overwhelming
+       * Verify travel time between activities is accounted for
+       * Verify meal breaks are included
+       * Verify check-in/check-out times are considered
+     - **SHORT TRIP CHECKLIST (1-3 days):**
+       * ✅ Focused on top 3-5 attractions only
+       * ✅ Realistic arrival day (1-2 activities after check-in)
+       * ✅ Realistic departure day (1-2 morning activities)
+       * ✅ Not trying to cover too much
+       * ✅ Adequate time for each activity (no rushing)
+     - **LONG TRIP CHECKLIST (8+ days):**
+       * ✅ Comprehensive coverage of main attractions
+       * ✅ Includes secondary attractions and local experiences
+       * ✅ Includes day trips (if applicable)
+       * ✅ Varied activities (cultural, natural, local experiences)
+       * ✅ Strategic rest periods included
+       * ✅ Multi-destination routing is logical
   11. **WEATHER & AIR QUALITY (MANDATORY FOR EACH DAY):** For EACH day in the 'plan' array, you MUST:
      - Search for expected weather conditions for that specific date and location (city where activities are planned)
      - Search for expected AQI for that specific date and location
@@ -664,8 +799,46 @@ export const generateItinerary = async (
      
      **WHEN NOT FEASIBLE**: If the trip is not feasible (calculated minimum > ${days}), include in the 'planNote' field: "NOTE: This trip is not feasible in ${days} days. Based on the actual distance (approximately [X] km round trip) and travel time, this trip requires approximately [Y] days to complete comfortably (calculated: [X] km ÷ [daily limit] km/day + 2 sightseeing days + 1 buffer day = [Y] days). [Then provide alternative solution]"
   15. **JSON VALIDATION:** NO unescaped double quotes (") in string values. Use single quotes or escape: \\". Check every string before responding.
-  16. **FINAL:** Response MUST be raw JSON starting with '{' and ending with '}'. No markdown wrapping, no intro text. Immediately parsable.
-  17. 'referenceBlogs' must be an empty array [].
+  
+  19. **FINAL VALIDATION BEFORE RESPONDING (MANDATORY CHECKLIST):**
+     Before generating the final JSON response, you MUST verify:
+     ✅ **TRIP DURATION COMPLIANCE:**
+        - Arrival day (Day 1) has realistic activity count (1-2 max, starting after check-in time)
+        - Departure day (Day ${days}) has realistic activity count (1-2 max, morning/early afternoon only)
+        - Full days have appropriate activity density for ${days}-day trip
+        - Total activities are achievable and not overwhelming
+     ✅ **TIMING REALISM:**
+        - All activities have specific time ranges
+        - Travel time between activities is accounted for (15-30 min buffers)
+        - Meal times are included (breakfast, lunch, dinner)
+        - Check-in time (2-3 PM) and check-out time (11 AM-12 PM) are considered
+        - Queue/waiting time at popular attractions is included
+     ✅ **LOGICAL FLOW:**
+        - Activities are grouped by location to minimize travel
+        - Morning activities come before afternoon activities
+        - Evening activities come after afternoon activities
+        - Travel days account for actual travel duration
+     ✅ **BUDGET ALIGNMENT:**
+        - Accommodation matches budget level (Low/Midrange/Luxury)
+        - Restaurant recommendations match budget level
+        - Activity costs are realistic for the budget
+     ✅ **VIBE ALIGNMENT:**
+        - Activities match the selected vibe(s): ${vibe.join(', ')}
+        - Food recommendations match food preference: ${foodPreference}
+     ✅ **COMPLETENESS:**
+        - All ${days} days have activities planned
+        - Weather and AQI are included for each day
+        - Accommodation options are provided for each day
+        - Food recommendations are provided for each day
+        - Transport details are included where needed
+     ✅ **REALISTIC EXPECTATIONS:**
+        - The plan is achievable and enjoyable (not exhausting)
+        - Activities are spaced appropriately
+        - Rest periods are included for longer trips
+        - The itinerary respects human limitations (no 18-hour days)
+  
+  20. **FINAL:** Response MUST be raw JSON starting with '{' and ending with '}'. No markdown wrapping, no intro text. Immediately parsable.
+  21. 'referenceBlogs' must be an empty array [].
   `;
   
     let fullText = '';

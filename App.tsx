@@ -1733,7 +1733,7 @@ const AppContent: React.FC = () => {
                     streamedText={itineraryStreamedText}
                     stages={itineraryStages}
                     onCancel={handleCancelGeneration}
-                    title="Crafting Your Adventure..."
+                    title="Crafting Your Itinerary..."
                     accentColor="violet"
                     funFacts={itineraryFunFacts}
                     attemptCount={itineraryAttemptCount}
