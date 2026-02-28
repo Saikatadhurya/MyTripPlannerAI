@@ -74,21 +74,54 @@ const TestimonialsCarousel: React.FC = () => {
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const touchStartX = useRef(0);
     const touchEndX = useRef(0);
+    const containerRef = useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
-        const fetchTestimonials = async () => {
-            try {
-                const response = await fetch('/data/testimonials.json');
-                const data: Testimonial[] = await response.json();
-                setTestimonials(data);
-            } catch (error) {
-                console.error("Failed to fetch testimonials:", error);
-            } finally {
-                setIsLoading(false);
+    // Fetch testimonials function
+    const fetchTestimonials = useCallback(async () => {
+        try {
+            const response = await fetch('/data/testimonials.json', {
+                cache: 'force-cache',
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
-        };
-        fetchTestimonials();
+            
+            const data: Testimonial[] = await response.json();
+            setTestimonials(data);
+        } catch (error) {
+            console.error("Failed to fetch testimonials:", error);
+        } finally {
+            setIsLoading(false);
+        }
     }, []);
+
+    // Set up Intersection Observer for lazy loading
+    useEffect(() => {
+        if (!containerRef.current) return;
+        
+        // Use Intersection Observer to lazy load testimonials only when component is about to be visible
+        if ('IntersectionObserver' in window) {
+            const observer = new IntersectionObserver(
+                (entries) => {
+                    if (entries[0].isIntersecting) {
+                        fetchTestimonials();
+                        observer.disconnect();
+                    }
+                },
+                { rootMargin: '200px' } // Start loading 200px before component is visible
+            );
+            
+            observer.observe(containerRef.current);
+            
+            return () => {
+                observer.disconnect();
+            };
+        } else {
+            // Fallback: load immediately if IntersectionObserver is not supported
+            fetchTestimonials();
+        }
+    }, [fetchTestimonials]);
 
     const resetTimeout = useCallback(() => {
         if (timeoutRef.current) {
@@ -135,20 +168,25 @@ const TestimonialsCarousel: React.FC = () => {
 
     if (isLoading) {
         return (
-            <div className="relative w-full max-w-lg mx-auto h-[420px] sm:h-[350px] bg-gradient-to-br from-violet-100 to-fuchsia-100 rounded-3xl p-6 animate-pulse">
+            <div 
+                ref={containerRef}
+                className="relative w-full max-w-lg mx-auto h-[420px] sm:h-[350px] bg-gradient-to-br from-violet-100 to-fuchsia-100 rounded-3xl p-6 animate-pulse">
                 <div className="bg-white/50 w-full h-full rounded-2xl"></div>
             </div>
         );
     }
     
     if (testimonials.length === 0) {
-        return null;
+        return (
+            <div ref={containerRef} className="relative w-full max-w-lg mx-auto"></div>
+        );
     }
 
     const activeTestimonial = testimonials[currentIndex];
 
     return (
         <div 
+            ref={containerRef}
             className="relative w-full max-w-lg mx-auto bg-gradient-to-br from-violet-200/80 via-white to-fuchsia-100/80 rounded-3xl p-4 sm:p-6 shadow-lg"
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}

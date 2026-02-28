@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppRecommendations, MobileApp } from '../types';
+import { useSaveRecommendation } from '../hooks/useSaveRecommendation';
+import Toast from './Toast';
 
 const PlatformBadge: React.FC<{ platform: MobileApp['platform'] }> = ({ platform }) => {
     const baseClasses = "text-xs font-semibold px-2.5 py-0.5 rounded-full";
@@ -20,9 +22,9 @@ const AppCard: React.FC<{ app: MobileApp }> = ({ app }) => {
     const showCategory = app.category && app.category.toLowerCase() !== app.name.toLowerCase();
 
     return (
-        <div className="bg-white/40 backdrop-blur-lg p-4 rounded-xl shadow-md border border-white/50 space-y-3 h-full flex flex-col relative">
+        <div className="bg-white/40 backdrop-blur-lg p-3 sm:p-4 rounded-lg sm:rounded-xl shadow-md border border-white/50 space-y-2 sm:space-y-3 h-full flex flex-col relative">
              {app.location && (
-                <span className="absolute top-2 right-2 text-xs font-bold px-2 py-0.5 rounded-full bg-teal-100 text-teal-800 border border-teal-200">
+                <span className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 text-xs font-bold px-1.5 sm:px-2 py-0.5 rounded-full bg-teal-100 text-teal-800 border border-teal-200">
                     📍 {app.location}
                 </span>
             )}
@@ -31,33 +33,33 @@ const AppCard: React.FC<{ app: MobileApp }> = ({ app }) => {
                     {showCategory ? (
                         // Layout with a distinct category title
                         <div>
-                            <h3 className="text-xl font-bold text-slate-800 capitalize truncate">{app.category}</h3>
-                            <div className="flex items-center space-x-2 mt-1">
-                                <span className="text-2xl">{app.icon}</span>
-                                <h4 className="font-semibold text-slate-700 truncate">{app.name}</h4>
+                            <h3 className="text-base sm:text-lg font-bold text-slate-800 capitalize truncate">{app.category}</h3>
+                            <div className="flex items-center space-x-1.5 sm:space-x-2 mt-0.5 sm:mt-1">
+                                <span className="text-xl sm:text-2xl">{app.icon}</span>
+                                <h4 className="font-semibold text-sm sm:text-base text-slate-700 truncate">{app.name}</h4>
                             </div>
                         </div>
                     ) : (
                         // Standard layout for apps without a category or where category is redundant
-                        <div className="flex items-center space-x-3">
-                            <span className="text-3xl">{app.icon}</span>
-                            <h4 className="font-bold text-slate-800 text-lg truncate">{app.name}</h4>
+                        <div className="flex items-center space-x-2 sm:space-x-3">
+                            <span className="text-2xl sm:text-3xl">{app.icon}</span>
+                            <h4 className="font-bold text-slate-800 text-base sm:text-lg truncate">{app.name}</h4>
                         </div>
                     )}
                 </div>
-                <div className="flex-shrink-0 ml-2 mt-1">
+                <div className="flex-shrink-0 ml-2 mt-0.5 sm:mt-1">
                     <PlatformBadge platform={app.platform} />
                 </div>
             </div>
-            <p className="text-sm text-slate-600 flex-grow">{app.description}</p>
-            <div className="flex items-center space-x-2 pt-3 border-t border-violet-200/50">
+            <p className="text-xs sm:text-sm text-slate-600 flex-grow">{app.description}</p>
+            <div className="flex items-center space-x-1.5 sm:space-x-2 pt-2 sm:pt-3 border-t border-violet-200/50">
                 {(app.platform === 'iOS' || app.platform === 'Both') && (
-                    <a href={appStoreSearchUrl} target="_blank" rel="noopener noreferrer" className="flex-1 text-center bg-slate-800 text-white px-3 py-1.5 rounded-md text-sm font-semibold hover:bg-slate-900 transition-colors flex items-center justify-center space-x-1">
+                    <a href={appStoreSearchUrl} target="_blank" rel="noopener noreferrer" className="flex-1 text-center bg-slate-800 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-semibold hover:bg-slate-900 transition-colors flex items-center justify-center space-x-1">
                         <span>App Store</span>
                     </a>
                 )}
                 {(app.platform === 'Android' || app.platform === 'Both') && (
-                    <a href={playStoreSearchUrl} target="_blank" rel="noopener noreferrer" className="flex-1 text-center bg-slate-200 text-slate-800 px-3 py-1.5 rounded-md text-sm font-semibold hover:bg-slate-300 transition-colors flex items-center justify-center space-x-1">
+                    <a href={playStoreSearchUrl} target="_blank" rel="noopener noreferrer" className="flex-1 text-center bg-slate-200 text-slate-800 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-semibold hover:bg-slate-300 transition-colors flex items-center justify-center space-x-1">
                         <span>Play Store</span>
                     </a>
                 )}
@@ -88,14 +90,14 @@ const CategorySection: React.FC<{
     const [borderColor, iconBgColor] = accentClasses[accentColor]?.split(' ') || ['border-gray-500', 'bg-gray-100'];
 
     return (
-        <div className={`bg-white/20 backdrop-blur-xl border border-white/30 rounded-2xl p-6 shadow-lg border-l-4 ${borderColor} transition-transform hover:scale-105`}>
-            <div className="flex items-center space-x-3 mb-4">
-                <div className={`flex-shrink-0 rounded-lg p-2 ${iconBgColor}`}>
+        <div className={`bg-white/20 backdrop-blur-xl border border-white/30 rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg border-l-4 ${borderColor} transition-transform hover:scale-105`}>
+            <div className="flex items-center space-x-2 sm:space-x-3 mb-3 sm:mb-4">
+                <div className={`flex-shrink-0 rounded-lg p-1.5 sm:p-2 ${iconBgColor}`}>
                     {icon}
                 </div>
-                <h3 className="text-xl font-bold text-slate-800">{title}</h3>
+                <h3 className="text-lg sm:text-xl font-bold text-slate-800 break-words">{title}</h3>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 {items.map((app, index) => (
                     <AppCard key={index} app={app} />
                 ))}
@@ -108,11 +110,82 @@ interface AppFinderResultProps {
     recommendations: AppRecommendations;
     onRegenerate: () => void;
     isUnifiedView?: boolean;
-    onPrint?: () => void;
+    requestData?: any; // Add request data for history saving
+    isHistoryView?: boolean; // Add flag to indicate if this is from history
 }
 
-const AppFinderResult: React.FC<AppFinderResultProps> = ({ recommendations, onRegenerate, isUnifiedView = false, onPrint }) => {
+const AppFinderResult: React.FC<AppFinderResultProps> = ({ recommendations, onRegenerate, isUnifiedView = false, requestData, isHistoryView = false }) => {
     const iconClass = "h-6 w-6";
+    const [hasBeenSaved, setHasBeenSaved] = useState(false);
+    const [savedId, setSavedId] = useState<string | null>(null);
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+    const { saveAppRecommendation } = useSaveRecommendation();
+    
+    // Safety check for recommendations object
+    if (!recommendations || typeof recommendations !== 'object') {
+        return (
+            <div className="max-w-6xl mx-auto text-center py-12">
+                <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+                    <h2 className="text-xl font-semibold text-red-800 mb-2">Invalid Data</h2>
+                    <p className="text-red-600">The app recommendations data is missing or corrupted.</p>
+                </div>
+            </div>
+        );
+    }
+    
+    // Save to history when component mounts (only if not in unified view and request data is available)
+    useEffect(() => {
+        // Don't save if this is a history view
+        if (!isUnifiedView && requestData && !hasBeenSaved && !isHistoryView) {
+            const saveRecommendation = async () => {
+                const id = await saveAppRecommendation(requestData, recommendations, recommendations.destination, requestData.language);
+                if (id) {
+                    setSavedId(id);
+                }
+                setHasBeenSaved(true);
+            };
+            saveRecommendation();
+        }
+    }, [isUnifiedView, requestData, recommendations, saveAppRecommendation, hasBeenSaved, isHistoryView]);
+    
+    const handleCopyLink = async () => {
+        if (!savedId) {
+            setToast({ message: 'Recommendation is still being saved. Please wait a moment.', type: 'error' });
+            return;
+        }
+        try {
+            const shareUrl = `${window.location.origin}/share/${savedId}`;
+            await navigator.clipboard.writeText(shareUrl);
+            setToast({ message: 'Shareable link copied to clipboard!', type: 'success' });
+        } catch (error) {
+            setToast({ message: 'Failed to copy link. Please try again.', type: 'error' });
+        }
+    };
+
+    const handleShare = async () => {
+        if (!savedId) {
+            setToast({ message: 'Recommendation is still being saved. Please wait a moment.', type: 'error' });
+            return;
+        }
+        try {
+            const shareUrl = `${window.location.origin}/share/${savedId}`;
+            if (navigator.share) {
+                await navigator.share({
+                    title: `Essential Apps for ${recommendations.destination}`,
+                    text: 'Check out these essential apps for your trip!',
+                    url: shareUrl,
+                });
+                setToast({ message: 'Recommendation shared successfully!', type: 'success' });
+            } else {
+                await navigator.clipboard.writeText(shareUrl);
+                setToast({ message: 'Shareable link copied to clipboard!', type: 'success' });
+            }
+        } catch (error: any) {
+            if (error.name !== 'AbortError') {
+                setToast({ message: 'Failed to share link. Please try again.', type: 'error' });
+            }
+        }
+    };
     
     const categoryDetails = {
         transportAndTravel: { title: "Transport & Travel", icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18.562 6.077C18.238 5.437 17.562 5 16.808 5H3.192c-.754 0-1.43.437-1.754 1.077L.05 9.423A.5.5 0 00.5 10h19a.5.5 0 00.45-.577l-1.388-3.346zM2 11v4a1 1 0 001 1h1a1 1 0 001-1v-4H2zm15 0v4a1 1 0 001 1h1a1 1 0 001-1v-4h-3zM5 11v4a1 1 0 001 1h8a1 1 0 001-1v-4H5z" clipRule="evenodd" /></svg>, color: "blue"},
@@ -126,35 +199,74 @@ const AppFinderResult: React.FC<AppFinderResultProps> = ({ recommendations, onRe
     };
 
     const displayOrder = Object.keys(categoryDetails) as Array<keyof typeof categoryDetails>;
-    const handlePrint = onPrint || (() => window.print());
 
     return (
-        <div className="max-w-6xl mx-auto space-y-12 animated-card" id="app-finder-result-content">
+        <div className="max-w-6xl mx-auto space-y-6 sm:space-y-8 md:space-y-12 animated-card mb-16 px-1 sm:px-4" id="app-finder-result-content">
             {!isUnifiedView && (
             <div className="flex justify-start items-center no-print">
                 <button
-                    onClick={onRegenerate}
-                    className="inline-flex items-center justify-center px-6 py-2 bg-white/60 text-slate-800 font-bold rounded-full hover:bg-white/80 transition-all duration-300 shadow-md border border-white/50"
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onRegenerate();
+                    }}
+                    className="inline-flex items-center justify-center px-4 py-1.5 sm:px-6 sm:py-2 bg-white/60 text-slate-800 font-bold rounded-full hover:bg-white/80 transition-all duration-300 shadow-md border border-white/50 text-xs sm:text-sm"
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h5M20 20v-5h-5" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 9a9 9 0 0114.13-5.22M20 15a9 9 0 01-14.13 5.22" /></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h5M20 20v-5h-5" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 9a9 9 0 0114.13-5.22M20 15a9 9 0 01-14.13 5.22" /></svg>
                     <span>Find Apps for Another Trip</span>
                 </button>
             </div>
             )}
             
-            <header className="space-y-4 text-center">
-                <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight">
-                    Essential Apps for {recommendations.destination}
-                </h1>
-                <p className="text-lg text-gray-700 mt-2">
-                    Your personalized guide to local and international apps.
-                </p>
+            <header className="bg-gradient-to-br from-teal-50/60 via-cyan-50/40 to-blue-50/30 backdrop-blur-lg rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 border border-teal-200/50 shadow-md animated-card">
+                <div className="text-center">
+                    <div className="inline-flex items-center justify-center mb-2 sm:mb-3">
+                        <div className="bg-gradient-to-br from-teal-500 to-cyan-600 rounded-full p-1.5 sm:p-2 shadow-md">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-extrabold bg-gradient-to-r from-slate-900 via-teal-800 to-slate-900 bg-clip-text text-transparent tracking-tight break-words px-1 sm:px-2">
+                        Essential Apps for {recommendations.destination}
+                    </h1>
+                    <p className="text-xs sm:text-sm md:text-base text-slate-600 mt-1.5 sm:mt-2 font-medium break-words px-1 sm:px-2">
+                        Your personalized guide to local and international apps.
+                    </p>
+                </div>
             </header>
             
-            <div className="space-y-10">
+            {/* Share buttons - Only show when saved and not in history view */}
+            {savedId && !isHistoryView && !isUnifiedView && (
+                <div className="flex items-center justify-center gap-2 sm:gap-3 py-3 sm:py-4 no-print">
+                    <button
+                        onClick={handleCopyLink}
+                        className="inline-flex items-center px-4 py-2 sm:px-5 sm:py-2.5 bg-gradient-to-r from-violet-600 to-violet-700 text-white font-semibold rounded-full hover:from-violet-700 hover:to-violet-800 transition-all duration-300 shadow-md text-xs sm:text-sm"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                        Copy Link
+                    </button>
+                    <button
+                        onClick={handleShare}
+                        className="inline-flex items-center px-4 py-2 sm:px-5 sm:py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-full hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-md text-xs sm:text-sm"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                        </svg>
+                        Share
+                    </button>
+                </div>
+            )}
+            
+            <div className="space-y-6 sm:space-y-8 md:space-y-10">
                 {displayOrder.map(key => {
                     const details = categoryDetails[key];
-                    const items = recommendations[key];
+                    // Ensure items is always an array to prevent mapping errors
+                    const items = Array.isArray(recommendations[key]) ? recommendations[key] : [];
+                    
                     return (
                         <CategorySection
                             key={key}
@@ -167,28 +279,33 @@ const AppFinderResult: React.FC<AppFinderResultProps> = ({ recommendations, onRe
                 })}
             </div>
 
-            <div className="pt-8 text-center no-print">
-                <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4 mt-8">
+            <div className="pt-4 sm:pt-6 md:pt-8 text-center no-print">
+                <div className="flex flex-col sm:flex-row justify-center items-center space-y-3 sm:space-y-0 sm:space-x-4 mt-4 sm:mt-6 md:mt-8">
                     {!isUnifiedView && (
                     <button
-                        onClick={onRegenerate}
-                        className="inline-flex items-center justify-center w-full sm:w-auto px-8 py-3 bg-teal-600 text-white font-bold rounded-full hover:bg-teal-700 transition-all duration-300 transform hover:scale-105 shadow-lg"
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          onRegenerate();
+                        }}
+                        className="inline-flex items-center justify-center w-full sm:w-auto px-6 sm:px-8 py-2 sm:py-3 bg-teal-600 text-white font-bold rounded-full hover:bg-teal-700 transition-all duration-300 transform hover:scale-105 shadow-lg text-sm sm:text-base"
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h5M20 20v-5h-5" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 9a9 9 0 0114.13-5.22M20 15a9 9 0 01-14.13 5.22" /></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h5M20 20v-5h-5" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 9a9 9 0 0114.13-5.22M20 15a9 9 0 01-14.13 5.22" /></svg>
                         <span>Find More Apps</span>
                     </button>
                     )}
-                    <button
-                        onClick={handlePrint}
-                        className="inline-flex items-center justify-center w-full sm:w-auto px-8 py-3 bg-white/60 text-slate-800 font-bold rounded-full hover:bg-white/80 transition-all duration-300 shadow-md border border-white/50"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v-1a1 1 0 011-1h10a1 1 0 011 1v1h1a2 2 0 002-2v-3a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clipRule="evenodd" />
-                        </svg>
-                        <span>{isUnifiedView ? 'Print This Section' : 'Print App Guide'}</span>
-                    </button>
                 </div>
             </div>
+            
+            {/* Toast notification */}
+            {toast && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={() => setToast(null)}
+                />
+            )}
         </div>
     );
 };

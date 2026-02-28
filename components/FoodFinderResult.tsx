@@ -1,5 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { FoodRecommendations, FoodItem, FoodItemGroup } from '../types';
+import { useSaveRecommendation } from '../hooks/useSaveRecommendation';
+import Toast from './Toast';
 
 const CategoryCard: React.FC<{
     title: string;
@@ -63,36 +65,36 @@ const CategoryCard: React.FC<{
     };
 
     return (
-        <div className={`bg-white/20 backdrop-blur-xl border border-white/30 rounded-2xl p-6 transition-transform hover:scale-105 shadow-lg border-l-4 ${borderColor}`}>
-            <div className="flex items-center space-x-3 mb-4">
-                <div className={`flex-shrink-0 rounded-lg p-2 ${iconBgColor}`}>
+        <div className={`bg-white/20 backdrop-blur-xl border border-white/30 rounded-xl sm:rounded-2xl p-4 sm:p-6 transition-transform hover:scale-105 shadow-lg border-l-4 ${borderColor}`}>
+            <div className="flex items-center space-x-2 sm:space-x-3 mb-3 sm:mb-4">
+                <div className={`flex-shrink-0 rounded-lg p-1.5 sm:p-2 ${iconBgColor}`}>
                     {icon}
                 </div>
-                <h3 className="text-xl font-bold text-slate-800">{title}</h3>
+                <h3 className="text-lg sm:text-xl font-bold text-slate-800 break-words">{title}</h3>
             </div>
-            <div className="space-y-4">
-                 <ul className="space-y-2 -m-3">
+            <div className="space-y-3 sm:space-y-4">
+                 <ul className="space-y-2 -m-2 sm:-m-3">
                     {aggregatedItems.map((item, itemIndex) => (
                         <li key={itemIndex}>
                             <button
                                 onClick={() => handleFoodItemClick(item)}
-                                className="w-full text-left p-3 rounded-lg hover:bg-amber-100/50 focus:outline-none focus:ring-2 focus:ring-amber-400 transition-colors"
+                                className="w-full text-left p-2.5 sm:p-3 rounded-lg hover:bg-amber-100/50 focus:outline-none focus:ring-2 focus:ring-amber-400 transition-colors"
                                 aria-label={`Search for images of ${item.name}`}
                             >
-                                <div className="font-semibold text-slate-900 flex flex-wrap items-center gap-x-2 gap-y-1">
-                                    <span className="text-base">{item.name}</span>
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-slate-400 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                <div className="font-semibold text-slate-900 flex flex-wrap items-center gap-x-1.5 sm:gap-x-2 gap-y-1">
+                                    <span className="text-sm sm:text-base break-words">{item.name}</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4 text-slate-400 inline-block flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                                     </svg>
                                     {isMultiLocation && (
                                         item.locations.map((location, locIndex) => (
-                                            <span key={locIndex} className="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 whitespace-nowrap">
+                                            <span key={locIndex} className="text-xs font-bold px-1.5 sm:px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 whitespace-nowrap">
                                                 📍 {location}
                                             </span>
                                         ))
                                     )}
                                 </div>
-                                <p className="text-sm text-slate-600 mt-1">{item.description}</p>
+                                <p className="text-xs sm:text-sm text-slate-600 mt-0.5 sm:mt-1">{item.description}</p>
                             </button>
                         </li>
                     ))}
@@ -106,11 +108,70 @@ interface FoodFinderResultProps {
     recommendations: FoodRecommendations;
     onRegenerate: () => void;
     isUnifiedView?: boolean;
-    onPrint?: () => void;
+    requestData?: any; // Add request data for history saving
+    isHistoryView?: boolean; // Add flag to indicate if this is from history
 }
 
-const FoodFinderResult: React.FC<FoodFinderResultProps> = ({ recommendations, onRegenerate, isUnifiedView = false, onPrint }) => {
+const FoodFinderResult: React.FC<FoodFinderResultProps> = ({ recommendations, onRegenerate, isUnifiedView = false, requestData, isHistoryView = false }) => {
     const iconClass = "h-6 w-6";
+    const [hasBeenSaved, setHasBeenSaved] = useState(false);
+    const [savedId, setSavedId] = useState<string | null>(null);
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+    const { saveFoodRecommendation } = useSaveRecommendation();
+    
+    // Save to history when component mounts (only if not in unified view and request data is available)
+    useEffect(() => {
+        // Don't save if this is a history view
+        if (!isUnifiedView && requestData && !hasBeenSaved && !isHistoryView) {
+            const saveRecommendation = async () => {
+                const id = await saveFoodRecommendation(requestData, recommendations, recommendations.destination, requestData.language);
+                if (id) {
+                    setSavedId(id);
+                }
+                setHasBeenSaved(true);
+            };
+            saveRecommendation();
+        }
+    }, [isUnifiedView, requestData, recommendations, saveFoodRecommendation, hasBeenSaved, isHistoryView]);
+    
+    const handleCopyLink = async () => {
+        if (!savedId) {
+            setToast({ message: 'Recommendation is still being saved. Please wait a moment.', type: 'error' });
+            return;
+        }
+        try {
+            const shareUrl = `${window.location.origin}/share/${savedId}`;
+            await navigator.clipboard.writeText(shareUrl);
+            setToast({ message: 'Shareable link copied to clipboard!', type: 'success' });
+        } catch (error) {
+            setToast({ message: 'Failed to copy link. Please try again.', type: 'error' });
+        }
+    };
+
+    const handleShare = async () => {
+        if (!savedId) {
+            setToast({ message: 'Recommendation is still being saved. Please wait a moment.', type: 'error' });
+            return;
+        }
+        try {
+            const shareUrl = `${window.location.origin}/share/${savedId}`;
+            if (navigator.share) {
+                await navigator.share({
+                    title: `Local Food Guide for ${recommendations.destination}`,
+                    text: 'Check out this amazing food guide!',
+                    url: shareUrl,
+                });
+                setToast({ message: 'Recommendation shared successfully!', type: 'success' });
+            } else {
+                await navigator.clipboard.writeText(shareUrl);
+                setToast({ message: 'Shareable link copied to clipboard!', type: 'success' });
+            }
+        } catch (error: any) {
+            if (error.name !== 'AbortError') {
+                setToast({ message: 'Failed to share link. Please try again.', type: 'error' });
+            }
+        }
+    };
     const categoryDetails = {
         iconicDishes: { title: "Iconic Dishes", icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>, color: "orange"},
         breakfast: { title: "Breakfast", icon: <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M21 3v18H3V3h18zM5 7h14M5 12h14M5 17h14" /></svg>, color: "purple"},
@@ -128,32 +189,69 @@ const FoodFinderResult: React.FC<FoodFinderResultProps> = ({ recommendations, on
 
     // The order in which categories will be displayed
     const displayOrder = Object.keys(categoryDetails) as Array<keyof typeof categoryDetails>;
-    const handlePrint = onPrint || (() => window.print());
 
     return (
-        <div className="max-w-6xl mx-auto space-y-12 animated-card" id="food-finder-result-content">
+        <div className="max-w-6xl mx-auto space-y-6 sm:space-y-8 md:space-y-12 animated-card mb-16 px-1 sm:px-4" id="food-finder-result-content">
             {!isUnifiedView && (
             <div className="flex justify-start items-center no-print">
                 <button
-                    onClick={onRegenerate}
-                    className="inline-flex items-center justify-center px-6 py-2 my-2 bg-white/60 text-slate-800 font-bold rounded-full hover:bg-white/80 transition-all duration-300 shadow-md border border-white/50"
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onRegenerate();
+                    }}
+                    className="inline-flex items-center justify-center px-4 py-1.5 sm:px-6 sm:py-2 bg-white/60 text-slate-800 font-bold rounded-full hover:bg-white/80 transition-all duration-300 shadow-md border border-white/50 text-xs sm:text-sm"
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h5M20 20v-5h-5" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 9a9 9 0 0114.13-5.22M20 15a9 9 0 01-14.13 5.22" /></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h5M20 20v-5h-5" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 9a9 9 0 0114.13-5.22M20 15a9 9 0 01-14.13 5.22" /></svg>
                     <span>Find Another Feast</span>
                 </button>
             </div>
             )}
             
-            <header className="space-y-4 text-center">
-                <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight">
-                    Local Food Guide for {recommendations.destination}
-                </h1>
-                <p className="text-lg text-gray-700 mt-2">
-                    Your personalized culinary journey awaits!
-                </p>
+            <header className="bg-gradient-to-br from-orange-50/60 via-amber-50/40 to-yellow-50/30 backdrop-blur-lg rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 border border-orange-200/50 shadow-md animated-card">
+                <div className="text-center">
+                    <div className="inline-flex items-center justify-center mb-2 sm:mb-3">
+                        <div className="bg-gradient-to-br from-orange-500 to-amber-600 rounded-full p-1.5 sm:p-2 shadow-md">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0c-.454-.303-.977-.454-1.5-.454V5.454c.523 0 1.046-.151 1.5-.454a2.704 2.704 0 013 0 2.704 2.704 0 003 0 2.704 2.704 0 013 0 2.704 2.704 0 003 0c.454.303.977.454 1.5.454v10.092zM15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-extrabold bg-gradient-to-r from-slate-900 via-orange-800 to-slate-900 bg-clip-text text-transparent tracking-tight break-words px-1 sm:px-2">
+                        Local Food Guide for {recommendations.destination}
+                    </h1>
+                    <p className="text-xs sm:text-sm md:text-base text-slate-600 mt-1.5 sm:mt-2 font-medium break-words px-1 sm:px-2">
+                        Your personalized culinary journey awaits!
+                    </p>
+                </div>
             </header>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {/* Share buttons - Only show when saved and not in history view */}
+            {savedId && !isHistoryView && !isUnifiedView && (
+                <div className="flex items-center justify-center gap-2 sm:gap-3 py-3 sm:py-4 no-print">
+                    <button
+                        onClick={handleCopyLink}
+                        className="inline-flex items-center px-4 py-2 sm:px-5 sm:py-2.5 bg-gradient-to-r from-violet-600 to-violet-700 text-white font-semibold rounded-full hover:from-violet-700 hover:to-violet-800 transition-all duration-300 shadow-md text-xs sm:text-sm"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                        Copy Link
+                    </button>
+                    <button
+                        onClick={handleShare}
+                        className="inline-flex items-center px-4 py-2 sm:px-5 sm:py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-full hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-md text-xs sm:text-sm"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                        </svg>
+                        Share
+                    </button>
+                </div>
+            )}
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
                 {displayOrder.map(key => {
                     const details = categoryDetails[key as keyof typeof categoryDetails];
                     const items = recommendations[key as keyof FoodRecommendations] as FoodItemGroup[];
@@ -169,28 +267,33 @@ const FoodFinderResult: React.FC<FoodFinderResultProps> = ({ recommendations, on
                 })}
             </div>
 
-            <div className="pt-8 text-center no-print">
-                <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4 mt-8">
+            <div className="pt-4 sm:pt-6 md:pt-8 text-center no-print">
+                <div className="flex flex-col sm:flex-row justify-center items-center space-y-3 sm:space-y-0 sm:space-x-4 mt-4 sm:mt-6 md:mt-8">
                     {!isUnifiedView && (
                     <button
-                        onClick={onRegenerate}
-                        className="inline-flex items-center justify-center w-full sm:w-auto px-8 py-3 bg-amber-600 text-white font-bold rounded-full hover:bg-amber-700 transition-all duration-300 transform hover:scale-105 shadow-lg"
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          onRegenerate();
+                        }}
+                        className="inline-flex items-center justify-center w-full sm:w-auto px-6 sm:px-8 py-2 sm:py-3 bg-amber-600 text-white font-bold rounded-full hover:bg-amber-700 transition-all duration-300 transform hover:scale-105 shadow-lg text-sm sm:text-base"
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h5M20 20v-5h-5" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 9a9 9 0 0114.13-5.22M20 15a9 9 0 01-14.13 5.22" /></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h5M20 20v-5h-5" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 9a9 9 0 0114.13-5.22M20 15a9 9 0 01-14.13 5.22" /></svg>
                         <span>Find Another Feast</span>
                     </button>
                     )}
-                    <button
-                        onClick={handlePrint}
-                        className="inline-flex items-center justify-center w-full sm:w-auto px-8 py-3 bg-white/60 text-slate-800 font-bold rounded-full hover:bg-white/80 transition-all duration-300 shadow-md border border-white/50"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v-1a1 1 0 011-1h10a1 1 0 011 1v1h1a2 2 0 002-2v-3a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clipRule="evenodd" />
-                        </svg>
-                        <span>{isUnifiedView ? 'Print This Section' : 'Print Guide'}</span>
-                    </button>
                 </div>
             </div>
+            
+            {/* Toast notification */}
+            {toast && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={() => setToast(null)}
+                />
+            )}
         </div>
     );
 };

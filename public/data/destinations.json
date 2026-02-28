@@ -48,5 +48,45 @@
     "name": "Vietnam",
     "description": "Bustling cities, lush rice paddies, and rich history",
     "icon": "🛶"
+  },
+  {
+    "name": "Tokyo, Japan",
+    "description": "Modern metropolis with ancient traditions",
+    "icon": "⛩️"
+  },
+  {
+    "name": "Paris, France",
+    "description": "City of lights, art, and romance",
+    "icon": "🗼"
+  },
+  {
+    "name": "New York, USA",
+    "description": "The city that never sleeps",
+    "icon": "🗽"
+  },
+  {
+    "name": "South Korea",
+    "description": "Modern cities, ancient temples, and K-pop culture",
+    "icon": "🏯"
+  },
+  {
+    "name": "Sydney, Australia",
+    "description": "Harbor city with iconic opera house",
+    "icon": "🏛️"
+  },
+  {
+    "name": "Rome, Italy",
+    "description": "Eternal city with ancient history",
+    "icon": "🏛️"
+  },
+  {
+    "name": "Barcelona, Spain",
+    "description": "Artistic city with stunning architecture",
+    "icon": "🏰"
+  },
+  {
+    "name": "Istanbul, Turkey",
+    "description": "Where Europe meets Asia",
+    "icon": "🕌"
   }
 ]

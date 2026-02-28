@@ -2,13 +2,18 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { PackingList, PackingListRequestData } from '../types';
 import { extractJson, cleanCitations } from './jsonUtils';
+import { CookieUtils } from './cookieUtils';
 
-export const generatePackingList = async (data: PackingListRequestData, onChunk?: (chunk: string) => void): Promise<PackingList> => {
-  if (!process.env.API_KEY) {
-    throw new Error("API key is missing. Please set it in your environment variables.");
+export const generatePackingList = async (data: PackingListRequestData, onChunk?: (chunk: string) => void, userApiKey?: string): Promise<{result: PackingList, prompt: string}> => {
+  const { apiKey, isUsingDefaultKey } = await CookieUtils.getApiKeyWithSource(userApiKey);
+  
+  // Ensure API key is properly trimmed
+  if (!apiKey || apiKey.trim().length === 0) {
+    throw new Error("Invalid API key: key is empty or whitespace only");
   }
+  const cleanApiKey = apiKey.trim();
 
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey: cleanApiKey });
 
   const { destination, startDate, days, language, coveredDestinations } = data;
 
@@ -28,11 +33,12 @@ export const generatePackingList = async (data: PackingListRequestData, onChunk?
   const prompt = `
     Based on a ${days}-day trip to ${destinationsString} starting around ${startDate}, generate a smart, weather-aware packing list in ${language}.
     Consider the typical climate and weather for that location and time of year.
-    Provide practical advice. For clothing, suggest layers if the weather is variable.
+    Provide practical advice. For clothing, suggest layers if the weather is variable. You MUST provide separate clothing recommendations for male and female travelers, tailored to their specific needs.
     ${multiStopInstructions}
     The response MUST be a single, valid JSON object that strictly follows this structure and types, with all text content in ${language}:
     {
-      "clothingAndFootwear": string[],
+      "maleClothing": string[],
+      "femaleClothing": string[],
       "toiletriesAndPersonalCare": string[],
       "medicinesAndHealth": string[],
       "electronicsAndGear": string[],
@@ -44,6 +50,13 @@ export const generatePackingList = async (data: PackingListRequestData, onChunk?
       "approximateTemperature": string
     }
 
+    **CRITICAL CLOTHING SECTION INSTRUCTIONS:**
+    1. You MUST provide separate clothing lists for male and female travelers.
+    2. The 'maleClothing' array should contain clothing and footwear items specifically tailored for male travelers (e.g., men's shirts, men's pants, men's shoes, socks, etc.). DO NOT include inner garments, underwear, or undergarments in the suggestions.
+    3. The 'femaleClothing' array should contain clothing and footwear items specifically tailored for female travelers (e.g., women's tops, women's bottoms, women's shoes, etc.). DO NOT include inner garments, underwear, bras, or undergarments in the suggestions.
+    4. Both sections should consider the weather conditions, trip duration, and destination context.
+    5. Include appropriate footwear and accessories in each respective section. DO NOT suggest any inner garments or undergarments.
+
     Important Rules:
     1. The 'approximateTemperature' must be a string representing the estimated temperature range in Celsius (e.g., "25-30°C"). If it's a multi-stop trip, you MUST follow the multi-stop instructions for this field.
     2. The 'adventureClothing' list must contain recommendations for gear and clothing suitable for common adventure activities in ${destination} (like hiking, swimming, skiing, etc.). If no specific adventure activities are obvious, provide general outdoor/activewear suggestions.
@@ -51,14 +64,9 @@ export const generatePackingList = async (data: PackingListRequestData, onChunk?
     4. The 'bagSuggestion' should recommend a type and size of bag (e.g., "A 40L backpack" or "A medium-sized suitcase").
     5. The 'locallyAvailableItems' list should include things the user might not need to pack because they are easy and cheap to buy at the destination.
     6. You MUST use bold markdown (**text**) to highlight key items or advice within the string arrays.
-    7. **CRITICAL JSON VALIDATION RULE**: The output MUST be a perfectly valid JSON object. This is the single most important instruction.
-        a. **NO UNESCAPED QUOTES**: Inside any JSON string value, you MUST NEVER use a double quote character ("). It will break the JSON and cause an error.
-        b. **HOW TO HANDLE QUOTES**: If you need to include a quote inside a description, you have two options:
-            i. **PREFERRED**: Use single quotes instead (e.g., "Don't forget your 'just-in-case' sweater.").
-            ii. **ALTERNATIVE**: If you absolutely must use a double quote, you MUST escape it with a backslash (e.g., "A bag that is described as \\"water-resistant\\" is ideal.").
-        c. **FAILURE TO FOLLOW THIS RULE WILL RENDER THE ENTIRE OUTPUT USELESS.** You must double-check every string value for unescaped double quotes before finishing your response.
+    7. **JSON VALIDATION:** The output MUST be a perfectly valid JSON object. NO unescaped double quotes (") in string values. Use single quotes or escape with \\". Check every string before finishing.
     8. The entire JSON response, including all string values, MUST be in ${language}.
-    9. **ABSOLUTE FINAL INSTRUCTION**: Your entire response MUST be the raw JSON object. It MUST start with the character '{' and end with the character '}'. You MUST NOT wrap it in markdown (like \`\`\`json), and you MUST NOT add any introductory text. The response must be immediately parsable as JSON.
+    9. **FINAL INSTRUCTION:** Your entire response MUST be the raw JSON object starting with '{' and ending with '}'. NO markdown wrapping, NO introductory text. Immediately parsable as JSON.
   `;
 
   let fullText = '';
@@ -67,6 +75,9 @@ export const generatePackingList = async (data: PackingListRequestData, onChunk?
         const stream = await ai.models.generateContentStream({
           model: "gemini-2.5-flash",
           contents: prompt,
+          config: {
+            thinkingConfig: { thinkingBudget: 0 },
+          }
         });
 
         for await (const chunk of stream) {
@@ -78,6 +89,10 @@ export const generatePackingList = async (data: PackingListRequestData, onChunk?
         const response = await ai.models.generateContent({
           model: "gemini-2.5-flash",
           contents: prompt,
+          config: {
+            thinkingConfig: { thinkingBudget: 0 },
+            responseMimeType: "application/json",
+          }
         });
         fullText = response.text;
       }
@@ -97,12 +112,14 @@ export const generatePackingList = async (data: PackingListRequestData, onChunk?
       
       const cleanedJson = cleanCitations(parsedJson);
 
-      return {
+      const result = {
         ...cleanedJson,
         destination,
         days,
         startDate,
       };
+
+      return { result, prompt };
   } catch (error) {
       console.error("Failed to generate and parse packing list stream:", error);
       console.error("Original AI response text accumulated:", fullText);
@@ -116,6 +133,9 @@ export const generatePackingList = async (data: PackingListRequestData, onChunk?
         const combinedErrorText = (error.message + fullText).toLowerCase();
 
         if (combinedErrorText.includes("quota") || combinedErrorText.includes("rate limit") || combinedErrorText.includes("429")) {
+            if (isUsingDefaultKey) {
+                throw new Error("[429] The default API key has reached its quota limit. Please set your own Gemini API key in your profile settings to continue.");
+            }
             throw new Error("[429] You have exceeded the request limit. Please check your plan and billing details and try again later.");
         }
         if (combinedErrorText.includes("overloaded") || combinedErrorText.includes("server error") || combinedErrorText.includes("503")) {

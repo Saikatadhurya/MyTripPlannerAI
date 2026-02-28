@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { FoodFinderRequestData, FoodPreference, LocationSuggestion, PopularDestination } from '../types';
 import { getDestinationSuggestions } from '../services/geminiService';
-import BackToHomeButton from './BackToHomeButton';
+import { User } from '../services/authService';
 import SelectionPage from './SelectionPage';
 
 interface FoodFinderFormProps {
@@ -12,6 +12,8 @@ interface FoodFinderFormProps {
   onCancel: () => void;
   streamedText: string;
   initialData?: FoodFinderRequestData | null;
+  user: User | null;
+  onOpenAuthModal: () => void;
 }
 
 const foodPreferences: {label: FoodPreference, icon: string}[] = [
@@ -35,7 +37,7 @@ const Toggle: React.FC<{ label: string; description: string; enabled: boolean; o
     >
       <div className="text-left">
           <p className="font-semibold text-slate-800">{label}</p>
-          <p className="text-sm text-slate-600">{description}</p>
+          <p className="text-xs sm:text-sm text-slate-600">{description}</p>
       </div>
       <div className={`w-12 h-6 flex items-center rounded-full transition-colors duration-300 ${enabled ? 'bg-orange-500' : 'bg-slate-300'}`}>
           <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${enabled ? 'translate-x-6' : 'translate-x-1'}`}></div>
@@ -43,7 +45,7 @@ const Toggle: React.FC<{ label: string; description: string; enabled: boolean; o
     </button>
 );
 
-const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, error, onBack, onCancel, streamedText, initialData }) => {
+const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, error, onBack, onCancel, streamedText, initialData, user, onOpenAuthModal }) => {
   const [formData, setFormData] = useState<FoodFinderRequestData>(initialData || {
     destination: '',
     startDate: new Date().toISOString().split('T')[0],
@@ -54,6 +56,7 @@ const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, er
 
   const [suggestions, setSuggestions] = useState<LocationSuggestion[]>([]);
   const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false);
+  const [apiKeyError, setApiKeyError] = useState<string | null>(null);
   const [isDestinationSelected, setIsDestinationSelected] = useState(!!initialData?.destination);
   const [destinationError, setDestinationError] = useState<string | null>(null);
   const [popularDestinations, setPopularDestinations] = useState<PopularDestination[]>([]);
@@ -97,12 +100,52 @@ const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, er
     if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
 
     if (value.trim().length > 1) {
+      // Check if user is logged in before searching
+      if (!user) {
+        onOpenAuthModal();
+        return;
+      }
       setIsSuggestionsLoading(true);
       debounceTimeout.current = setTimeout(() => {
         if (!isSelectingSuggestion.current) {
-          getDestinationSuggestions(value).then(results => {
+          getDestinationSuggestions(value, user?.gemini_api_key).then(results => {
             setSuggestions(results);
             setIsSuggestionsLoading(false);
+            setApiKeyError(null); // Clear any previous API key errors
+          }).catch(error => {
+            setSuggestions([]);
+            setIsSuggestionsLoading(false);
+            
+            // Check if it's a quota/API key error - handle ApiError format
+            const errorMessage = error?.message || error?.error?.message || '';
+            const errorString = JSON.stringify(error || {});
+            const nestedError = error?.error;
+            const nestedErrorCode = nestedError?.code;
+            const nestedErrorStatus = nestedError?.status;
+            
+            // Extract error code from nested structure (ApiError format)
+            const errorCode = nestedErrorCode || error?.code || (nestedErrorStatus === 'RESOURCE_EXHAUSTED' ? 429 : null);
+            
+            // Check for quota/exhaustion errors
+            const combinedErrorText = (errorMessage + errorString).toLowerCase();
+            const isQuotaError = errorCode === 429 || 
+                                nestedErrorStatus === 'RESOURCE_EXHAUSTED' ||
+                                errorMessage.includes('[429]') || 
+                                combinedErrorText.includes('quota') || 
+                                combinedErrorText.includes('rate limit') ||
+                                combinedErrorText.includes('limit') ||
+                                combinedErrorText.includes('exceeded') ||
+                                combinedErrorText.includes('resource_exhausted');
+            
+            if (isQuotaError) {
+              // Extract message without [429] prefix
+              const cleanMessage = errorMessage.replace(/^\[429\]\s*/, '');
+              setApiKeyError(cleanMessage || 'Your Gemini API key has reached its quota limit. Please set a new Gemini API key in your profile settings to continue.');
+            } else if (errorMessage.includes('Gemini key not set') || errorMessage.includes('API key not valid')) {
+              setApiKeyError('API key not valid. Please provide a valid Gemini API key in your profile settings to search for destinations.');
+            } else {
+              setApiKeyError('Failed to fetch destination suggestions. Please try again.');
+            }
           });
         }
       }, 500);
@@ -148,7 +191,14 @@ const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, er
   }, []);
 
   const handleOpenSelection = (field: keyof FoodFinderRequestData, title: string) => {
+    // Disabled - mobile now uses inline suggestions instead of SelectionPage
+    return;
     if (!isMobile) return;
+    // Check authentication for destination search
+    if (field === 'destination' && !user) {
+      onOpenAuthModal();
+      return;
+    }
     if (field === 'destination') setSearchQuery(formData.destination);
     else setSearchQuery('');
     setSelectionView({ field, title });
@@ -180,11 +230,51 @@ const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, er
       setDestinationError(null);
       if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
       if (value.trim().length > 1) {
+        // Check if user is logged in before searching
+        if (!user) {
+          onOpenAuthModal();
+          return;
+        }
         setIsSuggestionsLoading(true);
         debounceTimeout.current = setTimeout(() => {
-          getDestinationSuggestions(value).then(results => {
+          getDestinationSuggestions(value, user?.gemini_api_key).then(results => {
             setSuggestions(results);
             setIsSuggestionsLoading(false);
+            setApiKeyError(null); // Clear any previous API key errors
+          }).catch(error => {
+            setSuggestions([]);
+            setIsSuggestionsLoading(false);
+            
+            // Check if it's a quota/API key error - handle ApiError format
+            const errorMessage = error?.message || error?.error?.message || '';
+            const errorString = JSON.stringify(error || {});
+            const nestedError = error?.error;
+            const nestedErrorCode = nestedError?.code;
+            const nestedErrorStatus = nestedError?.status;
+            
+            // Extract error code from nested structure (ApiError format)
+            const errorCode = nestedErrorCode || error?.code || (nestedErrorStatus === 'RESOURCE_EXHAUSTED' ? 429 : null);
+            
+            // Check for quota/exhaustion errors
+            const combinedErrorText = (errorMessage + errorString).toLowerCase();
+            const isQuotaError = errorCode === 429 || 
+                                nestedErrorStatus === 'RESOURCE_EXHAUSTED' ||
+                                errorMessage.includes('[429]') || 
+                                combinedErrorText.includes('quota') || 
+                                combinedErrorText.includes('rate limit') ||
+                                combinedErrorText.includes('limit') ||
+                                combinedErrorText.includes('exceeded') ||
+                                combinedErrorText.includes('resource_exhausted');
+            
+            if (isQuotaError) {
+              // Extract message without [429] prefix
+              const cleanMessage = errorMessage.replace(/^\[429\]\s*/, '');
+              setApiKeyError(cleanMessage || 'Your Gemini API key has reached its quota limit. Please set a new Gemini API key in your profile settings to continue.');
+            } else if (errorMessage.includes('Gemini key not set') || errorMessage.includes('API key not valid')) {
+              setApiKeyError('API key not valid. Please provide a valid Gemini API key in your profile settings to search for destinations.');
+            } else {
+              setApiKeyError('Failed to fetch destination suggestions. Please try again.');
+            }
           });
         }, 500);
       } else {
@@ -196,6 +286,11 @@ const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, er
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    // Check if user is logged in before submitting
+    if (!user) {
+      onOpenAuthModal();
+      return;
+    }
     if (formData.destination.trim() === '') {
         setDestinationError("Please enter a destination.");
         return;
@@ -204,6 +299,10 @@ const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, er
         setDestinationError("Please pick a location from the list to lock it in! 🗺️");
         return;
     }
+    if (apiKeyError) {
+        return;
+    }
+
     onSubmit(formData);
   };
 
@@ -260,37 +359,68 @@ const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, er
             popularItems={popularItems}
             renderPopularItem={renderPopularItem}
             accentColor="amber"
+            error={apiKeyError && selectionView?.field === 'destination' ? apiKeyError : null}
         />
     );
   };
   
   return (
     <div className="max-w-xl mx-auto">
-      <BackToHomeButton onClick={onBack} />
-
-      <div className="text-center mb-10">
-        <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Local Food Finder</h1>
-        <p className="mt-2 text-lg text-slate-600">Discover authentic local cuisine for your trip.</p>
-      </div>
+      {/* App Name Header */}
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-orange-600 via-amber-500 to-orange-500 bg-clip-text text-transparent text-center">
+          Local Food Finder
+        </h1>
+        </div>
 
       {error && (
         <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md mb-6" role="alert">
           <p className="font-bold">Oops!</p>
-          <p>{error}</p>
+          {typeof error === 'string' && error.toLowerCase().includes('gemini') && error.toLowerCase().includes('key') ? (
+            <p>
+              Gemini API key not set. Please add your API key in{' '}
+              <a href="/profile" className="font-semibold underline hover:text-red-800">Edit Profile</a>
+              {' '}to continue.
+            </p>
+          ) : (
+            <p>{error}</p>
+          )}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-8 bg-white/60 backdrop-blur-md p-8 rounded-2xl border border-slate-200/70 shadow-xl">
+      <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8 bg-white/60 backdrop-blur-md p-4 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl border border-slate-200/70 shadow-xl">
         <div className="relative">
-          <label htmlFor="destination" className="block text-sm font-medium text-slate-700 mb-1">Destination</label>
-          <div className="relative" onClick={() => handleOpenSelection('destination', 'Select Destination')}>
+          <label htmlFor="destination" className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">Destination</label>
+          <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 20l-4.95-5.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
             </div>
-            <input id="destination" ref={inputRef} type="text" value={formData.destination} onChange={isMobile ? undefined : handleDestinationChange} onBlur={isMobile ? undefined : handleDestinationBlur} placeholder="e.g., Kyoto, Japan" className="w-full pl-10 pr-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition" required autoComplete="off" readOnly={isMobile} />
+            <input id="destination" ref={inputRef} type="text" value={formData.destination} onChange={handleDestinationChange} onBlur={handleDestinationBlur} placeholder="e.g., Kyoto, Japan" className="w-full pl-10 pr-4 py-2 bg-white text-base text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition" required autoComplete="off" />
           </div>
-          {isSuggestionsLoading && !isMobile && <div className="absolute right-3 top-9"><svg className="animate-spin h-5 w-5 text-amber-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>}
-          {!isMobile && suggestions.length > 0 && (
+          {isSuggestionsLoading && (
+            <div className="absolute right-3 top-9">
+              <svg className="animate-spin h-5 w-5 text-amber-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            </div>
+          )}
+          {isSuggestionsLoading && formData.destination.trim().length > 1 && (
+            <div className="mt-2 px-3 py-2 bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200/50 rounded-lg shadow-sm animate-pulse">
+              <div className="flex items-center space-x-2 text-sm text-orange-700">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <span className="font-medium">Searching for locations</span>
+                <span className="flex space-x-1">
+                  <span className="animate-bounce" style={{ animationDelay: '0ms' }}>.</span>
+                  <span className="animate-bounce" style={{ animationDelay: '150ms' }}>.</span>
+                  <span className="animate-bounce" style={{ animationDelay: '300ms' }}>.</span>
+                </span>
+              </div>
+            </div>
+          )}
+          {suggestions.length > 0 && (
              <ul ref={suggestionsRef} className="absolute z-10 w-full bg-white border border-slate-300 rounded-lg mt-1 shadow-lg max-h-60 overflow-y-auto">
                 {suggestions.map((s, i) => (
                     <li key={i} onClick={() => handleSuggestionClick(s)} className="px-4 py-3 cursor-pointer hover:bg-amber-100/60 flex justify-between items-center transition-colors">
@@ -309,22 +439,49 @@ const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, er
                 <span>{destinationError}</span>
             </div>
           )}
+          {apiKeyError && (
+            <div style={{ animation: 'validation-fade-in 0.3s ease' }} className="mt-2 text-sm text-amber-700 bg-amber-100/60 p-2 rounded-md flex items-center space-x-2">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+                <span className="flex items-center flex-wrap gap-1">
+                  {apiKeyError.includes('quota') || apiKeyError.includes('limit') || apiKeyError.includes('exceeded') ? (
+                    <>
+                      {apiKeyError.includes('profile settings') ? (
+                        <>
+                          {apiKeyError.split('profile settings')[0]}
+                          <a href="/profile" className="font-semibold underline hover:text-amber-800">your profile settings</a>
+                          {apiKeyError.split('profile settings')[1]}
+                        </>
+                      ) : (
+                        <>
+                          {apiKeyError}
+                          {' '}Please set your own Gemini API key in{' '}
+                          <a href="/profile" className="font-semibold underline hover:text-amber-800">your profile settings</a>
+                          {' '}to continue.
+                        </>
+                      )}
+                    </>
+                  ) : apiKeyError.includes('API key not valid') || apiKeyError.includes('Gemini key not set') ? (
+                    <>
+                      API key not valid. Please provide a valid Gemini API key in{' '}
+                      <a href="/profile" className="font-semibold underline hover:text-amber-800">Edit Profile</a>
+                      {' '}to search for destinations.
+                    </>
+                  ) : (
+                    apiKeyError
+                  )}
+                </span>
+            </div>
+          )}
         </div>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="min-w-0">
-            <label htmlFor="startDate" className="block text-sm font-medium text-slate-700 mb-1">Date</label>
-            <input id="startDate" type="date" value={formData.startDate} min={new Date().toISOString().split('T')[0]} onChange={e => handleInputChange('startDate', e.target.value)} className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition" required />
+            <label htmlFor="startDate" className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">Date</label>
+            <input id="startDate" type="date" value={formData.startDate} min={new Date().toISOString().split('T')[0]} onChange={e => handleInputChange('startDate', e.target.value)} className="w-full px-4 py-2 bg-white text-base text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition" required />
           </div>
            <div className="relative">
-                <label className="block text-sm font-medium text-slate-700 mb-1">Language</label>
-                {isMobile ? (
-                    <div onClick={() => handleOpenSelection('language', 'Select Language')} className="w-full px-4 py-2 bg-white text-gray-800 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition flex justify-between items-center text-left cursor-pointer">
-                        <span className="truncate">{formData.language}</span>
-                        <svg className={`h-5 w-5 text-slate-400`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
-                    </div>
-                ) : (
-                    <div ref={langDropdownRef} className="relative">
+                <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">Language</label>
+                <div ref={langDropdownRef} className="relative">
                         <input 
                             type="text"
                             value={isLangDropdownOpen ? langSearchTerm : formData.language}
@@ -361,12 +518,11 @@ const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, er
                             </ul>
                         )}
                     </div>
-                )}
             </div>
         </div>
         
         <div>
-           <label className="block text-sm font-medium text-slate-700 mb-2">Food Preference</label>
+           <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-2">Food Preference</label>
             <div className="grid grid-cols-3 gap-3">
                 {foodPreferences.map(({ label, icon }) => (
                     <button key={label} type="button" onClick={() => handleInputChange('foodPreference', label)} className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 border-2 flex items-center justify-center space-x-2 ${formData.foodPreference === label ? 'bg-amber-600 text-white border-amber-600' : 'bg-white/50 border-white/50 hover:border-amber-400'}`}>
@@ -386,17 +542,17 @@ const FoodFinderForm: React.FC<FoodFinderFormProps> = ({ onSubmit, isLoading, er
             />
         </div>
 
-        <div className="text-center pt-4">
+        <div className="text-center pt-4 mb-24 pb-24">
           <button
             type="submit"
             className="w-full sm:w-auto px-10 py-4 bg-amber-600 text-white font-bold rounded-full hover:bg-amber-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:bg-amber-400/80 disabled:cursor-not-allowed disabled:shadow-md disabled:scale-100"
-            disabled={!isDestinationSelected || !!destinationError || isLoading}
+            disabled={!user || !isDestinationSelected || !!destinationError || !!apiKeyError || isLoading}
           >
             🍴 Discover My Local Feast
           </button>
         </div>
       </form>
-      {renderSelectionPage()}
+      {/* SelectionPage disabled - mobile now uses inline suggestions */}
     </div>
   );
 };

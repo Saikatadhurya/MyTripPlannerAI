@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { MusicRecommendations, MusicItem, MusicGenreCategory } from '../types';
+import { useSaveRecommendation } from '../hooks/useSaveRecommendation';
+import Toast from './Toast';
 
 const AppLinkButton: React.FC<{ appName: MusicItem['appLinks'][0]['appName'], musicTitle: string, artist: string }> = ({ appName, musicTitle, artist }) => {
     const styles = {
@@ -23,7 +25,7 @@ const AppLinkButton: React.FC<{ appName: MusicItem['appLinks'][0]['appName'], mu
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className={`px-3 py-1 text-xs font-semibold rounded-full transition-transform transform hover:scale-105 ${styles[appName] || 'bg-slate-500 hover:bg-slate-600 text-white'}`}
+            className={`px-2 sm:px-3 py-0.5 sm:py-1 text-xs font-semibold rounded-full transition-transform transform hover:scale-105 ${styles[appName] || 'bg-slate-500 hover:bg-slate-600 text-white'}`}
         >
             {appName}
         </a>
@@ -45,22 +47,22 @@ const MusicItemCard: React.FC<{ item: MusicItem }> = ({ item }) => {
 
   return (
     <div
-      className="bg-white/30 backdrop-blur-lg p-4 rounded-xl shadow-lg border border-white/50 flex space-x-4 items-center transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer h-full"
+      className="bg-white/30 backdrop-blur-lg p-3 sm:p-4 rounded-lg sm:rounded-xl shadow-lg border border-white/50 flex space-x-3 sm:space-x-4 items-center transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer h-full"
       onClick={handleCardClick}
       onKeyDown={handleKeyDown}
       role="button"
       tabIndex={0}
       aria-label={`Search for ${item.title} by ${item.artistOrDescription} on Google`}
     >
-      <div className="flex-shrink-0 w-16 h-16 bg-fuchsia-100/70 rounded-md flex items-center justify-center">
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-fuchsia-600" viewBox="0 0 20 20" fill="currentColor">
+      <div className="flex-shrink-0 w-12 h-12 sm:w-16 sm:h-16 bg-fuchsia-100/70 rounded-md flex items-center justify-center">
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 sm:h-8 sm:w-8 text-fuchsia-600" viewBox="0 0 20 20" fill="currentColor">
           <path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3V4a1 1 0 00-1-1z" />
         </svg>
       </div>
       <div className="flex-1 min-w-0">
-        <h3 className="font-bold text-lg text-slate-900 truncate" title={item.title}>{item.title}</h3>
-        <p className="text-sm text-slate-700 truncate" title={item.artistOrDescription}>{item.artistOrDescription}</p>
-        <div className="flex items-center flex-wrap gap-2 mt-3 pt-3 border-t border-fuchsia-200/50">
+        <h3 className="font-bold text-base sm:text-lg text-slate-900 truncate" title={item.title}>{item.title}</h3>
+        <p className="text-xs sm:text-sm text-slate-700 truncate" title={item.artistOrDescription}>{item.artistOrDescription}</p>
+        <div className="flex items-center flex-wrap gap-1.5 sm:gap-2 mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-fuchsia-200/50">
           {item.appLinks && item.appLinks.map((link, linkIndex) => (
             <AppLinkButton key={linkIndex} appName={link.appName} musicTitle={item.title} artist={item.artistOrDescription} />
           ))}
@@ -115,13 +117,13 @@ const CategoryHeader: React.FC<{ category: MusicGenreCategory }> = ({ category }
     const iconBg = accentClasses[color] || accentClasses['slate'];
 
     return (
-        <div className="flex items-start space-x-4">
-            <div className={`flex-shrink-0 rounded-lg p-3 ${iconBg}`}>
+        <div className="flex items-start space-x-2 sm:space-x-3 md:space-x-4">
+            <div className={`flex-shrink-0 rounded-lg p-2 sm:p-2.5 md:p-3 ${iconBg}`}>
                 {icon}
             </div>
-            <div>
-                <h2 className="text-2xl font-bold text-slate-800">{category.genre}</h2>
-                <p className="text-sm text-slate-600 mt-1">{category.description}</p>
+            <div className="flex-1 min-w-0">
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-800 break-words">{category.genre}</h2>
+                <p className="text-xs sm:text-sm text-slate-600 mt-0.5 sm:mt-1 break-words">{category.description}</p>
             </div>
         </div>
     );
@@ -131,42 +133,138 @@ interface MusicFinderResultProps {
     recommendations: MusicRecommendations;
     onRegenerate: () => void;
     isUnifiedView?: boolean;
-    onPrint?: () => void;
+    requestData?: any; // Add request data for history saving
+    isHistoryView?: boolean; // Add flag to indicate if this is from history
 }
 
-const MusicFinderResult: React.FC<MusicFinderResultProps> = ({ recommendations, onRegenerate, isUnifiedView = false, onPrint }) => {
+const MusicFinderResult: React.FC<MusicFinderResultProps> = ({ recommendations, onRegenerate, isUnifiedView = false, requestData, isHistoryView = false }) => {
     const hasMusic = recommendations.musicCategories && recommendations.musicCategories.length > 0;
-    const handlePrint = onPrint || (() => window.print());
+    const [hasBeenSaved, setHasBeenSaved] = useState(false);
+    const [savedId, setSavedId] = useState<string | null>(null);
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+    const { saveMusicRecommendation } = useSaveRecommendation();
+    
+    // Save to history when component mounts (only if not in unified view and request data is available)
+    useEffect(() => {
+        // Don't save if this is a history view
+        if (!isUnifiedView && requestData && !hasBeenSaved && !isHistoryView) {
+            const saveRecommendation = async () => {
+                const id = await saveMusicRecommendation(requestData, recommendations, recommendations.destination, requestData.language);
+                if (id) {
+                    setSavedId(id);
+                }
+                setHasBeenSaved(true);
+            };
+            saveRecommendation();
+        }
+    }, [isUnifiedView, requestData, recommendations, saveMusicRecommendation, hasBeenSaved, isHistoryView]);
+    
+    const handleCopyLink = async () => {
+        if (!savedId) {
+            setToast({ message: 'Recommendation is still being saved. Please wait a moment.', type: 'error' });
+            return;
+        }
+        try {
+            const shareUrl = `${window.location.origin}/share/${savedId}`;
+            await navigator.clipboard.writeText(shareUrl);
+            setToast({ message: 'Shareable link copied to clipboard!', type: 'success' });
+        } catch (error) {
+            setToast({ message: 'Failed to copy link. Please try again.', type: 'error' });
+        }
+    };
+
+    const handleShare = async () => {
+        if (!savedId) {
+            setToast({ message: 'Recommendation is still being saved. Please wait a moment.', type: 'error' });
+            return;
+        }
+        try {
+            const shareUrl = `${window.location.origin}/share/${savedId}`;
+            if (navigator.share) {
+                await navigator.share({
+                    title: `The Sound of ${recommendations.destination}`,
+                    text: 'Check out this amazing music guide!',
+                    url: shareUrl,
+                });
+                setToast({ message: 'Recommendation shared successfully!', type: 'success' });
+            } else {
+                await navigator.clipboard.writeText(shareUrl);
+                setToast({ message: 'Shareable link copied to clipboard!', type: 'success' });
+            }
+        } catch (error: any) {
+            if (error.name !== 'AbortError') {
+                setToast({ message: 'Failed to share link. Please try again.', type: 'error' });
+            }
+        }
+    };
 
     return (
-        <div className="max-w-5xl mx-auto space-y-12 animated-card" id="music-finder-result-content">
+        <div className="max-w-5xl mx-auto space-y-6 sm:space-y-8 md:space-y-12 animated-card mb-16 px-1 sm:px-4" id="music-finder-result-content">
             {!isUnifiedView && (
             <div className="flex justify-start items-center no-print">
                 <button
-                    onClick={onRegenerate}
-                    className="inline-flex items-center justify-center px-6 py-2 my-2 bg-white/60 text-slate-800 font-bold rounded-full hover:bg-white/80 transition-all duration-300 shadow-md border border-white/50"
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onRegenerate();
+                    }}
+                    className="inline-flex items-center justify-center px-4 py-1.5 sm:px-6 sm:py-2 my-2 bg-white/60 text-slate-800 font-bold rounded-full hover:bg-white/80 transition-all duration-300 shadow-md border border-white/50 text-xs sm:text-sm"
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h5M20 20v-5h-5" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 9a9 9 0 0114.13-5.22M20 15a9 9 0 01-14.13 5.22" /></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h5M20 20v-5h-5" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 9a9 9 0 0114.13-5.22M20 15a9 9 0 01-14.13 5.22" /></svg>
                     <span>Find Music for Another Trip</span>
                 </button>
             </div>
             )}
             
-            <header className="space-y-4 text-center">
-                <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight">
-                    The Sound of {recommendations.destination}
-                </h1>
-                <p className="text-lg text-gray-700 mt-2">
-                    Your personalized guide to the local music scene.
-                </p>
+            <header className="bg-gradient-to-br from-fuchsia-50/60 via-pink-50/40 to-rose-50/30 backdrop-blur-lg rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 border border-fuchsia-200/50 shadow-md animated-card">
+                <div className="text-center">
+                    <div className="inline-flex items-center justify-center mb-2 sm:mb-3">
+                        <div className="bg-gradient-to-br from-fuchsia-500 to-pink-600 rounded-full p-1.5 sm:p-2 shadow-md">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                            </svg>
+                        </div>
+                    </div>
+                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-extrabold bg-gradient-to-r from-slate-900 via-fuchsia-800 to-slate-900 bg-clip-text text-transparent tracking-tight break-words px-1 sm:px-2">
+                        The Sound of {recommendations.destination}
+                    </h1>
+                    <p className="text-xs sm:text-sm md:text-base text-slate-600 mt-1.5 sm:mt-2 font-medium break-words px-1 sm:px-2">
+                        Your personalized guide to the local music scene.
+                    </p>
+                </div>
             </header>
             
-            <div className="space-y-10">
+            {/* Share buttons - Only show when saved and not in history view */}
+            {savedId && !isHistoryView && !isUnifiedView && (
+                <div className="flex items-center justify-center gap-2 sm:gap-3 py-3 sm:py-4 no-print">
+                    <button
+                        onClick={handleCopyLink}
+                        className="inline-flex items-center px-4 py-2 sm:px-5 sm:py-2.5 bg-gradient-to-r from-violet-600 to-violet-700 text-white font-semibold rounded-full hover:from-violet-700 hover:to-violet-800 transition-all duration-300 shadow-md text-xs sm:text-sm"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                        Copy Link
+                    </button>
+                    <button
+                        onClick={handleShare}
+                        className="inline-flex items-center px-4 py-2 sm:px-5 sm:py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-full hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-md text-xs sm:text-sm"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                        </svg>
+                        Share
+                    </button>
+                </div>
+            )}
+            
+            <div className="space-y-6 sm:space-y-8 md:space-y-10">
                 {hasMusic ? (
                     recommendations.musicCategories.map((category, index) => (
-                        <div key={index} className="bg-white/30 backdrop-blur-lg p-6 rounded-2xl shadow-lg border border-white/50">
+                        <div key={index} className="bg-white/30 backdrop-blur-lg p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-lg border border-white/50">
                             <CategoryHeader category={category} />
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 mt-4 sm:mt-6">
                                 {category.music.map((item, itemIndex) => (
                                     <MusicItemCard key={itemIndex} item={item} />
                                 ))}
@@ -174,35 +272,40 @@ const MusicFinderResult: React.FC<MusicFinderResultProps> = ({ recommendations, 
                         </div>
                     ))
                 ) : (
-                    <div className="text-center bg-white/20 backdrop-blur-xl border border-white/30 rounded-2xl p-12 shadow-lg">
-                        <h2 className="text-2xl font-bold text-slate-800">No Specific Music Found</h2>
-                        <p className="text-slate-600 mt-2">We couldn't find unique local music for {recommendations.destination}. Try exploring global charts on Spotify or Apple Music for popular hits!</p>
+                    <div className="text-center bg-white/20 backdrop-blur-xl border border-white/30 rounded-xl sm:rounded-2xl p-6 sm:p-8 md:p-12 shadow-lg">
+                        <h2 className="text-xl sm:text-2xl font-bold text-slate-800 px-1 sm:px-2">No Specific Music Found</h2>
+                        <p className="text-sm sm:text-base text-slate-600 mt-2 px-1 sm:px-2">We couldn't find unique local music for {recommendations.destination}. Try exploring global charts on Spotify or Apple Music for popular hits!</p>
                     </div>
                 )}
             </div>
 
-            <div className="pt-8 text-center no-print">
-                <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4 mt-8">
+            <div className="pt-4 sm:pt-6 md:pt-8 text-center no-print">
+                <div className="flex flex-col sm:flex-row justify-center items-center space-y-3 sm:space-y-0 sm:space-x-4 mt-4 sm:mt-6 md:mt-8">
                     {!isUnifiedView && (
                     <button
-                        onClick={onRegenerate}
-                        className="inline-flex items-center justify-center w-full sm:w-auto px-8 py-3 bg-fuchsia-600 text-white font-bold rounded-full hover:bg-fuchsia-700 transition-all duration-300 transform hover:scale-105 shadow-lg"
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          onRegenerate();
+                        }}
+                        className="inline-flex items-center justify-center w-full sm:w-auto px-6 sm:px-8 py-2 sm:py-3 bg-fuchsia-600 text-white font-bold rounded-full hover:bg-fuchsia-700 transition-all duration-300 transform hover:scale-105 shadow-lg text-sm sm:text-base"
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h5M20 20v-5h-5" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 9a9 9 0 0114.13-5.22M20 15a9 9 0 01-14.13 5.22" /></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h5M20 20v-5h-5" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 9a9 9 0 0114.13-5.22M20 15a9 9 0 01-14.13 5.22" /></svg>
                         <span>Find More Music</span>
                     </button>
                     )}
-                    <button
-                        onClick={handlePrint}
-                        className="inline-flex items-center justify-center w-full sm:w-auto px-8 py-3 bg-white/60 text-slate-800 font-bold rounded-full hover:bg-white/80 transition-all duration-300 shadow-md border border-white/50"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v-1a1 1 0 011-1h10a1 1 0 011 1v1h1a2 2 0 002-2v-3a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clipRule="evenodd" />
-                        </svg>
-                        <span>{isUnifiedView ? 'Print This Section' : 'Print Music Guide'}</span>
-                    </button>
                 </div>
             </div>
+            
+            {/* Toast notification */}
+            {toast && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={() => setToast(null)}
+                />
+            )}
         </div>
     );
 };

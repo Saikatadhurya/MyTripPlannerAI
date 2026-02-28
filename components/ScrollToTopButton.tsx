@@ -2,14 +2,18 @@ import React, { useState, useEffect } from 'react';
 
 interface ScrollToTopButtonProps {
     isUnifiedView?: boolean;
+    scrollContainerRef?: React.RefObject<HTMLDivElement>;
 }
 
-const ScrollToTopButton: React.FC<ScrollToTopButtonProps> = ({ isUnifiedView = false }) => {
+const ScrollToTopButton: React.FC<ScrollToTopButtonProps> = ({ isUnifiedView = false, scrollContainerRef }) => {
   const [isVisible, setIsVisible] = useState(false);
 
   // Show button when page is scrolled down more than 200px
   const toggleVisibility = () => {
-    if (window.scrollY > 200) {
+    const scrollElement = scrollContainerRef?.current || window;
+    const scrollY = scrollContainerRef?.current ? scrollContainerRef.current.scrollTop : window.scrollY;
+    
+    if (scrollY > 200) {
       setIsVisible(true);
     } else {
       setIsVisible(false);
@@ -18,20 +22,29 @@ const ScrollToTopButton: React.FC<ScrollToTopButtonProps> = ({ isUnifiedView = f
 
   // Add scroll event listener
   useEffect(() => {
-    window.addEventListener('scroll', toggleVisibility);
+    const scrollElement = scrollContainerRef?.current || window;
+    
+    scrollElement.addEventListener('scroll', toggleVisibility);
 
     // Clean up the listener on component unmount
     return () => {
-      window.removeEventListener('scroll', toggleVisibility);
+      scrollElement.removeEventListener('scroll', toggleVisibility);
     };
-  }, []);
+  }, [scrollContainerRef]);
 
   // Smooth scroll to top
   const scrollToTop = () => {
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    });
+    if (scrollContainerRef?.current) {
+      scrollContainerRef.current.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    } else {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }
   };
 
   // On mobile, the bottom nav bar is present. We need to raise the button.

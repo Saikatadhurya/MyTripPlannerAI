@@ -1,7 +1,9 @@
-export type Budget = 'Budget' | 'Midrange' | 'Luxury';
-export type Vibe = 'Adventure & Thrill' | 'Relaxation & Wellness' | 'Cultural & Heritage' | 'Nature & Wildlife' | 'Food & Culinary' | 'Nightlife & Entertainment' | 'Luxury & Leisure' | 'Romantic & Family Getaways';
+export type Budget = 'Low Budget' | 'Midrange' | 'Luxury';
+export type Vibe = 'Adventure & Thrill' | 'Relaxation & Wellness' | 'Cultural & Heritage' | 'Nature & Wildlife' | 'Food & Culinary' | 'Nightlife & Entertainment' | 'Shopping & Style' | 'Romantic & Family Getaways';
 export type FoodPreference = 'Veg' | 'Non-Veg' | 'Vegan';
 export type TripType = 'Standard' | 'Bike' | 'Car';
+
+export type UnifiedPlanComponent = 'packing' | 'food' | 'apps' | 'music' | 'lingo';
 
 export interface QuestionnaireData {
     destination: string;
@@ -19,6 +21,8 @@ export interface QuestionnaireData {
     language: string;
     currency: string;
     includeAlcoholicDrinks: boolean;
+    stops?: string[]; // Array of additional stops/destinations
+    selectedComponents?: UnifiedPlanComponent[]; // Components to generate (itinerary is always included)
 }
 
 export interface DayPlan {
@@ -33,6 +37,8 @@ export interface DayPlan {
     suggestions: string[];
     cost: string;
   };
+  expectedWeather?: string; // Expected weather conditions for this day (e.g., "25-30°C, Sunny")
+  expectedAQI?: string; // Expected Air Quality Index for this day (e.g., "45 (Good)")
 }
 
 export interface BlogReference {
@@ -108,7 +114,9 @@ export interface PackingListRequestData {
 }
 
 export interface PackingList {
-    clothingAndFootwear: string[];
+    maleClothing: string[];
+    femaleClothing: string[];
+    clothingAndFootwear?: string[]; // Deprecated: kept for backward compatibility
     toiletriesAndPersonalCare: string[];
     medicinesAndHealth: string[];
     electronicsAndGear: string[];
@@ -215,6 +223,7 @@ export interface MusicRecommendations {
 export interface LingoFinderRequestData {
     destination: string;
     language: string;
+    coveredDestinations?: DestinationDetails[];
 }
 
 export interface Phrase {

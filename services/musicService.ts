@@ -1,14 +1,19 @@
 import { GoogleGenAI } from "@google/genai";
 import { MusicFinderRequestData, MusicRecommendations } from '../types';
 import { extractJson, cleanCitations } from './jsonUtils';
+import { CookieUtils } from './cookieUtils';
 
-export const generateMusicRecommendations = async (data: MusicFinderRequestData, onChunk?: (chunk: string) => void): Promise<MusicRecommendations> => {
-  if (!process.env.API_KEY) {
-    throw new Error("API key is missing. Please set it in your environment variables.");
+export const generateMusicRecommendations = async (data: MusicFinderRequestData, onChunk?: (chunk: string) => void, userApiKey?: string): Promise<{result: MusicRecommendations, prompt: string}> => {
+  const { apiKey, isUsingDefaultKey } = await CookieUtils.getApiKeyWithSource(userApiKey);
+  
+  // Ensure API key is properly trimmed
+  if (!apiKey || apiKey.trim().length === 0) {
+    throw new Error("Invalid API key: key is empty or whitespace only");
   }
+  const cleanApiKey = apiKey.trim();
 
   const { destination, language, coveredDestinations } = data;
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey: cleanApiKey });
 
   const isMultiStop = coveredDestinations && coveredDestinations.length > 1;
   const destinationsString = isMultiStop ? coveredDestinations.map(d => d.name).join(', ') : destination;
@@ -72,14 +77,9 @@ export const generateMusicRecommendations = async (data: MusicFinderRequestData,
     }
 
     **FINAL CRITICAL RULES:**
-    1.  **Language:** The entire JSON response MUST be in ${language}.
-    2.  **CRITICAL JSON VALIDATION RULE**: The output MUST be a perfectly valid JSON object. This is the single most important instruction.
-        a. **NO UNESCAPED QUOTES**: Inside any JSON string value (like 'title' or 'artistOrDescription'), you MUST NEVER use a double quote character ("). It will break the JSON and cause an error.
-        b. **HOW TO HANDLE QUOTES**: If you need to include a quote, you have two options:
-            i. **PREFERRED**: Use single quotes instead (e.g., "A song called 'The Best' by...").
-            ii. **ALTERNATIVE**: If you absolutely must use a double quote, you MUST escape it with a backslash (e.g., "The review said, \\"It's a hit!\\"").
-        c. **FAILURE TO FOLLOW THIS RULE WILL RENDER THE ENTIRE OUTPUT USELESS.** You must double-check every string value for unescaped double quotes before finishing your response.
-    3. **ABSOLUTE FINAL INSTRUCTION**: Your entire response MUST be the raw JSON object. It MUST start with the character '{' and end with the character '}'. You MUST NOT wrap it in markdown (like \`\`\`json), and you MUST NOT add any introductory text. The response must be immediately parsable as JSON.
+    1. **Language:** The entire JSON response MUST be in ${language}.
+    2. **JSON VALIDATION:** The output MUST be a perfectly valid JSON object. NO unescaped double quotes (") in string values. Use single quotes or escape with \\". Check every string before finishing.
+    3. **FINAL INSTRUCTION:** Your entire response MUST be the raw JSON object starting with '{' and ending with '}'. NO markdown wrapping, NO introductory text. Immediately parsable as JSON.
   `;
 
   let fullText = '';
@@ -90,6 +90,7 @@ export const generateMusicRecommendations = async (data: MusicFinderRequestData,
             contents: prompt,
             config: {
                 tools: [{ googleSearch: {} }],
+                thinkingConfig: { thinkingBudget: 0 },
             }
         });
         
@@ -104,6 +105,8 @@ export const generateMusicRecommendations = async (data: MusicFinderRequestData,
             contents: prompt,
             config: {
                 tools: [{ googleSearch: {} }],
+                thinkingConfig: { thinkingBudget: 0 },
+                responseMimeType: "application/json",
             }
         });
         fullText = response.text;
@@ -124,7 +127,7 @@ export const generateMusicRecommendations = async (data: MusicFinderRequestData,
 
       const cleanedJson = cleanCitations(parsedJson);
 
-      return cleanedJson;
+      return { result: cleanedJson, prompt };
   } catch (error) {
       console.error("Failed to generate and parse music recommendations stream:", error);
       console.error("Original AI response text accumulated:", fullText);
@@ -138,6 +141,9 @@ export const generateMusicRecommendations = async (data: MusicFinderRequestData,
         const combinedErrorText = (error.message + fullText).toLowerCase();
 
         if (combinedErrorText.includes("quota") || combinedErrorText.includes("rate limit") || combinedErrorText.includes("429")) {
+            if (isUsingDefaultKey) {
+                throw new Error("[429] The default API key has reached its quota limit. Please set your own Gemini API key in your profile settings to continue.");
+            }
             throw new Error("[429] You have exceeded the request limit. Please check your plan and billing details and try again later.");
         }
         if (combinedErrorText.includes("overloaded") || combinedErrorText.includes("server error") || combinedErrorText.includes("503")) {

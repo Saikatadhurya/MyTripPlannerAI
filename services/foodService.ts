@@ -2,13 +2,18 @@
 import { GoogleGenAI } from "@google/genai";
 import { FoodFinderRequestData, FoodRecommendations } from '../types';
 import { extractJson, cleanCitations } from './jsonUtils';
+import { CookieUtils } from './cookieUtils';
 
-export const generateFoodRecommendations = async (data: FoodFinderRequestData, onChunk?: (chunk: string) => void): Promise<FoodRecommendations> => {
-  if (!process.env.API_KEY) {
-    throw new Error("API key is missing. Please set it in your environment variables.");
+export const generateFoodRecommendations = async (data: FoodFinderRequestData, onChunk?: (chunk: string) => void, userApiKey?: string): Promise<{result: FoodRecommendations, prompt: string}> => {
+  const { apiKey, isUsingDefaultKey } = await CookieUtils.getApiKeyWithSource(userApiKey);
+  
+  // Ensure API key is properly trimmed
+  if (!apiKey || apiKey.trim().length === 0) {
+    throw new Error("Invalid API key: key is empty or whitespace only");
   }
+  const cleanApiKey = apiKey.trim();
 
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey: cleanApiKey });
   const { destination, startDate, foodPreference, includeAlcoholicDrinks, language, coveredDestinations } = data;
 
   const isMultiStop = coveredDestinations && coveredDestinations.length > 1;
@@ -93,10 +98,8 @@ export const generateFoodRecommendations = async (data: FoodFinderRequestData, o
     - Prioritize populating 'iconicDishes', 'snacksAndStreetFood', 'lunch', and 'dinner'.
     - The 'drinksAndBeverages' array should always contain **non-alcoholic** options. If 'Include Alcoholic Drinks' is 'Yes', you MUST also add local alcoholic beverages. If 'No', the array MUST NOT contain any alcoholic drinks.
     - The ENTIRE response MUST be translated into ${language}.
-    - **CRITICAL JSON VALIDATION RULE**: The output MUST be a perfectly valid JSON object.
-        a. **NO UNESCAPED QUOTES**: Inside any JSON string value, you MUST NEVER use a double quote character ("). Use single quotes or escape them (\\").
-        b. **FAILURE TO FOLLOW THIS RULE WILL RENDER THE ENTIRE OUTPUT USELESS.**
-    - **ABSOLUTE FINAL INSTRUCTION**: Your entire response MUST be the raw JSON object. It MUST start with '{' and end with '}'. You MUST NOT wrap it in markdown or add any introductory text.
+    - **JSON VALIDATION:** The output MUST be a perfectly valid JSON object. NO unescaped double quotes (") in string values. Use single quotes or escape with \\". Check every string before finishing.
+    - **FINAL INSTRUCTION:** Your entire response MUST be the raw JSON object starting with '{' and ending with '}'. NO markdown wrapping, NO introductory text. Immediately parsable as JSON.
   `;
   
   let fullText = '';
@@ -107,6 +110,7 @@ export const generateFoodRecommendations = async (data: FoodFinderRequestData, o
             contents: prompt,
             config: {
                 tools: [{ googleSearch: {} }],
+                thinkingConfig: { thinkingBudget: 0 },
             }
         });
 
@@ -121,6 +125,8 @@ export const generateFoodRecommendations = async (data: FoodFinderRequestData, o
             contents: prompt,
             config: {
                 tools: [{ googleSearch: {} }],
+                thinkingConfig: { thinkingBudget: 0 },
+                responseMimeType: "application/json",
             }
         });
         fullText = response.text;
@@ -140,7 +146,7 @@ export const generateFoodRecommendations = async (data: FoodFinderRequestData, o
 
       const cleanedJson = cleanCitations(parsedJson);
 
-      return cleanedJson;
+      return { result: cleanedJson, prompt };
   } catch (error) {
       console.error("Failed to generate and parse food recommendations stream:", error);
       console.error("Original AI response text accumulated:", fullText);
@@ -154,6 +160,9 @@ export const generateFoodRecommendations = async (data: FoodFinderRequestData, o
         const combinedErrorText = (error.message + fullText).toLowerCase();
 
         if (combinedErrorText.includes("quota") || combinedErrorText.includes("rate limit") || combinedErrorText.includes("429")) {
+            if (isUsingDefaultKey) {
+                throw new Error("[429] The default API key has reached its quota limit. Please set your own Gemini API key in your profile settings to continue.");
+            }
             throw new Error("[429] You have exceeded the request limit. Please check your plan and billing details and try again later.");
         }
         if (combinedErrorText.includes("overloaded") || combinedErrorText.includes("server error") || combinedErrorText.includes("503")) {

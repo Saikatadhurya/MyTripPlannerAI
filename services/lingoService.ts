@@ -1,22 +1,45 @@
 import { GoogleGenAI } from "@google/genai";
 import { LingoFinderRequestData, LingoRecommendations } from '../types';
 import { extractJson, cleanCitations } from './jsonUtils';
+import { CookieUtils } from './cookieUtils';
 
-export const generateLingoGuide = async (data: LingoFinderRequestData, onChunk?: (chunk: string) => void): Promise<LingoRecommendations> => {
-  if (!process.env.API_KEY) {
-    throw new Error("API key is missing. Please set it in your environment variables.");
+export const generateLingoGuide = async (data: LingoFinderRequestData, onChunk?: (chunk: string) => void, userApiKey?: string): Promise<{result: LingoRecommendations, prompt: string}> => {
+  const { apiKey, isUsingDefaultKey } = await CookieUtils.getApiKeyWithSource(userApiKey);
+  
+  // Ensure API key is properly trimmed
+  if (!apiKey || apiKey.trim().length === 0) {
+    throw new Error("Invalid API key: key is empty or whitespace only");
+  }
+  const cleanApiKey = apiKey.trim();
+
+  const { destination, language, coveredDestinations } = data;
+  const ai = new GoogleGenAI({ apiKey: cleanApiKey });
+
+  const isMultiStop = coveredDestinations && coveredDestinations.length > 1;
+  const destinationsString = isMultiStop 
+    ? coveredDestinations.map(d => d.name).join(', ')
+    : destination;
+  
+  let multiStopInstructions = '';
+  if (isMultiStop) {
+    multiStopInstructions = `
+    **MULTI-STOP TRIP INSTRUCTION:**
+    This is a multi-destination trip covering: ${destinationsString}.
+    You MUST create a comprehensive phrasebook that is useful across ALL these destinations.
+    - Identify the PRIMARY language(s) spoken across these destinations. If multiple languages are spoken, prioritize the most common one, but include phrases that work across the region.
+    - The phrasebook should be practical for travelers moving between these locations.
+    - The 'destination' field should reflect the multi-destination nature (e.g., "${destinationsString} Tour" or "Multi-City ${destinationsString} Guide").
+    `;
   }
 
-  const { destination, language } = data;
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
   const prompt = `
-    You are an expert Linguist and Local Guide AI. Your mission is to create a practical, helpful, and culturally aware phrasebook for a traveler visiting "${destination}".
+    You are an expert Linguist and Local Guide AI. Your mission is to create a practical, helpful, and culturally aware phrasebook for a traveler visiting ${isMultiStop ? `multiple destinations: ${destinationsString}` : `"${destination}"`}.
     The output language for the entire JSON response must be in ${language}.
+    ${multiStopInstructions}
 
     **CRITICAL INSTRUCTIONS & PROTOCOL:**
 
-    1.  **Identify Local Language:** First, you MUST determine the primary local language spoken in "${destination}". This will be used for the translations.
+    1.  **Identify Local Language:** First, you MUST determine the primary local language(s) spoken ${isMultiStop ? `across these destinations: ${destinationsString}` : `in "${destination}"`}. This will be used for the translations.
     2.  **Curate Essential Categories:** Create a list of essential phrase categories. You MUST include at least the following five categories: "Greetings & Basics", "Dining & Ordering Food", "Shopping & Bargaining", "Directions & Transportation", and "Emergencies". You may add 1-2 other relevant categories if applicable to the destination (e.g., "Beach Phrases" for a coastal city).
     3.  **Generate Phrases:** For each category, provide 5-8 useful phrases. Each phrase object MUST contain three fields:
         - \`english\`: The phrase in English.
@@ -27,8 +50,8 @@ export const generateLingoGuide = async (data: LingoFinderRequestData, onChunk?:
     The response MUST be ONLY a single, valid JSON object that strictly follows this structure. All text content must be in ${language}.
 
     {
-      "destination": "${destination}",
-      "localLanguage": "The name of the local language you identified (e.g., 'Japanese', 'Hindi', 'Spanish')",
+      "destination": "${isMultiStop ? destinationsString : destination}",
+      "localLanguage": "The name of the primary local language you identified ${isMultiStop ? 'across these destinations' : 'for this destination'} (e.g., 'Japanese', 'Hindi', 'Spanish')",
       "categories": [
         {
           "categoryName": "Greetings & Basics",
@@ -40,25 +63,35 @@ export const generateLingoGuide = async (data: LingoFinderRequestData, onChunk?:
     }
 
     **FINAL CRITICAL RULES:**
-    1.  **Language:** The entire JSON response MUST be in ${language}.
-    2.  **CRITICAL JSON VALIDATION RULE**: The output MUST be a perfectly valid JSON object. This is the single most important instruction.
-        a. **NO UNESCAPED QUOTES**: Inside any JSON string value, you MUST NEVER use a double quote character ("). It will break the JSON and cause an error.
-        b. **HOW TO HANDLE QUOTES**: Use single quotes or escape double quotes with a backslash (e.g., "The guide said, \\"Welcome!\\"").
-        c. **FAILURE TO FOLLOW THIS RULE WILL RENDER THE ENTIRE OUTPUT USELESS.** You must double-check every string value for unescaped double quotes.
-    3. **ABSOLUTE FINAL INSTRUCTION**: Your entire response MUST be the raw JSON object. It MUST start with the character '{' and end with the character '}'. You MUST NOT wrap it in markdown (like \`\`\`json), and you MUST NOT add any introductory text.
+    1. **Language:** The entire JSON response MUST be in ${language}.
+    2. **JSON VALIDATION:** The output MUST be a perfectly valid JSON object. NO unescaped double quotes (") in string values. Use single quotes or escape with \\". Check every string before finishing.
+    3. **FINAL INSTRUCTION:** Your entire response MUST be the raw JSON object starting with '{' and ending with '}'. NO markdown wrapping, NO introductory text. Immediately parsable as JSON.
   `;
 
   let fullText = '';
   try {
       if (onChunk) {
-        const stream = await ai.models.generateContentStream({ model: "gemini-2.5-flash", contents: prompt });
+        const stream = await ai.models.generateContentStream({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+                thinkingConfig: { thinkingBudget: 0 },
+            }
+        });
         for await (const chunk of stream) {
             const chunkText = chunk.text;
             fullText += chunkText;
             onChunk(chunkText);
         }
       } else {
-        const response = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+                thinkingConfig: { thinkingBudget: 0 },
+                responseMimeType: "application/json",
+            }
+        });
         fullText = response.text;
       }
 
@@ -74,7 +107,7 @@ export const generateLingoGuide = async (data: LingoFinderRequestData, onChunk?:
 
       const cleanedJson = cleanCitations(parsedJson);
 
-      return cleanedJson;
+      return { result: cleanedJson, prompt };
   } catch (error) {
       console.error("Failed to generate and parse lingo guide stream:", error);
       console.error("Original AI response text accumulated:", fullText);
@@ -88,6 +121,9 @@ export const generateLingoGuide = async (data: LingoFinderRequestData, onChunk?:
         const combinedErrorText = (error.message + fullText).toLowerCase();
 
         if (combinedErrorText.includes("quota") || combinedErrorText.includes("rate limit") || combinedErrorText.includes("429")) {
+            if (isUsingDefaultKey) {
+                throw new Error("[429] The default API key has reached its quota limit. Please set your own Gemini API key in your profile settings to continue.");
+            }
             throw new Error("[429] You have exceeded the request limit. Please check your plan and billing details and try again later.");
         }
         if (combinedErrorText.includes("overloaded") || combinedErrorText.includes("server error") || combinedErrorText.includes("503")) {

@@ -1,8 +1,9 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Itinerary } from '../types';
-import ExportOptions from './ExportOptions';
-import { getReferenceBlogs } from '../services/geminiService';
+import { useSaveRecommendation } from '../hooks/useSaveRecommendation';
+import { User } from '../services/authService';
+import Toast from './Toast';
 
 // Helper to parse simple markdown bolding
 const parseBold = (text: string | undefined) => {
@@ -11,15 +12,306 @@ const parseBold = (text: string | undefined) => {
   return { __html: text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') };
 };
 
+// Helper to extract hotel name from formatted text (removes price info and bold markers)
+const extractHotelName = (text: string): string => {
+  if (!text) return '';
+  
+  // First, try to extract bold text (most common format: **Hotel Name**)
+  const boldMatch = text.match(/\*\*([^*]+)\*\*/);
+  if (boldMatch && boldMatch[1]) {
+    let name = boldMatch[1].trim();
+    // Remove price info if present in the bold text
+    name = name.replace(/\s*\(.*$/g, '').trim();
+    if (name.length > 0) return name;
+  }
+  
+  // Fallback: remove bold markers and extract first meaningful part
+  let cleaned = text.replace(/\*\*/g, '');
+  
+  // Remove price information (everything from "(" onwards)
+  cleaned = cleaned.replace(/\s*\(.*$/g, '');
+  
+  // Remove common prefixes/suffixes
+  cleaned = cleaned.replace(/^(from|starting|at)\s+/i, '');
+  
+  // Extract first part (before dash, colon, or comma)
+  const firstPart = cleaned.split(/[-–—:,\n]/)[0].trim();
+  
+  // If first part is too short or looks like a number, try next part
+  if (firstPart.length < 3 || /^\d+/.test(firstPart)) {
+    const parts = cleaned.split(/[-–—:,\n]/);
+    if (parts.length > 1) {
+      return parts[1].trim();
+    }
+  }
+  
+  return firstPart || cleaned.trim();
+};
+
+// Helper to extract location from day title or activities
+const extractLocationFromDay = (day: Itinerary['plan'][0], itinerary: Itinerary): string => {
+  // Try to extract from day title (e.g., "Day 3: Travel from Chittorgarh to Udaipur" -> "Udaipur")
+  if (day.title) {
+    // Look for patterns like "to [Location]", "in [Location]", "at [Location]"
+    const toMatch = day.title.match(/(?:to|in|at)\s+([A-Z][a-zA-Z\s]+?)(?:\s|$|&|,)/);
+    if (toMatch && toMatch[1]) {
+      const location = toMatch[1].trim();
+      // Filter out common words
+      if (!['Day', 'Travel', 'Sightseeing', 'Local', 'Explore'].includes(location)) {
+        return location;
+      }
+    }
+    
+    // Try to find city names from coveredDestinations in the title
+    if (itinerary.coveredDestinations) {
+      for (const dest of itinerary.coveredDestinations) {
+        if (day.title.includes(dest.name)) {
+          return dest.name;
+        }
+      }
+    }
+  }
+  
+  // Try to extract from activities (look for city names)
+  if (day.activities && day.activities.length > 0) {
+    const activitiesText = day.activities.join(' ');
+    if (itinerary.coveredDestinations) {
+      for (const dest of itinerary.coveredDestinations) {
+        if (activitiesText.includes(dest.name)) {
+          return dest.name;
+        }
+      }
+    }
+  }
+  
+  // Fallback: use the first covered destination or main destination
+  if (itinerary.coveredDestinations && itinerary.coveredDestinations.length > 0) {
+    return itinerary.coveredDestinations[0].name;
+  }
+  
+  // Last resort: extract city name from main destination (if it's a simple city name)
+  const mainDest = itinerary.destination;
+  // If destination is something like "Rajasthan Heritage Tour", try to find a city
+  // For now, just return the destination as-is, but we'll try to improve this
+  return mainDest.split(/[,\s]+/).find(part => part.length > 3 && /^[A-Z]/.test(part)) || mainDest;
+};
+
+// Helper to find destinations visited on a specific day
+const getDestinationsForDay = (day: Itinerary['plan'][0], itinerary: Itinerary): Itinerary['coveredDestinations'] => {
+  if (!itinerary.coveredDestinations || itinerary.coveredDestinations.length === 0) {
+    return [];
+  }
+  
+  const dayLocation = extractLocationFromDay(day, itinerary);
+  const dayText = `${day.title} ${day.activities?.join(' ') || ''}`.toLowerCase();
+  
+  // Find all destinations that match this day
+  const matchingDestinations = itinerary.coveredDestinations.filter(dest => {
+    const destNameLower = dest.name.toLowerCase();
+    // Check if destination name appears in day title or activities
+    return dayText.includes(destNameLower) || dayLocation.toLowerCase().includes(destNameLower);
+  });
+  
+  // If no matches found, try to match by location extracted from day
+  if (matchingDestinations.length === 0 && dayLocation) {
+    const locationMatch = itinerary.coveredDestinations.find(dest => 
+      dest.name.toLowerCase() === dayLocation.toLowerCase() ||
+      dayLocation.toLowerCase().includes(dest.name.toLowerCase())
+    );
+    if (locationMatch) {
+      return [locationMatch];
+    }
+  }
+  
+  return matchingDestinations;
+};
+
+// Helper to generate Google search URL for a hotel
+const generateHotelSearchUrl = (hotelName: string, location: string): string => {
+  const searchQuery = `${hotelName} ${location}`.trim();
+  return `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`;
+};
+
+// Helper to extract restaurant name from formatted text (removes description and bold markers)
+const extractRestaurantName = (text: string): string => {
+  if (!text) return '';
+  
+  // First, try to extract bold text (most common format: **Restaurant Name**)
+  const boldMatch = text.match(/\*\*([^*]+)\*\*/);
+  if (boldMatch && boldMatch[1]) {
+    let name = boldMatch[1].trim();
+    // Remove description after dash, colon, or parenthesis
+    name = name.replace(/\s*[-–—:]\s*.*$/g, '');
+    name = name.replace(/\s*\(.*$/g, '');
+    if (name.length > 0) return name;
+  }
+  
+  // Fallback: remove bold markers and extract first meaningful part
+  let cleaned = text.replace(/\*\*/g, '');
+  
+  // Remove description after dash or colon or parenthesis
+  cleaned = cleaned.replace(/\s*[-–—:]\s*.*$/g, ''); // Remove after dash/colon
+  cleaned = cleaned.replace(/\s*\(.*$/g, ''); // Remove after parenthesis
+  
+  // Remove common prefixes
+  cleaned = cleaned.replace(/^(at|visit|try|enjoy)\s+/i, '');
+  
+  // Extract first part (before dash, colon, comma, or newline)
+  const firstPart = cleaned.split(/[-–—:,\n]/)[0].trim();
+  
+  // If first part is too short, try next part
+  if (firstPart.length < 3) {
+    const parts = cleaned.split(/[-–—:,\n]/);
+    if (parts.length > 1) {
+      return parts[1].trim();
+    }
+  }
+  
+  return firstPart || cleaned.trim();
+};
+
+// Helper to generate Google search URL for a restaurant
+const generateRestaurantSearchUrl = (restaurantName: string, location: string): string => {
+  const searchQuery = `${restaurantName} ${location}`.trim();
+  return `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`;
+};
+
+// Helper to get weather icon based on weather description and temperature (compact size)
+const getWeatherIcon = (tempString: string | undefined): React.ReactNode => {
+  if (!tempString) return <span role="img" aria-label="thermometer">🌡️</span>;
+  
+  const weatherText = tempString.toLowerCase();
+  
+  // First, check weather description keywords for more accurate icon selection
+  // Check more specific conditions first
+  if (weatherText.includes('partly cloudy') || weatherText.includes('partly cloud')) {
+    return <span role="img" aria-label="sun behind cloud">⛅</span>;
+  }
+  if (weatherText.includes('sunny') || weatherText.includes('clear')) {
+    return <span role="img" aria-label="sun">☀️</span>;
+  }
+  if (weatherText.includes('rain') || weatherText.includes('shower') || weatherText.includes('drizzle')) {
+    return <span role="img" aria-label="rain">🌧️</span>;
+  }
+  if (weatherText.includes('snow') || weatherText.includes('sleet')) {
+    return <span role="img" aria-label="snowflake">❄️</span>;
+  }
+  if (weatherText.includes('storm') || weatherText.includes('thunder')) {
+    return <span role="img" aria-label="storm">⛈️</span>;
+  }
+  if (weatherText.includes('cloud') || weatherText.includes('overcast')) {
+    return <span role="img" aria-label="cloud">☁️</span>;
+  }
+  if (weatherText.includes('fog') || weatherText.includes('mist')) {
+    return <span role="img" aria-label="fog">🌫️</span>;
+  }
+  
+  // Fall back to temperature-based logic if no weather keywords found
+  const matches = tempString.match(/-?\d+/g);
+  if (!matches) return <span role="img" aria-label="thermometer">🌡️</span>;
+  
+  const temps = matches.map(Number).filter(t => t > -50 && t < 60); // Filter out invalid temps
+  if (temps.length === 0) return <span role="img" aria-label="thermometer">🌡️</span>;
+  
+  const avgTemp = temps.reduce((a, b) => a + b, 0) / temps.length;
+
+  // Temperature-based icon selection (Celsius)
+  if (avgTemp >= 30) return <span role="img" aria-label="sun">☀️</span>;
+  if (avgTemp >= 20) return <span role="img" aria-label="sun behind cloud">⛅</span>;
+  if (avgTemp >= 10) return <span role="img" aria-label="cloud">☁️</span>;
+  if (avgTemp >= 0) return <span role="img" aria-label="coat">🧥</span>;
+  return <span role="img" aria-label="snowflake">❄️</span>;
+};
+
+// Helper to get AQI color and category (handles ranges like "45-65" or single values)
+const getAQIColor = (aqiString: string | undefined): { color: string; bgColor: string; textColor: string } => {
+  if (!aqiString) return { color: 'slate', bgColor: 'bg-slate-100', textColor: 'text-slate-600' };
+  
+  // Extract all numbers from the string (handles ranges like "45-65" or single values like "45")
+  const aqiMatches = aqiString.match(/\d+/g);
+  if (!aqiMatches || aqiMatches.length === 0) return { color: 'slate', bgColor: 'bg-slate-100', textColor: 'text-slate-600' };
+  
+  // If range, use the higher value (worst case); if single value, use that
+  const aqiValues = aqiMatches.map(Number);
+  const aqi = Math.max(...aqiValues); // Use the maximum value from the range for color determination
+  
+  if (aqi <= 100) return { color: 'green', bgColor: 'bg-green-100', textColor: 'text-green-700' };
+  if (aqi <= 150) return { color: 'orange', bgColor: 'bg-orange-100', textColor: 'text-orange-700' };
+  if (aqi <= 200) return { color: 'red', bgColor: 'bg-red-100', textColor: 'text-red-700' };
+  if (aqi <= 300) return { color: 'purple', bgColor: 'bg-purple-100', textColor: 'text-purple-700' };
+  return { color: 'maroon', bgColor: 'bg-red-200', textColor: 'text-red-900' };
+};
+
+// Helper to parse time from activity text
+const parseActivityTime = (text: string): { time?: string; description: string } => {
+  if (!text) return { description: '' };
+  
+  // Pattern to match time ranges with optional bold markers and colon separator
+  // Matches formats like: "**01:00 PM - 02:00 PM:**" or "**01:00 PM:**" or "01:00 PM - 02:00 PM:"
+  // The pattern matches the entire prefix including bold markers and colon
+  const timeRangePattern = /\*\*(\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)\s*-\s*\d{1,2}:\d{2}\s*(?:AM|PM|am|pm))\*\*\s*:\s*/i;
+  const singleTimePattern = /\*\*(\d{1,2}:\d{2}\s*(?:AM|PM|am|pm))\*\*\s*:\s*/i;
+  const onwardsPattern = /\*\*(\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)\s+onwards)\*\*\s*:\s*/i;
+  
+  // Also handle single asterisk bold or no bold
+  const timeRangePatternAlt = /(\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)\s*-\s*\d{1,2}:\d{2}\s*(?:AM|PM|am|pm))\s*:\s*/i;
+  const singleTimePatternAlt = /(\d{1,2}:\d{2}\s*(?:AM|PM|am|pm))\s*:\s*/i;
+  const onwardsPatternAlt = /(\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)\s+onwards)\s*:\s*/i;
+  
+  let match = text.match(timeRangePattern);
+  let time: string | undefined;
+  
+  if (match) {
+    time = match[1];
+  } else {
+    match = text.match(singleTimePattern);
+    if (match) {
+      time = match[1];
+    } else {
+      match = text.match(onwardsPattern);
+      if (match) {
+        time = match[1];
+      } else {
+        match = text.match(timeRangePatternAlt);
+        if (match) {
+          time = match[1];
+        } else {
+          match = text.match(singleTimePatternAlt);
+          if (match) {
+            time = match[1];
+          } else {
+            match = text.match(onwardsPatternAlt);
+            if (match) {
+              time = match[1];
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  if (match && time) {
+    // Remove the entire matched pattern (including bold markers and colon) and clean up
+    let description = text.replace(match[0], '').trim();
+    // Strip any remaining leading colons, dashes, or whitespace as a safety measure
+    description = description.replace(/^[:–—\s\-]+/, '').trim();
+    return { time, description };
+  }
+  
+  // If no time is found, still strip leading colons, dashes, and trim
+  const cleanedDescription = text.replace(/^[:–—\s\-]+/, '').trim();
+  return { description: cleanedDescription };
+};
+
 const SummaryItem: React.FC<{ icon: React.ReactNode; label: string; children: React.ReactNode }> = ({ icon, label, children }) => (
-    <div className="bg-white/40 backdrop-blur-md p-4 rounded-xl border border-white/50 flex items-center space-x-4">
-        <div className="flex-shrink-0 bg-violet-100 text-violet-600 rounded-full p-3">
-            {icon}
+    <div className="bg-gradient-to-br from-white/60 to-violet-50/30 backdrop-blur-md p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-violet-200/50 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1 h-full flex flex-col">
+        <div className="flex items-center space-x-3 sm:space-x-4 mb-2 sm:mb-3">
+            <div className="flex-shrink-0 bg-gradient-to-br from-violet-500 to-violet-600 text-white rounded-lg sm:rounded-xl p-2 sm:p-3 shadow-md">
+                {icon}
+            </div>
+            <p className="text-xs sm:text-sm text-violet-700 font-semibold uppercase tracking-wide">{label}</p>
         </div>
-        <div>
-            <p className="text-sm text-violet-800 font-medium break-words">{label}</p>
-            <div className="font-semibold text-lg text-slate-800 break-words">{children}</div>
-        </div>
+        <div className="font-bold text-base sm:text-lg text-slate-800 break-words mt-auto">{children}</div>
     </div>
 );
 
@@ -36,17 +328,33 @@ const getCurrencySymbol = (currencyString: string): string => {
 // New component for budget cards
 const BudgetCard: React.FC<{ title: string; icon: React.ReactNode; value: string; currencySymbol: string; isHighlighted?: boolean; animationDelay: string; }> = ({ title, icon, value, currencySymbol, isHighlighted = false, animationDelay }) => {
   // Clean value from any currency prefix the AI might have added
-  const cleanedValue = value.replace(/^[A-Z]{3,5}\s?/, '').replace(/^[^\d\s.,-]+/, '').trim();
+  let cleanedValue = value.replace(/^[A-Z]{3,5}\s?/, '').replace(/^[^\d\s.,-]+/, '').trim();
   
-  // Regex to split the numerical part from the description
-  const match = cleanedValue.match(/([\d,.\s-]+)\s*(.*)/s);
+  // Check if the value contains a range (e.g., "2000-3000" or "2000 - 3000")
+  const rangeMatch = cleanedValue.match(/(\d+(?:[.,]\d+)?)\s*[-–—]\s*(\d+(?:[.,]\d+)?)/);
   
   let mainValue = cleanedValue;
   let description = '';
 
-  if (match) {
-    mainValue = match[1].trim();
-    description = match[2].trim();
+  if (rangeMatch) {
+    // Handle range: extract both numbers and format them
+    const minValue = rangeMatch[1].replace(/,/g, '');
+    const maxValue = rangeMatch[2].replace(/,/g, '');
+    mainValue = `${minValue} - ${maxValue}`;
+    
+    // Extract description after the range
+    const afterRange = cleanedValue.substring(rangeMatch[0].length).trim();
+    if (afterRange) {
+      description = afterRange;
+    }
+  } else {
+    // Handle single value: regex to split the numerical part from the description
+    const match = cleanedValue.match(/([\d,.\s-]+)\s*(.*)/s);
+    
+    if (match) {
+      mainValue = match[1].trim();
+      description = match[2].trim();
+    }
   }
   
   const cardClasses = isHighlighted 
@@ -63,33 +371,29 @@ const BudgetCard: React.FC<{ title: string; icon: React.ReactNode; value: string
 
   return (
     <div 
-      className={`p-6 rounded-2xl text-center flex flex-col justify-start animated-card h-full ${cardClasses}`}
+      className={`p-3 sm:p-4 md:p-6 rounded-xl sm:rounded-2xl text-center flex flex-col justify-start animated-card h-full ${cardClasses}`}
       style={{ animationDelay }}
     >
-      <div className={`mx-auto rounded-full h-12 w-12 flex items-center justify-center flex-shrink-0 ${iconContainerClasses}`}>
+      <div className={`mx-auto rounded-full h-10 w-10 sm:h-12 sm:w-12 flex items-center justify-center flex-shrink-0 ${iconContainerClasses}`}>
         {icon}
       </div>
-      <p className={`mt-4 text-sm font-medium break-words ${textColorClasses.title}`}>{title}</p>
+      <p className={`mt-2 sm:mt-3 md:mt-4 text-xs sm:text-sm font-medium break-words ${textColorClasses.title}`}>{title}</p>
       <div className="mt-2 flex-grow flex flex-col justify-center">
-        <p className={`text-2xl font-bold break-words ${textColorClasses.value}`}>{currencySymbol} {mainValue}</p>
-        {description && <p className={`text-sm mt-1 break-words ${textColorClasses.description}`}>{description}</p>}
+        <p className={`text-lg sm:text-2xl font-bold break-words ${textColorClasses.value}`}>{currencySymbol} {mainValue}</p>
+        {description && <p className={`text-xs sm:text-sm mt-1 break-words ${textColorClasses.description}`}>{description}</p>}
       </div>
     </div>
   );
 };
 
-// Helper to identify transport-related blogs
-const isTransportBlog = (blog: Itinerary['referenceBlogs'][0]): boolean => {
-    const keywords = ['transport', 'getting around', 'driving', 'bus', 'train', 'airport', 'commute', 'travel between', 'route', 'navigation'];
-    const content = `${blog.title.toLowerCase()} ${blog.description.toLowerCase()}`;
-    return keywords.some(keyword => content.includes(keyword));
-};
 
 interface ItineraryPreviewProps {
   itinerary: Itinerary;
   onRegenerate: () => void;
   isUnifiedView?: boolean;
-  onPrint?: () => void;
+  requestData?: any; // Add request data for history saving
+  isHistoryView?: boolean; // Add flag to indicate if this is from history
+  user?: User | null;
 }
 
 const getAboutSectionsForDestination = (destinationDetails: Itinerary['coveredDestinations'][0]) => {
@@ -109,33 +413,210 @@ const DestinationInfoTabs: React.FC<{ destinationDetails: Itinerary['coveredDest
     const sections = getAboutSectionsForDestination(destinationDetails);
     const availableSections = sections.filter(section => (section.content || (Array.isArray(section.items) && section.items.length > 0)));
     const [activeTab, setActiveTab] = useState(availableSections[0]?.title || '');
+    const tabsContainerRef = useRef<HTMLDivElement>(null);
+    const [showScrollArrow, setShowScrollArrow] = useState(true);
+    const [showLeftArrow, setShowLeftArrow] = useState(false);
+
+    // Check if scrolling is needed and if user has scrolled to the end or beginning
+    useEffect(() => {
+        const checkScroll = () => {
+            if (tabsContainerRef.current) {
+                const container = tabsContainerRef.current;
+                const hasScroll = container.scrollWidth > container.clientWidth;
+                const isAtEnd = container.scrollLeft + container.clientWidth >= container.scrollWidth - 10; // 10px threshold
+                const isAtStart = container.scrollLeft <= 10; // 10px threshold
+                
+                setShowScrollArrow(hasScroll && !isAtEnd);
+                setShowLeftArrow(hasScroll && !isAtStart);
+            }
+        };
+
+        checkScroll();
+        const container = tabsContainerRef.current;
+        if (container) {
+            container.addEventListener('scroll', checkScroll);
+            // Also check on resize
+            window.addEventListener('resize', checkScroll);
+        }
+
+        return () => {
+            if (container) {
+                container.removeEventListener('scroll', checkScroll);
+            }
+            window.removeEventListener('resize', checkScroll);
+        };
+    }, [availableSections.length]);
+
+    // Handle right arrow click to scroll to next 2 sections
+    const handleRightArrowClick = () => {
+        if (tabsContainerRef.current) {
+            const container = tabsContainerRef.current;
+            const buttons = container.querySelectorAll('button');
+            
+            if (buttons.length === 0) return;
+            
+            // Get the width of the first button (they should be similar)
+            const firstButton = buttons[0] as HTMLElement;
+            const buttonWidth = firstButton.offsetWidth;
+            const buttonSpacing = 6; // space-x-1.5 = 6px (1.5 * 4px)
+            const scrollAmount = (buttonWidth + buttonSpacing) * 2; // Scroll by 2 buttons
+            
+            // Calculate new scroll position
+            const currentScroll = container.scrollLeft;
+            const maxScroll = container.scrollWidth - container.clientWidth;
+            const newScroll = Math.min(currentScroll + scrollAmount, maxScroll);
+            
+            // Smooth scroll
+            container.scrollTo({
+                left: newScroll,
+                behavior: 'smooth'
+            });
+        }
+    };
+
+    // Handle left arrow click to scroll back by 2 sections
+    const handleLeftArrowClick = () => {
+        if (tabsContainerRef.current) {
+            const container = tabsContainerRef.current;
+            const buttons = container.querySelectorAll('button');
+            
+            if (buttons.length === 0) return;
+            
+            // Get the width of the first button (they should be similar)
+            const firstButton = buttons[0] as HTMLElement;
+            const buttonWidth = firstButton.offsetWidth;
+            const buttonSpacing = 6; // space-x-1.5 = 6px (1.5 * 4px)
+            const scrollAmount = (buttonWidth + buttonSpacing) * 2; // Scroll by 2 buttons
+            
+            // Calculate new scroll position
+            const currentScroll = container.scrollLeft;
+            const newScroll = Math.max(currentScroll - scrollAmount, 0);
+            
+            // Smooth scroll
+            container.scrollTo({
+                left: newScroll,
+                behavior: 'smooth'
+            });
+        }
+    };
 
     if (availableSections.length === 0) {
         return null;
     }
 
     return (
-        <div className="bg-white/40 backdrop-blur-lg rounded-2xl shadow-lg border border-white/50 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-            <nav className="no-print border-b border-violet-200/50 p-2 sm:p-3">
-                <div className="flex space-x-1 sm:space-x-2 overflow-x-auto hide-scrollbar [mask-image:linear-gradient(to_right,rgba(0,0,0,1)_85%,rgba(0,0,0,0))] lg:[mask-image:none]">
+        <div className="bg-gradient-to-br from-violet-50/60 via-indigo-50/40 to-purple-50/30 backdrop-blur-lg rounded-xl sm:rounded-2xl shadow-lg border border-violet-200/50 transition-all duration-300 hover:shadow-xl hover:border-violet-300/60 overflow-hidden">
+            {/* Destination Header */}
+            <div className="bg-gradient-to-r from-violet-600/90 to-indigo-600/90 backdrop-blur-sm px-4 py-3 sm:px-5 sm:py-4">
+                <div className="flex items-center justify-between gap-3">
+                    <a
+                        href={`https://www.google.com/search?q=${encodeURIComponent(destinationDetails.name)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center space-x-3 flex-1 min-w-0 group cursor-pointer"
+                        aria-label={`Search ${destinationDetails.name} on Google`}
+                        title={`Click to search ${destinationDetails.name} on Google`}
+                    >
+                        <div className="flex-shrink-0 bg-white/20 backdrop-blur-sm rounded-lg p-2 shadow-md group-hover:bg-white/30 transition-all duration-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                        </div>
+                        <h4 className="text-lg sm:text-xl font-bold text-white break-words leading-tight flex-1 min-w-0 group-hover:text-violet-100 transition-colors duration-200 underline-offset-2 group-hover:underline" dangerouslySetInnerHTML={parseBold(destinationDetails.name)} />
+                    </a>
+                    <a
+                        href={`https://www.google.com/search?q=${encodeURIComponent(destinationDetails.name)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-shrink-0 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg p-2 shadow-md transition-all duration-200 hover:scale-110 active:scale-95"
+                        aria-label={`Search ${destinationDetails.name} on Google`}
+                        title={`Search ${destinationDetails.name} on Google`}
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </a>
+                </div>
+            </div>
+
+            {/* Tabs Navigation */}
+            <nav className="no-print bg-white/30 backdrop-blur-sm border-b border-violet-200/50 px-3 py-2 sm:px-4 sm:py-2.5 relative">
+                <div 
+                    ref={tabsContainerRef}
+                    className={`flex space-x-1.5 sm:space-x-2 overflow-x-auto hide-scrollbar ${
+                        (showLeftArrow || showScrollArrow)
+                            ? showLeftArrow && showScrollArrow
+                                ? '[mask-image:linear-gradient(to_right,rgba(0,0,0,0)_0%,rgba(0,0,0,0.3)_10%,rgba(0,0,0,1)_20%,rgba(0,0,0,1)_75%,rgba(0,0,0,0.3)_85%,rgba(0,0,0,0)_100%)]'
+                                : showLeftArrow
+                                    ? '[mask-image:linear-gradient(to_right,rgba(0,0,0,0)_0%,rgba(0,0,0,0.3)_10%,rgba(0,0,0,1)_20%,rgba(0,0,0,1)_100%)]'
+                                    : '[mask-image:linear-gradient(to_right,rgba(0,0,0,1)_0%,rgba(0,0,0,1)_75%,rgba(0,0,0,0.3)_85%,rgba(0,0,0,0)_100%)]'
+                            : '[mask-image:none]'
+                    }`}
+                >
                     {availableSections.map(section => (
                         <button
                             key={section.title}
                             onClick={() => setActiveTab(section.title)}
-                            className={`flex-shrink-0 flex items-center space-x-2 px-3 py-2 text-sm sm:text-base font-semibold rounded-md transition-all duration-200 ${
+                            className={`flex-shrink-0 flex items-center space-x-1.5 sm:space-x-2 px-3 py-2 sm:px-3.5 sm:py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all duration-200 transform hover:scale-105 ${
                                 activeTab === section.title
-                                ? 'bg-violet-600 text-white shadow'
-                                : 'text-slate-600 hover:bg-white/60'
+                                ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg shadow-violet-500/30 scale-105'
+                                : 'text-slate-700 hover:bg-white/70 hover:text-violet-700'
                             }`}
                         >
-                            {section.icon}
-                            <span>{section.title}</span>
+                            <span className={`w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 ${activeTab === section.title ? 'text-white' : 'text-violet-600'}`}>{section.icon}</span>
+                            <span className="whitespace-nowrap">{section.title}</span>
                         </button>
                     ))}
                 </div>
+                
+                {/* Left Arrow Indicator */}
+                {showLeftArrow && (
+                    <div className="absolute left-0 top-0 bottom-0 w-12 pointer-events-none z-10 flex items-center justify-start pl-2 bg-gradient-to-r from-white/30 via-white/20 to-transparent">
+                        <button
+                            onClick={handleLeftArrowClick}
+                            className="bg-white/90 backdrop-blur-sm rounded-full p-1.5 shadow-md border border-violet-200/50 hover:bg-white hover:shadow-lg hover:border-violet-300/70 transition-all duration-200 active:scale-95 pointer-events-auto cursor-pointer"
+                            aria-label="Scroll to previous sections"
+                        >
+                            <svg 
+                                xmlns="http://www.w3.org/2000/svg" 
+                                className="h-3.5 w-3.5 text-violet-600 scroll-arrow-animate-reverse" 
+                                fill="none" 
+                                viewBox="0 0 24 24" 
+                                stroke="currentColor" 
+                                strokeWidth={2.5}
+                            >
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                            </svg>
+                        </button>
+                    </div>
+                )}
+                
+                {/* Right Arrow Indicator */}
+                {showScrollArrow && (
+                    <div className="absolute right-0 top-0 bottom-0 w-12 pointer-events-none z-10 flex items-center justify-end pr-2 bg-gradient-to-l from-white/30 via-white/20 to-transparent">
+                        <button
+                            onClick={handleRightArrowClick}
+                            className="bg-white/90 backdrop-blur-sm rounded-full p-1.5 shadow-md border border-violet-200/50 hover:bg-white hover:shadow-lg hover:border-violet-300/70 transition-all duration-200 active:scale-95 pointer-events-auto cursor-pointer"
+                            aria-label="Scroll to next sections"
+                        >
+                            <svg 
+                                xmlns="http://www.w3.org/2000/svg" 
+                                className="h-3.5 w-3.5 text-violet-600 scroll-arrow-animate" 
+                                fill="none" 
+                                viewBox="0 0 24 24" 
+                                stroke="currentColor" 
+                                strokeWidth={2.5}
+                            >
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                            </svg>
+                        </button>
+                    </div>
+                )}
             </nav>
 
-            <div key={activeTab} className="relative p-4 sm:p-6" style={{animation: 'fadeIn 0.4s ease-out'}}>
+            {/* Content Area */}
+            <div key={activeTab} className="relative bg-white/40 backdrop-blur-sm" style={{animation: 'fadeIn 0.4s ease-out'}}>
                 {availableSections.map(section => {
                     const isActive = activeTab === section.title;
                     return (
@@ -149,14 +630,24 @@ const DestinationInfoTabs: React.FC<{ destinationDetails: Itinerary['coveredDest
                                 </div>
                                 <h3 className="text-xl font-bold text-slate-800">{section.title}</h3>
                             </div>
-                            <div className="prose prose-slate max-w-none text-gray-700 print:pl-1">
+                            <div className="p-4 sm:p-5">
                                 {section.content && (
-                                    <div dangerouslySetInnerHTML={parseBold(section.content as string)} />
+                                    <div className="prose prose-slate max-w-none text-sm sm:text-base text-slate-700 leading-relaxed">
+                                        <div className="bg-white/60 backdrop-blur-sm rounded-lg p-4 sm:p-5 border border-violet-100/50 shadow-sm" dangerouslySetInnerHTML={parseBold(section.content as string)} />
+                                    </div>
                                 )}
                                 {Array.isArray(section.items) && section.items.length > 0 && (
-                                    <ul className="list-disc pl-5 space-y-1">
+                                    <ul className="space-y-2.5 sm:space-y-3 mt-2">
                                         {section.items.map((item, index) => (
-                                            <li key={index} dangerouslySetInnerHTML={parseBold(item)} />
+                                            <li 
+                                                key={index} 
+                                                className="flex items-start space-x-3 bg-white/60 backdrop-blur-sm rounded-lg p-3 sm:p-4 border border-violet-100/50 shadow-sm hover:shadow-md hover:border-violet-200/70 transition-all duration-200"
+                                            >
+                                                <div className="flex-shrink-0 mt-0.5">
+                                                    <div className="w-2 h-2 rounded-full bg-gradient-to-r from-violet-500 to-indigo-500"></div>
+                                                </div>
+                                                <div className="flex-1 text-sm sm:text-base text-slate-700 leading-relaxed" dangerouslySetInnerHTML={parseBold(item)} />
+                                            </li>
                                         ))}
                                     </ul>
                                 )}
@@ -170,19 +661,274 @@ const DestinationInfoTabs: React.FC<{ destinationDetails: Itinerary['coveredDest
 };
 
 
-const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegenerate, isUnifiedView = false, onPrint }) => {
-  const [blogs, setBlogs] = useState<Itinerary['referenceBlogs']>([]);
-  const [isLoadingBlogs, setIsLoadingBlogs] = useState(true);
+const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegenerate, isUnifiedView = false, requestData, isHistoryView = false, user }) => {
+  const [hasBeenSaved, setHasBeenSaved] = useState(false);
+  const [savedId, setSavedId] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  const { saveItineraryRecommendation } = useSaveRecommendation();
   
+  // Day indicator state
+  const [currentDay, setCurrentDay] = useState<number>(1);
+  const [isEditingDay, setIsEditingDay] = useState(false);
+  const [dayInputValue, setDayInputValue] = useState<string>('1');
+  const dayRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
+  const observerRef = useRef<IntersectionObserver | null>(null);
+
+  // Save to history when component mounts (only if not in unified view and request data is available)
   useEffect(() => {
-    const fetchBlogs = async () => {
-      setIsLoadingBlogs(true);
-      const fetchedBlogs = await getReferenceBlogs(itinerary.destination, itinerary.language);
-      setBlogs(fetchedBlogs);
-      setIsLoadingBlogs(false);
+    // Don't save if this is a history view
+    if (!isUnifiedView && requestData && !hasBeenSaved && !isHistoryView) {
+      const saveRecommendation = async () => {
+        const id = await saveItineraryRecommendation(requestData, itinerary, itinerary.destination, requestData.language);
+        if (id) {
+          setSavedId(id);
+        }
+        setHasBeenSaved(true);
+      };
+      saveRecommendation();
+    }
+  }, [isUnifiedView, requestData, itinerary, saveItineraryRecommendation, hasBeenSaved, isHistoryView]);
+
+  // Initialize current day
+  useEffect(() => {
+    if (itinerary.plan && itinerary.plan.length > 0) {
+      setCurrentDay(1);
+      setDayInputValue('1');
+    }
+  }, [itinerary.plan]);
+
+  // Set up IntersectionObserver to track current day based on scroll position
+  useEffect(() => {
+    // Clean up previous observer
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+    }
+
+    // Create new observer
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        // Find the entry with the highest intersection ratio that's in the upper portion of viewport
+        let mostVisible: { day: number; ratio: number; top: number } | null = null;
+
+        entries.forEach((entry) => {
+          const dayNumber = parseInt(entry.target.getAttribute('data-day') || '1');
+          const rect = entry.boundingClientRect;
+          const viewportCenter = window.innerHeight / 2;
+          
+          // Prefer elements that are in the upper portion of the viewport
+          const distanceFromTop = Math.max(0, rect.top);
+          const isInUpperPortion = rect.top < viewportCenter * 0.6;
+          
+          if (entry.isIntersecting) {
+            // Calculate score: higher intersection ratio and closer to top gets higher score
+            const ratioScore = entry.intersectionRatio;
+            const positionScore = isInUpperPortion ? 1 - (distanceFromTop / (viewportCenter * 0.6)) : 0.5;
+            const score = ratioScore * 0.7 + positionScore * 0.3;
+            
+            if (!mostVisible || score > mostVisible.ratio) {
+              mostVisible = {
+                day: dayNumber,
+                ratio: score,
+                top: rect.top,
+              };
+            }
+          }
+        });
+
+        if (mostVisible) {
+          setCurrentDay(mostVisible.day);
+          if (!isEditingDay) {
+            setDayInputValue(mostVisible.day.toString());
+          }
+        }
+      },
+      {
+        root: null,
+        rootMargin: '-10% 0px -70% 0px', // Trigger when day is in upper portion of viewport
+        threshold: [0, 0.1, 0.25, 0.5, 0.75, 1],
+      }
+    );
+
+    // Small delay to ensure refs are set
+    const timeoutId = setTimeout(() => {
+      // Observe all day elements
+      Object.values(dayRefs.current).forEach((ref) => {
+        if (ref && observerRef.current) {
+          observerRef.current.observe(ref);
+        }
+      });
+    }, 100);
+
+    // Cleanup
+    return () => {
+      clearTimeout(timeoutId);
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
     };
-    fetchBlogs();
-  }, [itinerary.destination, itinerary.language]);
+  }, [itinerary.plan, isEditingDay]);
+
+  // Scroll to specific day
+  const scrollToDay = useCallback((dayNumber: number) => {
+    console.log(`Scrolling to day ${dayNumber}`);
+    
+    // Use requestAnimationFrame and setTimeout to ensure DOM is updated and refs are available
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        // First try to find by ref
+        let dayRef = dayRefs.current[dayNumber];
+        console.log(`Day ref for ${dayNumber}:`, dayRef);
+        
+        // If not found, try to find by id
+        if (!dayRef) {
+          dayRef = document.getElementById(`day-${dayNumber}`) as HTMLElement;
+          console.log(`Day element by id day-${dayNumber}:`, dayRef);
+        }
+        
+        // If not found, try to find by data attribute
+        if (!dayRef) {
+          const dayElement = document.querySelector(`[data-day="${dayNumber}"]`) as HTMLElement;
+          if (dayElement) {
+            dayRef = dayElement;
+            console.log(`Day element by data-day="${dayNumber}":`, dayRef);
+          }
+        }
+        
+        // If still not found, try to find by index (dayNumber - 1, since days are 1-indexed)
+        if (!dayRef && itinerary.plan && itinerary.plan.length > 0) {
+          const dayIndex = dayNumber - 1;
+          if (dayIndex >= 0 && dayIndex < itinerary.plan.length) {
+            const dayFromPlan = itinerary.plan[dayIndex];
+            console.log(`Trying to find day by index ${dayIndex}:`, dayFromPlan);
+            if (dayFromPlan) {
+              dayRef = dayRefs.current[dayFromPlan.day] || 
+                       document.getElementById(`day-${dayFromPlan.day}`) ||
+                       (document.querySelector(`[data-day="${dayFromPlan.day}"]`) as HTMLElement);
+              console.log(`Day ref found by plan index:`, dayRef);
+            }
+          }
+        }
+        
+        if (dayRef) {
+          console.log(`Found day element, scrolling to it`);
+          
+          // Use scrollIntoView first for reliability
+          dayRef.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+            inline: 'nearest'
+          });
+          
+          // Then adjust for header offset
+          setTimeout(() => {
+            const rect = dayRef!.getBoundingClientRect();
+            const headerOffset = 120; // Offset for navbar and day indicator
+            
+            // If element is behind the header, adjust scroll
+            if (rect.top < headerOffset) {
+              const adjustment = headerOffset - rect.top;
+              window.scrollBy({
+                top: adjustment,
+                behavior: 'smooth'
+              });
+              console.log(`Adjusted scroll by ${adjustment}px for header`);
+            }
+          }, 400);
+          
+          // Update state
+          setCurrentDay(dayNumber);
+          setDayInputValue(dayNumber.toString());
+          setIsEditingDay(false);
+        } else {
+          // If still not found, just update the state
+          console.warn(`Day ${dayNumber} not found. Available refs:`, Object.keys(dayRefs.current));
+          console.warn(`Available plan days:`, itinerary.plan?.map(d => d.day));
+          setCurrentDay(dayNumber);
+          setDayInputValue(dayNumber.toString());
+          setIsEditingDay(false);
+        }
+      }, 150);
+    });
+  }, [itinerary.plan]);
+
+  // Handle day input change
+  const handleDayInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setDayInputValue(value);
+  };
+
+  // Handle day input submit
+  const handleDayInputSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const dayNumber = parseInt(dayInputValue, 10);
+    if (!isNaN(dayNumber) && dayNumber >= 1 && dayNumber <= itinerary.days) {
+      scrollToDay(dayNumber);
+    } else {
+      setDayInputValue(currentDay.toString());
+      setIsEditingDay(false);
+    }
+  };
+
+  // Handle day input blur
+  const handleDayInputBlur = () => {
+    const dayNumber = parseInt(dayInputValue, 10);
+    if (!isNaN(dayNumber) && dayNumber >= 1 && dayNumber <= itinerary.days) {
+      scrollToDay(dayNumber);
+    } else {
+      setDayInputValue(currentDay.toString());
+      setIsEditingDay(false);
+    }
+  };
+
+  // Handle day input key down
+  const handleDayInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleDayInputSubmit(e);
+    } else if (e.key === 'Escape') {
+      setDayInputValue(currentDay.toString());
+      setIsEditingDay(false);
+    }
+  };
+  
+  const handleCopyLink = async () => {
+    if (!savedId) {
+      setToast({ message: 'Itinerary is still being saved. Please wait a moment.', type: 'error' });
+      return;
+    }
+    try {
+      const shareUrl = `${window.location.origin}/share/${savedId}`;
+      await navigator.clipboard.writeText(shareUrl);
+      setToast({ message: 'Shareable link copied to clipboard!', type: 'success' });
+    } catch (error) {
+      setToast({ message: 'Failed to copy link. Please try again.', type: 'error' });
+    }
+  };
+
+  const handleShare = async () => {
+    if (!savedId) {
+      setToast({ message: 'Itinerary is still being saved. Please wait a moment.', type: 'error' });
+      return;
+    }
+    try {
+      const shareUrl = `${window.location.origin}/share/${savedId}`;
+      if (navigator.share) {
+        await navigator.share({
+          title: `Trip to ${itinerary.destination}`,
+          text: 'Check out this amazing trip itinerary!',
+          url: shareUrl,
+        });
+        setToast({ message: 'Itinerary shared successfully!', type: 'success' });
+      } else {
+        await navigator.clipboard.writeText(shareUrl);
+        setToast({ message: 'Shareable link copied to clipboard!', type: 'success' });
+      }
+    } catch (error: any) {
+      if (error.name !== 'AbortError') {
+        setToast({ message: 'Failed to share link. Please try again.', type: 'error' });
+      }
+    }
+  };
 
   const formattedStartDate = new Date(itinerary.startDate + 'T00:00:00').toLocaleDateString('en-US', {
     year: 'numeric',
@@ -194,9 +940,23 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
   const isRoadTrip = itinerary.tripType === 'Car' || itinerary.tripType === 'Bike';
 
   // Helper function to safely parse cost strings into numbers
+  // Handles ranges like "2000-3000" by using the average value
   const parseCost = (costString?: string): number => {
     if (!costString) return 0;
-    // Removes currency symbols, codes, commas, and any other text before parsing.
+    
+    // Check if it's a range (e.g., "2000-3000" or "2000 - 3000")
+    const rangeMatch = String(costString).match(/(\d+(?:[.,]\d+)?)\s*[-–—]\s*(\d+(?:[.,]\d+)?)/);
+    
+    if (rangeMatch) {
+      // For ranges, use the average of min and max
+      const min = parseFloat(rangeMatch[1].replace(/,/g, ''));
+      const max = parseFloat(rangeMatch[2].replace(/,/g, ''));
+      if (!isNaN(min) && !isNaN(max)) {
+        return (min + max) / 2;
+      }
+    }
+    
+    // For single values, remove currency symbols, codes, commas, and any other text before parsing
     const cleaned = String(costString).replace(/[^\d.]/g, '');
     return parseFloat(cleaned) || 0;
   };
@@ -287,30 +1047,111 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
 
 
   return (
-    <div className="max-w-4xl mx-auto space-y-12" id="itinerary-preview-content">
+    <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8 md:space-y-12 mb-16 px-1 sm:px-4" id="itinerary-preview-content">
+      {/* Day Indicator - Fixed position for better visibility */}
+      {itinerary.days && itinerary.days > 0 && (
+        <div className="fixed top-20 right-2 sm:top-24 sm:right-4 md:top-24 md:right-6 z-[100] no-print">
+          <div className="bg-white backdrop-blur-md rounded-full shadow-lg sm:shadow-xl border border-violet-400/60 px-2 py-1.5 sm:px-3 sm:py-2 flex items-center space-x-1.5 sm:space-x-2 ring-1 ring-violet-200/50">
+            {isEditingDay ? (
+              <form onSubmit={handleDayInputSubmit} className="flex items-center space-x-1 sm:space-x-1.5">
+                <input
+                  type="number"
+                  min="1"
+                  max={itinerary.days}
+                  value={dayInputValue}
+                  onChange={handleDayInputChange}
+                  onBlur={handleDayInputBlur}
+                  onKeyDown={handleDayInputKeyDown}
+                  className="w-8 sm:w-10 text-center text-xs sm:text-sm font-semibold text-slate-800 bg-violet-50 border border-violet-400 rounded-md focus:outline-none focus:ring-1 focus:ring-violet-500 focus:border-violet-500"
+                  autoFocus
+                />
+                <span className="text-xs sm:text-sm text-slate-600 font-medium whitespace-nowrap">of {itinerary.days}</span>
+              </form>
+            ) : (
+              <button
+                onClick={() => setIsEditingDay(true)}
+                className="flex items-center space-x-1.5 sm:space-x-2 hover:bg-violet-50 rounded-full px-1 sm:px-2 py-0.5 transition-colors group"
+                aria-label={`Current day ${currentDay} of ${itinerary.days}. Click to edit and jump to a specific day.`}
+              >
+                <span className="text-xs sm:text-sm font-semibold text-slate-800 bg-violet-100 px-2 py-0.5 sm:px-3 sm:py-1 rounded-md border border-violet-200 group-hover:bg-violet-200 transition-colors min-w-[1.5rem] sm:min-w-[2rem] text-center">
+                  {currentDay}
+                </span>
+                <span className="text-xs sm:text-sm text-slate-600 font-medium whitespace-nowrap">of {itinerary.days}</span>
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  className="h-3 w-3 sm:h-4 sm:w-4 text-slate-500 group-hover:text-violet-600 transition-colors flex-shrink-0" 
+                  fill="none" 
+                  viewBox="0 0 24 24" 
+                  stroke="currentColor" 
+                  strokeWidth={2}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+      
        {!isUnifiedView && (
        <div className="flex justify-start items-center no-print animated-card">
         <button
-          onClick={onRegenerate}
-          className="inline-flex items-center px-6 py-2 my-2 bg-white/60 text-slate-800 font-bold rounded-full hover:bg-white/80 transition-all duration-300 shadow-md border border-white/50"
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onRegenerate();
+          }}
+          className="inline-flex items-center px-4 py-1.5 sm:px-6 sm:py-2 my-2 bg-white/60 text-slate-800 font-bold rounded-full hover:bg-white/80 transition-all duration-300 shadow-md border border-white/50 text-xs sm:text-sm"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.898 2.566l-1.581.53a5.002 5.002 0 00-8.917-1.789v.962a1 1 0 01-2 0V3a1 1 0 011-1zm12 15a1 1 0 01-1-1v-2.101a7.002 7.002 0 01-11.898-2.566l1.581-.53a5.002 5.002 0 008.917 1.789v-.962a1 1 0 012 0V17a1 1 0 01-1 1z" clipRule="evenodd" />
           </svg>
           <span>Plan Another Trip</span>
         </button>
       </div>
       )}
-      <header className="space-y-4 animated-card">
+      <header className="bg-gradient-to-br from-violet-50/60 via-indigo-50/40 to-blue-50/30 backdrop-blur-lg rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 border border-violet-200/50 shadow-md animated-card">
         <div className="text-center">
-            <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight break-words" dangerouslySetInnerHTML={parseBold(`Trip to ${itinerary.destination}`)} />
-            <p className="text-lg text-gray-700 mt-2 break-words">Your amazing {itinerary.days}-day {itinerary.isRoundTrip ? 'round trip ' : ''}itinerary</p>
+            <div className="inline-flex items-center justify-center mb-2 sm:mb-3">
+                <div className="bg-gradient-to-br from-violet-500 to-indigo-600 rounded-full p-1.5 sm:p-2 shadow-md">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 9m-6 3l6-3m0 0l6-3m-6 3v6.382" />
+                    </svg>
+                </div>
+            </div>
+            <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-extrabold bg-gradient-to-r from-slate-900 via-violet-800 to-slate-900 bg-clip-text text-transparent tracking-tight break-words px-1 sm:px-2" dangerouslySetInnerHTML={parseBold(`Trip to ${itinerary.destination}`)} />
+            <p className="text-xs sm:text-sm md:text-base text-slate-600 mt-1.5 sm:mt-2 font-medium break-words px-1 sm:px-2">Your amazing {itinerary.days}-day {itinerary.isRoundTrip ? 'round trip ' : ''}itinerary</p>
         </div>
       </header>
       
+      {/* Share buttons - Only show when saved and not in history view */}
+      {savedId && !isHistoryView && !isUnifiedView && (
+        <div className="flex items-center justify-center gap-2 sm:gap-3 py-3 sm:py-4 no-print animated-card">
+          <button
+            onClick={handleCopyLink}
+            className="inline-flex items-center px-4 py-2 sm:px-5 sm:py-2.5 bg-gradient-to-r from-violet-600 to-violet-700 text-white font-semibold rounded-full hover:from-violet-700 hover:to-violet-800 transition-all duration-300 shadow-md text-xs sm:text-sm"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+            Copy Link
+          </button>
+          <button
+            onClick={handleShare}
+            className="inline-flex items-center px-4 py-2 sm:px-5 sm:py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-full hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-md text-xs sm:text-sm"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+            </svg>
+            Share
+          </button>
+        </div>
+      )}
+      
       <section>
-        <h2 className="text-3xl font-bold text-slate-800 mb-6 animated-card" style={{ animationDelay: '100ms' }}>Trip Summary</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 mb-4 sm:mb-6 animated-card px-1 sm:px-2" style={{ animationDelay: '100ms' }}>Trip Summary</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4 lg:gap-6">
           <div className="animated-card" style={{ animationDelay: '200ms' }}>
             <SummaryItem icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>} label="Start Date">
               {formattedStartDate}
@@ -359,13 +1200,13 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
       </section>
 
       <section>
-        <h2 className="text-3xl font-bold text-slate-800 mb-6 animated-card" style={{ animationDelay: '500ms' }}>Budget Overview <span className="text-base font-normal text-slate-600">(Est. Per Person)</span></h2>
+        <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 mb-4 sm:mb-6 animated-card px-1 sm:px-2" style={{ animationDelay: '500ms' }}>Budget Overview <span className="text-sm sm:text-base font-normal text-slate-600">(Est. Per Person)</span></h2>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-2 gap-2 sm:gap-4 lg:gap-6">
           {budgetItemsForGrid.map((item, index) => {
             const isLastItem = index === budgetItemsForGrid.length - 1;
-            // Span the last item if the total number of items is odd
-            const wrapperClass = (isLastItem && budgetItemsForGrid.length % 2 !== 0) ? 'sm:col-span-2' : '';
+            // Span the last item if the total number of items is odd (works for both mobile and desktop)
+            const wrapperClass = (isLastItem && budgetItemsForGrid.length % 2 !== 0) ? 'col-span-2 sm:col-span-2' : '';
 
             return (
               <div key={item.key} className={wrapperClass}>
@@ -425,77 +1266,9 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
         </section>
       )}
 
-      {isLoadingBlogs ? (
-        <section>
-          <h2 className="text-3xl font-bold text-slate-800 mb-6 animated-card flex items-center space-x-3" style={{ animationDelay: '900ms' }}>
-             <svg className="animate-spin h-6 w-6 text-violet-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-             <span>Finding helpful blogs...</span>
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {Array(2).fill(0).map((_, i) => (
-              <div key={i} className="bg-white/40 p-5 rounded-xl border border-white/50 shadow-lg animate-pulse">
-                <div className="h-4 bg-slate-200/50 rounded w-1/4"></div>
-                <div className="h-5 bg-slate-200/50 rounded mt-2 w-3/4"></div>
-                <div className="h-4 bg-slate-200/50 rounded mt-3 w-full"></div>
-                <div className="h-4 bg-slate-200/50 rounded mt-1 w-5/6"></div>
-              </div>
-            ))}
-          </div>
-        </section>
-      ) : (
-        blogs && blogs.length > 0 && (
-        <section>
-          <h2 className="text-3xl font-bold text-slate-800 mb-6 animated-card" style={{ animationDelay: '900ms' }}>Reference Blog Posts</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {blogs.map((blog, index) => {
-               const isTransport = isTransportBlog(blog);
-               return (
-                <a 
-                  key={index}
-                  href={blog.url} target="_blank" rel="noopener noreferrer"
-                  className={`block p-5 rounded-xl shadow-lg border transition-all duration-300 hover:shadow-xl hover:-translate-y-1 animated-card ${
-                    isTransport 
-                      ? 'bg-sky-50/40 backdrop-blur-lg border-sky-300/50 hover:border-sky-400/50' 
-                      : 'bg-white/40 backdrop-blur-lg border-white/50 hover:border-violet-300/50'
-                  }`}
-                   style={{ animationDelay: `${950 + index * 100}ms` }}
-                >
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      {blog.source && <p className={`text-xs font-semibold uppercase tracking-wider ${isTransport ? 'text-sky-600' : 'text-violet-600'}`}>{blog.source}</p>}
-                      <h4 className="text-lg font-bold text-slate-800 mt-1 hover:underline break-words">{blog.title}</h4>
-                    </div>
-                    {isTransport && (
-                      <div className="flex-shrink-0 ml-4 bg-sky-100 text-sky-600 rounded-full p-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M18.562 6.077C18.238 5.437 17.562 5 16.808 5H3.192c-.754 0-1.43.437-1.754 1.077L.05 9.423A.5.5 0 00.5 10h19a.5.5 0 00.45-.577l-1.388-3.346zM2 11v4a1 1 0 001 1h1a1 1 0 001-1v-4H2zm15 0v4a1 1 0 001 1h1a1 1 0 001-1v-4h-3zM5 11v4a1 1 0 001 1h8a1 1 0 001-1v-4H5z" clipRule="evenodd" />
-                        </svg>
-                      </div>
-                    )}
-                  </div>
-                  <p className="text-sm text-slate-600 mt-2">{blog.description}</p>
-                </a>
-              );
-            })}
-          </div>
-        </section>
-        )
-      )}
-      
-      <section>
-        <h2 className="text-3xl font-bold text-slate-800 mb-6 animated-card" style={{ animationDelay: '1050ms' }}>About the Destinations</h2>
-        <div className="space-y-10">
-          {itinerary.coveredDestinations?.map((dest, destIndex) => (
-            <div key={destIndex} className="animated-card" style={{ animationDelay: `${1100 + destIndex * 200}ms` }}>
-                <h3 className="text-2xl font-bold text-slate-700 mb-4 border-b border-violet-200 pb-2 break-words" dangerouslySetInnerHTML={parseBold(dest.name)} />
-                <DestinationInfoTabs destinationDetails={dest} />
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="space-y-8">
-        <h2 className="text-3xl font-bold text-slate-800 animated-card" style={{ animationDelay: '1200ms' }}>Daily Itinerary</h2>
+      <section className="space-y-6 sm:space-y-8">
+        <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 animated-card px-1 sm:px-2 mb-4 sm:mb-6" style={{ animationDelay: '1050ms' }}>Daily Itinerary</h2>
+        
         {itinerary.plan.map((day, index) => {
           let dailyFuelCostPerPerson = 0;
           let totalDailyCostPerPerson = parseFloat(day.approxCost) || 0;
@@ -510,8 +1283,18 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
               }
           }
 
+          // Find destinations for this day
+          const dayDestinations = getDestinationsForDay(day, itinerary);
+
           return (
-          <div key={day.day} className="bg-white/40 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/50 transition-all duration-300 hover:shadow-2xl hover:border-violet-300/50 hover:-translate-y-1 animated-card" style={{ animationDelay: `${1250 + index * 100}ms` }}>
+          <div 
+            key={day.day} 
+            id={`day-${day.day}`}
+            ref={(el) => { dayRefs.current[day.day] = el; }}
+            data-day={day.day}
+            className="bg-white/40 backdrop-blur-lg p-3 sm:p-4 md:p-6 rounded-xl shadow-lg border border-white/50 transition-all duration-300 hover:shadow-2xl hover:border-violet-300/50 hover:-translate-y-1 animated-card" 
+            style={{ animationDelay: `${1100 + index * 100}ms` }}
+          >
             <div className="flex justify-between items-start">
               <div className="flex-1">
                 <p className="text-sm font-semibold text-violet-700">Day {day.day}</p>
@@ -523,76 +1306,351 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
               </div>
             </div>
             <hr className="my-4 border-violet-200" />
-            <div className="space-y-6">
-              <div className="bg-white/40 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/50">
-                  <h3 className="text-xl font-bold text-violet-800 mb-4">Activities</h3>
-                  <div className="prose prose-slate max-w-none text-gray-700">
+            
+            {/* Weather & AQI Section - Compact */}
+            {(day.expectedWeather || day.expectedAQI) && (
+              <div className="mb-4 bg-gradient-to-br from-sky-50/60 to-cyan-50/40 backdrop-blur-lg p-3 sm:p-3 rounded-lg shadow-md border border-sky-200/50">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                  {day.expectedWeather && (
+                    <div className="flex items-start space-x-2.5 sm:space-x-2 flex-1 min-w-0">
+                      <div className="flex-shrink-0 bg-white/30 p-1.5 rounded-md flex items-center justify-center h-7 w-7">
+                        <span className="text-base leading-none">{getWeatherIcon(day.expectedWeather)}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-slate-600 font-medium mb-1">Weather</p>
+                        <p className="text-sm font-bold text-sky-700 leading-relaxed break-words">{day.expectedWeather}</p>
+                      </div>
+                    </div>
+                  )}
+                  {day.expectedAQI && (
+                    <div className="flex items-start space-x-2.5 sm:space-x-2 flex-1 min-w-0">
+                      <div className={`flex-shrink-0 ${getAQIColor(day.expectedAQI).bgColor} ${getAQIColor(day.expectedAQI).textColor} p-1.5 rounded-md flex items-center justify-center h-7 w-7`}>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-slate-600 font-medium mb-1">AQI</p>
+                        <p className={`text-sm font-bold leading-relaxed break-words ${getAQIColor(day.expectedAQI).textColor}`}>{day.expectedAQI}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Destination Info - Show for this day */}
+            {dayDestinations.length > 0 && (
+              <div className="mb-4">
+                {dayDestinations.map((dest, destIndex) => (
+                  <div key={destIndex} className={destIndex > 0 ? 'mt-4' : ''}>
+                    <DestinationInfoTabs destinationDetails={dest} />
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            <div className="space-y-4 sm:space-y-6">
+              <div className="bg-gradient-to-br from-violet-50/60 to-indigo-50/40 backdrop-blur-lg p-3 sm:p-4 md:p-6 rounded-xl sm:rounded-2xl shadow-lg border border-violet-200/50">
+                  <div className="flex items-center space-x-2 sm:space-x-3 mb-4 sm:mb-6">
+                    <div className="bg-violet-600 text-white rounded-lg sm:rounded-xl p-2 sm:p-2.5 shadow-lg">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-xl sm:text-2xl font-bold text-violet-900">Activities</h3>
+                  </div>
+                  
+                  <div className="space-y-3 sm:space-y-4">
                     {day.activities && day.activities.length > 0 && (
-                      <ul className="list-disc pl-5 space-y-1">
-                        {day.activities.map((item, index) => (
-                          <li key={index} dangerouslySetInnerHTML={parseBold(item)} />
-                        ))}
-                      </ul>
+                      day.activities.map((item, index) => {
+                        const { time, description } = parseActivityTime(item);
+                        const isLastItem = index === day.activities!.length - 1;
+                        
+                        return (
+                          <div key={index} className="relative pl-6 sm:pl-8 group">
+                            {/* Timeline line */}
+                            {!isLastItem && (
+                              <div className="absolute left-2.5 sm:left-3 top-6 sm:top-8 bottom-0 w-0.5 bg-gradient-to-b from-violet-300 to-transparent group-hover:from-violet-500 transition-colors"></div>
+                            )}
+                            
+                            {/* Timeline dot */}
+                            <div className="absolute left-0 top-1 sm:top-1.5 w-5 h-5 sm:w-6 sm:h-6 bg-gradient-to-br from-violet-500 to-indigo-500 rounded-full border-2 sm:border-4 border-white shadow-lg flex items-center justify-center group-hover:scale-125 transition-transform duration-300">
+                              <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full"></div>
+                            </div>
+                            
+                            {/* Activity content */}
+                            <div className="bg-white/70 backdrop-blur-sm rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-md border border-violet-100/50 hover:shadow-lg hover:border-violet-200 transition-all duration-300 hover:-translate-x-1">
+                              {time && (
+                                <div className="flex items-center space-x-1.5 sm:space-x-2 mb-2">
+                                  <div className="bg-violet-100 text-violet-700 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm font-semibold flex items-center space-x-1 sm:space-x-1.5 shadow-sm">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <span>{time}</span>
+                                  </div>
+                                </div>
+                              )}
+                              <div className="text-sm sm:text-base text-gray-700 leading-relaxed" dangerouslySetInnerHTML={parseBold(description)} />
+                            </div>
+                          </div>
+                        );
+                      })
                     )}
                   </div>
               </div>
 
-              <div className="bg-white/40 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/50">
-                  <h3 className="text-xl font-bold text-violet-800 mb-4">Food Recommendations</h3>
-                  <div className="prose prose-slate max-w-none text-gray-700">
-                     {day.food && day.food.length > 0 && (
-                        <ul className="list-disc pl-5 space-y-1">
-                          {day.food.map((item, index) => (
-                            <li key={index} dangerouslySetInnerHTML={parseBold(item)} />
-                          ))}
-                        </ul>
-                      )}
+              <div className="bg-gradient-to-br from-amber-50/60 to-orange-50/40 backdrop-blur-lg p-3 sm:p-4 md:p-6 rounded-xl sm:rounded-2xl shadow-lg border border-amber-200/50">
+                  <div className="flex items-center space-x-2 sm:space-x-3 mb-4 sm:mb-6">
+                    <div className="bg-amber-600 text-white rounded-lg sm:rounded-xl p-2 sm:p-2.5 shadow-lg">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0c-.454-.303-.977-.454-1.5-.454V5.454c.523 0 1.046-.151 1.5-.454a2.704 2.704 0 013 0 2.704 2.704 0 003 0 2.704 2.704 0 013 0 2.704 2.704 0 003 0c.454.303.977.454 1.5.454v10.092zM15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-xl sm:text-2xl font-bold text-amber-900">Food & Restaurant Recommendations</h3>
+                  </div>
+                  
+                  <div className="grid gap-2 sm:gap-3">
+                    {day.food && day.food.length > 0 && (
+                      day.food.map((item, index) => {
+                        const restaurantName = extractRestaurantName(item);
+                        const dayLocation = extractLocationFromDay(day, itinerary);
+                        let itemWithLink = item;
+                        
+                        // Always try to create a link - use extracted name or fallback to first bold text
+                        let searchName = restaurantName;
+                        let searchUrl = '';
+                        
+                        if (searchName && searchName.length > 0) {
+                          searchUrl = generateRestaurantSearchUrl(searchName, dayLocation);
+                        } else {
+                          // Fallback: extract first bold text or first few words
+                          const boldMatch = item.match(/\*\*([^*]+)\*\*/);
+                          if (boldMatch && boldMatch[1]) {
+                            searchName = boldMatch[1].split(/[-–—:]/)[0].trim();
+                          } else {
+                            const words = item.split(/\s+/);
+                            searchName = words.slice(0, Math.min(3, words.length)).join(' ').split(/[-–—:]/)[0].trim();
+                          }
+                          if (searchName && searchName.length > 0) {
+                            searchUrl = generateRestaurantSearchUrl(searchName, dayLocation);
+                          }
+                        }
+                        
+                        // Create link if we have a search URL
+                        if (searchUrl) {
+                          // Try to find and replace the restaurant name in the text
+                          const escapedName = (searchName || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                          
+                          // Strategy 1: Replace bold version
+                          const boldPattern = new RegExp(`\\*\\*${escapedName}\\*\\*`, 'gi');
+                          if (boldPattern.test(item)) {
+                            boldPattern.lastIndex = 0;
+                            itemWithLink = item.replace(boldPattern, (match) => {
+                              const nameWithoutBold = match.replace(/\*\*/g, '');
+                              return `<a href="${searchUrl}" target="_blank" rel="noopener noreferrer" class="text-amber-600 hover:text-amber-800 underline font-semibold transition-colors"><strong>${nameWithoutBold}</strong></a>`;
+                            });
+                          } else {
+                            // Strategy 2: Replace non-bold version (case-insensitive, anywhere)
+                            const namePattern = new RegExp(`(${escapedName})`, 'gi');
+                            if (namePattern.test(item)) {
+                              namePattern.lastIndex = 0;
+                              itemWithLink = item.replace(namePattern, (match) => {
+                                return `<a href="${searchUrl}" target="_blank" rel="noopener noreferrer" class="text-amber-600 hover:text-amber-800 underline font-semibold transition-colors">${match}</a>`;
+                              });
+                            } else {
+                              // Strategy 3: Wrap first bold section
+                              const firstBold = item.match(/\*\*([^*]+)\*\*/);
+                              if (firstBold) {
+                                itemWithLink = item.replace(firstBold[0], `<a href="${searchUrl}" target="_blank" rel="noopener noreferrer" class="text-amber-600 hover:text-amber-800 underline font-semibold transition-colors"><strong>${firstBold[1]}</strong></a>`);
+                              } else {
+                                // Strategy 4: Wrap entire item as last resort
+                                itemWithLink = `<a href="${searchUrl}" target="_blank" rel="noopener noreferrer" class="text-amber-600 hover:text-amber-800 underline font-semibold transition-colors">${item}</a>`;
+                              }
+                            }
+                          }
+                        }
+                        
+                        // Now parse any remaining bold markdown
+                        itemWithLink = parseBold(itemWithLink).__html;
+                        
+                        return (
+                          <div key={index} className="bg-white/70 backdrop-blur-sm rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-md border border-amber-100/50 hover:shadow-lg hover:border-amber-200 transition-all duration-300 hover:scale-[1.02] group">
+                            <div className="flex items-start space-x-2 sm:space-x-3">
+                              <div className="flex-shrink-0 bg-amber-100 text-amber-600 rounded-full p-1.5 sm:p-2 mt-0.5 group-hover:bg-amber-200 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                                </svg>
+                              </div>
+                              <div className="text-sm sm:text-base text-gray-700 leading-relaxed flex-1" dangerouslySetInnerHTML={{ __html: itemWithLink }} />
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
                   </div>
               </div>
               
-               <div className="bg-white/40 backdrop-blur-lg p-6 rounded-xl shadow-lg border border-white/50">
-                  <h3 className="text-xl font-bold text-violet-800 mb-4">Suggested Places to Stay</h3>
-                  <div className="prose prose-slate max-w-none text-gray-700">
+               <div className="bg-gradient-to-br from-blue-50/60 to-cyan-50/40 backdrop-blur-lg p-3 sm:p-4 md:p-6 rounded-xl sm:rounded-2xl shadow-lg border border-blue-200/50">
+                  <div className="flex items-center space-x-2 sm:space-x-3 mb-4 sm:mb-6">
+                    <div className="bg-blue-600 text-white rounded-lg sm:rounded-xl p-2 sm:p-2.5 shadow-lg">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                      </svg>
+                    </div>
+                    <h3 className="text-xl sm:text-2xl font-bold text-blue-900">Suggested Places to Stay</h3>
+                  </div>
+                  
+                  <div className="grid gap-2 sm:gap-3">
                     {day.placesToStay && day.placesToStay.length > 0 && (
-                      <ul className="list-disc pl-5 space-y-1">
-                        {day.placesToStay.map((item, index) => (
-                          <li key={index} dangerouslySetInnerHTML={parseBold(item)} />
-                        ))}
-                      </ul>
+                      day.placesToStay.map((item, index) => {
+                        const hotelName = extractHotelName(item);
+                        const dayLocation = extractLocationFromDay(day, itinerary);
+                        let itemWithLink = item;
+                        
+                        // Always try to create a link - use extracted name or fallback to first bold text
+                        let searchName = hotelName;
+                        let searchUrl = '';
+                        
+                        if (searchName && searchName.length > 0) {
+                          searchUrl = generateHotelSearchUrl(searchName, dayLocation);
+                        } else {
+                          // Fallback: extract first bold text or first few words
+                          const boldMatch = item.match(/\*\*([^*]+)\*\*/);
+                          if (boldMatch && boldMatch[1]) {
+                            searchName = boldMatch[1].replace(/\s*\(.*$/g, '').trim();
+                          } else {
+                            const words = item.split(/\s+/);
+                            searchName = words.slice(0, Math.min(3, words.length)).join(' ').replace(/\s*\(.*$/g, '').trim();
+                          }
+                          if (searchName && searchName.length > 0) {
+                            searchUrl = generateHotelSearchUrl(searchName, dayLocation);
+                          }
+                        }
+                        
+                        // Create link if we have a search URL
+                        if (searchUrl) {
+                          // Try to find and replace the hotel name in the text
+                          const escapedName = (searchName || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                          
+                          // Strategy 1: Replace bold version
+                          const boldPattern = new RegExp(`\\*\\*${escapedName}\\*\\*`, 'gi');
+                          if (boldPattern.test(item)) {
+                            boldPattern.lastIndex = 0;
+                            itemWithLink = item.replace(boldPattern, (match) => {
+                              const nameWithoutBold = match.replace(/\*\*/g, '');
+                              return `<a href="${searchUrl}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline font-semibold transition-colors"><strong>${nameWithoutBold}</strong></a>`;
+                            });
+                          } else {
+                            // Strategy 2: Replace non-bold version (case-insensitive, anywhere)
+                            const namePattern = new RegExp(`(${escapedName})`, 'gi');
+                            if (namePattern.test(item)) {
+                              namePattern.lastIndex = 0;
+                              itemWithLink = item.replace(namePattern, (match) => {
+                                return `<a href="${searchUrl}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline font-semibold transition-colors">${match}</a>`;
+                              });
+                            } else {
+                              // Strategy 3: Wrap first bold section
+                              const firstBold = item.match(/\*\*([^*]+)\*\*/);
+                              if (firstBold) {
+                                itemWithLink = item.replace(firstBold[0], `<a href="${searchUrl}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline font-semibold transition-colors"><strong>${firstBold[1]}</strong></a>`);
+                              } else {
+                                // Strategy 4: Wrap entire item as last resort
+                                itemWithLink = `<a href="${searchUrl}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline font-semibold transition-colors">${item}</a>`;
+                              }
+                            }
+                          }
+                        }
+                        
+                        // Now parse any remaining bold markdown
+                        itemWithLink = parseBold(itemWithLink).__html;
+                        
+                        return (
+                          <div key={index} className="bg-white/70 backdrop-blur-sm rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-md border border-blue-100/50 hover:shadow-lg hover:border-blue-200 transition-all duration-300 hover:scale-[1.02] group">
+                            <div className="flex items-start space-x-2 sm:space-x-3">
+                              <div className="flex-shrink-0 bg-blue-100 text-blue-600 rounded-full p-1.5 sm:p-2 mt-0.5 group-hover:bg-blue-200 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                </svg>
+                              </div>
+                              <div className="text-sm sm:text-base text-gray-700 leading-relaxed flex-1" dangerouslySetInnerHTML={{ __html: itemWithLink }} />
+                            </div>
+                          </div>
+                        );
+                      })
                     )}
                   </div>
               </div>
               
               {day.transport && (
-                <div className="bg-violet-50/50 backdrop-blur-lg p-4 rounded-xl border border-violet-200/50">
-                   <h4 className="font-bold text-violet-800 flex items-center space-x-2 mb-3">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18.562 6.077C18.238 5.437 17.562 5 16.808 5H3.192c-.754 0-1.43.437-1.754 1.077L.05 9.423A.5.5 0 00.5 10h19a.5.5 0 00.45-.577l-1.388-3.346zM2 11v4a1 1 0 001 1h1a1 1 0 001-1v-4H2zm15 0v4a1 1 0 001 1h1a1 1 0 001-1v-4h-3zM5 11v4a1 1 0 001 1h8a1 1 0 001-1v-4H5z" clipRule="evenodd" /></svg>
-                      <span>Transport Suggestions</span>
-                   </h4>
-                   {isRoadTrip && dailyFuelCostPerPerson > 0 && (
-                      <p className="text-sm text-slate-700 mb-2">
-                          <strong>Est. Fuel Cost:</strong> {currencySymbol}{dailyFuelCostPerPerson.toFixed(2)} per person
-                      </p>
-                   )}
-                   <ul className="list-disc pl-5 space-y-1 text-gray-700">
-                      {[].concat(day.transport.suggestions || []).map((item, index) => (
-                        <li key={index} dangerouslySetInnerHTML={parseBold(String(item))} />
-                      ))}
-                   </ul>
+                <div className="bg-gradient-to-br from-emerald-50/60 to-teal-50/40 backdrop-blur-lg p-3 sm:p-4 md:p-6 rounded-xl sm:rounded-2xl shadow-lg border border-emerald-200/50">
+                  <div className="flex items-center space-x-2 sm:space-x-3 mb-4 sm:mb-6">
+                    <div className="bg-emerald-600 text-white rounded-lg sm:rounded-xl p-2 sm:p-2.5 shadow-lg">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 9m0 13V9m0 0l6-3m-6 3l6-3" />
+                      </svg>
+                    </div>
+                    <h3 className="text-xl sm:text-2xl font-bold text-emerald-900">Transport Suggestions</h3>
+                  </div>
+                  
+                  {isRoadTrip && dailyFuelCostPerPerson > 0 && (
+                    <div className="bg-amber-100/70 backdrop-blur-sm rounded-lg sm:rounded-xl p-3 sm:p-4 mb-3 sm:mb-4 border border-amber-200/50 shadow-sm">
+                      <div className="flex items-center space-x-2">
+                        <div className="flex-shrink-0 bg-amber-500 text-white rounded-full p-1.5 sm:p-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 10v-1m0 0c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="text-xs sm:text-sm font-semibold text-amber-900">Est. Fuel Cost</p>
+                          <p className="text-base sm:text-lg font-bold text-amber-800">{currencySymbol}{dailyFuelCostPerPerson.toFixed(2)} per person</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="grid gap-2 sm:gap-3">
+                    {[].concat(day.transport.suggestions || []).map((item, index) => (
+                      <div key={index} className="bg-white/70 backdrop-blur-sm rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-md border border-emerald-100/50 hover:shadow-lg hover:border-emerald-200 transition-all duration-300 hover:scale-[1.02] group">
+                        <div className="flex items-start space-x-2 sm:space-x-3">
+                          <div className="flex-shrink-0 bg-emerald-100 text-emerald-600 rounded-full p-1.5 sm:p-2 mt-0.5 group-hover:bg-emerald-200 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          </div>
+                          <div className="text-sm sm:text-base text-gray-700 leading-relaxed flex-1" dangerouslySetInnerHTML={parseBold(String(item))} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
               
               {day.medicalFacilities && day.medicalFacilities.length > 0 && (
-                <div className="bg-green-50/50 backdrop-blur-lg p-4 rounded-xl border border-green-200/50">
-                   <h4 className="font-bold text-green-800 flex items-center space-x-2 mb-3">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.707-10.293a1 1 0 00-1.414-1.414l-3 3a1 1 0 001.414 1.414L9 10.414V13a1 1 0 102 0v-2.586l.293.293a1 1 0 001.414-1.414l-3-3z" clipRule="evenodd" /></svg>
-                      <span>Nearby Medical Facilities</span>
-                   </h4>
-                   <ul className="list-disc pl-5 space-y-1 text-gray-700">
-                      {day.medicalFacilities.map((item, index) => (
-                        <li key={index} dangerouslySetInnerHTML={parseBold(item)} />
-                      ))}
-                   </ul>
+                <div className="bg-gradient-to-br from-rose-50/60 to-pink-50/40 backdrop-blur-lg p-3 sm:p-4 md:p-6 rounded-xl sm:rounded-2xl shadow-lg border border-rose-200/50">
+                  <div className="flex items-center space-x-2 sm:space-x-3 mb-4 sm:mb-6">
+                    <div className="bg-rose-600 text-white rounded-lg sm:rounded-xl p-2 sm:p-2.5 shadow-lg">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-xl sm:text-2xl font-bold text-rose-900">Nearby Medical Facilities</h3>
+                  </div>
+                  
+                  <div className="grid gap-2 sm:gap-3">
+                    {day.medicalFacilities.map((item, index) => (
+                      <div key={index} className="bg-white/70 backdrop-blur-sm rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-md border border-rose-100/50 hover:shadow-lg hover:border-rose-200 transition-all duration-300 hover:scale-[1.02] group">
+                        <div className="flex items-start space-x-2 sm:space-x-3">
+                          <div className="flex-shrink-0 bg-rose-100 text-rose-600 rounded-full p-1.5 sm:p-2 mt-0.5 group-hover:bg-rose-200 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                            </svg>
+                          </div>
+                          <div className="text-sm sm:text-base text-gray-700 leading-relaxed flex-1" dangerouslySetInnerHTML={parseBold(item)} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 
@@ -601,11 +1659,16 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
         )})}
       </section>
 
+
       <div className="pt-8 text-center no-print">
-        <ExportOptions itinerary={itinerary} onPrint={onPrint} isUnifiedView={isUnifiedView} />
         {!isUnifiedView && (
         <button
-            onClick={onRegenerate}
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onRegenerate();
+            }}
             className="mt-8 inline-flex items-center px-8 py-3 bg-indigo-600 text-white font-bold rounded-full hover:bg-indigo-700 transition-all duration-300 transform hover:scale-105 shadow-lg"
         >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
@@ -615,6 +1678,15 @@ const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ itinerary, onRegene
         </button>
         )}
       </div>
+      
+      {/* Toast notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 };
