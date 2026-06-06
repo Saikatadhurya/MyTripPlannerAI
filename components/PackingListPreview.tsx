@@ -2,16 +2,31 @@ import React, { useState, useEffect } from 'react';
 import { PackingList } from '../types';
 import { useSaveRecommendation } from '../hooks/useSaveRecommendation';
 
-const parseBold = (text: string | undefined) => {
-  if (!text) return { __html: '' };
-  // Bolding now includes larger, darker text for prominence
-  return { __html: text.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-slate-900 text-lg">$1</strong>') };
+const toDisplayString = (value: unknown): string => {
+  if (value == null) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (Array.isArray(value)) return value.map(toDisplayString).filter(Boolean).join(', ');
+  if (typeof value === 'object') {
+    const obj = value as Record<string, unknown>;
+    if (typeof obj.description === 'string') return obj.description;
+    if (typeof obj.text === 'string') return obj.text;
+    if (typeof obj.suggestion === 'string') return obj.suggestion;
+  }
+  return String(value);
 };
 
-const getWeatherIcon = (tempString: string | undefined): React.ReactNode => {
-    if (!tempString) return <span className="text-4xl" role="img" aria-label="thermometer">🌡️</span>;
+const parseBold = (text: unknown) => {
+  const str = toDisplayString(text);
+  if (!str) return { __html: '' };
+  return { __html: str.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-slate-900 text-lg">$1</strong>') };
+};
+
+const getWeatherIcon = (tempString: unknown): React.ReactNode => {
+    const str = toDisplayString(tempString);
+    if (!str) return <span className="text-4xl" role="img" aria-label="thermometer">🌡️</span>;
     
-    const weatherText = tempString.toLowerCase();
+    const weatherText = str.toLowerCase();
     
     // First, check weather description keywords for more accurate icon selection
     // Check more specific conditions first
@@ -41,7 +56,7 @@ const getWeatherIcon = (tempString: string | undefined): React.ReactNode => {
     // Match temperature patterns like "20-28°C", "25°C", "15 to 20°C", etc.
     // First try to match range pattern (e.g., "20-28°C" or "20 to 28°C")
     const rangePattern = /(-?\d+)\s*[-–—to]+\s*(-?\d+)/i;
-    const rangeMatch = tempString.match(rangePattern);
+    const rangeMatch = str.match(rangePattern);
     
     let avgTemp: number | null = null;
     
@@ -56,7 +71,7 @@ const getWeatherIcon = (tempString: string | undefined): React.ReactNode => {
     } else {
         // Try to match single temperature (e.g., "25°C")
         const singlePattern = /(-?\d+)\s*°?C/i;
-        const singleMatch = tempString.match(singlePattern);
+        const singleMatch = str.match(singlePattern);
         
         if (singleMatch) {
             const temp = parseInt(singleMatch[1], 10);
@@ -258,7 +273,7 @@ const PackingListPreview: React.FC<PackingListPreviewProps> = ({ packingList, on
                     <div className="flex-1 min-w-0">
                         <h3 className="text-base sm:text-lg font-bold text-slate-800">Expected Weather</h3>
                         <p className="text-xs sm:text-sm text-slate-600 -mt-0.5 sm:-mt-1">{formattedStartDate}</p>
-                        <p className="text-lg sm:text-xl md:text-2xl font-bold text-violet-700 mt-1 leading-tight break-words whitespace-pre-wrap">{packingList.approximateTemperature}</p>
+                        <p className="text-lg sm:text-xl md:text-2xl font-bold text-violet-700 mt-1 leading-tight break-words whitespace-pre-wrap">{toDisplayString(packingList.approximateTemperature)}</p>
                         <p className="text-xs sm:text-sm text-slate-600 mt-1 sm:mt-2">Pack accordingly for the weather conditions.</p>
                     </div>
                 </div>
