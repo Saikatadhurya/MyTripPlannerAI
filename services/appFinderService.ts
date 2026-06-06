@@ -2,11 +2,12 @@ import { GoogleGenAI } from "@google/genai";
 import { AppFinderRequestData, AppRecommendations } from '../types';
 import { extractJson, cleanCitations } from './jsonUtils';
 import { CookieUtils } from './cookieUtils';
+import { sleep, isQuotaApiError, isTransientApiError, formatQuotaError } from './geminiModel';
+import { generateGeminiJson } from './geminiRequest';
 
 export const generateAppRecommendations = async (data: AppFinderRequestData, onChunk?: (chunk: string) => void, userApiKey?: string): Promise<{result: AppRecommendations, prompt: string}> => {
   const { apiKey, isUsingDefaultKey } = await CookieUtils.getApiKeyWithSource(userApiKey);
   
-  // Ensure API key is properly trimmed
   if (!apiKey || apiKey.trim().length === 0) {
     throw new Error("Invalid API key: key is empty or whitespace only");
   }
@@ -23,23 +24,21 @@ export const generateAppRecommendations = async (data: AppFinderRequestData, onC
     multiStopInstructions = `
     This is a multi-stop trip covering: ${destinationsString}.
     **CRITICAL MULTI-STOP INSTRUCTIONS:**
-    1.  Your recommendations MUST be relevant for the entire region, but you MUST prioritize finding popular **local apps for EACH destination**. For example, if the trip includes "Goa", you MUST search for apps popular specifically in Goa.
-    2.  **MANDATORY 'location' field:** For each app you recommend that is specific to one of the locations, you MUST populate the 'location' field in the JSON with that city's name (e.g., "Goa"). For generic, widely-used apps like Google Maps or Booking.com, this field should be an empty string "".
+    1.  Your recommendations MUST be relevant for the entire region, but you MUST prioritize finding popular **local apps for EACH destination**.
+    2.  **MANDATORY 'location' field:** For each app specific to one location, populate 'location' with that city's name. For global apps like Google Maps, use "".
     `;
   }
 
-  const prompt = `
-    You are a tech-savvy local guide and an expert global travel assistant. Your mission is to provide a traveler with a curated list of the most useful, relevant, and currently available mobile apps for their trip to ${destinationsString}, written in ${language}. Your recommendations MUST include popular local alternatives to global apps.
+  const buildPrompt = (reinforceJson: boolean) => `
+    You are a tech-savvy local guide. Provide a curated list of useful mobile apps for a trip to ${destinationsString}, written in ${language}. Include global apps AND popular local alternatives.
     ${multiStopInstructions}
 
-    **CRITICAL INSTRUCTIONS & PROTOCOL:**
-    1.  **Use Google Search:** You MUST use your search capabilities to find currently available applications for ${destinationsString}.
-    2.  **Local Expertise is Key:** For each category, you must find both internationally known apps (e.g., Uber) AND their popular local competitors. This is crucial. For example, for Delhi, India, in 'Transport', you MUST include Uber, but also critical local competitors like Ola and Rapido.
-    3.  **DO NOT PROVIDE URLs:** You are strictly forbidden from providing any App Store or Play Store URLs. Your only task is to identify the app's name and platform.
-    4.  **DO NOT FETCH RATINGS:** You MUST NOT spend time searching for app ratings. The goal is a fast response.
-    5.  **Categorize Accurately:** Place each app in ONE of the specified categories. If a category has no relevant apps after an exhaustive search, return an empty array for it.
-
-    The response MUST be ONLY a single, valid JSON object that strictly follows this structure. All text content must be in ${language}.
+    **INSTRUCTIONS:**
+    1. Use your knowledge of well-known travel apps for ${destinationsString}.
+    2. For transport, include both Uber AND local competitors (e.g. Ola, Grab, Bolt).
+    3. DO NOT provide App Store URLs or ratings.
+    4. Recommend 2-3 apps per category maximum.
+    5. If a category has no relevant apps, return an empty array.
 
     JSON Structure:
     {
@@ -54,83 +53,76 @@ export const generateAppRecommendations = async (data: AppFinderRequestData, onC
       "festivalsAndSeasonal": [{ "name": "string", "category": "string", "description": "string", "platform": "iOS" | "Android" | "Both", "icon": "emoji", "location"?: "string" }]
     }
 
-    **CRITICAL RULES & EXAMPLE:**
-    1.  **App Naming Convention (CRITICAL):** The 'name' field MUST be the proper, official name of the app (e.g., "Google Maps", "AllTrails", "Uber Eats"). It MUST NOT be a generic category. For example, for the app 'AllTrails', the name MUST be "AllTrails", NOT "hikes".
-    2.  **Category (CRITICAL):** The 'category' field MUST be a short, one-word, lowercase description of the app's primary function (e.g., "hikes", "navigation", "food delivery"). For apps that are very famous and instantly recognizable by their icon (like Google Maps), you can make this category an empty string "". For others, it is mandatory.
-    3.  **Icon:** The 'icon' field MUST be a single, relevant emoji.
-    4.  **Language:** The entire JSON response, including all names and descriptions, MUST be in ${language}.
-    5. **JSON VALIDATION:** The output MUST be a perfectly valid JSON object. NO unescaped double quotes (") in string values. Use single quotes or escape with \\". Check every string before finishing.
-    6. **Example of a good entry:**
-        \`{ "name": "AllTrails", "category": "hikes", "description": "A popular app for discovering and navigating trekking trails...", "platform": "Both", "icon": "🌲", "location": "" }\`
-        \`{ "name": "Goa Miles", "category": "taxi", "description": "A taxi booking app specific to Goa...", "platform": "Both", "icon": "🚕", "location": "Goa" }\`
-    7. **FINAL INSTRUCTION:** Your entire response MUST be the raw JSON object starting with '{' and ending with '}'. NO markdown wrapping, NO introductory text. Immediately parsable as JSON.
+    Rules: 'name' = official app name. 'category' = one lowercase word. 'icon' = single emoji. All text in ${language}.
+    ${reinforceJson ? 'CRITICAL: Output ONLY raw JSON starting with { and ending with }. No markdown.' : ''}
   `;
+
+  const prompt = buildPrompt(false);
   
   let fullText = '';
   try {
-      if (onChunk) {
-        const stream = await ai.models.generateContentStream({
-            model: "gemini-2.5-flash",
-            contents: prompt,
-            config: {
-                tools: [{ googleSearch: {} }],
-                thinkingConfig: { thinkingBudget: 0 },
-            }
-        });
-
-        for await (const chunk of stream) {
-            const chunkText = chunk.text;
-            fullText += chunkText;
-            onChunk(chunkText);
+      const streamToUi = async (text: string) => {
+        if (!onChunk) return;
+        const chunkSize = 120;
+        for (let i = 0; i < text.length; i += chunkSize) {
+          onChunk(text.slice(i, i + chunkSize));
+          await sleep(0);
         }
-      } else {
-         const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: prompt,
-            config: {
-                tools: [{ googleSearch: {} }],
-                thinkingConfig: { thinkingBudget: 0 },
-                responseMimeType: "application/json",
-            }
-        });
-        fullText = response.text;
-      }
+      };
 
+      const parseAppsJson = (text: string) => {
+        if (!text.includes('{')) {
+          throw new Error("Could not find a valid JSON object in the AI response.");
+        }
+        const jsonString = extractJson(text);
+        const parsedJson = JSON.parse(jsonString);
 
-      if (!fullText) {
-          throw new Error("The AI returned an empty response.");
-      }
-      
-      const jsonString = extractJson(fullText);
-      const parsedJson = JSON.parse(jsonString);
-      
-      if (parsedJson.error && parsedJson.error.code) {
+        if (parsedJson.error && parsedJson.error.code) {
           const { code, message } = parsedJson.error;
           throw new Error(`[${code}] ${message}`);
+        }
+
+        return cleanCitations(parsedJson);
+      };
+
+      let cleanedJson: ReturnType<typeof cleanCitations> | null = null;
+      let lastAttemptError: unknown = null;
+
+      for (const reinforceJson of [false, true]) {
+        try {
+          fullText = await generateGeminiJson(ai, buildPrompt(reinforceJson));
+          cleanedJson = parseAppsJson(fullText);
+          await streamToUi(fullText);
+          break;
+        } catch (attemptError) {
+          lastAttemptError = attemptError;
+          if (isQuotaApiError(attemptError)) throw attemptError;
+        }
       }
 
-      const cleanedJson = cleanCitations(parsedJson);
+      if (!cleanedJson) {
+        if (lastAttemptError && isTransientApiError(lastAttemptError)) {
+          throw new Error("[503] The AI model is currently busy. Please wait a moment and try again.");
+        }
+        throw lastAttemptError ?? new Error("The AI returned an empty response.");
+      }
 
       return { result: cleanedJson, prompt };
   } catch (error) {
-      console.error("Failed to generate and parse app recommendations stream:", error);
+      console.error("Failed to generate and parse app recommendations:", error);
       console.error("Original AI response text accumulated:", fullText);
       
       if (error instanceof Error) {
         if (error.message.startsWith('[')) {
-            // It's already a custom-formatted error, re-throw it.
             throw error;
         }
 
         const combinedErrorText = (error.message + fullText).toLowerCase();
 
-        if (combinedErrorText.includes("quota") || combinedErrorText.includes("rate limit") || combinedErrorText.includes("429")) {
-            if (isUsingDefaultKey) {
-                throw new Error("[429] The default API key has reached its quota limit. Please set your own Gemini API key in your profile settings to continue.");
-            }
-            throw new Error("[429] You have exceeded the request limit. Please check your plan and billing details and try again later.");
+        if (isQuotaApiError(error) || combinedErrorText.includes("quota") || combinedErrorText.includes("429")) {
+            throw new Error(formatQuotaError(isUsingDefaultKey));
         }
-        if (combinedErrorText.includes("overloaded") || combinedErrorText.includes("server error") || combinedErrorText.includes("503")) {
+        if (combinedErrorText.includes("overloaded") || combinedErrorText.includes("503")) {
              throw new Error("[503] The AI model is currently busy. Please wait a moment and try again.");
         }
         

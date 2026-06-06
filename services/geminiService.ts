@@ -2,6 +2,8 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { Budget, Itinerary, Vibe, FoodPreference, TripType, LocationSuggestion } from '../types';
 import { extractJson, cleanCitations } from './jsonUtils';
 import { CookieUtils } from './cookieUtils';
+import { GEMINI_MODEL, sleep, isQuotaApiError, isTransientApiError, formatQuotaError } from './geminiModel';
+import { generateGeminiJson } from './geminiRequest';
 
 // Cache for destination suggestions to avoid redundant API calls
 const suggestionsCache = new Map<string, LocationSuggestion[]>();
@@ -34,16 +36,7 @@ export const getDestinationSuggestions = async (query: string, userApiKey?: stri
         Your response MUST be a single, valid JSON array of objects. Each object MUST have "type" (string), "name" (string), and "parentHierarchy" (string).
         DO NOT add any text before or after the JSON array. Start with '[' and end with ']'.`;
     
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-        thinkingConfig: { thinkingBudget: 0 },
-      }
-    });
-
-    const resultText = response.text.trim();
+    const resultText = await generateGeminiJson(ai, prompt);
     if (!resultText) {
         console.error("AI response for suggestions was empty or invalid:", response);
         return [];
@@ -843,49 +836,72 @@ export const generateItinerary = async (
   
     let fullText = '';
     try {
-        // Use streaming only if onChunk is provided, otherwise use a direct request for speed.
-        if (onChunk) {
-            const stream = await ai.models.generateContentStream({
-                model: "gemini-2.5-flash",
-                contents: prompt,
-                config: {
-                    tools: [{ googleSearch: {} }],
-                    thinkingConfig: { thinkingBudget: 0 },
-                    // Note: responseMimeType may not be fully supported in streaming mode
-                }
-            });
+        const jsonOnlyReminder =
+            '\n\nCRITICAL OUTPUT RULE: Respond with ONLY a single raw JSON object starting with { and ending with }. ' +
+            'No markdown fences, no headings, no prose before or after the JSON.';
 
-            for await (const chunk of stream) {
-                const chunkText = chunk.text;
-                fullText += chunkText;
-                onChunk(chunkText);
+        const requestItinerary = async (reinforceJson: boolean): Promise<string> => {
+            const contents = reinforceJson ? prompt + jsonOnlyReminder : prompt;
+            return generateGeminiJson(ai, contents);
+        };
+
+        const streamToUi = async (text: string) => {
+            if (!onChunk) return;
+            const chunkSize = 120;
+            for (let i = 0; i < text.length; i += chunkSize) {
+                onChunk(text.slice(i, i + chunkSize));
+                await sleep(0);
             }
-        } else {
-            const response = await ai.models.generateContent({
-                model: "gemini-2.5-flash",
-                contents: prompt,
-                config: {
-                    tools: [{ googleSearch: {} }],
-                    thinkingConfig: { thinkingBudget: 0 },
-                    responseMimeType: "application/json",
+        };
+
+        const parseItineraryJson = (text: string) => {
+            if (!text.includes('{')) {
+                throw new Error("Could not find a valid JSON object in the AI response.");
+            }
+
+            const jsonString = extractJson(text);
+            const parsedJson = JSON.parse(jsonString);
+
+            if (parsedJson.error && parsedJson.error.code) {
+                const { code, message } = parsedJson.error;
+                throw new Error(`[${code}] ${message}`);
+            }
+
+            if (!parsedJson.plan || !Array.isArray(parsedJson.plan) || parsedJson.plan.length === 0) {
+                throw new Error("Could not find a valid JSON object in the AI response.");
+            }
+
+            return cleanCitations(parsedJson);
+        };
+
+        const attemptConfigs = [{ reinforceJson: false }, { reinforceJson: true }];
+
+        let cleanedJson: ReturnType<typeof cleanCitations> | null = null;
+        let lastAttemptError: unknown = null;
+
+        for (const [index, config] of attemptConfigs.entries()) {
+            try {
+                fullText = await requestItinerary(config.reinforceJson);
+                cleanedJson = parseItineraryJson(fullText);
+                await streamToUi(fullText);
+                break;
+            } catch (attemptError) {
+                lastAttemptError = attemptError;
+                if (isQuotaApiError(attemptError)) {
+                    throw attemptError;
                 }
-            });
-            fullText = response.text;
+                if (index < attemptConfigs.length - 1) {
+                    console.warn(`Itinerary attempt ${index + 1} failed, retrying with stricter JSON prompt:`, attemptError);
+                }
+            }
         }
 
-        if (!fullText) {
-            throw new Error("The AI returned an empty response.");
+        if (!cleanedJson) {
+            if (lastAttemptError && isTransientApiError(lastAttemptError)) {
+                throw new Error("[503] The AI model is currently busy. Please wait a moment and try again.");
+            }
+            throw lastAttemptError ?? new Error("The AI returned an empty response.");
         }
-        
-        const jsonString = extractJson(fullText);
-        const parsedJson = JSON.parse(jsonString);
-
-        if (parsedJson.error && parsedJson.error.code) {
-            const { code, message } = parsedJson.error;
-            throw new Error(`[${code}] ${message}`);
-        }
-
-        const cleanedJson = cleanCitations(parsedJson);
 
         const result = {
             ...cleanedJson,
@@ -914,11 +930,8 @@ export const generateItinerary = async (
 
             const combinedErrorText = (error.message + fullText).toLowerCase();
     
-            if (combinedErrorText.includes("quota") || combinedErrorText.includes("rate limit") || combinedErrorText.includes("429")) {
-                if (isUsingDefaultKey) {
-                    throw new Error("[429] The default API key has reached its quota limit. Please set your own Gemini API key in your profile settings to continue.");
-                }
-                throw new Error("[429] You have exceeded the request limit. Please check your plan and billing details and try again later.");
+            if (isQuotaApiError(error) || combinedErrorText.includes("quota") || combinedErrorText.includes("rate limit") || combinedErrorText.includes("429")) {
+                throw new Error(formatQuotaError(isUsingDefaultKey));
             }
             if (combinedErrorText.includes("overloaded") || combinedErrorText.includes("server error") || combinedErrorText.includes("503")) {
                  throw new Error("[503] The AI model is currently busy. Please wait a moment and try again.");

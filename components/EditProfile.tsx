@@ -262,9 +262,10 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate
             CookieUtils.setGeminiApiKey(actualGeminiKey.trim());
           }
         } else if (formData.gemini_api_key && formData.gemini_api_key.trim().length > 0) {
-          // User provided a new key, store it in cookie
+          // User provided a new key, store it in cookie and use it immediately
+          actualGeminiKey = formData.gemini_api_key.trim();
           setHasGeminiKey(true);
-          CookieUtils.setGeminiApiKey(formData.gemini_api_key.trim());
+          CookieUtils.setGeminiApiKey(actualGeminiKey);
         }
         
         // Create updated user object with new data
@@ -275,7 +276,7 @@ const EditProfile: React.FC<EditProfileProps> = ({ user, onBack, onProfileUpdate
           full_name: formData.full_name.trim(),
           // Only include gemini_api_key if we have the actual key from backend response
           // Don't store placeholder "SET" or invalid values
-          gemini_api_key: actualGeminiKey && actualGeminiKey.trim().length >= 10 && actualGeminiKey !== 'SET' ? actualGeminiKey : undefined,
+          gemini_api_key: actualGeminiKey && actualGeminiKey.trim().length >= 10 && actualGeminiKey !== 'SET' ? actualGeminiKey : user?.gemini_api_key,
           updated_at: new Date().toISOString()
         };
         

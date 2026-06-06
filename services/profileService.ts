@@ -161,7 +161,12 @@ class ProfileService {
     // Redirect to Google OAuth with returnUrl and state parameters
     const currentUrl = window.location.href;
     const state = encodeURIComponent(JSON.stringify({ userId }));
-    const linkingUrl = `${process.env.REACT_APP_API_URL || process.env.VITE_API_URL || 'http://localhost:5000'}/auth/google/link?returnUrl=${encodeURIComponent(currentUrl)}&state=${state}`;
+    const backendBase =
+      (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') &&
+      window.location.port === '3000'
+        ? (process.env.REACT_APP_API_URL || process.env.VITE_API_URL || 'http://localhost:5001')
+        : window.location.origin;
+    const linkingUrl = `${backendBase}/auth/google/link?returnUrl=${encodeURIComponent(currentUrl)}&state=${state}`;
     window.location.href = linkingUrl;
   }
 

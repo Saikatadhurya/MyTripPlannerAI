@@ -1,6 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { extractJson, cleanCitations } from './jsonUtils';
 import { CookieUtils } from './cookieUtils';
+import { GEMINI_MODEL } from './geminiModel';
 import { Vibe, Budget, TripType } from '../types';
 
 export interface WeekendPackage {
@@ -112,7 +113,7 @@ Search for current weekend packages and popular weekend destinations near ${requ
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: GEMINI_MODEL,
       contents: prompt,
       config: {
         tools: [{ googleSearch: {} }],

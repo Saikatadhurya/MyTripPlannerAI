@@ -36,37 +36,55 @@ export const extractJson = (text: string): string => {
     } else {
         const startChar = content[startIndex];
         const endChar = startChar === '{' ? '}' : ']';
-    
-        // 3. Use a counter to find the correct end of the JSON structure.
-        // This is more robust than `lastIndexOf` as it handles nested structures.
+
+        // 3. Find the matching end brace/bracket, respecting quoted strings.
         let count = 0;
         let endIndex = -1;
+        let inString = false;
+        let escaped = false;
+
         for (let i = startIndex; i < content.length; i++) {
-            if (content[i] === startChar) {
-                count++;
-            } else if (content[i] === endChar) {
-                count--;
+            const char = content[i];
+
+            if (escaped) {
+                escaped = false;
+                continue;
             }
-            if (count === 0) {
-                endIndex = i;
-                break;
+
+            if (char === '\\' && inString) {
+                escaped = true;
+                continue;
+            }
+
+            if (char === '"') {
+                inString = !inString;
+                continue;
+            }
+
+            if (!inString) {
+                if (char === startChar) {
+                    count++;
+                } else if (char === endChar) {
+                    count--;
+                }
+                if (count === 0) {
+                    endIndex = i;
+                    break;
+                }
             }
         }
-    
+
         if (endIndex === -1) {
             throw new Error("Could not find a complete JSON object or array in the AI response (unmatched brackets/braces).");
         }
-    
-        // 4. Extract the substring that is likely our JSON.
+
         jsonString = content.substring(startIndex, endIndex + 1);
     }
 
-
-    // 5. Pre-parse cleanup for common LLM errors.
-    // Remove trailing commas, which are invalid in strict JSON.
+    // 4. Pre-parse cleanup for common LLM errors.
     jsonString = jsonString.replace(/,\s*([}\]])/g, "$1");
-    // Remove single-line and multi-line comments.
-    jsonString = jsonString.replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, '');
+    // Block comments only — do not strip // lines (breaks URLs like https://...)
+    jsonString = jsonString.replace(/\/\*[\s\S]*?\*\//g, '');
 
     return jsonString;
 };

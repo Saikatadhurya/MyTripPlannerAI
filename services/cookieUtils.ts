@@ -42,6 +42,8 @@ export class CookieUtils {
   static setGeminiApiKey(apiKey: string): void {
     // This is for USER's own key only, not the default key
     this.setCookie(this.GEMINI_API_KEY_COOKIE, apiKey);
+    // Ensure the shared default key is never used once the user sets their own
+    this.deleteDefaultApiKey();
   }
 
   static getGeminiApiKey(): string | null {
@@ -145,6 +147,7 @@ export class CookieUtils {
       if (trimmedKey === 'SET' || trimmedKey.length < 10) {
         // Fall through to check cookie/default key
       } else {
+        this.deleteDefaultApiKey();
         return { apiKey: trimmedKey, isUsingDefaultKey: false };
       }
     }
@@ -153,7 +156,10 @@ export class CookieUtils {
     const cookieKey = this.getGeminiApiKey();
     if (cookieKey && cookieKey.trim().length > 0) {
       const trimmedKey = cookieKey.trim();
-      return { apiKey: trimmedKey, isUsingDefaultKey: false };
+      if (trimmedKey.length >= 10 && trimmedKey !== 'SET') {
+        this.deleteDefaultApiKey();
+        return { apiKey: trimmedKey, isUsingDefaultKey: false };
+      }
     }
     
     // Step 3: Fall back to encrypted default key (user hasn't set their own key or deleted it)

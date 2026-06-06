@@ -4,10 +4,12 @@ const { initUserLimits, ensureFeaturesSeeded } = require('../models/usageModel')
 const otpModel = require('../models/otpModel');
 const emailService = require('../services/emailService');
 
+const defaultLocalUrl = `http://localhost:${process.env.PORT || 5001}`;
+
 // Get the frontend URL, with fallback logic for production
 const frontendUrl = process.env.FRONTEND_URL || 
                      process.env.BASE_URL || 
-                     (process.env.NODE_ENV === 'production' ? process.env.RENDER_URL : 'http://localhost:5000');
+                     (process.env.NODE_ENV === 'production' ? process.env.RENDER_URL : defaultLocalUrl);
 
 exports.signup = async (req, res) => {
     const { full_name, email, password } = req.body;

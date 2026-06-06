@@ -18,10 +18,13 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+const PORT = process.env.PORT || 5001;
+const defaultLocalUrl = `http://localhost:${PORT}`;
+
 // Get the frontend URL, with fallback logic for production
 const frontendUrl = process.env.FRONTEND_URL || 
                      process.env.BASE_URL || 
-                     (process.env.NODE_ENV === 'production' ? process.env.RENDER_URL : 'http://localhost:5000');
+                     (process.env.NODE_ENV === 'production' ? process.env.RENDER_URL : defaultLocalUrl);
 
 app.use(cors({
     origin: frontendUrl,
@@ -63,9 +66,18 @@ app.use((req, res) => {
     res.sendFile(path.join(__dirname, '../dist/index.html'));
 });
 
-const PORT = process.env.PORT || 5000;
 const BASE_URL = process.env.BASE_URL || 
-                  (process.env.RENDER_URL ? process.env.RENDER_URL : `http://localhost:${PORT}`);
+                  (process.env.RENDER_URL ? process.env.RENDER_URL : defaultLocalUrl);
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
+    console.log(`Server running at ${BASE_URL}`);
+});
+
+server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+        console.error(`Port ${PORT} is already in use. Set PORT in backend/.env to a free port.`);
+    } else {
+        console.error('Server failed to start:', err.message);
+    }
+    process.exit(1);
 });

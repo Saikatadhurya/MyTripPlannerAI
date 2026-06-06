@@ -2,6 +2,8 @@ import { GoogleGenAI } from "@google/genai";
 import { LingoFinderRequestData, LingoRecommendations } from '../types';
 import { extractJson, cleanCitations } from './jsonUtils';
 import { CookieUtils } from './cookieUtils';
+import { sleep, isQuotaApiError, formatQuotaError } from './geminiModel';
+import { generateGeminiJson } from './geminiRequest';
 
 export const generateLingoGuide = async (data: LingoFinderRequestData, onChunk?: (chunk: string) => void, userApiKey?: string): Promise<{result: LingoRecommendations, prompt: string}> => {
   const { apiKey, isUsingDefaultKey } = await CookieUtils.getApiKeyWithSource(userApiKey);
@@ -70,32 +72,15 @@ export const generateLingoGuide = async (data: LingoFinderRequestData, onChunk?:
 
   let fullText = '';
   try {
-      if (onChunk) {
-        const stream = await ai.models.generateContentStream({
-            model: "gemini-2.5-flash",
-            contents: prompt,
-            config: {
-                thinkingConfig: { thinkingBudget: 0 },
-            }
-        });
-        for await (const chunk of stream) {
-            const chunkText = chunk.text;
-            fullText += chunkText;
-            onChunk(chunkText);
-        }
-      } else {
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: prompt,
-            config: {
-                thinkingConfig: { thinkingBudget: 0 },
-                responseMimeType: "application/json",
-            }
-        });
-        fullText = response.text;
-      }
+      fullText = await generateGeminiJson(ai, prompt);
 
-      if (!fullText) throw new Error("The AI returned an empty response.");
+      if (onChunk) {
+        const chunkSize = 120;
+        for (let i = 0; i < fullText.length; i += chunkSize) {
+          onChunk(fullText.slice(i, i + chunkSize));
+          await sleep(0);
+        }
+      }
       
       const jsonString = extractJson(fullText);
       const parsedJson = JSON.parse(jsonString);
@@ -120,11 +105,8 @@ export const generateLingoGuide = async (data: LingoFinderRequestData, onChunk?:
 
         const combinedErrorText = (error.message + fullText).toLowerCase();
 
-        if (combinedErrorText.includes("quota") || combinedErrorText.includes("rate limit") || combinedErrorText.includes("429")) {
-            if (isUsingDefaultKey) {
-                throw new Error("[429] The default API key has reached its quota limit. Please set your own Gemini API key in your profile settings to continue.");
-            }
-            throw new Error("[429] You have exceeded the request limit. Please check your plan and billing details and try again later.");
+        if (isQuotaApiError(error) || combinedErrorText.includes("quota") || combinedErrorText.includes("429")) {
+            throw new Error(formatQuotaError(isUsingDefaultKey));
         }
         if (combinedErrorText.includes("overloaded") || combinedErrorText.includes("server error") || combinedErrorText.includes("503")) {
              throw new Error("[503] The AI model is currently busy. Please wait a moment and try again.");

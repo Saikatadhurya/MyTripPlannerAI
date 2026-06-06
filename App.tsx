@@ -27,6 +27,8 @@ import ForgotPassword from './components/ForgotPassword';
 
 type View = 'landing' | 'questionnaire' | 'itineraryResult' | 'packingAssistantForm' | 'packingAssistantResult' | 'foodFinderForm' | 'foodFinderResult' | 'appFinderForm' | 'appFinderResult' | 'musicFinderForm' | 'musicFinderResult' | 'lingoFinderForm' | 'lingoFinderResult' | 'contact' | 'blog' | 'unifiedPlannerForm' | 'unifiedResult' | 'editProfile' | 'history';
 
+const isQuotaErrorMessage = (message: string) => message.includes('[429]');
+
 // --- Loading State Constants ---
 const itineraryStages = [
     { key: '"budgetSummary":', text: 'Calculating Budget Overview' },
@@ -838,7 +840,11 @@ const AppContent: React.FC = () => {
             console.error(`Attempt ${attempt} for itinerary failed:`, lastError);
             
             if (lastError.message === "Cancelled") break;
-            if (attempt < maxRetries) await new Promise(resolve => setTimeout(resolve, 500)); // Reduced for faster recovery
+            if (isQuotaErrorMessage(lastError.message)) break;
+            if (attempt < maxRetries) {
+                const delayMs = lastError.message.includes('[503]') ? 3000 * attempt : 500;
+                await new Promise(resolve => setTimeout(resolve, delayMs));
+            }
         }
     }
     
@@ -881,31 +887,18 @@ const AppContent: React.FC = () => {
           console.error(`Attempt ${attempt} for ${step} failed:`, e);
           lastError = e instanceof Error ? e : new Error('An unknown error occurred');
           
+          if (isQuotaErrorMessage(lastError.message)) break;
+
           if (attempt < maxRetries) {
-            // Check if it's a rate limit or server overload error
             const errorMessage = lastError.message.toLowerCase();
-            const isRateLimit = errorMessage.includes('[429]') || 
-                               errorMessage.includes('quota') || 
-                               errorMessage.includes('rate limit') ||
-                               errorMessage.includes('limit') ||
-                               errorMessage.includes('exceeded');
             const isServerOverload = errorMessage.includes('[503]') || 
                                     errorMessage.includes('overloaded') || 
                                     errorMessage.includes('server error') ||
                                     errorMessage.includes('busy');
             
-            // Use exponential backoff with longer delays for rate limits
-            let delay: number;
-            if (isRateLimit) {
-              // For rate limits, use longer exponential backoff: 3s, 6s, 12s
-              delay = Math.min(3000 * Math.pow(2, attempt - 1), 15000);
-            } else if (isServerOverload) {
-              // For server overload, use moderate delays: 2s, 4s, 8s
-              delay = Math.min(2000 * Math.pow(2, attempt - 1), 10000);
-            } else {
-              // For other errors, use shorter delays: 1s, 2s, 4s
-              delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
-            }
+            const delay = isServerOverload
+              ? Math.min(2000 * Math.pow(2, attempt - 1), 10000)
+              : Math.min(1000 * Math.pow(2, attempt - 1), 5000);
             
             await new Promise(resolve => setTimeout(resolve, delay));
           }
@@ -1068,8 +1061,11 @@ const AppContent: React.FC = () => {
                         return;
                     }
 
+                    if (isQuotaErrorMessage(lastError.message)) break;
+
                     if (attempt < maxRetries) {
-                        await new Promise(resolve => setTimeout(resolve, 500)); // wait before retrying (reduced for faster recovery)
+                        const delayMs = lastError.message.includes('[503]') ? 3000 * attempt : 500;
+                        await new Promise(resolve => setTimeout(resolve, delayMs));
                     }
                 }
             }
@@ -1142,14 +1138,15 @@ const AppContent: React.FC = () => {
               console.error(`Attempt ${attempt} for packing list failed:`, lastError);
               
               if (lastError.message === "Cancelled") break;
+              if (isQuotaErrorMessage(lastError.message)) break;
               if (attempt < maxRetries) await new Promise(resolve => setTimeout(resolve, 1500));
           }
       }
       
       if (!simplePlanCancellationFlag.current && lastError) {
-          if (!isUnified) {
-            setError(lastError.message);
-            navigate('/packing');
+        if (!isUnified) {
+          setError(lastError.message);
+          navigate('/packing');
           } else {
             throw lastError;
           }
@@ -1208,6 +1205,7 @@ const AppContent: React.FC = () => {
               console.error(`Attempt ${attempt} for food recommendations failed:`, lastError);
               
               if (lastError.message === "Cancelled") break;
+              if (isQuotaErrorMessage(lastError.message)) break;
               if (attempt < maxRetries) await new Promise(resolve => setTimeout(resolve, 1500));
           }
       }
@@ -1274,7 +1272,11 @@ const AppContent: React.FC = () => {
               console.error(`Attempt ${attempt} for app recommendations failed:`, lastError);
               
               if (lastError.message === "Cancelled") break;
-              if (attempt < maxRetries) await new Promise(resolve => setTimeout(resolve, 1500));
+              if (isQuotaErrorMessage(lastError.message)) break;
+              if (attempt < maxRetries) {
+                const delayMs = lastError.message.includes('[503]') ? 3000 * attempt : 1500;
+                await new Promise(resolve => setTimeout(resolve, delayMs));
+              }
           }
       }
       
@@ -1340,6 +1342,7 @@ const AppContent: React.FC = () => {
               console.error(`Attempt ${attempt} for music recommendations failed:`, lastError);
               
               if (lastError.message === "Cancelled") break;
+              if (isQuotaErrorMessage(lastError.message)) break;
               if (attempt < maxRetries) await new Promise(resolve => setTimeout(resolve, 1500));
           }
       }
@@ -1406,6 +1409,7 @@ const AppContent: React.FC = () => {
               console.error(`Attempt ${attempt} for lingo guide failed:`, lastError);
               
               if (lastError.message === "Cancelled") break;
+              if (isQuotaErrorMessage(lastError.message)) break;
               if (attempt < maxRetries) await new Promise(resolve => setTimeout(resolve, 1500));
           }
       }
@@ -1481,7 +1485,8 @@ const AppContent: React.FC = () => {
 
             // Only run steps that are selected and pending
             const selectedComponents = data.selectedComponents || ['packing', 'food', 'apps', 'music', 'lingo'];
-            const parallelSteps: (keyof Omit<UnifiedPlanLoadingStatus, 'itinerary'>)[] = ['packing', 'food', 'apps', 'music', 'lingo'];
+            // Apps runs last — it uses Google Search and is the heaviest quota consumer
+            const parallelSteps: (keyof Omit<UnifiedPlanLoadingStatus, 'itinerary'>)[] = ['packing', 'food', 'music', 'lingo', 'apps'];
             // Filter to only run steps that are both selected AND pending
             const stepsToRun = parallelSteps.filter(step => {
               const isSelected = selectedComponents.includes(step);
@@ -1503,8 +1508,9 @@ const AppContent: React.FC = () => {
                     // Add delay between requests (except for the first one)
                     // This helps avoid rate limiting when multiple requests are made
                     if (i > 0) {
-                        // Exponential backoff: 1s, 2s, 3s, etc. (max 5s)
-                        const delay = Math.min(1000 * i, 5000);
+                        // Extra pause before apps (Google Search is quota-heavy)
+                        const baseDelay = step === 'apps' ? 3000 : 1000;
+                        const delay = Math.min(baseDelay * i, step === 'apps' ? 8000 : 5000);
                         await new Promise(resolve => setTimeout(resolve, delay));
                     }
                     

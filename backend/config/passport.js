@@ -4,10 +4,12 @@ const userModel = require('../models/userModel');
 const { initUserLimits, ensureFeaturesSeeded } = require('../models/usageModel');
 require('dotenv').config();
 
+const defaultLocalUrl = `http://localhost:${process.env.PORT || 5001}`;
+
 // Get the backend URL, with fallback logic for production
 const backendUrl = process.env.BACKEND_URL || 
                     process.env.BASE_URL || 
-                    (process.env.NODE_ENV === 'production' ? process.env.RENDER_URL : 'http://localhost:5000');
+                    (process.env.NODE_ENV === 'production' ? process.env.RENDER_URL : defaultLocalUrl);
 
 /**
  * Serialize only the database user ID into the session
